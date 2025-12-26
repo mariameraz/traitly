@@ -1,4 +1,4 @@
-# setup.py (in project root, OUTSIDE of traitly/)
+# setup.py
 
 from setuptools import setup, find_packages
 import os
@@ -86,7 +86,7 @@ elif sys.platform.startswith("linux"):  # Linux
 
 setup(
     name="traitly",
-    version=VERSION,
+    version=0.1.0-alpha,
     
     # Metadata
     author="Maria Alejandra Torres Meraz",
@@ -150,8 +150,8 @@ setup(
     
     # Project URLs
     project_urls={
-        "Bug Reports": "https://github.com/your-username/traitly/issues",
-        "Documentation": "https://traitly.readthedocs.io/",
-        "Source Code": "https://github.com/your-username/traitly",
+        "Bug Reports": "https://github.com/mariameraz/traitly/issues",
+        "Documentation": "",
+        "Source Code": "https://github.com/mariameraz/traitly",
     },
 )
