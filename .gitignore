@@ -1,0 +1,20 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Specific files
+internal_structure/mask_unet.py
+
+# Build
+build/
+dist/
+*.egg-info/
