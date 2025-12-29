@@ -1,0 +1,84 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "traitly" 
+version = "0.1a0"
+requires-python = ">=3.9" 
+description = """
+    Open-source computer vision toolkit for high-throughput fruit and locule phenotyping. 
+    Analyze fruit morphology (size, shape), internal anatomy (locule number, shape, size, symmetry), 
+    pericarp thickness, and extract tissue color metrics (RGB, LAB, HSV, grayscale).
+"""
+readme = "README.md"
+license = { text = "AGPL-3.0-or-later" }
+license-files = ["LICENSE*"]
+
+authors = [
+  { name = "Maria Alejandra Torres Meraz", email = "ma.torresmeraz@gmail.com" },
+  { name = "Hector Lopez Moreno", email = "hectorlpzmno@gmail.com" }
+]
+
+dependencies = [
+  "opencv-python",
+  "numpy",
+  "pandas",
+  "scipy",
+  "matplotlib",
+  "tqdm",
+  "psutil",
+  "easyocr",
+# "pyzbar",
+  "PyMuPDF",
+  "ultralytics",
+]
+
+keywords = [
+  "plant-phenotyping",
+  "fruit-morphology",
+  "crop-anatomy",
+  "fruit-phenotyping",  
+  "locule-analysis",  
+  "locule-detection",
+  "pericarp-thickness",
+  "computer-vision",
+  "agricultural-image-analysis",
+  "plant-breeding-tools",
+  "open-source-agriculture",
+  "high-throughput-phenotyping"
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha", # 4 - beta, 5 - Production/Stable
+  "Operating System :: OS Independent",  
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS :: MacOS X",
+]
+
+
+[project.optional-dependencies]
+dev = [
+  "pytest", 
+  "black",
+  "isort",
+  "flake8",
+  "mypy" 
+  ]
+
+
+
+
+# CLI configuration
+[project.scripts]
+traitly = "traitly.cli:main"
+
+
+[project.urls]
+Repository = "https://github.com/mariameraz/traitly"
+Source = "https://github.com/mariameraz/traitly/src"
+Issues = "https://github.com/mariameraz/traitly/issues"
+Discussion = "https://github.com/mariameraz/traitly/discussions"
+#Documentation
+#Homepage

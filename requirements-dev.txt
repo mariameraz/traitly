@@ -1,0 +1,15 @@
+# convert pdf to images
+pymupdf
+
+# iu (streamlite)
+streamlit 
+
+# testing
+pytest
+pytest-cov
+
+# linting and formatting
+black
+isort
+flake8
+mypy 
