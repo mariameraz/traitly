@@ -46,13 +46,13 @@ class FruitConfig:
     max_distance: int = 10
     
     # Symmetry settings
-    num_shifts: int = 500
+    num_shifts: int = 100
     angle_weight: float = 0.5
     radius_weight: float = 0.5
     min_radius_threshold: float = 0.1
     
     # Pericarp settings
-    num_rays: int = 360
+    num_rays: int = 180
     
     # Visualization settings
     stamp: bool = False

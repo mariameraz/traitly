@@ -1,0 +1,28 @@
+══════════════════════════════════════════════
+SESSION DETAILS:
+══════════════════════════════════════════════
+date: 2025-12-28
+time: 19:26:01
+folder_path: ../tests/sample_data/
+total_images_detected: 3
+processed_images: 3
+total_fruits_processed: 75
+skipped_no_contours: 0
+skipped_errors: 0
+processing_time_minutes: 0.09
+avg_time_per_image_sec: 1.85
+ram_used_gb: 0.35
+
+══════════════════════════════════════════════
+ARGUMENTS:
+══════════════════════════════════════════════
+n_cores: 1
+contour_mode: raw
+stamp: False
+min_circularity: 0.3
+min_locule_area: 300
+merge_locules: False
+confidence_threshold: 0.6
+diameter_cm: 2.5
+detect_label: False
+use_ellipse_fruit: False

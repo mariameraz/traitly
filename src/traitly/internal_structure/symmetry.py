@@ -14,7 +14,7 @@ from scipy.optimize import linear_sum_assignment
 # Angular locule symmetry
 #################################################################################################
 
-def angular_symmetry(locules_data, num_shifts=500):
+def angular_symmetry(locules_data, num_shifts=100):
     """
     Calculate angular symmetry by comparing actual locule angles with the most symmetrical arrangement.
 
@@ -24,7 +24,7 @@ def angular_symmetry(locules_data, num_shifts=500):
               of a locule, where 'polar_coord'[0] is the angle in radians from the reference centroid.
         OPTIONAL:
             - num_shifts (int): Number of angular shifts to test when trying to align the ideal angles
-              to the observed angles (default = 1000).
+              to the observed angles (default = 100).
 
     Returns:
         float: Normalized angular error in range [0, 1]:

@@ -404,64 +404,94 @@ def get_inner_pericarp_contour(
 
 def calculate_pericarp_thickness_radial(
     outer_contour, inner_contour, fruit_centroid, 
-    img_shape, num_rays=360, px_per_cm=None
+    img_shape, num_rays=180, px_per_cm=None
 ):
+    """
+    Calculate pericarp thickness using radial sampling.
+    CORRECTED VERSION - Fixed intersection distance calculation.
+    
+    Args:
+        outer_contour: Outer fruit contour
+        inner_contour: Inner contour (convex hull of locules)
+        fruit_centroid: Fruit center (cx, cy)
+        img_shape: Image shape (height, width)
+        num_rays: Number of rays to trace (default: 360)
+        px_per_cm: Pixel to cm conversion factor
+    
+    Returns:
+        Dict with thickness statistics: mean, median, std, min, max, cv
+    """
     cx, cy = fruit_centroid
     height, width = img_shape[:2]
     
-    # Crear máscaras (igual)
+    # Create binary masks
     mask_outer = np.zeros((height, width), dtype=np.uint8)
     mask_inner = np.zeros((height, width), dtype=np.uint8)
     cv2.drawContours(mask_outer, [outer_contour], -1, 255, -1)
     cv2.drawContours(mask_inner, [inner_contour], -1, 255, -1)
     
-    # VECTORIZADO: Precalcular todos los rayos
+    # Precalculate all rays
     angles = np.linspace(0, 2 * np.pi, num_rays, endpoint=False)
     max_search = max(height, width)
     
-    # Crear grilla de distancias radiales
+    # Create radial distance grid
     r_grid = np.arange(1, max_search)
     cos_angles = np.cos(angles)
     sin_angles = np.sin(angles)
     
     thicknesses_px = []
     
-    # Procesar por lotes (más rápido que uno por uno)
+    # Process rays
     for i, (dx, dy) in enumerate(zip(cos_angles, sin_angles)):
-        # Calcular todas las posiciones a lo largo del rayo
+        # Calculate all positions along the ray
         xs = (cx + dx * r_grid).astype(int)
         ys = (cy + dy * r_grid).astype(int)
         
-        # Filtrar coordenadas válidas
+        # Filter valid coordinates
         valid = (xs >= 0) & (xs < width) & (ys >= 0) & (ys < height)
         xs_valid = xs[valid]
         ys_valid = ys[valid]
+        r_valid = r_grid[valid]  # CRITICAL: Keep corresponding radial distances
         
         if len(xs_valid) == 0:
             continue
         
-        # Buscar intersección con outer (vectorizado)
+        # Find outer boundary intersection
         outer_vals = mask_outer[ys_valid, xs_valid]
         outer_idx = np.where(outer_vals == 0)[0]
-        outer_dist = outer_idx[0] if len(outer_idx) > 0 else 0
         
-        # Buscar intersección con inner (vectorizado)
+        if len(outer_idx) == 0:
+            continue
+            
+        outer_r = r_valid[outer_idx[0] - 1] if outer_idx[0] > 0 else 0
+        
+        # Find inner boundary intersection
         inner_vals = mask_inner[ys_valid, xs_valid]
         inner_idx = np.where(inner_vals == 255)[0]
-        inner_dist = inner_idx[0] if len(inner_idx) > 0 else 0
         
-        if outer_dist > inner_dist > 0:
-            thicknesses_px.append(outer_dist - inner_dist)
+        if len(inner_idx) == 0:
+            continue
+            
+        inner_r = r_valid[inner_idx[0]]
+        
+        # Calculate thickness (using actual radial distances)
+        if outer_r > inner_r > 0:
+            thicknesses_px.append(outer_r - inner_r)
     
+    # Handle case with no valid measurements
     if not thicknesses_px:
         return {
-            'mean_thickness_cm': np.nan, 'median_thickness_cm': np.nan,
-            'std_thickness_cm': np.nan, 'min_thickness_cm': np.nan,
-            'max_thickness_cm': np.nan, 'cv_thickness': np.nan
+            'mean_thickness_cm': np.nan,
+            'median_thickness_cm': np.nan,
+            'std_thickness_cm': np.nan,
+            'min_thickness_cm': np.nan,
+            'max_thickness_cm': np.nan,
+            'cv_thickness': np.nan
         }
     
     thicknesses_px = np.array(thicknesses_px)
     
+    # Convert to cm if calibration available
     if px_per_cm and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
         thicknesses_cm = thicknesses_px / px_per_cm
         mean_val = np.mean(thicknesses_cm)
@@ -471,7 +501,7 @@ def calculate_pericarp_thickness_radial(
             'std_thickness_cm': float(np.std(thicknesses_cm)),
             'min_thickness_cm': float(np.min(thicknesses_cm)),
             'max_thickness_cm': float(np.max(thicknesses_cm)),
-            'cv_thickness': float(np.std(thicknesses_cm) / mean_val * 100)
+            'cv_thickness': float((np.std(thicknesses_cm) / mean_val * 100) if mean_val > 0 else np.nan)
         }
     else:
         mean_val = np.mean(thicknesses_px)
@@ -481,5 +511,5 @@ def calculate_pericarp_thickness_radial(
             'std_thickness_px': float(np.std(thicknesses_px)),
             'min_thickness_px': float(np.min(thicknesses_px)),
             'max_thickness_px': float(np.max(thicknesses_px)),
-            'cv_thickness': float(np.std(thicknesses_px) / mean_val * 100)
+            'cv_thickness': float((np.std(thicknesses_px) / mean_val * 100) if mean_val > 0 else np.nan)
         }

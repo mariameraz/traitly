@@ -4,10 +4,13 @@
 # STANDARD LIBRARY
 # ============================================================================
 import os
+from io import StringIO
+import sys
 import time
 import multiprocessing as mp
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Optional, List, Dict, Tuple, Any
+import warnings
 
 # ============================================================================
 # THIRD-PARTY LIBRARIES
@@ -27,6 +30,12 @@ from .analysis import analyze_fruits
 from ..utils import common_functions as cf
 from .annotated_image import AnnotatedImage
 
+##############################
+# Ignore warnings from torch #
+##############################
+
+warnings.filterwarnings('ignore', category=UserWarning, module='torch')
+warnings.filterwarnings('ignore', message='Using CPU')
 
 class FruitAnalyzer:
     """Class for analyzing fruit images with morphological measurements."""
@@ -94,14 +103,15 @@ class FruitAnalyzer:
     def setup_measurements(self, plot: bool = False, verbose: bool = True, 
                         font_size: int = 3, confidence: float = 0.6, 
                         plot_size: Tuple[int, int] = (8, 8),
-                        label: bool = True,
+                        detect_label: bool = False,
                         language_label: List[str] = ['es', 'en'],
                         min_area_label: int = 500,
                         min_canny_label: int = 0, max_canny_label: int = 150, 
                         blur_label: Tuple[int, int] = (11, 11),
                         width_cm: Optional[float] = None,
                         length_cm: Optional[float] = None,
-                        diameter_cm: Optional[float] = None) -> None:
+                        diameter_cm: Optional[float] = None, gpu: bool = False
+                        ) -> None:
         """
         Extract metadata from image including QR code, label text, and physical calibration.
         
@@ -169,57 +179,72 @@ class FruitAnalyzer:
         self.img_name = cf.detect_img_name(self.image_path)
         img_copy = self.img.copy()
 
-        if label:
-            print("\n" + "="*60)
-            print("LABEL DETECTION:")
-            print("="*60)
+        print("\n" + "="*60)
+        print("LABEL DETECTION:")
+        print("="*60)
 
-            # Step 1: Try to detect QR code first
-            self.label_text, img_copy = cf.detect_qr(img=img_copy)
+        # Step 1: Try to detect QR code first
+        self.label_text, img_copy = cf.detect_qr(img=img_copy)
 
-            # Detect label boxes (no plot here - plot at the end)
+        if self.label_text is not None and "No QR" not in str(self.label_text):
+            print(f"    > QR Code detected: {self.label_text}")
+        else:
+            self.label_text = None
+
+        # Step 2: Try to detect label boxes with YOLO
+        self.label_roi = cf.detect_label_box_yolo(img=img_copy, plot=False, conf = 0.4)
+
+        # Step 3: If YOLO failed, try alternative method
+        if self.label_roi is None or len(self.label_roi) == 0:
+            #print("    - YOLO label detection failed, trying alternative method...") # For debugging
             self.label_roi = cf.detect_label_box(
                 img=img_copy, 
-                verbose=False,  # Keep False for clean output
-                plot=False      # Always False - plot at the end
+                verbose=False,
+                plot=False
             )
-                        
-            # Check if QR was actually found (not an error message)
-            if self.label_text is not None and "No QR" not in str(self.label_text):
-                # Valid QR code found
-                print(f"    > QR Code detected: {self.label_text}")
-            
-            else:
-                # Step 2: No valid QR code, try label detection
+
+        # Step 4: If QR was detected, stop here (no need for OCR)
+        if self.label_text is not None:
+            pass  # Already have text from QR, skip OCR
+
+        # Step 5: If label_text is None, try OCR
+        elif self.label_text is None:
+    
+            if detect_label and self.label_roi is not None and len(self.label_roi) > 0:
+                # label=True and we have boxes: Extract text with OCR
                 print("    - No QR code found, attempting label detection...")
                 
-                # Check if label boxes were found
-                if self.label_roi is not None and len(self.label_roi) > 0:
-                    # Extract text from label boxes using OCR
+                old_stdout = sys.stdout
+                sys.stdout = StringIO()
+                
+                try:
                     self.label_text = cf.detect_label_text(
                         img=img_copy, 
                         label_roi=self.label_roi,
                         language=language_label,
                         blur_label=blur_label,
-                        verbose=False
+                        verbose=False,
+                        gpu = gpu
                     )
-                    
-                    if self.label_text:
-                        print(f"    > Label text detected: {self.label_text}")
-                    else:
-                        print("    - No text found in label boxes")
+                finally:
+                    sys.stdout = old_stdout
+                
+                if self.label_text:
+                    print(f"    > Label text detected: {self.label_text}")
                 else:
-                    print("    - No label boxes detected")
-                    self.label_text = None
-        else:
-            # Skip label detection
-            print("\n" + "="*60)
-            print("LABEL DETECTION: SKIPPED (label=False)")
-            print("="*60)
-            self.label_text = None
-            self.label_roi = None
-            img_copy = self.img  # Use original image
-        
+                    print("    - No text found in label boxes")
+            
+            elif detect_label and (self.label_roi is None or len(self.label_roi) == 0):
+                # label=True but no boxes detected
+                print("    - No QR code found, attempting label detection...")
+                print("    - No label boxes detected")
+            
+            elif not detect_label:
+                # label=False: Skip OCR
+                print("> No QR detected.")
+                print("> Label text detection: SKIPPED (label=False)")
+                self.label_roi = None
+            
         # Extract image dimensions
         h, w, _ = self.img.shape
         
@@ -277,9 +302,8 @@ class FruitAnalyzer:
                 if length_cm is None:
                     missing.append('length_cm')
                 
-                print('Reference circles not detected.')
                 print(f'Missing parameters: {", ".join(missing)}')
-                print('\n WARNING: Measurements will be returned in PIXEL units')
+                print('\n IMPORTANT: Measurements will be returned in >> PIXEL << units')
         
         print("="*60)
 
@@ -619,9 +643,9 @@ class FruitAnalyzer:
                     diameter_cm=config['diameter_cm'],
                     width_cm=config.get('width_cm'),
                     length_cm=config.get('length_cm'),
-                    label=config.get('detect_label', True),
+                    detect_label=config.get('detect_label', True),
                     verbose=False,
-                    plot=False
+                    plot=False, gpu=False
                 )
                 
                 # 3. Create mask
@@ -732,11 +756,11 @@ class FruitAnalyzer:
                     max_distance: int = 30,
                     max_locule_area: Optional[int] = None, 
                     merge_locules: bool = False,
-                    n_shifts: int = 500, 
+                    n_shifts: int = 100, 
                     angle_weight: float = 0.5, 
                     radius_weight: float = 0.5,
                     min_radius_threshold: float = 0.1,
-                    num_rays: int = 360,
+                    num_rays: int = 180,
                     centroid_fruit: int = 2,
                     centroid_locules: int = 2,
                     n_cores: int = 1,
@@ -745,7 +769,7 @@ class FruitAnalyzer:
                     diameter_cm: float = 2.5,
                     width_cm: Optional[float] = None,
                     length_cm: Optional[float] = None,
-                    detect_label: bool = True,
+                    detect_label: bool = False, gpu: bool = False,
                     **kwargs) -> None:
         """
         Process all images in a folder with optional parallel processing.
@@ -796,7 +820,7 @@ class FruitAnalyzer:
         """
         if not self.is_directory:
             raise ValueError("This instance was initialized with a single image. "
-                        "Use analyze_image() instead.")
+                        "Use analyze_image() instead or initialize FruitAnalyzer() with a folder path.")
         
         path_input = self.image_path
         output_dir = os.path.join(path_input, "Results") if output_dir is None else output_dir

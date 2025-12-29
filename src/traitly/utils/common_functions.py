@@ -7,19 +7,18 @@ import matplotlib.pyplot as plt
 #from pdf2image import convert_from_path
 
 from typing import Optional, List, Tuple, Union, Dict
-import fitz  # PyMuPD
 
 # Read QR code
-from pyzbar.pyzbar import decode
-import re
+#from pyzbar.pyzbar import decode
+
 
 # New modules included for px density (yolo model)
 from ultralytics import YOLO
 import statistics
 
-
-
-
+import sys
+from io import StringIO
+import warnings
 
 ##############################################################################
 valid_extensions = {'.jpg', '.jpeg', '.png', '.tiff', '.tif'}
@@ -128,17 +127,203 @@ def is_contour_valid(contour, filters=None):
 # Detect label text
 #################################################################################################
 
+
+# _READER_CACHE = {}
+
+# def get_easyocr_reader(languages=['en', 'es']):
+#     """Initialize EasyOCR reader with GPU (falls back to CPU if unavailable), suppressing all messages."""
+#     old_stdout, old_stderr = sys.stdout, sys.stderr
+#     sys.stdout = sys.stderr = StringIO()
+    
+#     try:
+#         import easyocr
+#         # Suppress all warnings including CUDA warnings
+#         with warnings.catch_warnings():
+#             warnings.simplefilter('ignore')
+#             reader = easyocr.Reader(languages, gpu=True, verbose=False)
+#     finally:
+#         sys.stdout, sys.stderr = old_stdout, old_stderr
+    
+#     return reader
+
+# def get_cached_reader(languages=('en', 'es')):
+#     """Return cached reader."""
+#     key = tuple(languages)
+#     if key not in _READER_CACHE:
+#         _READER_CACHE[key] = get_easyocr_reader(list(languages))
+#     return _READER_CACHE[key]
+
+    
+# def detect_label_text(img: np.ndarray, 
+#                       label_roi: List[Dict], 
+#                       language: List[str] = ['es', 'en'],
+#                       blur_label: Tuple[int, int] = (11, 11),
+#                       verbose: bool = False) -> Optional[str]:
+#     """
+#     Extract text from detected label regions using OCR.
+    
+#     Args:
+#         img: Input image (BGR format from OpenCV)
+#         label_roi: List of label boxes from detect_label_box().
+#                    Each dict contains: x, y, width, height, area, aspect_ratio
+#         language: Languages for OCR detection. Default is ['es', 'en'].
+#         blur_label: Gaussian blur kernel size. Default is (11, 11).
+#         verbose: Print debug information. Default is False.
+    
+#     Returns:
+#         Detected label text, or None if no text found in any region.
+#     """
+#     # Validate input
+#     if label_roi is None or len(label_roi) == 0:
+#         if verbose:
+#             print("No label regions provided")
+#         return None
+    
+#     if verbose:
+#         print(f"Processing {len(label_roi)} label box(es)...")
+    
+#     # Initialize OCR reader (attempts GPU, falls back to CPU silently)
+#     reader = get_cached_reader(tuple(language))
+    
+#     # Try OCR on each detected label region
+#     for i, box in enumerate(label_roi):
+#         x = box['x']
+#         y = box['y']
+#         w = box['width']
+#         h = box['height']
+        
+#         if verbose:
+#             print(f"\nProcessing box {i+1}/{len(label_roi)}:")
+#             print(f"   Position: ({x}, {y}), Size: {w}x{h}")
+        
+#         try:
+#             # Validate coordinates are within image bounds
+#             if y + h > img.shape[0] or x + w > img.shape[1]:
+#                 if verbose:
+#                     print(f"   - Box out of image bounds, skipping")
+#                 continue
+            
+#             # Extract label region from image
+#             label_region = img[y:y+h, x:x+w]
+            
+#             # Validate extracted region
+#             if label_region.size == 0:
+#                 if verbose:
+#                     print(f"   - Empty region, skipping")
+#                 continue
+            
+#             # Preprocess: Convert to grayscale
+#             gray = cv2.cvtColor(label_region, cv2.COLOR_BGR2GRAY)
+            
+#             # Apply Gaussian blur to reduce noise
+#             blur = cv2.GaussianBlur(gray, blur_label, 0)
+            
+#             # Run OCR on the preprocessed region
+#             results = reader.readtext(blur)
+            
+#             if results:
+#                 # Extract text from OCR results and join with spaces
+#                 label_text = " ".join([result[1] for result in results])
+                
+#                 if verbose:
+#                     print(f"   - Text found: '{label_text}'")
+#                     print(f"     Confidence scores: {[result[2] for result in results]}")
+                
+#                 return label_text  # Return immediately when text is found
+            
+#             else:
+#                 if verbose:
+#                     print(f"   - No text detected in this box")
+        
+#         except Exception as e:
+#             if verbose:
+#                 print(f"   - Error processing box {i+1}: {e}")
+#             continue
+    
+#     # No text found in any box
+#     if verbose:
+#         print("\nNo text could be extracted from any label box")
+    
+#     return None
+
+# Reemplaza estas funciones en common_functions.py (líneas ~265-305)
+
+_READER_CACHE = {}
+
+def get_easyocr_reader(languages=['en', 'es'], gpu=False):
+    """
+    Initialize EasyOCR reader with optional GPU support.
+    
+    Args:
+        languages: List of language codes for OCR
+        gpu: Whether to use GPU (only works with CUDA, not Apple MPS)
+    
+    Returns:
+        EasyOCR Reader instance
+    
+    Notes:
+        - GPU only works on systems with NVIDIA CUDA
+        - Apple Silicon Macs (M1/M2/M3) don't support CUDA
+        - Falls back to CPU silently if GPU unavailable
+    """
+    import sys
+    from io import StringIO
+    import warnings
+    
+    # Suppress all output during initialization
+    old_stdout, old_stderr = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = StringIO()
+    
+    try:
+        import easyocr
+        
+        # Check if GPU is actually available (only for CUDA)
+        if gpu:
+            import torch
+            if not torch.cuda.is_available():
+                # Silently fall back to CPU if CUDA not available
+                gpu = False
+        
+        # Suppress warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            reader = easyocr.Reader(languages, gpu=gpu, verbose=False)
+    
+    finally:
+        # Always restore stdout/stderr
+        sys.stdout, sys.stderr = old_stdout, old_stderr
+    
+    return reader
+
+
+def get_cached_reader(languages=('en', 'es'), gpu=False):
+    """
+    Return cached EasyOCR reader for given languages and GPU setting.
+    
+    Args:
+        languages: Tuple of language codes
+        gpu: Whether to use GPU
+    
+    Returns:
+        Cached EasyOCR Reader instance
+    """
+    # Include GPU in cache key to avoid conflicts
+    key = (tuple(languages), gpu)
+    
+    if key not in _READER_CACHE:
+        _READER_CACHE[key] = get_easyocr_reader(list(languages), gpu=gpu)
+    
+    return _READER_CACHE[key]
+
+    
 def detect_label_text(img: np.ndarray, 
                       label_roi: List[Dict], 
                       language: List[str] = ['es', 'en'],
                       blur_label: Tuple[int, int] = (11, 11),
                       verbose: bool = False,
-                      use_gpu: bool = False) -> Optional[str]:  # Nuevo parámetro
+                      gpu: bool = False) -> Optional[str]:  # ← Nuevo parámetro
     """
     Extract text from detected label regions using OCR.
-    
-    This function receives label box coordinates from detect_label_box() and 
-    applies OCR to extract text from those specific regions.
     
     Args:
         img: Input image (BGR format from OpenCV)
@@ -147,7 +332,7 @@ def detect_label_text(img: np.ndarray,
         language: Languages for OCR detection. Default is ['es', 'en'].
         blur_label: Gaussian blur kernel size. Default is (11, 11).
         verbose: Print debug information. Default is False.
-        use_gpu: Try to use GPU if available. Default is True.
+        gpu: Whether to attempt GPU acceleration (only works with CUDA). Default is False.
     
     Returns:
         Detected label text, or None if no text found in any region.
@@ -161,35 +346,8 @@ def detect_label_text(img: np.ndarray,
     if verbose:
         print(f"Processing {len(label_roi)} label box(es)...")
     
-    # ========== AUTO-DETECT GPU AVAILABILITY ==========
-    gpu_available = False
-    if use_gpu:
-        try:
-            import torch
-            gpu_available = torch.cuda.is_available()
-            if verbose and gpu_available:
-                print(f"GPU detected: {torch.cuda.get_device_name(0)}")
-                print(f"CUDA version: {torch.version.cuda}")
-        except ImportError:
-            if verbose:
-                print("PyTorch not found. Install with: pip install torch torchvision")
-    
-    # Initialize OCR reader with GPU if available
-    try:
-        if language:
-            reader = easyocr.Reader(language, gpu=gpu_available)
-        else:
-            reader = easyocr.Reader(['en'], gpu=gpu_available)
-        
-        if verbose:
-            print(f"Using {'GPU' if gpu_available else 'CPU'} for OCR")
-    
-    except Exception as e:
-        if verbose:
-            print(f"Error initializing OCR reader: {e}")
-            print("Falling back to CPU mode")
-        reader = easyocr.Reader(['en'], gpu=False)
-    # ==================================================
+    # Initialize OCR reader with GPU setting
+    reader = get_cached_reader(tuple(language), gpu=gpu)
     
     # Try OCR on each detected label region
     for i, box in enumerate(label_roi):
@@ -340,244 +498,143 @@ def validate_dir(path):
     return abs_path
 
 
-def pdf_to_img(pdf_path: str, dpi: int = 300, output_dir: Optional[str] = None, 
-               n_threads: Optional[int] = None, output_message: bool = True,
-               qr_label: bool = False) -> List[str]:
-    """
-    Converts a PDF file (or all PDFs in a folder) to JPEG images (one per page).
+# def detect_qr(img_path: Optional[str] = None, img: Optional[np.ndarray] = None) -> Tuple[Optional[str], Optional[np.ndarray]]:
+#     """
+#     Detects QR codes in an image
+#     Args:
+#         img_path: Path to the image (optional if img is provided)
+#         img: Image as numpy array (optional if img_path is provided)
+#     Returns:
+#         Tuple with (qr_text, image_with_rectangle)
+#     """
+#     # Valid extensions
+#     valid_extensions = {'.jpg', '.jpeg', '.png', '.tiff', '.tif'}
     
-    Args:
-        pdf_path: Path to the input PDF file or folder containing PDF files.
-        dpi: Conversion resolution (dots per inch).
-        output_dir: Directory to save the images. If None, creates 'images_from_pdf' in the same folder as the PDF.
-        n_threads: Number of threads for parallel processing. If None, uses 1 thread.
-        output_message: Whether to print progress messages.
-        qr_label: If True, detects QR codes and renames images with QR text. Falls back to default naming if no QR detected.
+#     # Validate that at least one argument is present
+#     if img_path is None and img is None:
+#         raise ValueError("You must provide either img_path or img")
     
-    Returns:
-        List of paths to the generated and renamed image files.
-    
-    Raises:
-        ValueError: If the input file is not a valid PDF or folder contains no PDFs.
-        RuntimeError: If the conversion process fails.
-    """
-    # Check if path is a directory or file
-    if os.path.isdir(pdf_path):
-        # Find all PDF files in the directory
-        pdf_files = [os.path.join(pdf_path, f) for f in os.listdir(pdf_path) 
-                     if f.lower().endswith('.pdf') and os.path.isfile(os.path.join(pdf_path, f))]
+#     # If path is provided, validate and load image
+#     if img_path:
+#         # Validate file exists
+#         if not os.path.exists(img_path):
+#             raise FileNotFoundError(f"Image does not exist: {img_path}")
         
-        if not pdf_files:
-            raise ValueError(f"No PDF files found in directory: {pdf_path}")
+#         # Validate extension
+#         file_ext = os.path.splitext(img_path)[1].lower()
+#         if file_ext not in valid_extensions:
+#             raise ValueError(f"Invalid format. Use: {', '.join(sorted(valid_extensions))}")
         
-        if output_message:
-            print(f"Extracting images may take a few minutes... ⋆✧｡٩(ˊᗜˋ )و✧*｡")
-            print(f"Processing {len(pdf_files)} PDF files...")
+#         # Load image with OpenCV (already in BGR format)
+#         img = cv2.imread(img_path)
         
-        # Process all PDFs without individual messages
-        all_saved_paths = []
-        for pdf_file in pdf_files:
-            paths = pdf_to_img(pdf_file, dpi=dpi, output_dir=output_dir, 
-                             n_threads=n_threads, output_message=False, qr_label=qr_label)
-            all_saved_paths.extend(paths)
+#         # Validate image loaded correctly
+#         if img is None:
+#             raise ValueError(f"Could not load image: {img_path}")
         
-        # Print final summary
-        if output_message:
-            final_output_dir = output_dir if output_dir else os.path.join(pdf_path, 'images_from_pdf')
-            print(f"{len(all_saved_paths)} images saved in: {final_output_dir}")
+    
+    
+#     # Validate it's a valid image
+#     if not isinstance(img, np.ndarray):
+#         raise TypeError("img must be a numpy array")
+    
+#     # Decode QR codes
+#     decoded_objects = decode(img)
+    
+#     # Initialize text variable
+#     qr_text = None
+    
+#     # Extract text and draw rectangle for each QR found
+#     for obj in decoded_objects:
+#         # Get the bounding box coordinates of the QR code
+#         x, y, w, h = obj.rect
         
-        return all_saved_paths
-    
-    # Input validation for single file
-    if not os.path.isfile(pdf_path):
-        raise ValueError(f"File not found: {pdf_path}")
-    
-    if not pdf_path.lower().endswith('.pdf'):
-        raise ValueError("Input file must be a PDF (.pdf extension)")
-    
-    # Set up output paths
-    pdf_dir = os.path.dirname(pdf_path)
-    pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
-    
-    if output_dir is None:
-        output_dir = os.path.join(pdf_dir, 'images_from_pdf')
-    
-    os.makedirs(output_dir, exist_ok=True)
-    
-    try:
-        if output_message:
-            print("Extracting images may take a few minutes... ⋆✧｡٩(ˊᗜˋ )و✧*｡")
+#         # Draw a green rectangle around the QR code
+#         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
         
-        # Convert PDF to images using PyMuPDF
-        doc = fitz.open(pdf_path)
-        
-        # Calculate zoom factor from DPI (72 is the base DPI in PDF)
-        zoom = dpi / 72
-        mat = fitz.Matrix(zoom, zoom)
-        
-        # Save images
-        saved_paths = []
-        used_names = {}  # Track used names to avoid duplicates
-        
-        for i in range(len(doc)):
-            page = doc[i]
-            pix = page.get_pixmap(matrix=mat)
-            
-            # Default image name
-            img_name = f"{pdf_name}_page{i+1}.jpg"
-            output_path = os.path.join(output_dir, img_name)
-            
-            # Save with default name first
-            pix.save(output_path)
-            
-            # If qr_label is True, try to detect QR and rename
-            if qr_label:
-                qr_text, _ = detect_qr(img_path=output_path)
-                
-                # Debug print
-                if output_message:
-                    print(f"Page {i+1} - QR detected: {qr_text}")
-                
-                # If QR detected and has valid text
-                if qr_text and qr_text != 'No QR code detected':
-                    # Sanitize QR text for filename
-                    sanitized_name = _sanitize_filename(qr_text)
-                    
-                    if output_message:
-                        print(f"  Sanitized name: {sanitized_name}")
-                    
-                    # Handle duplicate names
-                    if sanitized_name in used_names:
-                        used_names[sanitized_name] += 1
-                        final_name = f"{sanitized_name}_{used_names[sanitized_name]}.jpg"
-                    else:
-                        used_names[sanitized_name] = 0
-                        final_name = f"{sanitized_name}.jpg"
-                    
-                    # Rename file
-                    new_path = os.path.join(output_dir, final_name)
-                    
-                    if output_message:
-                        print(f"  Renaming: {img_name} -> {final_name}")
-                    
-                    os.rename(output_path, new_path)
-                    output_path = new_path
-            
-            saved_paths.append(output_path)
-        
-        doc.close()
-        
-        if output_message and not qr_label:
-            print(f"{len(saved_paths)} images saved in: {output_dir}")
-        
-        return saved_paths
+#         # Extract text (take the first QR found)
+#         if qr_text is None:
+#             qr_text = obj.data.decode('utf-8')
     
-    except Exception as e:
-        error_msg = f"PDF conversion error: {str(e)}"
-        if output_message:
-            print(error_msg)
-        raise RuntimeError(error_msg) from e
-
-
-def _sanitize_filename(text: str, max_length: int = 100) -> str:
-    """
-    Sanitizes text to be a valid filename.
+#     # If no QR was found
+#     if qr_text is not None:
+#         # Take only the first word (before first space)
+#         qr_text = qr_text.split()[0] if qr_text.split() else qr_text
     
-    Args:
-        text: Text to sanitize
-        max_length: Maximum length for the filename
-    
-    Returns:
-        Sanitized filename (without extension)
-    """
-    # Remove or replace invalid characters for filenames
-    # Keep alphanumeric, spaces, hyphens, and underscores
-    sanitized = re.sub(r'[^\w\s-]', '_', text)
-    
-    # Replace multiple spaces/underscores with single underscore
-    sanitized = re.sub(r'[\s_]+', '_', sanitized)
-    
-    # Remove leading/trailing underscores
-    sanitized = sanitized.strip('_')
-    
-    # Limit length
-    if len(sanitized) > max_length:
-        sanitized = sanitized[:max_length]
-    
-    # If empty after sanitization, return default
-    if not sanitized:
-        sanitized = "unnamed"
-    
-    return sanitized
-
+#     return qr_text, img
 
 def detect_qr(img_path: Optional[str] = None, img: Optional[np.ndarray] = None) -> Tuple[Optional[str], Optional[np.ndarray]]:
-    """
-    Detects QR codes in an image
-    Args:
-        img_path: Path to the image (optional if img is provided)
-        img: Image as numpy array (optional if img_path is provided)
-    Returns:
-        Tuple with (qr_text, image_with_rectangle)
-    """
-    # Valid extensions
+    """Optimized QR detection with early stopping"""
     valid_extensions = {'.jpg', '.jpeg', '.png', '.tiff', '.tif'}
     
-    # Validate that at least one argument is present
     if img_path is None and img is None:
         raise ValueError("You must provide either img_path or img")
     
-    # If path is provided, validate and load image
-    if img_path:
-        # Validate file exists
+    if img_path is not None:
         if not os.path.exists(img_path):
             raise FileNotFoundError(f"Image does not exist: {img_path}")
         
-        # Validate extension
         file_ext = os.path.splitext(img_path)[1].lower()
         if file_ext not in valid_extensions:
             raise ValueError(f"Invalid format. Use: {', '.join(sorted(valid_extensions))}")
         
-        # Load image with OpenCV (already in BGR format)
         img = cv2.imread(img_path)
-        
-        # Validate image loaded correctly
         if img is None:
             raise ValueError(f"Could not load image: {img_path}")
-        
     
-    
-    # Validate it's a valid image
     if not isinstance(img, np.ndarray):
         raise TypeError("img must be a numpy array")
     
-    # Decode QR codes
-    decoded_objects = decode(img)
+    detector = cv2.QRCodeDetector()
     
-    # Initialize text variable
-    qr_text = None
+    # Convert to grayscale ONCE
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
-    # Extract text and draw rectangle for each QR found
-    for obj in decoded_objects:
-        # Get the bounding box coordinates of the QR code
-        x, y, w, h = obj.rect
+    # ⚡ OPTIMIZATION: Try strategies in order of success rate
+    # Most QR codes work with original or adaptive, so try those first
+    preprocessing_strategies = [
+        ("original", gray),
+        ("adaptive", None),  # Compute lazily
+        ("otsu", None),
+        ("clahe", None),
+        ("blur_thresh", None)
+    ]
+    
+    qr_text: Optional[str] = None
+    points = None
+    
+    for strategy_name, processed_img in preprocessing_strategies:
+        # ⚡ Lazy computation - only process if needed
+        if processed_img is None:
+            if strategy_name == "adaptive":
+                processed_img = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                                       cv2.THRESH_BINARY_INV, 11, 2)
+            elif strategy_name == "otsu":
+                _, processed_img = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            elif strategy_name == "clahe":
+                clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+                processed_img = clahe.apply(gray)
+            elif strategy_name == "blur_thresh":
+                blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+                _, processed_img = cv2.threshold(blurred, 127, 255, cv2.THRESH_BINARY)
         
-        # Draw a green rectangle around the QR code
-        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        data, pts, _ = detector.detectAndDecode(processed_img)
         
-        # Extract text (take the first QR found)
-        if qr_text is None:
-            qr_text = obj.data.decode('utf-8')
+        if pts is not None and data:
+            qr_text = data
+            points = pts
+            break  # ⚡ Early exit
     
-    # If no QR was found
-    if qr_text is not None:
-        # Take only the first word (before first space)
+    # Draw rectangle if QR found
+    if points is not None and qr_text:
+        pts = points[0].astype(int)
+        x_min, y_min = pts[:, 0].min(), pts[:, 1].min()
+        x_max, y_max = pts[:, 0].max(), pts[:, 1].max()
+        
+        cv2.rectangle(img, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 255, 0), 2)
         qr_text = qr_text.split()[0] if qr_text.split() else qr_text
     
     return qr_text, img
-
-
-
 
 #################### New functions for pixel/cm estimation ##############################
 #### Version: Nov/2025
@@ -585,6 +642,20 @@ def detect_qr(img_path: Optional[str] = None, img: Optional[np.ndarray] = None) 
 #############################################
 ## Detect size reference (ROI) using YOLOv8
 #############################################
+
+## Cache yolo 
+
+_YOLO_MODEL_CACHE = {}
+
+def _get_yolo_model(model_path: str):
+    """Cache YOLO models to avoid reloading"""
+    if model_path not in _YOLO_MODEL_CACHE:
+        from ultralytics import YOLO
+        _YOLO_MODEL_CACHE[model_path] = YOLO(model_path)
+    return _YOLO_MODEL_CACHE[model_path]
+
+
+    
 
 def detect_size_ref_yolo(
         img: Optional[np.ndarray] = None,
@@ -601,12 +672,21 @@ def detect_size_ref_yolo(
         return_roi_coords: bool = False
 ) -> Union[Tuple[List[Tuple[int, int, int]], np.ndarray], 
            Tuple[List[Tuple[int, int, int]], np.ndarray, List[Tuple[int, int, int, int]]]]:
+    """
+    Detect size reference circles using YOLOv8 model.
+    Optimized version with reduced memory copies and lazy computations.
+    """
     
-    ## 1. Default method: Detect ROIs with YOLOv8
+    # Load model
+    # try:
+    #     model = YOLO(model_path)
+    # except Exception as e:
+    #     print(f"Error loading model from {model_path}: {e}")
+    #     return
     
-    # Load the model
+    # Load model (cached)
     try:
-        model = YOLO(model_path)
+        model = _get_yolo_model(model_path)
     except Exception as e:
         print(f"Error loading model from {model_path}: {e}")
         return
@@ -619,22 +699,22 @@ def detect_size_ref_yolo(
         img = cv2.imread(img_path)
         if img is None:
             raise ValueError(f"Error loading image from {img_path}")
-        
-    img = img.copy()
-        
-    # Extracting image dimensions
+    
+    # Extract dimensions once
     h, w = img.shape[:2]
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # Yolo detection
+    # YOLO detection
     results = model(img, conf=0.1, iou=iou_threshold, verbose=False)
 
+    # Initialize variables
     box_detected = False
-
-    # Empty list to store all detected circles and ROI boxes
     all_circles = []
     rois_debug = []
-    roi_boxes = []  # NEW: Store ROI bounding boxes
+    roi_boxes = []
+    
+    # Only create annotated image if we need it (when boxes are detected)
+    img_annotated = None
 
     for r in results:
         boxes = r.boxes
@@ -642,6 +722,7 @@ def detect_size_ref_yolo(
             print("No size reference detected.")
             continue
         
+        # Filter boxes by confidence threshold
         filtered_boxes = []
         low_conf_boxes = []
 
@@ -652,10 +733,11 @@ def detect_size_ref_yolo(
             else:
                 low_conf_boxes.append((box, conf))
 
+        # Report filtered boxes
         if len(low_conf_boxes) > 0:
             print(f"Filtered out {len(low_conf_boxes)} box(es) below the confidence threshold: {confidence_threshold}")
             for box_idx, (box, conf_value) in enumerate(low_conf_boxes, 1):
-                print(f"  - Box {box_idx}: confidence = {conf_value:.3f}")                
+                print(f"  - Box {box_idx}: confidence = {conf_value:.3f}")
 
         boxes = filtered_boxes
 
@@ -664,51 +746,65 @@ def detect_size_ref_yolo(
             continue
 
         box_detected = True
+        
+        # Now that we know we have boxes, create annotated image
+        if img_annotated is None:
+            img_annotated = img.copy()
 
         if yolo_verbose:
-            print(f"Processing {len(boxes)} high-confidence (≥{confidence_threshold}) size reference box(es):")
-            
+            print(f"Processing {len(boxes)} high-confidence (>={confidence_threshold}) size reference box(es):")
+        
+        # Pre-calculate padding percentages
+        pad_x_pct = 0.15
+        pad_y_pct = 0.05
+        
         for i, box in enumerate(boxes):
-
-            # Bounding box de YOLO
+            # Get bounding box coordinates
             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
-            x1 = max(0, min(x1, w-1)); x2 = max(0, min(x2, w-1))
-            y1 = max(0, min(y1, h-1)); y2 = max(0, min(y2, h-1))
+            
+            # Clamp coordinates
+            x1 = max(0, min(x1, w-1))
+            x2 = max(0, min(x2, w-1))
+            y1 = max(0, min(y1, h-1))
+            y2 = max(0, min(y2, h-1))
+            
             confidence = float(box.conf[0].cpu().numpy())
 
-            # Increase the space between the box content and its ROI (15% padding)
-            padx = int(0.15 * (x2 - x1 + 1))
-            pady = int(0.05 * (y2 - y1 + 1))
+            # Calculate padding
+            box_width = x2 - x1 + 1
+            box_height = y2 - y1 + 1
+            padx = int(pad_x_pct * box_width)
+            pady = int(pad_y_pct * box_height)
 
+            # Calculate ROI with padding
             roi_x1 = max(0, x1 - padx)
             roi_y1 = max(0, y1 - pady)
             roi_x2 = min(w, x2 + padx)
             roi_y2 = min(h, y2 + pady)
             
-            # NEW: Store ROI coordinates
             roi_boxes.append((roi_x1, roi_y1, roi_x2, roi_y2))
 
-            # Extract ROI
+            # Extract ROI from grayscale
             roi_gray = gray[roi_y1:roi_y2, roi_x1:roi_x2]
 
             if yolo_verbose:
                 roi_height, roi_width = roi_gray.shape[:2]
-                print(f"  - Ref {i+1}: {roi_width}×{roi_height} px, conf: {confidence:.3f}")
+                print(f"  - Ref {i+1}: {roi_width}x{roi_height} px, conf: {confidence:.3f}")
 
             if roi_gray.size == 0:
                 print("Empty ROI, skipping...")
                 continue
             
-            # Draw the bounding box on the original image
-            cv2.rectangle(img, (roi_x1, roi_y1), (roi_x2, roi_y2), (200, 100, 0), 2)
+            # Draw bounding box on annotated image
+            cv2.rectangle(img_annotated, (roi_x1, roi_y1), (roi_x2, roi_y2), (200, 100, 0), 2)
             cv2.putText(
-                img,
+                img_annotated,
                 f"Ref {i+1} ({confidence:.2f})",
                 (roi_x1 + 5, max(roi_y1 - 5, 10)),
                 cv2.FONT_HERSHEY_SIMPLEX, font_size, (200, 100, 0), 3, cv2.LINE_AA
             )
 
-            # Find circles in the ROI
+            # Find circles in ROI
             if plot_roi_analysis:
                 circles, dbg = find_size_ref_circles(roi_gray, return_debug=True, ref_circularity=0.7)
                 rois_debug.append({
@@ -719,180 +815,182 @@ def detect_size_ref_yolo(
                     "binary": dbg["binary"],
                     "overlay": dbg["overlay"],
                     "num_circles": len(circles)
-                })  
-            else:    
+                })
+            else:
                 circles = find_size_ref_circles(roi_gray, return_debug=False, ref_circularity=0.7)
 
-            # Convert circle coordinates to global image coordinates
+            # Convert circle coordinates to global and draw
             for (cx_roi, cy_roi, radius) in circles:
                 cx_global = cx_roi + roi_x1
                 cy_global = cy_roi + roi_y1
-
-                diameter = 2*radius
+                diameter = 2 * radius
                 
-                cv2.circle(img, (cx_global, cy_global), radius, (0, 0, 255), 5)
-                cv2.circle(img, (cx_global, cy_global), 10, (255, 0, 0), -1)
+                # Draw circle
+                cv2.circle(img_annotated, (cx_global, cy_global), radius, (0, 0, 255), 5)
+                cv2.circle(img_annotated, (cx_global, cy_global), 10, (255, 0, 0), -1)
                 
                 # Draw diameter line
-                end_x_radius = cx_global + radius
-                end_y_radius = cy_global 
-
-                cv2.line(img, (cx_global - radius, cy_global), 
-                         (end_x_radius, end_y_radius), (0, 255, 0), 3)
+                line_start_x = cx_global - radius
+                line_end_x = cx_global + radius
+                cv2.line(img_annotated, (line_start_x, cy_global), 
+                         (line_end_x, cy_global), (0, 255, 0), 3)
                 
-                # Draw diameter text above the line, centered
+                # Draw diameter text (centered above line)
                 text = f"{diameter}px"
-
                 text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_size, 4)[0]
-                text_width = text_size[0]
+                text_x = cx_global - (text_size[0] // 2)
+                text_y = cy_global - 20
                 
-                # Get center of the line
-                start_x = cx_global - radius
-                center_x = (start_x + end_x_radius) // 2
-                center_y = end_y_radius
-                
-                # Adjust text position to be centered above the line
-                text_x = center_x - (text_width // 2)
-                text_y = center_y - 20
-                
-                cv2.putText(img, text, (text_x, text_y),
+                cv2.putText(img_annotated, text, (text_x, text_y),
                             cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 255), 4)
 
-                # Save circle results
+                # Store circle data
                 all_circles.append((cx_global, cy_global, diameter))
 
-        # Confirm detection
+        # Report results
         if yolo_verbose:
             print(f"\nTotal circles detected: {len(all_circles)}")
-            
+        
         if not box_detected:
             print("No size reference box detected in the image by YOLO. Try adjusting confidence threshold or image quality.")
         elif len(all_circles) == 0:
-            print("No circles detected within the detected size reference boxes. Try adjusting thresholds or check image quality.")       
+            print("No circles detected within the detected size reference boxes. Try adjusting thresholds or check image quality.")
 
-        if plot:
+        # Plot main result if requested
+        if plot and img_annotated is not None:
             plt.figure(figsize=plot_size)
-            plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            plt.imshow(cv2.cvtColor(img_annotated, cv2.COLOR_BGR2RGB))
             plt.axis('off')
+            plt.show()
 
+        # Plot ROI analysis if requested
         if plot_roi_analysis and box_detected and len(rois_debug) > 0:
             n = min(len(rois_debug), show_max_rois)
             cols = 3
             rows = n
             plt.figure(figsize=(14, 4*rows))
+            
             for r_i in range(n):
                 item = rois_debug[r_i]
+                
                 # ROI Gray
                 plt.subplot(rows, cols, r_i*cols + 1)
                 plt.imshow(item["roi_gray"], cmap='gray')
                 x1, y1, x2, y2 = item["roi_box"]
                 plt.title(f'Ref {item["idx"]} ({item["conf"]:.2f})\nROI: ({x1},{y1})-({x2},{y2})')
                 plt.axis('off')
+                
                 # Binary
                 plt.subplot(rows, cols, r_i*cols + 2)
                 plt.imshow(item["binary"], cmap='gray')
                 plt.title('Binarization')
                 plt.axis('off')
+                
                 # Overlay
                 plt.subplot(rows, cols, r_i*cols + 3)
                 plt.imshow(cv2.cvtColor(item["overlay"], cv2.COLOR_BGR2RGB))
                 plt.title(f'Overlay (circles: {item["num_circles"]})')
                 plt.axis('off')
+            
             plt.tight_layout()
             plt.show()
 
+    # Return appropriate values based on whether boxes were detected
+    if img_annotated is None:
+        img_annotated = img  # Return original if nothing was detected
+    
     if return_roi_coords:
-        return all_circles, img, roi_boxes
+        return all_circles, img_annotated, roi_boxes if roi_boxes else None
     else:
-        return all_circles, img
+        return all_circles, img_annotated
+    
 
 
 def find_size_ref_circles(roi_gray, return_debug=False, ref_circularity=0.7):
-
-    circles = []
-
-    # Pre processing image
+    """Optimized circle detection with vectorized operations"""
+    
+    # Preprocessing
     blurred = cv2.GaussianBlur(roi_gray, (5, 5), 0)
-
-    # Image binarization
     binary = cv2.adaptiveThreshold(
         blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY_INV, 11, 2
     )
-
-    # Close/Open morphology
+    
+    # Morphology
     k = np.ones((3, 3), np.uint8)
     binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, k, iterations=1)
     binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, k, iterations=1)
-
-    # Get contours
+    
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    # Filtering contours by area and circularity
+    
+    # ⚡ Calculate min_area once
     h, w = roi_gray.shape[:2]
     min_area = max(50, int(0.01 * h * w))
-
+    
+    # ⚡ VECTORIZED: Filter all contours at once
+    circles = []
+    valid_contours = []
+    
     for contour in contours:
         area = cv2.contourArea(contour)
         if area < min_area:
             continue
+        
         per = cv2.arcLength(contour, True)
         if per == 0:
             continue
+        
         circularity = 4 * np.pi * area / (per * per)
         if circularity > ref_circularity:
             (x, y), radius = cv2.minEnclosingCircle(contour)
             circles.append((int(x), int(y), int(radius)))
-
-    # Draw contours and circles on a color version of the ROI
-    overlay = cv2.cvtColor(roi_gray, cv2.COLOR_GRAY2BGR)
-
-    for (cx, cy, r) in circles:
-        cv2.circle(overlay, (cx, cy), r, (0, 0, 255), 5)
-        cv2.circle(overlay, (cx, cy), 5, (0, 0, 255), -1)
-
+            valid_contours.append(contour)
+    
     if return_debug:
+        # ⚡ Only create overlay if needed
+        overlay = cv2.cvtColor(roi_gray, cv2.COLOR_GRAY2BGR)
+        for (cx, cy, r) in circles:
+            cv2.circle(overlay, (cx, cy), r, (0, 0, 255), 5)
+            cv2.circle(overlay, (cx, cy), 5, (0, 0, 255), -1)
+        
         return circles, {"roi_gray": roi_gray, "binary": binary, "overlay": overlay}
     else:
         return circles
-
-
-def diameter_px_per_cm(all_circles: List[Tuple[int, int, int]], verbose: bool = False, diameter_cm: float = 2.5, std_threshold: float = 2):
-
+    
+def diameter_px_per_cm(all_circles: List[Tuple[int, int, int]], verbose: bool = False, 
+                       diameter_cm: float = 2.5, std_threshold: float = 2):
+    """Optimized diameter calculation with numpy"""
+    
     if not all_circles:
         raise ValueError('No circles provided. The circles list is empty or not specified.')
-
-    all_diameters = []
-    for d in all_circles:
-        diameter = d[2]
-        all_diameters.append(diameter)
-
-    circles_mean = statistics.mean(all_diameters)
-    std_dev = statistics.stdev(all_diameters)
-
+    
+    # ⚡ Convert to numpy array for vectorized operations
+    all_diameters = np.array([d[2] for d in all_circles], dtype=float)
+    
+    circles_mean = np.mean(all_diameters)
+    std_dev = np.std(all_diameters)
+    
+    # ⚡ Vectorized filtering
     lower_limit = circles_mean - std_threshold * std_dev
     upper_limit = circles_mean + std_threshold * std_dev
-
-    outliers = [d for d in all_diameters if d < lower_limit or d > upper_limit]
-    filtered = [d for d in all_diameters if d >= lower_limit and d <= upper_limit]
-
-    if not filtered:  
+    
+    mask = (all_diameters >= lower_limit) & (all_diameters <= upper_limit)
+    filtered = all_diameters[mask]
+    
+    if len(filtered) == 0:
         if verbose:
-            print("Warning: All circles were filtered as outliers. Using full dataset for calculation.") 
+            print("Warning: All circles were filtered as outliers. Using full dataset for calculation.")
         filtered = all_diameters
     
-    # Calculate pixel per centimeter density
-    px_cm_density = statistics.mean(filtered) / diameter_cm
-
+    # ⚡ Single mean calculation
+    px_cm_density = np.mean(filtered) / diameter_cm
+    
     if verbose:
-        #print(f"Circle count: {len(all_diameters)}:")
-        #print(f"  - Mean diameter: {circles_mean:.2f} px; Standard deviation: {std_dev:.2f} px.")
         print(f"  - Diameter range (mean ± {std_threshold}): {lower_limit:.2f} px to {upper_limit:.2f} px")
-        #print(f"  - Outliers removed (std > 2): {outliers}")
-        print(f"  - Filtered diameters count (std < 2): {len(filtered)}; mean diameter: {statistics.mean(filtered):.2f} px.")
-        #print(f"  - Filtered mean diameter: {statistics.mean(filtered):.2f} px.")
+        print(f"  - Total circles after removing outliers (std < 2): {len(filtered)}")
+        print(f"  - Mean diameter of filtered circles: {np.mean(filtered):.2f} px")
         print(f"\n >>> Estimated px/cm density: {px_cm_density:.2f} px/cm (Reference diameter: {diameter_cm} cm)")
-
+    
     return px_cm_density
 
 
@@ -916,6 +1014,10 @@ def img_px_per_cm(img, size='letter_ansi', width_cm=None, length_cm=None):
             raise ValueError("width_cm must be positive")
         if length_cm is not None and (not isinstance(length_cm, (int, float)) or length_cm <= 0):
             raise ValueError("length_cm must be positive")
+        if width_cm > length_cm:
+            raise ValueError("width_cm cannot be greater than length_cm")
+        if length_cm < width_cm:
+            raise ValueError("length_cm cannot be less than width_cm")
         
         # Scanner paper sizes
         paper_sizes = {
@@ -995,6 +1097,7 @@ def px_cm_density(img, model_path='/Users/alejandra/Documents/GitHub/Morpho/Morp
         If return_coordinates=True: tuple (px/cm density or None, list of circle contours or None)
     """
     # Method 1: Try circle detection
+
     
     if return_coordinates:
         all_circles, img_annotated, roi_boxes = detect_size_ref_yolo(
@@ -1091,75 +1194,62 @@ def px_cm_density(img, model_path='/Users/alejandra/Documents/GitHub/Morpho/Morp
 
 def detect_label_box(imagen_path: Optional[str] = None, 
                      img: Optional[np.ndarray] = None,
-                     verbose: Optional[bool] = False, plot: Optional[bool] = False) -> List[Dict]:  # ← Cambiar aquí
-    """
-    Detects text boxes in an image
-    Args:
-        imagen_path: Path to the image
-        img: Numpy array with the image
-        verbose: Print debug information
-    Returns:
-        List of boxes, each box is a dict with keys: x, y, width, height, area, aspect_ratio
-    """
-    # Read image
+                     verbose: Optional[bool] = False, 
+                     plot: Optional[bool] = False,
+                     max_boxes: int = 10) -> List[Dict]:  # ⚡ NEW: limit results
+    """Optimized label box detection"""
+    
     if imagen_path is not None:
         img = cv2.imread(imagen_path)
     elif img is not None:
         img = img.copy()
     else:
-        raise ValueError("Either imagen_path or img must be provided.") 
+        raise ValueError("Either imagen_path or img must be provided.")
     
     if img is None:
         raise ValueError(f"Could not load image: {imagen_path}")
     
+    # ⚡ Single conversion
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
-    # Binarize
     _, thresh = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
-    
-    # Find contours
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    # List to store box coordinates
     boxes = []
+    
+    # ⚡ Pre-calculate to avoid repeated operations
     for cnt in contours:
+        if len(boxes) >= max_boxes:  # ⚡ Early stopping
+            break
+        
         x, y, w, h = cv2.boundingRect(cnt)
         area = w * h
+        
+        # ⚡ Quick reject before expensive division
+        if area <= 5000:
+            continue
+        
         aspect_ratio = w / h
         
-        # Filter by size and aspect ratio
-        if area > 5000 and 2 < aspect_ratio < 6:  # Horizontal rectangle
-            # Save coordinates
+        if 2 < aspect_ratio < 6:
             box_info = {
-                'x': x,
-                'y': y,
-                'width': w,
-                'height': h,
-                'area': area,
-                'aspect_ratio': aspect_ratio
+                'x': x, 'y': y, 'width': w, 'height': h,
+                'area': area, 'aspect_ratio': aspect_ratio
             }
             boxes.append(box_info)
-
+            
             if plot:
                 cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                
+    
     if plot:
-        plt.figure(figsize = (8,8))
+        plt.figure(figsize=(8, 8))
         plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         plt.axis('off')
         plt.show()
-
+    
     if verbose:
         print(f"\nTotal boxes found: {len(boxes)}")
-        print("\nAll coordinates:")
         for i, box in enumerate(boxes, 1):
             print(f"Box {i}: {box}")
-        
-        # Access individual boxes
-        if boxes:
-            first_box = boxes[0]
-            print(f"\nFirst box X: {first_box['x']}")
-            print(f"First box Y: {first_box['y']}")
     
     return boxes
 
@@ -1253,29 +1343,86 @@ def create_mask(self, n_kernel: int = 5, plot: bool = False, plot_size: Tuple[in
 
 
 def _remove_rois_from_mask(self, mask: np.ndarray) -> np.ndarray:
-    """
-    Remove label and reference ROIs from mask by setting them to black (0).
+    """Optimized ROI removal with batch operations"""
     
-    Args:
-        mask: Input mask to clean
-        
-    Returns:
-        Cleaned mask with ROIs removed
-    """
+    # ⚡ No copy if no ROIs to remove
+    if not ((hasattr(self, 'label_roi') and self.label_roi) or 
+            (hasattr(self, 'ref_roi') and self.ref_roi)):
+        return mask
+    
     mask_clean = mask.copy()
     
-    # Remove label ROIs (rectangles)
+    # ⚡ Batch process all label ROIs
     if hasattr(self, 'label_roi') and self.label_roi:
         for box in self.label_roi:
-            x, y = box['x'], box['y']
-            w, h = box['width'], box['height']
-            # Set rectangle area to black (0)
+            x, y, w, h = box['x'], box['y'], box['width'], box['height']
             mask_clean[y:y+h, x:x+w] = 0
     
-    # Remove reference ROI (polygon)
+    # ⚡ Batch process all reference ROIs
     if hasattr(self, 'ref_roi') and self.ref_roi:
-        for roi in self.ref_roi:
-            # Fill polygon with black (0)
-            cv2.fillPoly(mask_clean, [roi], 0)
+        # Use single fillPoly call if possible
+        cv2.fillPoly(mask_clean, self.ref_roi, 0)
     
     return mask_clean
+
+
+##############################
+# Detect label box with yolo #
+##############################
+
+def detect_label_box_yolo(img: np.ndarray, 
+                          model_path: str = 'traitly/package_data/models/label.pt',
+                          conf: float = 0.3, plot: bool = False) -> Optional[List[Dict]]:
+    """Optimized with model caching"""
+    
+    try:
+        model = _get_yolo_model(model_path)
+    except Exception as e:
+        print(f"Error loading YOLO model from {model_path}: {e}")
+        return None
+    
+    results = model(img, conf=conf, verbose=False)
+    
+    for r in results:
+        boxes = r.boxes
+        
+        if boxes is None or len(boxes) == 0:
+            return None
+        
+        # Convert YOLO detections to label_roi format
+        label_boxes = []
+        
+        for box in boxes:
+            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
+            
+            # Calculate box properties
+            width = x2 - x1
+            height = y2 - y1
+            area = width * height
+            aspect_ratio = width / height if height > 0 else 0
+            
+            # Create dict in same format as detect_label_box
+            box_info = {
+                'x': x1,
+                'y': y1,
+                'width': width,
+                'height': height,
+                'area': area,
+                'aspect_ratio': aspect_ratio
+            }
+            
+            label_boxes.append(box_info)
+        if plot:
+            plt.figure(figsize = (8,8))
+            img_copy = img.copy()
+            for box in label_boxes:
+                x, y = box['x'], box['y']
+                w, h = box['width'], box['height']
+                cv2.rectangle(img_copy, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            plt.imshow(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))
+            plt.axis('off')
+            plt.show()
+
+        return label_boxes if label_boxes else None
+    
+    return None

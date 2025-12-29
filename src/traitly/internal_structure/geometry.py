@@ -18,6 +18,7 @@ from scipy.spatial.distance import pdist, squareform
 # ===========================================================================
 from .processing import get_fruit_contour
 
+
 #################################################################################################
 # Calculate minor axis (fruit width approximation)
 #################################################################################################
@@ -187,7 +188,7 @@ def rotate_box(contour: np.ndarray,
     
     # Convert the rotated box into its 4 corner points
     box_points = cv2.boxPoints(rotated_rect)
-    box_points = np.int0(box_points)
+    box_points = box_points.astype(int)
     
     # Determine the length (maximum value) and width (minimum value)
     box_length_px = max(width_px, height_px)
