@@ -74,6 +74,11 @@ dev = [
 [project.scripts]
 traitly = "traitly.cli:main"
 
+[tool.setuptools.package-data]
+traitly = [
+    "package_data/models/*.pt",
+    "package_data/**/*",
+]
 
 [project.urls]
 Repository = "https://github.com/mariameraz/traitly"
