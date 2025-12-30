@@ -20,6 +20,8 @@ import sys
 from io import StringIO
 import warnings
 
+from pathlib import Path
+
 ##############################################################################
 valid_extensions = {'.jpg', '.jpeg', '.png', '.tiff', '.tif'}
 ##############################################################################
@@ -122,6 +124,32 @@ def is_contour_valid(contour, filters=None):
     return (filters['min_circularity'] <= circularity <= filters['max_circularity'] and
             filters['min_aspect_ratio'] <= aspect_ratio <= filters['max_aspect_ratio'])
 
+#################################################################################################
+
+#####################################
+# Load models and obtain their path #
+#####################################
+
+def _get_package_model_path(model_name: str) -> str:
+    """Get absolute path to model file in package_data"""
+    try:
+        # Try importlib.resources (Python 3.9+)
+        from importlib.resources import files
+        model_path = files('traitly').joinpath('package_data', 'models', model_name)
+        return str(model_path)
+    except (ImportError, AttributeError):
+        # Fallback for older Python or development mode
+        import traitly
+        package_dir = Path(traitly.__file__).parent
+        model_path = package_dir / 'package_data' / 'models' / model_name
+        
+        if not model_path.exists():
+            raise FileNotFoundError(
+                f"Model not found at: {model_path}\n"
+                f"Please ensure the model files are included in the package."
+            )
+        
+        return str(model_path)
 
 #################################################################################################
 # Detect label text
@@ -659,7 +687,7 @@ def _get_yolo_model(model_path: str):
 
 def detect_size_ref_yolo(
         img: Optional[np.ndarray] = None,
-        model_path: str = 'traitly/package_data/models/size_reference.pt',
+        model_path: Optional[str] = None,
         img_path: Optional[str] = None,
         confidence_threshold: float = 0.6,
         iou_threshold: float = 0.45,
@@ -684,12 +712,17 @@ def detect_size_ref_yolo(
     #     print(f"Error loading model from {model_path}: {e}")
     #     return
     
+
     # Load model (cached)
+    if model_path is None:
+        model_path = _get_package_model_path('size_reference.pt')
+    
     try:
         model = _get_yolo_model(model_path)
     except Exception as e:
         print(f"Error loading model from {model_path}: {e}")
-        return
+        return None if not return_roi_coords else (None, None, None)
+
     
     # Load image
     if img is None and img_path is None:
@@ -1059,7 +1092,7 @@ def img_px_per_cm(img, size='letter_ansi', width_cm=None, length_cm=None):
 
 
 
-def px_cm_density(img, model_path='/Users/alejandra/Documents/GitHub/Morpho/Morpho/morphoslicer/utils/Models/References_Model.pt', 
+def px_cm_density(img, model_path: Optional[str] = None,
                   confidence_threshold: float = 0.6, 
                   plot=False,
                   width_cm: Optional[float] = None, 
@@ -1098,7 +1131,16 @@ def px_cm_density(img, model_path='/Users/alejandra/Documents/GitHub/Morpho/Morp
     """
     # Method 1: Try circle detection
 
+    # Load model (cached)
+    if model_path is None:
+        model_path = _get_package_model_path('size_reference.pt')
     
+    try:
+        model = _get_yolo_model(model_path)
+    except Exception as e:
+        print(f"Error loading model from {model_path}: {e}")
+        return None if not return_coordinates else (None, None, None)
+
     if return_coordinates:
         all_circles, img_annotated, roi_boxes = detect_size_ref_yolo(
             img, 
@@ -1371,9 +1413,12 @@ def _remove_rois_from_mask(self, mask: np.ndarray) -> np.ndarray:
 ##############################
 
 def detect_label_box_yolo(img: np.ndarray, 
-                          model_path: str = 'traitly/package_data/models/label.pt',
+                          model_path: Optional[str] = None,
                           conf: float = 0.3, plot: bool = False) -> Optional[List[Dict]]:
     """Optimized with model caching"""
+    
+    if model_path is None:
+        model_path = _get_package_model_path('label.pt')
     
     try:
         model = _get_yolo_model(model_path)
