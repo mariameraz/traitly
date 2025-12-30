@@ -447,14 +447,10 @@ def detect_img_name(path_image):
         if not isinstance(path_image, str):
             raise TypeError('Path input should be of type str')
         
-        extensions = {'.jpg', '.jpeg', '.png', '.tiff', '.tif'}
-
+        # Only return the filename (with extension if present)
         filename = os.path.basename(path_image)
-        name, ext = os.path.splitext(filename)
-
-        if ext.lower() not in extensions:
-            warnings.warn("Warning: File extension is not a valid image format.")
-        return name
+        
+        return filename if filename else None
     
     except Exception as e:
         print(f"Error: {e}")
