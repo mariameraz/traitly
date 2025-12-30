@@ -213,7 +213,7 @@ def rotate_box(contour: np.ndarray,
 def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon_factor=0.001):
     """
     Calculate comprehensive fruit morphology metrics with contour transformation options.
-    OPTIMIZED VERSION - Early exits and hull reuse for better performance.
+    OPTIMIZED VERSION - Returns only metrics in the active unit (px or cm).
     
     Args:
         contour (np.ndarray): Fruit contour points
@@ -222,19 +222,22 @@ def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon_fa
         epsilon_factor (float): Epsilon factor for polygon approximation
     
     Returns:
-        dict: Dictionary containing fruit morphology metrics
+        dict: Dictionary containing fruit morphology metrics in single unit
     """
-    # OPTIMIZED: Early exit for invalid contours
+    # Determine unit
+    has_calibration = px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0
+    unit = 'cm' if has_calibration else 'px'
+    unit_area = 'cm2' if has_calibration else 'px'
+    
+    # Early exit for invalid contours
     if len(contour) < 3:
         return {
-            'fruit_area_px': np.nan,
-            'fruit_area_cm2': np.nan,
-            'fruit_perimeter_px': np.nan,
-            'fruit_perimeter_cm': np.nan,
+            f'fruit_area_{unit_area}': np.nan,
+            f'fruit_perimeter_{unit}': np.nan,
             'fruit_circularity': np.nan,
             'fruit_solidity': np.nan,
             'fruit_compactness': np.nan,
-            'fruit_convex_hull_area_px': np.nan
+            f'fruit_convex_hull_area_{unit_area}': np.nan
         }
     
     # Apply contour transformation according to specified mode
@@ -248,14 +251,12 @@ def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon_fa
     # Early exit after transformation
     if len(transformed_contour) < 3:
         return {
-            'fruit_area_px': np.nan,
-            'fruit_area_cm2': np.nan,
-            'fruit_perimeter_px': np.nan,
-            'fruit_perimeter_cm': np.nan,
+            f'fruit_area_{unit_area}': np.nan,
+            f'fruit_perimeter_{unit}': np.nan,
             'fruit_circularity': np.nan,
             'fruit_solidity': np.nan,
             'fruit_compactness': np.nan,
-            'fruit_convex_hull_area_px': np.nan
+            f'fruit_convex_hull_area_{unit_area}': np.nan
         }
     
     # Calculate area and perimeter on transformed contour
@@ -265,25 +266,23 @@ def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon_fa
     # Single validation check
     if area_px <= 0 or perimeter_px <= 0:
         return {
-            'fruit_area_px': np.nan,
-            'fruit_area_cm2': np.nan,
-            'fruit_perimeter_px': np.nan,
-            'fruit_perimeter_cm': np.nan,
+            f'fruit_area_{unit_area}': np.nan,
+            f'fruit_perimeter_{unit}': np.nan,
             'fruit_circularity': np.nan,
             'fruit_solidity': np.nan,
             'fruit_compactness': np.nan,
-            'fruit_convex_hull_area_px': np.nan
+            f'fruit_convex_hull_area_{unit_area}': np.nan
         }
     
     # OPTIMIZED: Use multiplication instead of division
-    if px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
+    if has_calibration:
         inv_px_per_cm = 1.0 / px_per_cm
         inv_px_per_cm_sq = inv_px_per_cm * inv_px_per_cm
-        area_cm2 = area_px * inv_px_per_cm_sq
-        perimeter_cm = perimeter_px * inv_px_per_cm
+        area_val = area_px * inv_px_per_cm_sq
+        perimeter_val = perimeter_px * inv_px_per_cm
     else:
-        area_cm2 = np.nan
-        perimeter_cm = np.nan
+        area_val = area_px
+        perimeter_val = perimeter_px
     
     # Calculate shape metrics using transformed contour
     circularity = (4 * np.pi * area_px) / (perimeter_px ** 2) if perimeter_px > 0 else np.nan
@@ -296,18 +295,22 @@ def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon_fa
         hull = cv2.convexHull(transformed_contour)
         hull_area_px = cv2.contourArea(hull)
     
+    # Convert hull area to correct unit
+    if has_calibration:
+        hull_area_val = hull_area_px * inv_px_per_cm_sq
+    else:
+        hull_area_val = hull_area_px
+    
     solidity = area_px / hull_area_px if hull_area_px > 0 else np.nan
     
     # Compactness (perimeter² / area)
     compactness = (perimeter_px ** 2) / area_px if area_px > 0 else np.nan
     
     return {
-        'fruit_area_px': float(area_px),
-        'fruit_area_cm2': float(area_cm2),
-        'fruit_perimeter_px': float(perimeter_px),
-        'fruit_perimeter_cm': float(perimeter_cm),
+        f'fruit_area_{unit_area}': float(area_val),
+        f'fruit_perimeter_{unit}': float(perimeter_val),
         'fruit_circularity': float(circularity),
         'fruit_solidity': float(solidity),
         'fruit_compactness': float(compactness),
-        'fruit_convex_hull_area_px': float(hull_area_px)
+        f'fruit_convex_hull_area_{unit_area}': float(hull_area_val)
     }
