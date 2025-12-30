@@ -11,6 +11,7 @@ import multiprocessing as mp
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Optional, List, Dict, Tuple, Any
 import warnings
+from datetime import datetime
 
 # ============================================================================
 # THIRD-PARTY LIBRARIES
@@ -21,6 +22,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import psutil
+
 
 # ============================================================================
 # LOCAL/INTERNAL IMPORTS
@@ -176,6 +178,7 @@ class FruitAnalyzer:
             - Without calibration, all measurements will be returned in pixel units
         """
         # Save image name
+        #self.img_name = os.path.splitext(self.image_path)[0]
         self.img_name = cf.detect_img_name(self.image_path)
         img_copy = self.img.copy()
 
@@ -189,7 +192,7 @@ class FruitAnalyzer:
         if self.label_text is not None and "No QR" not in str(self.label_text):
             print(f"    > QR Code detected: {self.label_text}")
         else:
-            self.label_text = None
+            self.label_text = "No label detected/included"
 
         # Step 2: Try to detect label boxes with YOLO
         self.label_roi = cf.detect_label_box_yolo(img=img_copy, plot=False, conf = 0.4)
@@ -505,67 +508,41 @@ class FruitAnalyzer:
         return None
 
     def analyze_image(self, 
-                      plot: bool = True, 
-                      plot_size: Tuple[int, int] = (10, 10), 
-                      font_scale: float = 1.5, 
-                      font_thickness: int = 2, 
-                      text_color: Tuple[int, int, int] = (0, 0, 0),  # Black by default
-                      label_position: str = 'top',  # Options: 'top', 'bottom', 'left', 'right'
-                      label_color: Tuple[int, int, int] = (255, 255, 255),  # White by default
-                      use_ellipse: bool = False, 
-                      contour_mode: str = 'raw', 
-                      stamp: bool = False, 
-                      epsilon_factor: float = 0.001, 
-                      centroid_fruit: int = 2,
-                      centroid_locules: int = 2,
-                      padding: int = 15, 
-                      line_spacing: int = 15, 
-                      min_locule_area: int = 100, 
-                      min_distance: int = 0, 
-                      max_distance: int = 100,
-                      max_locule_area: Optional[int] = None, 
-                      merge_locules: bool = False,
-                      n_shifts: int = 500, 
-                      angle_weight: float = 0.5, 
-                      radius_weight: float = 0.5,
-                      min_radius_threshold: float = 0.1, 
-                      num_rays: int = 360) -> AnnotatedImage:
+                    plot: bool = True, 
+                    plot_size: Tuple[int, int] = (10, 10), 
+                    font_scale: float = 1.5, 
+                    font_thickness: int = 2, 
+                    text_color: Tuple[int, int, int] = (0, 0, 0),
+                    label_position: str = 'top',
+                    label_color: Tuple[int, int, int] = (255, 255, 255),
+                    use_ellipse: bool = False, 
+                    contour_mode: str = 'raw', 
+                    stamp: bool = False, 
+                    epsilon_factor: float = 0.001, 
+                    centroid_fruit: int = 2,
+                    centroid_locules: int = 2,
+                    padding: int = 15, 
+                    line_spacing: int = 15, 
+                    min_locule_area: int = 100, 
+                    min_distance: int = 0, 
+                    max_distance: int = 100,
+                    max_locule_area: Optional[int] = None, 
+                    merge_locules: bool = False,
+                    n_shifts: int = 100, 
+                    angle_weight: float = 0.5, 
+                    radius_weight: float = 0.5,
+                    min_radius_threshold: float = 0.1, 
+                    num_rays: int = 180) -> AnnotatedImage:
         """
         Analyze detected fruits using analysis.analyze_fruits().
         
-        Args:
-            plot: Whether to display the annotated image. Default is True.
-            plot_size: Figure size for plotting. Default is (10, 10).
-            font_scale: Font scale for annotations. Default is 1.5.
-            font_thickness: Font thickness for annotations. Default is 2.
-            text_color: Text color in BGR format. Default is (0, 0, 0) - black.
-            label_position: Position of labels ('top', 'bottom', 'left', 'right'). 
-                Default is 'top'.
-            label_color: Background color for labels in BGR format. 
-                Default is (255, 255, 255) - white.
-            use_ellipse: Use ellipse for pericarp calculation. Default is False.
-            contour_mode: Contour mode ('raw', 'hull', 'approx', 'ellipse', 'circle'). 
-                Default is 'raw'.
-            stamp: Invert image colors. Default is False.
-            epsilon_factor: Approximation factor for contours. Default is 0.001.
-            centroid_fruit: Radius for fruit centroid marker. Default is 2.
-            centroid_locules: Radius for locule centroid marker. Default is 2.
-            padding: Padding around text labels. Default is 15.
-            line_spacing: Spacing between text lines. Default is 15.
-            min_locule_area: Minimum locule area for filtering. Default is 100.
-            min_distance: Minimum distance for locule merging. Default is 0.
-            max_distance: Maximum distance for locule merging. Default is 100.
-            max_locule_area: Maximum locule area for filtering. Default is None.
-            merge_locules: Whether to merge close locules. Default is False.
-            n_shifts: Number of shifts for angular symmetry. Default is 500.
-            angle_weight: Weight for angle in rotational symmetry. Default is 0.5.
-            radius_weight: Weight for radius in rotational symmetry. Default is 0.5.
-            min_radius_threshold: Minimum radius threshold for symmetry. Default is 0.1.
-            num_rays: Number of rays for pericarp thickness. Default is 360.
-        
-        Returns:
-            AnnotatedImage: Object containing results and annotated image
         """
+        
+        start_time = time.time()
+        start_datetime = datetime.now()
+        process = psutil.Process()
+        initial_ram_gb = (process.memory_info().rss / 1024**2) / 1024
+        
         # Call analyze_fruits with single px_per_cm value
         self.results = analyze_fruits(
             img=self.img_annotated,
@@ -601,9 +578,33 @@ class FruitAnalyzer:
             centroid_locules=centroid_locules,
             centroid_fruit=centroid_fruit
         )
+        
+        # Calculate processing time and memory
+        processing_time = time.time() - start_time
+        final_ram_gb = (process.memory_info().rss / 1024**2) / 1024
+        ram_used_gb = final_ram_gb - initial_ram_gb
+        
+        # Add metadata to results object
+        self.results.processing_metadata = {
+            'start_datetime': start_datetime,
+            'processing_time': processing_time,
+            'ram_used_gb': ram_used_gb,
+            'config': {
+                'contour_mode': contour_mode,
+                'stamp': stamp,
+                'min_circularity': getattr(self, '_last_min_circularity', 0.5),  # From find_fruits
+                'min_locule_area': min_locule_area,
+                'merge_locules': merge_locules,
+                'confidence_threshold': 0.6,  # Default from setup_measurements
+                'diameter_cm': 2.5,  # Default
+                'detect_label': True,  # Default
+                'use_ellipse': use_ellipse
+            }
+        }
 
         return self.results
 
+    
     def _process_single_file(self, filename: str, config: Dict[str, Any]) -> Tuple[Optional[pd.DataFrame], Dict[str, str], int]:
         """
         Internal method to process a single image file.
@@ -1080,8 +1081,3 @@ class FruitAnalyzer:
             print(f"> Throughput: {images_per_minute:.2f} images/minute")
 
         return None
-    
-
-
-
-    ###
