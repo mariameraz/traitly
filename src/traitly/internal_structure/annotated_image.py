@@ -13,8 +13,13 @@ class AnnotatedImage:
     Stores analysis results and provides saving functionality.
     """
     
-    def __init__(self, cv2_image: np.ndarray, results: list = None, 
-                 image_path: Optional[str] = None, processing_metadata: Optional[Dict[str, Any]] = None):
+    def __init__(self, 
+                 cv2_image: np.ndarray, 
+                 results: list = None, 
+                 image_path: Optional[str] = None, 
+                 processing_metadata: Optional[Dict[str, Any]] = None,
+                 color_results: list = None
+                 ):
         # Store both BGR (for cv2) and RGB (for display) to avoid reconversion
         self.bgr_image = cv2_image  # Original BGR format
         self.rgb_image = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB)  
@@ -22,6 +27,7 @@ class AnnotatedImage:
         self.table = self.results                  
         self.image_path = image_path
         self._dir_cache = {}  # Cache for directory checks
+        self.color_results = color_results if color_results else []
         
         # Store metadata for reports
         self.processing_metadata = processing_metadata or {}
@@ -355,8 +361,16 @@ class AnnotatedImage:
                 
                 if output_message:
                     print(f"CSV saved at: {csv_path}")
+
             else:
                 raise ValueError("No results data available to save")
+            
+            if self.color_results:
+                color_csv_path = os.path.join(abs_output_dir, f"{base_name}_color_results.csv")
+                pd.DataFrame(self.color_results).to_csv(color_csv_path, sep=sep, index=False, encoding='utf-8')
+                
+                if output_message:
+                    print(f"Color CSV saved at: {color_csv_path}")
             
             # Save reports if requested
             if include_reports:

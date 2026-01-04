@@ -35,8 +35,6 @@ class FruitConfig:
     """Configuration for fruit analysis."""
     # Contour settings
     contour_mode: str = 'raw'
-    epsilon_factor: float = 0.001
-    use_ellipse: bool = False
     
     # Locule settings
     min_locule_area: int = 300
@@ -68,6 +66,12 @@ class FruitConfig:
     centroid_locules: int = 3
     label_position: str = 'top'
 
+    # Color
+    extract_color: bool = False
+    color_stat: str = 'mean' # mean or median
+
+    # Locules config
+    locules_filled: bool = False
 
 def analyze_fruits(
     img: np.ndarray,
@@ -78,6 +82,7 @@ def analyze_fruits(
     label_text: str,
     label_id: Optional[int] = None,
     path: Optional[str] = None,
+    original_img_clean: Optional[np.ndarray] = None,
     **kwargs
 ) -> AnnotatedImage:
     """
@@ -101,9 +106,13 @@ def analyze_fruits(
                            if k in FruitConfig.__dataclass_fields__})
     
     annotated_img = cv2.bitwise_not(img.copy()) if config.stamp else img.copy()
+
+    original_img = original_img_clean if original_img_clean is not None else img
+    
     fruit_centroids = calculate_fruit_centroids(contours)
     
     results = []
+    color_results = []
     sequential_id = 1
     
     for fruit_id, locules in fruit_locus_map.items():
@@ -122,11 +131,19 @@ def analyze_fruits(
                 label_text=label_text,
                 sequential_id=sequential_id,
                 img_shape=img.shape[:2],
-                config=config
+                config=config,
+                original_img=original_img
             )
             
             if result is not None:
-                results.append(result)
+                if isinstance(result, tuple):
+                    morphology_result, color_result = result
+                    results.append(morphology_result)
+                    if color_result is not None:
+                        color_results.append(color_result)
+                else:
+                    results.append(result)
+
                 sequential_id += 1
                 
         except Exception as e:
@@ -139,9 +156,110 @@ def analyze_fruits(
         plt.imshow(cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB))
         plt.axis('off')
         plt.show()
+   
+    return AnnotatedImage(
+        annotated_img, 
+        results, 
+        color_results=color_results if color_results else None,
+        image_path=path
+    )
     
-    return AnnotatedImage(annotated_img, results, image_path=path)
 
+
+# def _analyze_single_fruit(
+#     fruit_id: int,
+#     locules: List[int],
+#     contours: List[np.ndarray],
+#     fruit_centroids: List[Tuple[int, int]],
+#     annotated_img: np.ndarray,
+#     px_per_cm: Optional[float],
+#     img_name: str,
+#     label_text: str,
+#     sequential_id: int,
+#     img_shape: Tuple[int, int],
+#     config: FruitConfig
+# ) -> Optional[Dict[str, Any]]:
+#     """Analyze a single fruit and return its metrics."""
+    
+#     # Determine unit once
+#     has_calibration = px_per_cm is not None and px_per_cm > 0
+#     unit = 'cm' if has_calibration else 'px'
+    
+#     # 1. Prepare fruit data
+#     fruit_data = _prepare_fruit_data(
+#         fruit_id, contours, fruit_centroids, 
+#         annotated_img, config
+#     )
+    
+#     if fruit_data is None:
+#         return None
+    
+#     # 2. Calculate fruit metrics
+#     fruit_metrics = _calculate_fruit_metrics(
+#         fruit_data['contour'],
+#         fruit_data['centroid'],
+#         contours[fruit_id],
+#         annotated_img,
+#         px_per_cm,
+#         config,
+#         unit
+#     )
+    
+#     # 3. Process locules
+#     locule_metrics = _process_locules(
+#         locules, contours, fruit_data['centroid'],
+#         annotated_img, px_per_cm, config, unit
+#     )
+    
+#     # 4. Calculate pericarp metrics
+#     pericarp_metrics = _calculate_pericarp_metrics(
+#         locule_metrics['filtered_ids'],
+#         contours,
+#         fruit_data['contour'],
+#         fruit_data['centroid'],
+#         annotated_img,
+#         img_shape,
+#         px_per_cm,
+#         config,
+#         unit
+#     )
+    
+#     # 5. Calculate symmetry
+#     symmetry_metrics = _calculate_symmetry_metrics(
+#         locule_metrics['data'], config
+#     )
+    
+#     # 6. Calculate derived metrics
+#     derived_metrics = _calculate_derived_metrics(
+#         fruit_metrics,
+#         pericarp_metrics,
+#         locule_metrics,
+#         unit
+#     )
+    
+    
+#     # 7. Annotate image
+#     _annotate_fruit(
+#         fruit_data['contour'],
+#         sequential_id,
+#         locule_metrics['count'],
+#         annotated_img,
+#         img_shape,
+#         config
+#     )
+    
+#     # 8. Format final results
+#     return _format_results(
+#         img_name=img_name,
+#         label_text=label_text,
+#         sequential_id=sequential_id,
+#         fruit_metrics=fruit_metrics,
+#         locule_metrics=locule_metrics,
+#         pericarp_metrics=pericarp_metrics,
+#         symmetry_metrics=symmetry_metrics,
+#         derived_metrics=derived_metrics,
+#         unit=unit
+#     )
 
 def _analyze_single_fruit(
     fruit_id: int,
@@ -154,8 +272,9 @@ def _analyze_single_fruit(
     label_text: str,
     sequential_id: int,
     img_shape: Tuple[int, int],
-    config: FruitConfig
-) -> Optional[Dict[str, Any]]:
+    config: FruitConfig,
+    original_img: Optional[np.ndarray] = None  # for color extraction
+) -> Optional[Tuple[Dict[str, Any], Optional[Dict[str, Any]]]]:  
     """Analyze a single fruit and return its metrics."""
     
     # Determine unit once
@@ -208,11 +327,13 @@ def _analyze_single_fruit(
     
     # 6. Calculate derived metrics
     derived_metrics = _calculate_derived_metrics(
-        fruit_metrics,
-        pericarp_metrics,
-        locule_metrics,
-        unit
+    fruit_metrics,
+    pericarp_metrics,
+    locule_metrics,
+    unit,
+    locules_filled=config.locules_filled  # >>>> testing new filled parameter
     )
+
     
     # 7. Annotate image
     _annotate_fruit(
@@ -223,8 +344,38 @@ def _analyze_single_fruit(
         img_shape,
         config
     )
-    
-    # 8. Format final results
+
+    # 8. Extract color features if requested
+    color_metrics = None
+    if config.extract_color:
+        from .color import analyze_fruit_color
+        from .processing import get_inner_pericarp_contour
+        
+        # Use original image (not annotated) for color extraction
+        img_for_color = original_img if original_img is not None else annotated_img
+        
+        # Get inner pericarp contour if locules exist
+        inner_contour = None
+        if locule_metrics['filtered_ids']:
+            inner_contour = get_inner_pericarp_contour(
+                locules=locule_metrics['filtered_ids'],
+                contours=contours
+            )
+        
+        # NEW: Get locule contours for exclusion
+        locule_contours = None
+        if not config.locules_filled and locule_metrics['filtered_ids']:
+            locule_contours = [contours[i] for i in locule_metrics['filtered_ids']]
+        
+        color_metrics = analyze_fruit_color(
+            img=img_for_color,
+            fruit_contour=fruit_data['contour'],
+            inner_pericarp_contour=inner_contour,
+            locule_contours=locule_contours,  # NEW parameter for locule exclusion
+            img_shape=img_shape,
+            stat=config.color_stat
+        )
+
     return _format_results(
         img_name=img_name,
         label_text=label_text,
@@ -234,6 +385,7 @@ def _analyze_single_fruit(
         pericarp_metrics=pericarp_metrics,
         symmetry_metrics=symmetry_metrics,
         derived_metrics=derived_metrics,
+        color_metrics=color_metrics,  
         unit=unit
     )
 
@@ -250,8 +402,7 @@ def _prepare_fruit_data(
     fruit_contour = get_fruit_contour(
         fruit_id=fruit_id,
         contours=contours,
-        contour_mode=config.contour_mode,
-        epsilon_factor=config.epsilon_factor
+        contour_mode=config.contour_mode
     )
     
     cv2.drawContours(annotated_img, [fruit_contour], -1, (0, 255, 0), 2)
@@ -284,8 +435,7 @@ def _calculate_fruit_metrics(
     morphology = get_fruit_morphology(
         contour=original_contour,
         px_per_cm=px_per_cm,
-        contour_mode=config.contour_mode,
-        epsilon_factor=config.epsilon_factor
+        contour_mode=config.contour_mode
     )
     
     # Calculate axes (returns: major_cm, minor_cm, major_px, minor_px)
@@ -374,13 +524,13 @@ def _process_locules(
         for locule_id in filtered_ids:
             contour = contours[locule_id]
             if len(contour) > 0:
-                cv2.drawContours(annotated_img, [contour], -1, (255, 0, 255), 2)
+                cv2.drawContours(annotated_img, [contour], -1, (255, 0, 255), 2) # Pink
     
     # Draw centroids
     for loc_data in filtered_data:
         cx, cy = loc_data['centroid']
         cv2.circle(annotated_img, (int(cx), int(cy)), 
-                  config.centroid_locules, (0, 255, 255), -1)
+                  config.centroid_locules, (0, 255, 255), -1) # Cyan
     
     # Calculate statistics in correct unit
     stats = _calculate_locule_statistics(filtered_data, px_per_cm, unit)
@@ -416,15 +566,15 @@ def _calculate_locule_statistics(
             'cv_circularity': np.nan
         }
     
-    # OPTIMIZATION: Extract arrays once instead of multiple list comprehensions
+    # Extract arrays once instead of multiple list comprehensions
     areas = np.array([d['area'] for d in locules_data])
     perimeters = np.array([d['perimeter'] for d in locules_data])
     
-    # Convert to cm² if unit is cm
+    # Convert to cm2 if unit is cm
     if unit == 'cm' and px_per_cm is not None and px_per_cm > 0:
         areas = areas / (px_per_cm ** 2)
     
-    # OPTIMIZED: Reuse 'areas' array for circularity calculation
+    # Reuse 'areas' array for circularity calculation
     # Note: Use original pixel areas for circularity (dimensionless metric)
     areas_px = np.array([d['area'] for d in locules_data])
     circularities = (4 * np.pi * areas_px) / (perimeters**2 + 1e-6)
@@ -469,17 +619,13 @@ def _calculate_pericarp_metrics(
         contours=contours,
         px_per_cm=px_per_cm,
         img=annotated_img,
-        draw_inner_pericarp=True,
-        use_ellipse=config.use_ellipse,
-        epsilon=config.epsilon_factor
+        draw_inner_pericarp=True
     )
     
     # Get inner contour
     inner_contour = get_inner_pericarp_contour(
         locules=filtered_locule_ids,
-        contours=contours,
-        use_ellipse=config.use_ellipse,
-        epsilon=config.epsilon_factor
+        contours=contours
     )
     
     # Calculate thickness (returns dict with _cm or _px keys)
@@ -492,7 +638,7 @@ def _calculate_pericarp_metrics(
         px_per_cm=px_per_cm
     )
     
-    # Select correct values based on unit
+    # Select correct area values based on unit
     inner_area = inner_area_cm2 if unit == 'cm' else inner_area_px
     
     # Filter thickness stats to only include the active unit
@@ -540,13 +686,13 @@ def _calculate_derived_metrics(
     fruit_metrics: Dict[str, float],
     pericarp_metrics: Dict[str, float],
     locule_metrics: Dict[str, Any],
-    unit: str
+    unit: str,
 ) -> Dict[str, float]:
     """Calculate derived metrics (ratios, percentages) in single unit."""
     
-    # Get values using correct unit suffix (cm2 for areas in cm, px for pixels)
     unit_suffix = 'cm2' if unit == 'cm' else 'px'
     
+    # Reuse fruit, pericarp and locule metrics for optimization
     fruit_area = fruit_metrics.get(f'fruit_area_{unit_suffix}', 0)
     inner_area = pericarp_metrics.get(f'inner_pericarp_area_{unit_suffix}', 0)
     total_locule_area = locule_metrics.get(f'total_area_{unit_suffix}', 0)
@@ -554,19 +700,32 @@ def _calculate_derived_metrics(
     box_wid = fruit_metrics.get(f'box_width_{unit}', 0)
     
     # Calculate derived metrics
-    outer_pericarp = fruit_area - inner_area if fruit_area > inner_area else 0
     compactness = fruit_area / (box_len * box_wid) if (box_len > 0 and box_wid > 0) else np.nan
-    inner_ratio = inner_area / fruit_area if fruit_area > 0 else 0
     locule_pct = (total_locule_area / fruit_area) * 100 if fruit_area > 0 else 0
     packing_eff = (total_locule_area / inner_area) * 100 if inner_area > 0 else 0
     
-    return {
-        'compactness_index': compactness,
-        f'outer_pericarp_area_{unit_suffix}': outer_pericarp,
-        'inner_area_ratio': inner_ratio,
-        'locule_area_percentage': locule_pct,
-        'locule_packing_efficiency': packing_eff
+    result = {
+    'compactness_index': compactness,
+    
+    # Absolute metrics
+    f'outer_pericarp_area_{unit_suffix}': fruit_area - inner_area,
+    f'internal_flesh_area_{unit_suffix}': inner_area - total_locule_area,
+    f'internal_cavity_area_{unit_suffix}': inner_area,
+    f'locule_cavity_area_{unit_suffix}': total_locule_area,
+    
+    # Ratios y percentages
+    'outer_pericarp_ratio': (fruit_area - inner_area) / fruit_area if fruit_area > 0 else 0,
+    'internal_cavity_ratio': inner_area / fruit_area,
+    'locule_to_fruit_ratio': total_locule_area / fruit_area,
+    'locule_to_cavity_ratio': total_locule_area / inner_area,
+    'flesh_to_cavity_ratio': (inner_area - total_locule_area) / inner_area,
+    
+    # Percentages
+    'locule_to_fruit_percentage': locule_pct,
+    'locule_to_cavity_percentage': packing_eff
     }
+
+    return result
 
 
 def _annotate_fruit(
@@ -648,11 +807,13 @@ def _format_results(
     pericarp_metrics: Dict[str, float],
     symmetry_metrics: Dict[str, float],
     derived_metrics: Dict[str, float],
-    unit: str
-) -> Dict[str, Any]:
+    color_metrics: Optional[Dict] = None,  
+    unit: str = None,
+) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
     """Format all metrics into final result dictionary."""
     
-    return {
+    # Morphology results
+    morphology_results = {
         # Identification
         'image_name': img_name,
         'label': label_text,
@@ -660,10 +821,28 @@ def _format_results(
         'n_locules': locule_metrics['count'],
         'unit': unit,
         
-        # All metrics (already filtered to single unit)
+        # Metrics filtered to single unit (cm or px)
         **fruit_metrics,
         **{k: v for k, v in locule_metrics.items() if k not in ['filtered_ids', 'data', 'count']},
         **pericarp_metrics,
         **symmetry_metrics,
         **derived_metrics
     }
+    
+    # Color results (if extracted)
+    color_results = None
+    if color_metrics is not None:
+        color_results = {
+            'image_name': img_name,
+            'label': label_text,
+            'fruit_id': sequential_id,
+        }
+        
+        # Add prefixes to distinguish regions
+        for region, metrics in color_metrics.items():
+            # Convert 'whole_fruit' -> 'wholefruit', 'outer_pericarp' -> 'outerpericarp'
+            prefix = region.replace('_', '')
+            for key, value in metrics.items():
+                color_results[f'{prefix}_{key}'] = value
+    
+    return morphology_results, color_results

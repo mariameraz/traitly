@@ -192,7 +192,7 @@ class FruitAnalyzer:
         if self.label_text is not None and "No QR" not in str(self.label_text):
             print(f"    > QR Code detected: {self.label_text}")
         else:
-            self.label_text = "No label detected/included"
+            self.label_text = None
 
         # Step 2: Try to detect label boxes with YOLO
         self.label_roi = cf.detect_label_box_yolo(img=img_copy, plot=False, conf = 0.4)
@@ -239,14 +239,19 @@ class FruitAnalyzer:
             
             elif detect_label and (self.label_roi is None or len(self.label_roi) == 0):
                 # label=True but no boxes detected
-                print("    - No QR code found, attempting label detection...")
-                print("    - No label boxes detected")
+                print(" > No QR code found, attempting label detection...")
+                print(" > No label detected/included")
+                #print("    - No label boxes detected")
+
             
             elif not detect_label:
                 # label=False: Skip OCR
                 print("> No QR detected.")
                 print("> Label text detection: SKIPPED (label=False)")
                 self.label_roi = None
+            
+        if self.label_text is None:
+            self.label_text = "No label detected/included"
             
         # Extract image dimensions
         h, w, _ = self.img.shape
@@ -532,7 +537,11 @@ class FruitAnalyzer:
                     angle_weight: float = 0.5, 
                     radius_weight: float = 0.5,
                     min_radius_threshold: float = 0.1, 
-                    num_rays: int = 180) -> AnnotatedImage:
+                    num_rays: int = 180,
+                    extract_color: bool = False,  # By default, only extract morphology data
+                    color_stat: str = 'mean', # mean or median
+                    locules_filled: bool = False
+                    ) -> AnnotatedImage:
         """
         Analyze detected fruits using analysis.analyze_fruits().
         
@@ -546,6 +555,7 @@ class FruitAnalyzer:
         # Call analyze_fruits with single px_per_cm value
         self.results = analyze_fruits(
             img=self.img_annotated,
+            original_img_clean=self.img,
             contours=self.contours,
             fruit_locus_map=self.fruit_locus_map,
             px_per_cm=self.px_per_cm, 
@@ -576,7 +586,10 @@ class FruitAnalyzer:
             min_radius_threshold=min_radius_threshold,
             num_rays=num_rays,
             centroid_locules=centroid_locules,
-            centroid_fruit=centroid_fruit
+            centroid_fruit=centroid_fruit,
+            extract_color=extract_color,
+            color_stat=color_stat,
+            locules_filled=locules_filled
         )
         
         # Calculate processing time and memory
@@ -695,7 +708,10 @@ class FruitAnalyzer:
                 min_radius_threshold=config['min_radius_threshold'],
                 num_rays=config.get('num_rays', 360),
                 centroid_fruit=config.get('centroid_fruit', 2),
-                centroid_locules=config.get('centroid_locules', 2)
+                centroid_locules=config.get('centroid_locules', 2),
+                extract_color=config.get('extract_color', False),
+                color_stat=config.get('color_stat', 'mean'),
+                locules_filled=config.get('locules_filled', False)
             )
             
             # Get results - optimized with getattr
@@ -771,6 +787,9 @@ class FruitAnalyzer:
                     width_cm: Optional[float] = None,
                     length_cm: Optional[float] = None,
                     detect_label: bool = False, gpu: bool = False,
+                    extract_color: bool = False,  
+                    color_stat: str = 'mean', # mean or median
+                    locules_filled: bool = False,
                     **kwargs) -> None:
         """
         Process all images in a folder with optional parallel processing.
@@ -904,6 +923,9 @@ class FruitAnalyzer:
             'width_cm': width_cm,
             'length_cm': length_cm,
             'detect_label': detect_label,
+            'extract_color': extract_color,
+            'color_stat': color_stat,
+            'locules_filled': locules_filled, 
             # Mask kwargs
             'mask_kwargs': kwargs
         }

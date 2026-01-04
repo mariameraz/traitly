@@ -462,9 +462,8 @@ def detect_img_name(path_image):
 # Plotting image on screen
 #################################################################################################
 
-def plot_img(img, fig_axis=False, plot_size=(10, 10), label_text='None', 
-             img_name='None', title_fontsize=12, title_location='center', 
-             metadata=True, gray = False):
+def plot_img(img, fig_axis=False, plot_size=(10, 10),
+             gray = False):
     """
     Plots an image with customizable display options.
     
@@ -483,16 +482,13 @@ def plot_img(img, fig_axis=False, plot_size=(10, 10), label_text='None',
         plt.imshow(img, cmap='gray') 
     else:
         plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    if metadata:
-        plt.title(f"{img_name}: {label_text}", fontsize=title_fontsize, loc=title_location)
-    
+
     plt.tight_layout()
     
     if not fig_axis:
         plt.axis('off')
     
     plt.show()
-
 
 #################################################################################################
 # Converting PDF pages to JPEG images

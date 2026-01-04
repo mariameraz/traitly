@@ -21,8 +21,6 @@ def get_inner_pericarp_area(
     px_per_cm: Optional[float] = None, 
     img: Optional[np.ndarray] = None,
     draw_inner_pericarp: bool = False, 
-    use_ellipse: bool = False, 
-    epsilon: float = 0.0001, 
     contour_thickness: int = 2, 
     contour_color: Tuple[int, int, int] = (0, 240, 240)
 ) -> Tuple[float, float]:
@@ -66,20 +64,13 @@ def get_inner_pericarp_area(
     all_points = np.vstack([contours[i] for i in locules])
     area_px = 0.0
     
-    if use_ellipse and all_points.shape[0] >= 5:
-        ellipse = cv2.fitEllipse(all_points.astype(np.float32))
-        if draw_inner_pericarp:
-            cv2.ellipse(img, ellipse, contour_color, contour_thickness)
-        
-        a, b = ellipse[1][0] / 2, ellipse[1][1] / 2
-        area_px = np.pi * a * b
-    else:
-        hull = cv2.convexHull(all_points)
-        epsilon_val = epsilon * cv2.arcLength(hull, True)
-        smoothed_hull = cv2.approxPolyDP(hull, epsilon_val, True)
-        if draw_inner_pericarp:
-            cv2.drawContours(img, [smoothed_hull], -1, contour_color, contour_thickness)
-        area_px = cv2.contourArea(smoothed_hull)
+    # Draw hull contour around all the locules
+    hull = cv2.convexHull(all_points)
+    epsilon_val = 0.0001 * cv2.arcLength(hull, True)
+    smoothed_hull = cv2.approxPolyDP(hull, epsilon_val, True)
+    if draw_inner_pericarp:
+        cv2.drawContours(img, [smoothed_hull], -1, contour_color, contour_thickness)
+    area_px = cv2.contourArea(smoothed_hull)
     
     # Handle px_per_cm - ensure it's a valid float, not a dict or other type
     if px_per_cm is not None and not isinstance(px_per_cm, dict) and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
