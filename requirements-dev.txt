@@ -2,7 +2,7 @@
 pymupdf
 
 # iu (streamlite)
-streamlit 
+
 
 # testing
 pytest

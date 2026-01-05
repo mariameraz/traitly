@@ -8,3 +8,4 @@ psutil
 easyocr
 pyzbar
 ultralytics
+streamlit 
