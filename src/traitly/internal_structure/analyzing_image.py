@@ -96,7 +96,7 @@ class FruitAnalyzer:
             plot_axis: Whether to show axis on plot
         """
         self.img = cf.load_img(self.image_path, plot=plot, 
-                              plot_size=plot_size, fig_axis=plot_axis)
+                              plot_size=plot_size)
         if self.img is None:
             raise ValueError(f"Failed to load image: {self.image_path}")
 
@@ -468,7 +468,7 @@ class FruitAnalyzer:
             self.mask = cv2.bitwise_and(self.mask, cv2.bitwise_not(mask_rois))
 
         if plot:
-            cf.plot_img(self.mask, metadata=False, plot_size=plot_size, fig_axis=plot_axis)
+            cf.plot_img(self.mask, plot_size=plot_size, fig_axis=plot_axis)
 
         return None
 
