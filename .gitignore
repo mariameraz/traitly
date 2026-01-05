@@ -14,6 +14,7 @@ __pycache__/
 # Specific files
 internal_structure/mask_unet.py
 src/example.ipynb
+src/traitly_app.py
 
 # Build
 build/
