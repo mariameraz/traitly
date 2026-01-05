@@ -1,16 +1,11 @@
 import cv2
 import os
 import numpy as np
-import easyocr
 import warnings
 import matplotlib.pyplot as plt
-#from pdf2image import convert_from_path
+import easyocr
 
 from typing import Optional, List, Tuple, Union, Dict
-
-# Read QR code
-#from pyzbar.pyzbar import decode
-
 
 # New modules included for px density (yolo model)
 from ultralytics import YOLO
@@ -21,7 +16,6 @@ from io import StringIO
 import warnings
 
 from pathlib import Path
-
 ##############################################################################
 valid_extensions = {'.jpg', '.jpeg', '.png', '.tiff', '.tif'}
 ##############################################################################
@@ -31,7 +25,7 @@ valid_extensions = {'.jpg', '.jpeg', '.png', '.tiff', '.tif'}
 # Load an image
 ##############################################################################
 
-def load_img(path, plot=True, plot_size=(20, 10), fig_axis=True):
+def load_img(path, plot=True, plot_size=(20, 10)):
     """Load a BGR image from file and validate its format.
     
     Args:
@@ -63,7 +57,7 @@ def load_img(path, plot=True, plot_size=(20, 10), fig_axis=True):
             raise ValueError(f"Cannot load image: {os.path.basename(path)}")
         
         if plot:
-            plot_img(img, metadata=False, fig_axis=fig_axis, plot_size=plot_size)
+            plot_img(img, plot_size=plot_size)
 
         return img
 
