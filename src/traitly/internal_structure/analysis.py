@@ -106,7 +106,7 @@ def analyze_fruits(
                            if k in FruitConfig.__dataclass_fields__})
     
     annotated_img = cv2.bitwise_not(img.copy()) if config.stamp else img.copy()
-
+    
     original_img = original_img_clean if original_img_clean is not None else img
     
     fruit_centroids = calculate_fruit_centroids(contours)
@@ -165,102 +165,6 @@ def analyze_fruits(
     )
     
 
-
-# def _analyze_single_fruit(
-#     fruit_id: int,
-#     locules: List[int],
-#     contours: List[np.ndarray],
-#     fruit_centroids: List[Tuple[int, int]],
-#     annotated_img: np.ndarray,
-#     px_per_cm: Optional[float],
-#     img_name: str,
-#     label_text: str,
-#     sequential_id: int,
-#     img_shape: Tuple[int, int],
-#     config: FruitConfig
-# ) -> Optional[Dict[str, Any]]:
-#     """Analyze a single fruit and return its metrics."""
-    
-#     # Determine unit once
-#     has_calibration = px_per_cm is not None and px_per_cm > 0
-#     unit = 'cm' if has_calibration else 'px'
-    
-#     # 1. Prepare fruit data
-#     fruit_data = _prepare_fruit_data(
-#         fruit_id, contours, fruit_centroids, 
-#         annotated_img, config
-#     )
-    
-#     if fruit_data is None:
-#         return None
-    
-#     # 2. Calculate fruit metrics
-#     fruit_metrics = _calculate_fruit_metrics(
-#         fruit_data['contour'],
-#         fruit_data['centroid'],
-#         contours[fruit_id],
-#         annotated_img,
-#         px_per_cm,
-#         config,
-#         unit
-#     )
-    
-#     # 3. Process locules
-#     locule_metrics = _process_locules(
-#         locules, contours, fruit_data['centroid'],
-#         annotated_img, px_per_cm, config, unit
-#     )
-    
-#     # 4. Calculate pericarp metrics
-#     pericarp_metrics = _calculate_pericarp_metrics(
-#         locule_metrics['filtered_ids'],
-#         contours,
-#         fruit_data['contour'],
-#         fruit_data['centroid'],
-#         annotated_img,
-#         img_shape,
-#         px_per_cm,
-#         config,
-#         unit
-#     )
-    
-#     # 5. Calculate symmetry
-#     symmetry_metrics = _calculate_symmetry_metrics(
-#         locule_metrics['data'], config
-#     )
-    
-#     # 6. Calculate derived metrics
-#     derived_metrics = _calculate_derived_metrics(
-#         fruit_metrics,
-#         pericarp_metrics,
-#         locule_metrics,
-#         unit
-#     )
-    
-    
-#     # 7. Annotate image
-#     _annotate_fruit(
-#         fruit_data['contour'],
-#         sequential_id,
-#         locule_metrics['count'],
-#         annotated_img,
-#         img_shape,
-#         config
-#     )
-    
-#     # 8. Format final results
-#     return _format_results(
-#         img_name=img_name,
-#         label_text=label_text,
-#         sequential_id=sequential_id,
-#         fruit_metrics=fruit_metrics,
-#         locule_metrics=locule_metrics,
-#         pericarp_metrics=pericarp_metrics,
-#         symmetry_metrics=symmetry_metrics,
-#         derived_metrics=derived_metrics,
-#         unit=unit
-#     )
-
 def _analyze_single_fruit(
     fruit_id: int,
     locules: List[int],
@@ -306,7 +210,7 @@ def _analyze_single_fruit(
         locules, contours, fruit_data['centroid'],
         annotated_img, px_per_cm, config, unit
     )
-    
+
     # 4. Calculate pericarp metrics
     pericarp_metrics = _calculate_pericarp_metrics(
         locule_metrics['filtered_ids'],
@@ -330,10 +234,9 @@ def _analyze_single_fruit(
     fruit_metrics,
     pericarp_metrics,
     locule_metrics,
-    unit,
-    locules_filled=config.locules_filled  # >>>> testing new filled parameter
+    unit
     )
-
+    
     
     # 7. Annotate image
     _annotate_fruit(
@@ -344,6 +247,7 @@ def _analyze_single_fruit(
         img_shape,
         config
     )
+    
 
     # 8. Extract color features if requested
     color_metrics = None
@@ -566,18 +470,21 @@ def _calculate_locule_statistics(
             'cv_circularity': np.nan
         }
     
-    # Extract arrays once instead of multiple list comprehensions
-    areas = np.array([d['area'] for d in locules_data])
-    perimeters = np.array([d['perimeter'] for d in locules_data])
+
+
+
     
-    # Convert to cm2 if unit is cm
-    if unit == 'cm' and px_per_cm is not None and px_per_cm > 0:
-        areas = areas / (px_per_cm ** 2)
     
     # Reuse 'areas' array for circularity calculation
     # Note: Use original pixel areas for circularity (dimensionless metric)
-    areas_px = np.array([d['area'] for d in locules_data])
-    circularities = (4 * np.pi * areas_px) / (perimeters**2 + 1e-6)
+    areas = np.array([d['area'] for d in locules_data])
+    #perimeters = np.array([d['perimeter'] for d in locules_data])
+
+    # Convert to cm2 if unit is cm
+    if unit == 'cm' and px_per_cm is not None and px_per_cm > 0:
+        areas = areas / (px_per_cm ** 2)
+
+    circularities = np.array([d['circularity'] for d in locules_data]) 
     
     # Calculate area statistics
     mean_area = float(areas.mean())

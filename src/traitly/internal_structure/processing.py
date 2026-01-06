@@ -1,3 +1,5 @@
+# traitly/internal_structure/processing.py
+
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
@@ -9,76 +11,6 @@ import math
 # ============================================================================
 import cv2
 import numpy as np
-
-
-#################################################################################################
-# Determinate inner pericarp area
-#################################################################################################
-
-def get_inner_pericarp_area(
-    locules: List[int], 
-    contours: List[np.ndarray], 
-    px_per_cm: Optional[float] = None, 
-    img: Optional[np.ndarray] = None,
-    draw_inner_pericarp: bool = False, 
-    contour_thickness: int = 2, 
-    contour_color: Tuple[int, int, int] = (0, 240, 240)
-) -> Tuple[float, float]:
-    """
-    Calculates and visualizes the inner pericarp area (enclosing locules) using either ellipse fitting 
-    or convex hull approximation. Returns the calculated area in both pixels and square centimeters.
-
-    Args:
-        locules: Indices of contours in `contours` that correspond to fruit locules.
-        contours: Detected contours (as returned by cv2.findContours()).
-        px_per_cm: Average pixels per centimeter conversion factor. If None, area_cm2 will be np.nan.
-        img: Input BGR image (uint8) where contours will be drawn (if draw_inner_pericarp=True).
-        draw_inner_pericarp: If True, draws the contour on `img`.
-        use_ellipse: If True, uses ellipse fitting; otherwise uses convex hull.
-        epsilon: Smoothing factor as percentage of arc length (range: [0, 1]).
-        contour_thickness: Thickness of drawn contours in pixels.
-        contour_color: BGR color for contours (default: cyan).
-
-    Returns:
-        tuple: (area_cm2, area_px)
-            - area_cm2: Calculated area in square centimeters (np.nan if px_per_cm is None).
-            - area_px: Calculated area in square pixels.
-
-    Raises:
-        ValueError: If `epsilon` is outside [0, 1] or `contours`/`loculi` indices are invalid.
-        cv2.error: If OpenCV operations fail (e.g., insufficient points for ellipse fitting).
-
-    Notes:
-        - For ellipse fitting: Requires ≥5 contour points (returns area=0 if insufficient).
-        - Convex hull: More stable for irregular shapes but may overestimate area.
-        - Smoothing (epsilon): Lower values preserve detail; higher values simplify the contour.
-        - Color convention: Uses BGR (OpenCV standard) for `contour_color`.
-        - Area conversion: Uses average px_per_cm for both dimensions.
-    """
-    if draw_inner_pericarp and img is None:
-        raise ValueError("img cannot be None when draw_inner_pericarp=True")
-
-    if not locules:
-        return 0.0, 0.0
-        
-    all_points = np.vstack([contours[i] for i in locules])
-    area_px = 0.0
-    
-    # Draw hull contour around all the locules
-    hull = cv2.convexHull(all_points)
-    epsilon_val = 0.0001 * cv2.arcLength(hull, True)
-    smoothed_hull = cv2.approxPolyDP(hull, epsilon_val, True)
-    if draw_inner_pericarp:
-        cv2.drawContours(img, [smoothed_hull], -1, contour_color, contour_thickness)
-    area_px = cv2.contourArea(smoothed_hull)
-    
-    # Handle px_per_cm - ensure it's a valid float, not a dict or other type
-    if px_per_cm is not None and not isinstance(px_per_cm, dict) and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
-        area_cm2 = area_px / (px_per_cm ** 2)
-    else:
-        area_cm2 = np.nan
-    
-    return area_cm2, area_px
 
 
 #################################################################################################
@@ -113,7 +45,7 @@ def calculate_fruit_centroids(contours: List[np.ndarray]) -> List[Optional[Tuple
 def precalculate_locules_data(
     contours: List[np.ndarray], 
     locules: List[int], 
-    centroid: Tuple[int, int]
+    centroid: Tuple[int, int] # Fruit centroid (reference)
 ) -> List[Dict]:
     """ 
     Precalculates and stores geometric data about locules from image contours to optimize further processing.
@@ -126,7 +58,7 @@ def precalculate_locules_data(
     Returns:
         A list of dictionaries, each containing:
             - 'contour_id' (int): Contour identifier.
-            - 'centroid' (Tuple[int, int]): (x, y) coordinates of the locule's centroid.
+            - 'centroid' (Tuple[int, int]): (x, y) coordinates of the fruit's centroid.
             - 'area' (float): Area of the locule in pixels.
             - 'perimeter' (float): Perimeter of the locule in pixels.
             - 'contour' (np.ndarray): Original contour points.
@@ -157,14 +89,19 @@ def precalculate_locules_data(
         angle = math.atan2(dy, dx) % (2 * np.pi)
         radius = math.hypot(dx, dy)
 
+        if perimeter > 0:
+            circularity = (4 * np.pi * area) / (perimeter ** 2)
+        else:
+            circularity = np.nan
+
         locules_data.append({
             'contour_id': locule,
             'centroid': (cx, cy),
-            'area': area,
-            'perimeter': perimeter,
+            'area': area, #px
+            'perimeter': perimeter, #px
             'contour': contour,
             'polar_coord': (angle, radius),
-            'circularity': (4 * np.pi * area) / (perimeter ** 2)
+            'circularity': circularity
         })
 
     return locules_data
@@ -178,7 +115,7 @@ def get_fruit_contour(
     contours: List[np.ndarray], 
     fruit_id: int, 
     contour_mode: str = 'raw', 
-    epsilon_factor: float = 0.0001
+    epsilon: float = 0.002
 ) -> np.ndarray:
     """
     Extract and optionally transform a fruit contour.
@@ -192,7 +129,7 @@ def get_fruit_contour(
             - 'approx': Approximate polygon using Douglas-Peucker
             - 'ellipse': Fit an ellipse around the contour
             - 'circle': Fit minimum enclosing circle
-        epsilon_factor: Approximation factor for 'approx' mode
+        epsilon: Approximation factor for 'approx' mode
         
     Returns:
         Transformed contour points
@@ -211,7 +148,7 @@ def get_fruit_contour(
         
     elif contour_mode == 'approx':
         peri = cv2.arcLength(fruit_contour, True)
-        epsilon = max(1.0, epsilon_factor * peri)
+        epsilon = epsilon * peri
         fruit_contour = cv2.approxPolyDP(fruit_contour, epsilon, True)
         
     elif contour_mode == 'ellipse':
@@ -240,158 +177,74 @@ def get_fruit_contour(
 
 
 #################################################################################################
-# Get inner pericarp contour
+# Get inner pericarp contour and area
 #################################################################################################
 
 def get_inner_pericarp_contour(
     locules: List[int],
-    contours: List[np.ndarray],
-    use_ellipse: bool = False,
-    epsilon: float = 0.001
+    contours: List[np.ndarray]
 ) -> np.ndarray:
     """
-    Get the inner pericarp contour that encloses all locules.
+    Get the convex hull that encloses all locules.
     
     Args:
         locules: List of locule indices
         contours: List of all contours
-        use_ellipse: If True, fit an ellipse instead of using convex hull
-        epsilon: Epsilon value for polygon approximation
-    
+        
     Returns:
-        Inner pericarp contour
+        Convex hull contour enclosing all locules
     """
     if not locules:
         return np.array([])
     
-    all_points = []
-    for locule_id in locules:
-        contour = contours[locule_id]
-        if len(contour) > 0:
-            all_points.extend(contour.reshape(-1, 2))
+    all_points = np.vstack([contours[i] for i in locules])
+    return cv2.convexHull(all_points)
+
+
+def get_inner_pericarp_area(
+    locules: List[int], 
+    contours: List[np.ndarray], 
+    px_per_cm: Optional[float] = None, 
+    img: Optional[np.ndarray] = None,
+    draw_inner_pericarp: bool = False, 
+    contour_thickness: int = 2, 
+    contour_color: Tuple[int, int, int] = (0, 240, 240)
+) -> Tuple[float, float]:
+    """
+    Calculates and visualizes the inner pericarp area.
     
-    if not all_points:
-        return np.array([])
+    Returns:
+        tuple: (area_cm2, area_px)
+    """
     
-    all_points = np.array(all_points)
+    if draw_inner_pericarp and img is None:
+        raise ValueError("img cannot be None when draw_inner_pericarp=True")
     
-    if use_ellipse and len(all_points) >= 5:
-        ellipse = cv2.fitEllipse(all_points)
-        inner_contour = cv2.ellipse2Poly(
-            (int(ellipse[0][0]), int(ellipse[0][1])),
-            (int(ellipse[1][0] / 2), int(ellipse[1][1] / 2)),
-            int(ellipse[2]),
-            0, 360,
-            delta=5
-        ).reshape(-1, 1, 2)
+    if not locules:
+        return 0.0, 0.0
+    
+    # Reuse the previous ip contour function
+    hull = get_inner_pericarp_contour(locules, contours)
+    
+    if len(hull) == 0:
+        return 0.0, 0.0
+    
+    if draw_inner_pericarp:
+        cv2.drawContours(img, [hull], -1, contour_color, contour_thickness)
+    
+    area_px = cv2.contourArea(hull)
+    
+    if px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
+        area_cm2 = area_px / (px_per_cm ** 2)
     else:
-        inner_contour = cv2.convexHull(all_points)
+        area_cm2 = np.nan
     
-    if epsilon > 0:
-        perimeter = cv2.arcLength(inner_contour, True)
-        inner_contour = cv2.approxPolyDP(inner_contour, epsilon * perimeter, True)
-    
-    return inner_contour
+    return area_cm2, area_px
 
 
 #################################################################################################
 # Calculate pericarp thickness using radial sampling
 #################################################################################################
-
-# def calculate_pericarp_thickness_radial(
-#     outer_contour: np.ndarray, 
-#     inner_contour: np.ndarray, 
-#     fruit_centroid: Tuple[float, float],
-#     img_shape: Tuple[int, int],
-#     num_rays: int = 360,
-#     px_per_cm: Optional[float] = None
-# ) -> Dict[str, float]:
-#     """
-#     Calcula el grosor del pericarpio usando muestreo radial.
-    
-#     Args:
-#         outer_contour: Contorno exterior del fruto
-#         inner_contour: Contorno interior (convex hull de lóculos)
-#         fruit_centroid: Centro del fruto (cx, cy)
-#         img_shape: Forma de la imagen (height, width)
-#         num_rays: Número de rayos a trazar (más = más preciso)
-#         px_per_cm: Conversión de píxeles a cm
-    
-#     Returns:
-#         dict con estadísticas: mean, median, std, min, max thickness
-#     """
-#     cx, cy = fruit_centroid
-#     height, width = img_shape[:2]
-    
-#     # Crear máscaras binarias
-#     mask_outer = np.zeros((height, width), dtype=np.uint8)
-#     mask_inner = np.zeros((height, width), dtype=np.uint8)
-#     cv2.drawContours(mask_outer, [outer_contour], -1, 255, -1)
-#     cv2.drawContours(mask_inner, [inner_contour], -1, 255, -1)
-    
-#     thicknesses_px = []
-#     max_search = max(height, width)
-#     angles = np.linspace(0, 2 * np.pi, num_rays, endpoint=False)
-    
-#     for angle in angles:
-#         dx, dy = np.cos(angle), np.sin(angle)
-        
-#         # Buscar intersección con contorno exterior
-#         outer_dist = 0
-#         for r in range(1, max_search):
-#             x, y = int(cx + dx * r), int(cy + dy * r)
-#             if not (0 <= x < width and 0 <= y < height):
-#                 break
-#             if mask_outer[y, x] == 0:
-#                 outer_dist = r - 1
-#                 break
-        
-#         # Buscar intersección con contorno interior
-#         inner_dist = 0
-#         for r in range(1, max_search):
-#             x, y = int(cx + dx * r), int(cy + dy * r)
-#             if not (0 <= x < width and 0 <= y < height):
-#                 break
-#             if mask_inner[y, x] == 255:
-#                 inner_dist = r
-#                 break
-        
-#         if outer_dist > inner_dist > 0:
-#             thicknesses_px.append(outer_dist - inner_dist)
-    
-#     if not thicknesses_px:
-#         return {
-#             'mean_thickness_cm': np.nan,
-#             'median_thickness_cm': np.nan,
-#             'std_thickness_cm': np.nan,
-#             'min_thickness_cm': np.nan,
-#             'max_thickness_cm': np.nan,
-#             'cv_thickness': np.nan
-#         }
-    
-#     thicknesses_px = np.array(thicknesses_px)
-    
-#     if px_per_cm and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
-#         thicknesses_cm = thicknesses_px / px_per_cm
-#         mean_val = np.mean(thicknesses_cm)
-#         return {
-#             'mean_thickness_cm': float(mean_val),
-#             'median_thickness_cm': float(np.median(thicknesses_cm)),
-#             'std_thickness_cm': float(np.std(thicknesses_cm)),
-#             'min_thickness_cm': float(np.min(thicknesses_cm)),
-#             'max_thickness_cm': float(np.max(thicknesses_cm)),
-#             'cv_thickness': float(np.std(thicknesses_cm) / mean_val * 100)
-#         }
-#     else:
-#         mean_val = np.mean(thicknesses_px)
-#         return {
-#             'mean_thickness_px': float(mean_val),
-#             'median_thickness_px': float(np.median(thicknesses_px)),
-#             'std_thickness_px': float(np.std(thicknesses_px)),
-#             'min_thickness_px': float(np.min(thicknesses_px)),
-#             'max_thickness_px': float(np.max(thicknesses_px)),
-#             'cv_thickness': float(np.std(thicknesses_px) / mean_val * 100)
-#         }
 
 def calculate_pericarp_thickness_radial(
     outer_contour, inner_contour, fruit_centroid, 
@@ -399,18 +252,6 @@ def calculate_pericarp_thickness_radial(
 ):
     """
     Calculate pericarp thickness using radial sampling.
-    CORRECTED VERSION - Fixed intersection distance calculation.
-    
-    Args:
-        outer_contour: Outer fruit contour
-        inner_contour: Inner contour (convex hull of locules)
-        fruit_centroid: Fruit center (cx, cy)
-        img_shape: Image shape (height, width)
-        num_rays: Number of rays to trace (default: 360)
-        px_per_cm: Pixel to cm conversion factor
-    
-    Returns:
-        Dict with thickness statistics: mean, median, std, min, max, cv
     """
     cx, cy = fruit_centroid
     height, width = img_shape[:2]
@@ -431,9 +272,10 @@ def calculate_pericarp_thickness_radial(
     sin_angles = np.sin(angles)
     
     thicknesses_px = []
-    
+    outer_distances_px = []
+
     # Process rays
-    for i, (dx, dy) in enumerate(zip(cos_angles, sin_angles)):
+    for dx, dy in zip(cos_angles, sin_angles):
         # Calculate all positions along the ray
         xs = (cx + dx * r_grid).astype(int)
         ys = (cy + dy * r_grid).astype(int)
@@ -442,21 +284,28 @@ def calculate_pericarp_thickness_radial(
         valid = (xs >= 0) & (xs < width) & (ys >= 0) & (ys < height)
         xs_valid = xs[valid]
         ys_valid = ys[valid]
-        r_valid = r_grid[valid]  # CRITICAL: Keep corresponding radial distances
+        r_valid = r_grid[valid]
         
         if len(xs_valid) == 0:
             continue
         
-        # Find outer boundary intersection
+        # Find outer boundary (last pixel INSIDE mask)
         outer_vals = mask_outer[ys_valid, xs_valid]
-        outer_idx = np.where(outer_vals == 0)[0]
+        outer_idx = np.where(outer_vals == 0)[0]  # First pixel OUTSIDE
         
         if len(outer_idx) == 0:
+            # All pixels are inside, use last valid position
+            outer_r = r_valid[-1]
+        elif outer_idx[0] == 0:
+            # First pixel already outside, skip this ray
             continue
-            
-        outer_r = r_valid[outer_idx[0] - 1] if outer_idx[0] > 0 else 0
+        else:
+            # Get last pixel inside (one before first outside pixel)
+            outer_r = r_valid[outer_idx[0] - 1]
         
-        # Find inner boundary intersection
+        outer_distances_px.append(outer_r)
+        
+        # Find inner boundary (first pixel INSIDE inner mask)
         inner_vals = mask_inner[ys_valid, xs_valid]
         inner_idx = np.where(inner_vals == 255)[0]
         
@@ -465,10 +314,13 @@ def calculate_pericarp_thickness_radial(
             
         inner_r = r_valid[inner_idx[0]]
         
-        # Calculate thickness (using actual radial distances)
-        if outer_r > inner_r > 0:
+        # Calculate thickness
+        if outer_r > inner_r:
             thicknesses_px.append(outer_r - inner_r)
-    
+
+    # Calculate lobedness
+    lobedness_px = float(np.std(outer_distances_px)) if outer_distances_px else np.nan
+
     # Handle case with no valid measurements
     if not thicknesses_px:
         return {
@@ -477,7 +329,8 @@ def calculate_pericarp_thickness_radial(
             'std_thickness_cm': np.nan,
             'min_thickness_cm': np.nan,
             'max_thickness_cm': np.nan,
-            'cv_thickness': np.nan
+            'cv_thickness': np.nan,
+            'lobedness_cm': np.nan
         }
     
     thicknesses_px = np.array(thicknesses_px)
@@ -485,6 +338,7 @@ def calculate_pericarp_thickness_radial(
     # Convert to cm if calibration available
     if px_per_cm and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
         thicknesses_cm = thicknesses_px / px_per_cm
+        lobedness = lobedness_px / px_per_cm
         mean_val = np.mean(thicknesses_cm)
         return {
             'mean_thickness_cm': float(mean_val),
@@ -492,7 +346,8 @@ def calculate_pericarp_thickness_radial(
             'std_thickness_cm': float(np.std(thicknesses_cm)),
             'min_thickness_cm': float(np.min(thicknesses_cm)),
             'max_thickness_cm': float(np.max(thicknesses_cm)),
-            'cv_thickness': float((np.std(thicknesses_cm) / mean_val * 100) if mean_val > 0 else np.nan)
+            'cv_thickness': float((np.std(thicknesses_cm) / mean_val * 100) if mean_val > 0 else np.nan),
+            'lobedness_cm': float(lobedness)
         }
     else:
         mean_val = np.mean(thicknesses_px)
@@ -502,5 +357,6 @@ def calculate_pericarp_thickness_radial(
             'std_thickness_px': float(np.std(thicknesses_px)),
             'min_thickness_px': float(np.min(thicknesses_px)),
             'max_thickness_px': float(np.max(thicknesses_px)),
-            'cv_thickness': float((np.std(thicknesses_px) / mean_val * 100) if mean_val > 0 else np.nan)
+            'cv_thickness': float((np.std(thicknesses_px) / mean_val * 100) if mean_val > 0 else np.nan),
+            'lobedness_px': float(lobedness_px)
         }

@@ -523,7 +523,7 @@ class FruitAnalyzer:
                     use_ellipse: bool = False, 
                     contour_mode: str = 'raw', 
                     stamp: bool = False, 
-                    epsilon_factor: float = 0.001, 
+                    epsilon: float = 0.001, 
                     centroid_fruit: int = 2,
                     centroid_locules: int = 2,
                     padding: int = 15, 
@@ -576,7 +576,7 @@ class FruitAnalyzer:
             max_locule_area=max_locule_area,
             merge_locules=merge_locules,
             bg_color=label_color,
-            epsilon_factor=epsilon_factor,
+            epsilon=epsilon,
             min_distance=min_distance,
             max_distance=max_distance,
             path=self.image_path,
@@ -698,7 +698,7 @@ class FruitAnalyzer:
                 min_locule_area=config['min_locule_area'],
                 max_locule_area=config.get('max_locule_area'),
                 merge_locules=config.get('merge_locules', False),
-                epsilon_factor=config['epsilon_factor'],
+                epsilon=config['epsilon'],
                 use_ellipse=config['use_ellipse_fruit'],
                 min_distance=config['min_distance'],
                 max_distance=config['max_distance'],
@@ -710,8 +710,7 @@ class FruitAnalyzer:
                 centroid_fruit=config.get('centroid_fruit', 2),
                 centroid_locules=config.get('centroid_locules', 2),
                 extract_color=config.get('extract_color', False),
-                color_stat=config.get('color_stat', 'mean'),
-                locules_filled=config.get('locules_filled', False)
+                color_stat=config.get('color_stat', 'mean')
             )
             
             # Get results - optimized with getattr
@@ -767,7 +766,7 @@ class FruitAnalyzer:
                     padding: int = 15, 
                     line_spacing: int = 15, 
                     min_locule_area: int = 300, 
-                    epsilon_factor: float = 0.005, 
+                    epsilon: float = 0.005, 
                     use_ellipse_fruit: bool = False, 
                     min_distance: int = 2, 
                     max_distance: int = 30,
@@ -810,7 +809,7 @@ class FruitAnalyzer:
             padding: Padding around text labels. Default is 15.
             line_spacing: Spacing between text lines. Default is 15.
             min_locule_area: Minimum locule area. Default is 300.
-            epsilon_factor: Approximation factor for contours. Default is 0.005.
+            epsilon: Approximation factor for contours. Default is 0.005.
             use_ellipse_fruit: Use ellipse for pericarp. Default is False.
             min_distance: Minimum distance for locule merging. Default is 2.
             max_distance: Maximum distance for locule merging. Default is 30.
@@ -904,7 +903,7 @@ class FruitAnalyzer:
             'padding': padding,
             'line_spacing': line_spacing,
             'min_locule_area': min_locule_area,
-            'epsilon_factor': epsilon_factor,
+            'epsilon': epsilon,
             'use_ellipse_fruit': use_ellipse_fruit,
             'min_distance': min_distance,
             'max_distance': max_distance,
