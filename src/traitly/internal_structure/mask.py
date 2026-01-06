@@ -249,71 +249,7 @@ def find_fruits(
 # Merge close locules
 #################################################################################################
 
-# def merge_locules_func(locules_indices, contours, min_distance=0, max_distance=50, min_area=10):
-#     if not locules_indices:
-#         return []
-    
-#     # Filtrar contornos válidos (con área suficiente y que no estén vacíos)
-#     valid_locules = []
-#     for i in locules_indices:
-#         if (len(contours[i]) > 0 and  # Verificar que el contorno tenga puntos
-#             cv2.contourArea(contours[i]) > min_area):
-#             valid_locules.append(i)
-    
-#     if not valid_locules:
-#         return []
-    
-#     merged = [False] * len(valid_locules)
-#     result_locules = []
-    
-#     for i in range(len(valid_locules)):
-#         if not merged[i]:
-#             current_idx = valid_locules[i]
-#             current_contour = contours[current_idx]
-            
-#             # Verificar que el contorno actual no esté vacío
-#             if len(current_contour) == 0:
-#                 continue
-                
-#             merged[i] = True
-#             to_merge = [current_contour]
-            
-#             for j in range(i+1, len(valid_locules)):
-#                 if not merged[j]:
-#                     other_idx = valid_locules[j]
-#                     other_contour = contours[other_idx]
-                    
-#                     # Verificar que el otro contorno no esté vacío
-#                     if len(other_contour) == 0:
-#                         continue
-                    
-#                     # Cálculo de distancia (tu código existente)
-#                     min_dist = float('inf')
-#                     for point in other_contour[::2, 0, :]:
-#                         dist = cv2.pointPolygonTest(current_contour, (float(point[0]), float(point[1])), True)
-#                         if dist < min_dist:
-#                             min_dist = dist
-#                             if min_dist <= 0:
-#                                 break
-                    
-#                     if min_distance < abs(min_dist) < max_distance:
-#                         to_merge.append(other_contour)
-#                         merged[j] = True
-            
-#             if len(to_merge) > 1:
-#                 try:
-#                     merged_contour = np.vstack(to_merge)
-#                     epsilon = 0.001 * cv2.arcLength(merged_contour, True)
-#                     merged_loculus = cv2.approxPolyDP(merged_contour, epsilon, True)
-#                     if len(merged_loculus) > 0:  # Verificar que el resultado no esté vacío
-#                         result_locules.append(merged_loculus)
-#                 except:
-#                     # En caso de error en la fusión, mantener el contorno original
-#                     result_locules.append(current_contour)
-#             else:
-#                 result_locules.append(current_contour)
-    
-#     return result_locules
+
 
 def merge_locules_func(locules_indices, contours, min_distance=0, max_distance=50, min_area=10):
     """
