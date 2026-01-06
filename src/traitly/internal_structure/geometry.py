@@ -210,7 +210,7 @@ def rotate_box(contour: np.ndarray,
     return box_length_cm, box_width_cm, box_length_px, box_width_px
 
 
-def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon_factor=0.001):
+def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon=0.001):
     """
     Calculate comprehensive fruit morphology metrics with contour transformation options.
     OPTIMIZED VERSION - Returns only metrics in the active unit (px or cm).
@@ -219,7 +219,7 @@ def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon_fa
         contour (np.ndarray): Fruit contour points
         px_per_cm (float, optional): Pixel to cm conversion factor
         contour_mode (str): Contour transformation mode ('raw', 'hull', 'approx', 'ellipse', 'circle')
-        epsilon_factor (float): Epsilon factor for polygon approximation
+        epsilon (float): Epsilon factor for polygon approximation
     
     Returns:
         dict: Dictionary containing fruit morphology metrics in single unit
@@ -245,7 +245,7 @@ def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon_fa
         contours=[contour],  # Pass as list with single element
         fruit_id=0,          # Index 0 since there's only one contour
         contour_mode=contour_mode,
-        epsilon_factor=epsilon_factor
+        epsilon=epsilon
     )
     
     # Early exit after transformation
