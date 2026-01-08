@@ -1,11 +1,18 @@
 
 # traitly/internal_structure/mask.py
 
+
+# ============================================================================
+# STANDARD LIBRARY
+# ============================================================================
+from typing import Optional, Tuple
+
 # ============================================================================
 # THIRD-PARTY LIBRARIES
 # ============================================================================
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 # ============================================================================
 # LOCAL/INTERNAL IMPORTS
@@ -249,8 +256,6 @@ def find_fruits(
 # Merge close locules
 #################################################################################################
 
-
-
 def merge_locules_func(locules_indices, contours, min_distance=0, max_distance=50, min_area=10):
     """
     Merge close locules based on proximity.
@@ -399,3 +404,338 @@ def merge_locules_func(locules_indices, contours, min_distance=0, max_distance=5
                 result_locules.append(current_contour)
     
     return result_locules
+
+
+#################################################
+# Convert image to lab and apply clahe contrast #
+#################################################
+
+def _ensure_uint8(L: np.ndarray) -> np.ndarray:
+    """Ensures the image is in uint8 format."""
+    if L.dtype != np.uint8:
+        # If in float [0, 1], scale to [0, 255]
+        if L.max() <= 1.0:
+            L = (L * 255).astype(np.uint8)
+        else:
+            # If in another range, clip and convert
+            L = np.clip(L, 0, 255).astype(np.uint8)
+    return L
+
+def gamma_contrast(L: np.ndarray, 
+                   gamma: float = 1.0, 
+                   plot: bool = False) -> np.ndarray:
+    """
+    Applies gamma correction to enhance contrast.
+    
+    Args:
+        L: Luminance channel (grayscale image)
+        gamma: Gamma value for correction
+            - gamma < 1: Brightens shadows (expands low values)
+            - gamma > 1: Darkens highlights (compresses high values)
+            - gamma = 1: No change
+        plot: If True, displays the result
+    
+    Returns:
+        Gamma-corrected luminance channel
+    """
+    # Normalize to [0, 1]
+    L = _ensure_uint8(L)
+    L_norm = L / 255.0
+    
+    # Apply gamma correction
+    L_corrected = np.power(L_norm, gamma)
+    
+    # Convert back to [0, 255]
+    l_gamma_corrected = (L_corrected * 255).astype(np.uint8)
+    
+    if plot:
+        plot_img(l_gamma_corrected)
+
+    return l_gamma_corrected
+
+def sigmoid_contrast(L: np.ndarray, 
+                     gain: float = 10, 
+                     cutoff: float = 0.5) -> np.ndarray:
+    """
+    Applies sigmoidal contrast enhancement.
+    
+    Args:
+        L: Luminance channel (grayscale image)
+        gain: Intensity of the contrast (5-20 recommended)
+        cutoff: Central point of the sigmoid (0.3-0.7 recommended)
+    
+    Returns:
+        Sigmoid-transformed luminance channel
+    """
+    L = _ensure_uint8(L)
+    L_norm = L / 255.0
+    
+    # Apply sigmoid transformation
+    L_sigmoid = 1 / (1 + np.exp(-gain * (L_norm - cutoff)))
+    
+    # Renormalize to [0, 1]
+    L_sigmoid = (L_sigmoid - L_sigmoid.min()) / (L_sigmoid.max() - L_sigmoid.min())
+    
+    return (L_sigmoid * 255).astype(np.uint8)
+
+def exp_transform(L: np.ndarray, c: float = 1.0) -> np.ndarray:
+    """
+    Applies exponential transformation - expands high values.
+    
+    Args:
+        L: Luminance channel (grayscale image)
+        c: Exponential coefficient (controls expansion intensity)
+    
+    Returns:
+        Exponentially-transformed luminance channel
+    """
+    L = _ensure_uint8(L)
+    L_norm = L / 255.0
+    
+    # Apply exponential transformation
+    L_exp = np.expm1(c * L_norm)
+    L_exp = (L_exp / L_exp.max() * 255)
+    
+    return L_exp.astype(np.uint8)
+
+
+def apply_contrast(img: np.ndarray, 
+                   contrast_method: Optional[str] = 'gamma',
+                   gamma: Optional[float] = 1.5,
+                   gain: Optional[float] = 5,
+                   cutoff: Optional[float] = 0.5,
+                   c: Optional[float] = 0.5,
+                   plot: Optional[bool] = False,
+                   plot_size: Optional[Tuple[int, int]] = (12, 12),
+                   compare: Optional[bool] = False,
+                   kernel_blur: Optional[int] = 1,
+                   clip_limit: Optional[int] = None,
+                   tile_grid_size: Optional[int] = 12) -> np.ndarray:
+    """
+    Applies contrast transformation to the L channel of a LAB image.
+    
+    Args:
+        img: Image in BGR format
+        contrast_method: Contrast method to apply ('gamma', 'sigmoid', 'exp', or 'none')
+        gamma: Parameter for gamma_contrast (default: 1.5)
+        gain: Parameter for sigmoid_contrast (default: 5)
+        cutoff: Parameter for sigmoid_contrast (default: 0.5)
+        c: Parameter for exp_transform (default: 0.5)
+        plot: If True, displays the result of the selected method
+        plot_size: Figure size for plotting (default: (12, 12))
+        compare: If True, visually compares all 3 methods (overrides plot)
+        kernel_blur: Median blur kernel size (default: 1, must be odd)
+        clip_limit: CLAHE clip limit (default: None = no CLAHE applied)
+        tile_grid_size: CLAHE tile grid size (default: 12)
+    
+    Returns:
+        Transformed L channel (2D numpy array)
+    
+    Raises:
+        TypeError: If input image is not a numpy array
+        ValueError: If image format is invalid or contrast_method is unknown
+    """
+    # Validate input
+    if not isinstance(img, np.ndarray):
+        raise TypeError("Input image must be a numpy array")
+    if img.ndim != 3 or img.shape[2] != 3:
+        raise ValueError("Image must be in BGR format (3 channels)")
+    
+    # Convert to LAB color space
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    
+    # Extract L channel
+    l_channel = lab[:, :, 0]
+    
+    # Dictionary of contrast methods
+    contrast_methods = {
+        'gamma': lambda: gamma_contrast(l_channel, gamma=gamma, plot=False),
+        'sigmoid': lambda: sigmoid_contrast(l_channel, gain=gain, cutoff=cutoff),
+        'exp': lambda: exp_transform(l_channel, c=c),
+        'none': lambda: l_channel.copy()  # No transformation, return L channel as-is
+    }
+    
+    # Validate method
+    if contrast_method not in contrast_methods:
+        raise ValueError(f"contrast_method must be one of {list(contrast_methods.keys())}")
+    
+    # If compare=True, display all 3 methods (excluding 'none')
+    if compare:
+        l_gamma = gamma_contrast(l_channel, gamma=gamma, plot=False)
+        l_sigmoid = sigmoid_contrast(l_channel, gain=gain, cutoff=cutoff)
+        l_exp = exp_transform(l_channel, c=c)
+        
+        plt.figure(figsize=plot_size)
+        
+        plt.subplot(2, 2, 1)
+        plt.imshow(l_channel, cmap='gray')
+        plt.title("Original")
+        plt.axis('off')
+        
+        plt.subplot(2, 2, 2)
+        plt.imshow(l_gamma, cmap='gray')
+        plt.title(f"Gamma (γ={gamma})")
+        plt.axis('off')
+        
+        plt.subplot(2, 2, 3)
+        plt.imshow(l_sigmoid, cmap='gray')
+        plt.title(f"Sigmoid (gain={gain}, cutoff={cutoff})")
+        plt.axis('off')
+        
+        plt.subplot(2, 2, 4)
+        plt.imshow(l_exp, cmap='gray')
+        plt.title(f"Exponential (c={c})")
+        plt.axis('off')
+        
+        plt.tight_layout()
+        plt.show()
+    
+    # Apply transformation to the L channel using the selected method
+    l_transformed = contrast_methods[contrast_method]()
+    
+    # Apply median blur
+    l_transformed = cv2.medianBlur(l_transformed, kernel_blur)
+    
+    # Apply CLAHE only if clip_limit is specified
+    if clip_limit is not None:
+        clahe = cv2.createCLAHE(clipLimit=clip_limit, 
+                               tileGridSize=(tile_grid_size, tile_grid_size))
+        l_transformed = clahe.apply(l_transformed)
+    
+    # If plot=True and compare=False, display only the selected method
+    if plot and not compare:
+        plt.figure(figsize=plot_size)
+        
+        plt.subplot(1, 2, 1)
+        plt.imshow(l_channel, cmap='gray')
+        plt.title("Original L Channel")
+        plt.axis('off')
+        
+        plt.subplot(1, 2, 2)
+        plt.imshow(l_transformed, cmap='gray')
+        
+        # Build title with processing info
+        if contrast_method == 'none':
+            title = "L Channel (no contrast)"
+        else:
+            title = f"L Channel ({contrast_method})"
+        
+        if clip_limit is not None:
+            title += f" + CLAHE({clip_limit})"
+        
+        plt.title(title)
+        plt.axis('off')
+        
+        plt.tight_layout()
+        plt.show()
+    
+    return l_transformed
+
+def create_mask_locules(l_transformed,
+                        fruit_mask,
+                        kernel_close=None,
+                        thresh_min=100,
+                        thresh_max=255,
+                        kernel_open=None,
+                        min_fruit_size=5000,
+                        invert_locules=False,
+                        plot=False,
+                        plot_size=(15, 5)):
+    """
+    Creates a fused mask containing fruits with their internal locules.
+    
+    Args:
+        l_transformed: Transformed L channel from LAB color space
+        fruit_mask: Binary mask of fruits (from create_mask)
+        kernel_close: Kernel size for closing operation (optional, None = no closing)
+        thresh_min: Minimum threshold value for binarization (default: 100)
+        thresh_max: Maximum threshold value for binarization (default: 255)
+        kernel_open: Kernel size for opening operation (optional, None = no opening)
+        min_fruit_size: Minimum area to consider a contour as a fruit (default: 5000)
+        invert_locules: If True, inverts locules mask before fusion (default: False)
+        plot: If True, displays the masks (default: False)
+        plot_size: Figure size for plotting (default: (15, 5))
+    
+    Returns:
+        Binary mask with fruits and internal locules fused (numpy array)
+    """
+    # Validate input
+    if not isinstance(l_transformed, np.ndarray):
+        raise TypeError("l_transformed must be a numpy array")
+    if not isinstance(fruit_mask, np.ndarray):
+        raise TypeError("fruit_mask must be a numpy array")
+    
+    # Apply threshold to get locules
+    _, locule_mask = cv2.threshold(l_transformed, thresh_min, thresh_max, 
+                                   cv2.THRESH_BINARY_INV)
+    
+    # Apply morphological closing if specified
+    if kernel_close is not None:
+        kernel_cl = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, 
+                                              (kernel_close, kernel_close))
+        locule_mask = cv2.morphologyEx(locule_mask, cv2.MORPH_CLOSE, kernel_cl)
+    
+    # Apply morphological opening if specified
+    if kernel_open is not None:
+        kernel_op = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, 
+                                              (kernel_open, kernel_open))
+        locule_mask = cv2.morphologyEx(locule_mask, cv2.MORPH_OPEN, kernel_op)
+    
+    # Find all contours
+    inv_locule_mask = cv2.bitwise_not(locule_mask)
+    contours, hierarchy = cv2.findContours(inv_locule_mask, cv2.RETR_TREE, 
+                                          cv2.CHAIN_APPROX_SIMPLE)
+    
+    # Create black mask and fill ONLY fruits (large contours without parent)
+    fruits_only_mask = np.zeros_like(locule_mask)
+    
+    if contours and hierarchy is not None:
+        for i, cnt in enumerate(contours):
+            parent = hierarchy[0][i][3]
+            area = cv2.contourArea(cnt)
+            
+            # If no parent (external contour) and large (fruit, not noise)
+            if parent == -1 and area > min_fruit_size:
+                # Fill this fruit completely (includes all internal structures)
+                cv2.drawContours(fruits_only_mask, [cnt], -1, 255, -1)
+    
+    # Apply fruits mask to original locule_mask
+    # This removes ALL background, keeping only fruits and their structures
+    locule_mask_clean = cv2.bitwise_and(locule_mask, fruits_only_mask)
+    
+    # Invert locules mask if requested
+    if invert_locules:
+        # Invert only within fruits (keep background black)
+        locule_mask_clean = cv2.bitwise_and(
+            cv2.bitwise_not(locule_mask_clean),
+            fruits_only_mask
+        )
+    
+    # Fuse fruit mask with locules mask
+    mask_fruits_rgb = cv2.cvtColor(cv2.bitwise_not(fruit_mask), cv2.COLOR_GRAY2BGR)
+    mask_fruits_rgb[locule_mask_clean == 255] = [255, 255, 255]
+    final_mask = cv2.bitwise_not(mask_fruits_rgb[:, :, 0])
+    
+    if plot:
+        plt.figure(figsize=plot_size)
+        
+        plt.subplot(1, 3, 1)
+        plt.imshow(l_transformed, cmap='gray')
+        plt.title('L* contrast applied')
+        plt.axis('off')
+        
+        plt.subplot(1, 3, 2)
+        plt.imshow(locule_mask_clean, cmap='gray')
+        title = "Locules mask" + (" (inverted)" if invert_locules else "")
+        plt.title(title)
+        plt.axis('off')
+        
+        plt.subplot(1, 3, 3)
+        plt.imshow(final_mask, cmap='gray')
+        plt.title("Final mask (Fruits + Locules)")
+        plt.axis('off')
+        
+        plt.tight_layout()
+        plt.show()
+    
+    return final_mask

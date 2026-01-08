@@ -27,7 +27,7 @@ import psutil
 # ============================================================================
 # LOCAL/INTERNAL IMPORTS
 # ============================================================================
-from .mask import create_mask, find_fruits
+from .mask import create_mask, find_fruits, apply_contrast, create_mask_locules
 from .analysis import analyze_fruits
 from ..utils import common_functions as cf
 from .annotated_image import AnnotatedImage
@@ -64,9 +64,10 @@ class FruitAnalyzer:
         # load_img
         self.is_directory = os.path.isdir(image_path)
         self.img = None
-        self.img_inverted = None
+        self.img_bgr = None
         self.img_annotated = None
-        
+        self.l_transformed = None
+
         # setup_measurements
         self.ref_roi = None
         self.label_roi = None
@@ -76,7 +77,7 @@ class FruitAnalyzer:
         
         # create_mask
         self.mask = None
-        self.mask_fruits = None
+        self.mask_locules = None
         self.contours = None
         self.fruit_locus_map = None
         
@@ -368,13 +369,13 @@ class FruitAnalyzer:
             None: Modifies self.mask with the generated binary mask.
         """
         if stamp:
-            self.img_inverted = cv2.bitwise_not(self.img)
+            self.img_bgr = cv2.bitwise_not(self.img)
         else:
-            self.img_inverted = self.img.copy()
+            self.img_bgr = self.img.copy()
         
         # Create base mask - only calculate once
         self.mask = create_mask(
-            self.img_inverted,
+            self.img_bgr,
             n_kernel=n_kernel, 
             n_iteration=n_iteration,
             plot=False,
@@ -386,50 +387,6 @@ class FruitAnalyzer:
             upper_hsv=upper_hsv
         )
         
-        if locules_filled:  # Useful for tomato, orange, cucumber, etc...
-            # Use the already calculated mask instead of recalculating
-            base_mask = self.mask.copy()
-            
-            # Fill fruit contours
-            contours, _ = cv2.findContours(base_mask, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-            for cnt in contours:
-                cv2.drawContours(base_mask, [cnt], -1, 255, -1)
-                
-            # Convert image to Lab for locule processing
-            lab = cv2.cvtColor(self.img, cv2.COLOR_BGR2LAB)
-            l_channel = lab[:,:,0]
-
-            clahe = cv2.createCLAHE(clipLimit=clip_limit, 
-                                   tileGridSize=(tile_grid_size, tile_grid_size))
-            l_clahe = clahe.apply(l_channel)
-
-            _, locule_mask = cv2.threshold(l_clahe, 0, 255, 
-                                          cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-            locule_mask = cv2.medianBlur(locule_mask, n_blur)
-
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (n_kernel, n_kernel))
-            opened = cv2.morphologyEx(locule_mask, cv2.MORPH_OPEN, kernel)
-            closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernel)
-
-            # Detect only internal contours (locules)
-            inv_closed = cv2.bitwise_not(closed)
-            contours, hierarchy = cv2.findContours(inv_closed, cv2.RETR_TREE, 
-                                                  cv2.CHAIN_APPROX_SIMPLE)
-            mask_lobules_only = np.zeros_like(closed)
-            
-            for i, cnt in enumerate(contours):
-                if hierarchy[0][i][3] != -1 and cv2.contourArea(cnt) > min_locule_size:
-                    cv2.drawContours(mask_lobules_only, [cnt], -1, 255, -1)
-            
-            mask_lobules_only = cv2.medianBlur(mask_lobules_only, n_blur)
-
-            # Overlap fruits mask with locule mask
-            mask_fruits_rgb = cv2.cvtColor(cv2.bitwise_not(base_mask), cv2.COLOR_GRAY2BGR)
-            mask_fruits_rgb[mask_lobules_only == 255] = [255, 255, 255]
-            
-            self.mask_fruits = base_mask.copy()
-            self.mask = cv2.bitwise_not(mask_fruits_rgb[:,:,0])
-
         # Deleting label and reference squares from mask
         if remove_roi:
             # Create a same size black mask 
@@ -472,6 +429,105 @@ class FruitAnalyzer:
 
         return None
 
+
+    def apply_contrast(self,
+                    contrast_method: Optional[str] = 'gamma',
+                    gamma: Optional[float] = 1.5,
+                    gain: Optional[float] = 5,
+                    cutoff: Optional[float] = 0.5,
+                    c: Optional[float] = 0.5,
+                    plot: Optional[bool] = True,
+                    plot_size: Optional[Tuple[int, int]] = (12, 12),
+                    compare: Optional[bool] = False,
+                    kernel_blur: Optional[int] = 1,
+                    clip_limit: Optional[int] = None,
+                    tile_grid_size: Optional[int] = 12) -> np.ndarray:
+        """
+        Applies contrast transformation to the L channel of a LAB image.
+        
+        Args:
+            img: Image in BGR format
+            contrast_method: Contrast method to apply ('gamma', 'sigmoid', or 'exp')
+            gamma: Parameter for gamma_contrast (default: 1.5)
+            gain: Parameter for sigmoid_contrast (default: 5)
+            cutoff: Parameter for sigmoid_contrast (default: 0.5)
+            c: Parameter for exp_transform (default: 0.5)
+            plot: If True, displays the result of the selected method
+            plot_size: Figure size for plotting (default: (12, 12))
+            compare: If True, visually compares all 3 methods (overrides plot)
+        
+        Returns:
+            Transformed L channel (2D numpy array)
+        
+        Raises:
+            TypeError: If input image is not a numpy array
+            ValueError: If image format is invalid or contrast_method is unknown
+        """
+        self.l_transformed = apply_contrast(img = self.img_bgr, 
+                                       contrast_method = contrast_method,
+                                       gamma = gamma,
+                                       gain = gain,
+                                       cutoff = cutoff, 
+                                       c = c,
+                                       plot = plot, 
+                                       plot_size = plot_size,
+                                       compare = compare,
+                                       kernel_blur = kernel_blur,
+                                       clip_limit = clip_limit,
+                   tile_grid_size = tile_grid_size)
+        return None
+    
+    def create_mask_locules(self, 
+                            thresh_min=120,
+                            thresh_max=255,
+                            kernel_close=None,
+                            kernel_open=None,
+                            min_fruit_size=5000,
+                            invert_locules=False,
+                            plot=False,
+                            plot_size=(15, 5)):
+        """
+        Creates and stores a fused mask containing fruits with internal locules.
+        
+        Args:
+            thresh_min: Minimum threshold value for binarization (default: 120)
+            thresh_max: Maximum threshold value for binarization (default: 255)
+            kernel_close: Kernel size for closing operation (optional, None = no closing)
+            kernel_open: Kernel size for opening operation (optional, None = no opening)
+            min_fruit_size: Minimum area to consider a contour as a fruit (default: 5000)
+            invert_locules: If True, inverts locules mask before fusion (default: False)
+            plot: If True, displays the masks (default: False)
+            plot_size: Figure size for plotting (default: (15, 5))
+        
+        Returns:
+            None (stores fused mask in self.mask_locules)
+        """
+        # Validate that required attributes exist
+        if self.l_transformed is None:
+            raise ValueError(
+                "l_transformed is not available. Please call apply_contrast() first."
+            )
+        
+        if self.mask is None:
+            raise ValueError(
+                "fruit mask is not available. Please call create_mask() first."
+            )
+        
+        self.mask_locules = create_mask_locules(
+            l_transformed=self.l_transformed,
+            fruit_mask=self.mask,
+            thresh_min=thresh_min,
+            thresh_max=thresh_max,
+            kernel_close=kernel_close,
+            kernel_open=kernel_open,
+            min_fruit_size=min_fruit_size,
+            invert_locules=invert_locules,
+            plot=plot, 
+            plot_size=plot_size
+        )
+        
+        return None
+    
     def find_fruits(self, min_circularity: float = 0.5, output_message: bool = True, 
                     min_locule_area: int = 50, min_locule_per_fruit: int = 1, 
                     max_circularity: float = 1.0, min_aspect_ratio: float = 0.3, 
@@ -490,8 +546,13 @@ class FruitAnalyzer:
             max_aspect_ratio: Maximum aspect ratio for filtering. Default is 3.0.
             contour_filters: Additional contour filters. Default is None.
         """
+        if self.mask_locules is not None:
+            mask = self.mask_locules
+        else:
+            mask = self.mask
+
         self.contours, self.fruit_locus_map = find_fruits(
-            self.mask, 
+            mask, 
             min_circularity=min_circularity,
             min_locule_area=min_locule_area,
             max_circularity=max_circularity,
@@ -622,16 +683,6 @@ class FruitAnalyzer:
         """
         Internal method to process a single image file.
         Used for parallel processing.
-        
-        Args:
-            filename: Name of the image file to process
-            config: Configuration dictionary with processing parameters
-        
-        Returns:
-            Tuple containing:
-                - DataFrame with results (or None if processing failed)
-                - Dictionary with processing status
-                - Number of fruits detected
         """
         import sys
         from io import StringIO
@@ -651,7 +702,7 @@ class FruitAnalyzer:
                 # 1. Read image
                 analyzer.read_image()
                 
-                # 2. Setup measurements (calibration) - verbose=False suppresses output
+                # 2. Setup measurements (calibration)
                 analyzer.setup_measurements(
                     confidence=config['confidence_threshold'],
                     diameter_cm=config['diameter_cm'],
@@ -659,15 +710,55 @@ class FruitAnalyzer:
                     length_cm=config.get('length_cm'),
                     detect_label=config.get('detect_label', True),
                     verbose=False,
-                    plot=False, gpu=False
+                    plot=False, 
+                    gpu=False
                 )
                 
                 # 3. Create mask
+                valid_mask_params = {
+                    'n_kernel', 'plot', 'plot_size', 'stamp', 'plot_axis',
+                    'n_iteration', 'canny_min', 'canny_max', 'lower_hsv',
+                    'upper_hsv', 'locules_filled', 'min_locule_size', 
+                    'n_blur', 'clip_limit', 'tile_grid_size', 'remove_roi',
+                    'roi_expansion', 'kernel_open', 'kernel_close'
+                }
+
+                mask_kwargs = {
+                    k: v for k, v in config.get('mask_kwargs', {}).items()
+                    if k in valid_mask_params
+                }
+
                 analyzer.create_mask(
                     stamp=config['stamp'],
                     n_kernel=config['n_kernel'],
-                    **config.get('mask_kwargs', {})
+                    n_blur=config.get('n_blur', 11),
+                    **mask_kwargs
+    
                 )
+                
+                # 3.5. NEW: Apply contrast (if locules_filled is True)
+                if config.get('locules_filled', False):
+                    analyzer.apply_contrast(
+                        contrast_method=config.get('contrast_method', 'gamma'),
+                        gamma=config.get('gamma', 1.5),
+                        plot=False,
+                        gain=config.get('gain', 5),  
+                        cutoff=config.get('cutoff', 0.5), 
+                        c=config.get('c', 0.5),  
+                        kernel_blur=config.get('kernel_blur', 1),  
+                        clip_limit=config.get('clip_limit'), 
+                        tile_grid_size=config.get('tile_grid_size', 12),
+                    )
+                    
+                    # 3.6. NEW: Create mask locules
+                    analyzer.create_mask_locules(
+                        thresh_min=config.get('thresh_min', 120),
+                        thresh_max=config.get('thresh_max', 255),
+                        kernel_close=config.get('kernel_close'),
+                        kernel_open=config.get('kernel_open'),
+                        min_fruit_size=config.get('min_fruit_size', 5000),
+                        invert_locules=config.get('invert_locules', False),
+                        plot=False)
                 
                 # 4. Find fruits
                 analyzer.find_fruits(
@@ -679,6 +770,7 @@ class FruitAnalyzer:
                 # Restore stdout
                 sys.stdout = old_stdout
             
+                
             if not analyzer.contours:
                 error_dict['status'] = 'No contours found'
                 return None, error_dict, 0
@@ -789,6 +881,7 @@ class FruitAnalyzer:
                     extract_color: bool = False,  
                     color_stat: str = 'mean', # mean or median
                     locules_filled: bool = False,
+                    n_blur: int = 11,
                     **kwargs) -> None:
         """
         Process all images in a folder with optional parallel processing.
@@ -925,6 +1018,24 @@ class FruitAnalyzer:
             'extract_color': extract_color,
             'color_stat': color_stat,
             'locules_filled': locules_filled, 
+            # New parameters to apply_contrast and create_mask_locules
+            'contrast_method': kwargs.get('contrast_method', 'gamma'),
+            'gamma': kwargs.get('gamma', 1.5),
+            'thresh_min': kwargs.get('thresh_min', 120),
+            'thresh_max': kwargs.get('thresh_max', 255),
+            'kernel_close': kwargs.get('kernel_close'),
+            'kernel_open': kwargs.get('kernel_open'),
+            'min_fruit_size': kwargs.get('min_fruit_size', 5000),
+            'invert_locules': kwargs.get('invert_locules', False),
+            'n_blur': n_blur, 
+            # Contrast parameters
+            'gain': kwargs.get('gain', 5), 
+            'cutoff': kwargs.get('cutoff', 0.5),  
+            'c': kwargs.get('c', 0.5),  
+            'kernel_blur': kwargs.get('kernel_blur', 1),  
+            'clip_limit': kwargs.get('clip_limit'),  
+            'tile_grid_size': kwargs.get('tile_grid_size', 12), 
+
             # Mask kwargs
             'mask_kwargs': kwargs
         }
