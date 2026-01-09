@@ -1,4 +1,4 @@
-# Trait Table – Traitly
+# Traitly
 
 ## Table of Contents
 
