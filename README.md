@@ -3,7 +3,7 @@
 The tool supports both single-image and batch processing workflows, allowing users to analyze large image datasets with only a few lines of code, making it suitable for plant breeding and research.
 
 > **Note**  
-> A manuscript describing this software is currently under preparation and is expected to be released in **February–March 2026**.
+> A manuscript describing this software is currently under preparation and is expected to be released in **Spring-Summer, 2026**.
 
 ### What can Traitly do?
 
