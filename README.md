@@ -9,8 +9,8 @@ The tool supports both single-image and batch processing workflows, allowing use
 
 Traitly processes fruit images to measure:
 
-* **External morphology**: Area, perimeter, circularity, aspect ratio, and bounding box dimensions
-* **Internal anatomy**: Locule number, size distribution, and spatial arrangement
+* **Fruit morphology**: Area, perimeter, circularity, aspect ratio, and bounding box dimensions
+* **Locule anatomy**: Locule number, size distribution, and spatial arrangement
 * **Pericarp structure**: Thickness profiles, uniformity (CV), and surface irregularity (lobedness)
 * **Developmental symmetry**: Angular, radial, and rotational symmetry indices
 * **Color phenotypes**: Multi-channel analysis (RGB, HSV, Lab) across different fruit regions
