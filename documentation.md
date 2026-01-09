@@ -1,29 +1,5 @@
 # Traitly Documentation
 
-## Table of Contents
-
-1. [**Introduction**](#introduction)
-2. [**Trait Tables**](#trait-tables)
-   - 2.1 [Identification](#1-identification)
-   - 2.2 [Fruit Morphology](#2-fruit-morphology)
-   - 2.3 [Locule Statistics](#3-locule-statistics)
-   - 2.4 [Pericarp Metrics](#4-pericarp-metrics)
-   - 2.5 [Symmetry Metrics](#5-symmetry-metrics)
-   - 2.6 [Derived Metrics](#6-derived-metrics)
-   - 2.7 [Color Metrics](#7-color-metrics-optional---when-extract_colortrue)
-     * RGB Channels
-     * HSV Channels
-     * Lab Channels
-     * Grayscale & Derived Indices
-     * Variability Metrics
-3. [**Notes**](#notes)
-   - 3.1 [Unit conversion](#units)
-   - 3.2 [Symmetry Interpretation](#symmetry-interpretation)
-   - 3.3 [Typical Ranges](#typical-ranges)
-   - 3.4 [Key Formulas](#key-formulas)
-
----
-
 ## Introduction
 
 **Traitly** is a comprehensive fruit phenotyping tool that extracts morphological, structural, and color features from fruit images. This document catalogs all the traits (features) that Traitly can measure and export.
