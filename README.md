@@ -29,6 +29,40 @@ Updates regarding the public release will be announced through this repository a
 Interested users are encouraged to follow or watch the repository to stay informed.
 
 
+## Usage
+
+Below is a basic example of how to use **traitly**:
+
+```python
+from traitly.internal_structure import FruitAnalyzer
+
+##########################
+# Single image analysis #
+##########################
+path = 'PATH/my_image.jpg'
+
+analyzer = FruitAnalyzer(path)  # Initialize the FruitAnalyzer class
+
+analyzer.read_image()           # Read the image
+analyzer.setup_measurements()   # Obtain label and reference size information
+analyzer.create_mask()          # Create a binary mask to segment fruits and locules
+analyzer.find_fruits()          # Filter detected fruits
+analyzer.analyze_image()        # Run the fruit analysis
+analyzer.results.save_all()     # Save both the CSV file and the annotated image
+
+###################
+# Batch analysis #
+###################
+path = 'PATH/my_folder'
+
+analyzer = FruitAnalyzer(path)  # Initialize the FruitAnalyzer class
+analyzer.analyze_folder()       # Run the analysis on all valid images in the folder.
+                                # A single CSV file and the corresponding annotated images will be saved.
+```
+
+More detailed examples:
+👉 [https://github.com/mariameraz/traitly/blob/main/traitly-examples.ipynb](https://github.com/mariameraz/traitly/blob/main/traitly-examples.ipynb)
+
 ## Contact
 
 For inquiries regarding the project or potential collaborations, please send a message to ma.torresmeraz@gmail.com or torresmeraz@wisc.edu
