@@ -1,4 +1,4 @@
-Disponible en: [![Español](https://img.shields.io/badge/Language-English-purple)](README_ES.md)
+Disponible en: [![Español](https://img.shields.io/badge/Language-English-purple)](README.md)
 
 
 ***Traitly*** es una herramienta de código abierto en Python para el fenotipado de frutos de alto rendimiento, que extrae automáticamente rasgos cuantitativos a partir de imágenes digitales de rebanadas de fruta. 
