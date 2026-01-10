@@ -4,6 +4,8 @@
 
 **Traitly** is a comprehensive fruit phenotyping tool that extracts morphological, structural, and color features from fruit images. This document catalogs all the traits (features) that Traitly can measure and export.
 
+</br>
+
 ### What does Traitly measure?
 
 Traitly analyzes fruits by detecting their contours and internal structures (locules/seeds) to compute:
@@ -15,6 +17,38 @@ Traitly analyzes fruits by detecting their contours and internal structures (loc
 - **Color properties**: Multi-channel color analysis (optional)
 
 For more details, see: [**Trait Tables**](#trait-tables)
+
+</br>
+
+### Input Image Requirements
+
+Traitly is designed to analyze **cross-section (slice) images of fruits** acquired using a **flatbed scanner**.
+
+To ensure accurate segmentation and reliable trait extraction, the following conditions are recommended:
+
+* Fruits should be cut into **transversal slices** and placed flat on the scanner.
+* The background should be **uniform and black** (using a black cardboard box over the scanner helps block ambient light).
+* We recommend using a **consistent resolution across images**, although Traitly can process images of any size.
+* Avoid shadows, reflections, overlapping slices, or low contrast between the fruit and the background.
+
+### Optional elements
+
+Traitly can optionally detect:
+
+* **Size reference markers** (black dots) for pixel-to-metric calibration
+* **Text labels**
+* **QR codes** for sample identification
+
+These elements are not required but are recommended for large-scale experiments and automated workflows.
+
+### Label and QR generation
+
+Label design is flexible. For convenience, we provide a simple online tool to generate QR labels from a text file:
+
+* An online QR label generator: [https://qrlabel.streamlit.app/](https://qrlabel.streamlit.app/)
+* An offline alternative available in our [qrlabel repository](https://github.com/mariameraz/qrlabel)
+
+</br>
 
 ### Output formats
 
@@ -38,6 +72,8 @@ Traitly generates the following outputs for each processed image:
   - Labels: Fruit ID and locule count (e.g., "id 1: 4 loc")
 
 Each fruit receives a unique sequential ID (`fruit_id`) that links the visual annotation to its corresponding row in the CSV file, enabling easy cross-referencing between images and measurements.
+
+</br>
 
 ---
 
@@ -67,17 +103,18 @@ About the table:
 
 | Trait | Description | Formula | Type/Range |
 |-------------------------------------------|--------------------------------------------------------------|---------------------------------------------------|-------------|
-| `fruit_area_cm2` / `fruit_area_px` | Total fruit area | `cv2.contourArea(contour)` | `float` > 0 |
-| `fruit_perimeter_cm` / `fruit_perimeter_px` | Fruit contour perimeter | `cv2.arcLength(contour, True)` | `float` > 0 |
+| `fruit_area_cm2` / `fruit_area_px` | Total fruit area:  <p align="center"><img src="images/TFA.png" width="100"></p>  | `cv2.contourArea(contour)`  | `float` > 0 | 
+| `fruit_perimeter_cm` / `fruit_perimeter_px` | Fruit contour perimeter: <p align="center"><img src="images/FP.png" width="100"></p> | `cv2.arcLength(contour, True)` | `float` > 0 |
 | `fruit_circularity` | Measure of how circular the fruit is (1 = perfect circle) | `(4π × area) / perimeter²` | `float` 0–1 |
 | `fruit_solidity` | Proportion of fruit area relative to its convex hull | `area / convex_area` | `float` 0–1 |
 | `fruit_compactness` | Measure of contour compactness | `perimeter² / area` | `float` ≥ 4π |
 | `fruit_convex_hull_area_cm2` / `fruit_convex_hull_area_px` | Area of the fruit convex hull | `cv2.contourArea(convexHull)` | `float` > 0 |
-| `major_axis_cm` / `major_axis_px` | Length of the major axis (maximum distance between points) | `max(euclidean_distances)` | `float` > 0 |
-| `minor_axis_cm` / `minor_axis_px` | Length of the minor axis (width perpendicular to major axis) | `max(perpendicular_projections) - min(projections)` | `float` > 0 |
-| `box_length_cm` / `box_length_px` | Length of the minimum rotated bounding box (longer side) | `max(width, height)` from `minAreaRect` | `float` > 0 |
-| `box_width_cm` / `box_width_px` | Width of the minimum rotated bounding box (shorter side) | `min(width, height)` from `minAreaRect` | `float` > 0 |
+| `major_axis_cm` / `major_axis_px` | Length of the major axis (maximum distance between points):  <p align="center"><img src="images/AXES.png" width="100"></p> | `max(euclidean_distances)` | `float` > 0 |
+| `minor_axis_cm` / `minor_axis_px` | Length of the minor axis (width perpendicular to major axis):  <p align="center"><img src="images/AXES.png" width="100"></p>| `max(perpendicular_projections) - min(projections)` | `float` > 0 |
+| `box_length_cm` / `box_length_px` | Length of the minimum rotated bounding box (longer side):  <p align="center"><img src="images/BOX.png" width="100"></p> | `max(width, height)` from `minAreaRect` | `float` > 0 |
+| `box_width_cm` / `box_width_px` | Width of the minimum rotated bounding box (shorter side):  <p align="center"><img src="images/BOX.png" width="100"></p> | `min(width, height)` from `minAreaRect` | `float` > 0 |
 | `aspect_ratio` | Ratio between box width and length | `box_width / box_length` | `float` 0–1 |
+| `compactness_index` | Fruit compactness index relative to bounding box | `fruit_area / (box_length × box_width)` | `float` 0–1 |
 
 ---
 
@@ -85,13 +122,15 @@ About the table:
 
 | Trait | Description | Formula | Type/Range |
 |-----------------------------------|-------------------------------------------------------|----------------------------------|---------------|
+| `locule_cavity_area_cm2` / `locule_cavity_area_px` | Total combined locule area:  <p align="center"><img src="images/TLA.png" width="100"></p> | `sum(locule_areas)` | `float` ≥ 0 |
 | `mean_area_cm2` / `mean_area_px` | Mean locule area | `mean(locule_areas)` | `float` > 0 |
 | `std_area_cm2` / `std_area_px` | Standard deviation of locule area | `std(locule_areas)` | `float` ≥ 0 |
-| `total_area_cm2` / `total_area_px` | Total combined locule area | `sum(locule_areas)` | `float` > 0 |
 | `cv_area` | Coefficient of variation of locule area (homogeneity) | `(std / mean) × 100` | `float` ≥ 0 (%) |
 | `mean_circularity` | Mean circularity of locules | `mean((4π × area) / perimeter²)` | `float` 0–1 |
 | `std_circularity` | Standard deviation of locule circularity | `std(circularities)` | `float` ≥ 0 |
 | `cv_circularity` | Coefficient of variation of circularity | `(std / mean) × 100` | `float` ≥ 0 (%) |
+| `internal_flesh_area_cm2` / `internal_flesh_area_px` | Internal flesh area (internal cavity minus locules):  <p align="center"><img src="images/IFA.png" width="100"></p> |  `internal_cavity_area - total_locule_area` | `float` ≥ 0 |
+
 
 ---
 
@@ -99,14 +138,15 @@ About the table:
 
 | Trait | Description | Formula | Type/Range |
 |------------------------------------------------------|--------------------------------------------------------|------------------------------------------------------|---------------|
-| `inner_pericarp_area_cm2` / `inner_pericarp_area_px` | Inner pericarp area (convex hull enclosing all locules) | Area of the hull enclosing all locules | `float` > 0 |
-| `mean_thickness_cm` / `mean_thickness_px` | Mean pericarp thickness | `mean(radial_distances)` from outer to inner contour | `float` > 0 |
+| `outer_pericarp_ratio` | Proportion of outer pericarp relative to total fruit | `(fruit_area - inner_area) / fruit_area` | `float` 0–1 |
+| `mean_thickness_cm` / `mean_thickness_px` | Mean pericarp thickness: :  <p align="center"><img src="images/PT.png" width="100"></p> | `mean(radial_distances)` from outer to inner contour (defaul = 180 rays) | `float` > 0 | 
 | `median_thickness_cm` / `median_thickness_px` | Median pericarp thickness | `median(radial_distances)` | `float` > 0 |
 | `std_thickness_cm` / `std_thickness_px` | Standard deviation of pericarp thickness | `std(radial_distances)` | `float` ≥ 0 |
 | `min_thickness_cm` / `min_thickness_px` | Minimum pericarp thickness | `min(radial_distances)` | `float` > 0 |
 | `max_thickness_cm` / `max_thickness_px` | Maximum pericarp thickness | `max(radial_distances)` | `float` > 0 |
 | `cv_thickness` | Coefficient of variation of thickness (uniformity) | `(std / mean) × 100` | `float` ≥ 0 (%) |
 | `lobedness_cm` / `lobedness_px` | Fruit surface irregularity (std of outer radii) | `std(outer_radial_distances)` | `float` ≥ 0 |
+|`internal_cavity_area_cm2` / `internal_cavity_area_px` | Total internal cavity area:  <p align="center"><img src="images/ICA.png" width="100"></p> | `inner_pericarp_area` | `float` ≥ 0 |
 
 ---
 
@@ -114,8 +154,8 @@ About the table:
 
 | Trait | Description | Formula | Type/Range |
 |----------------------|----------------------------------------------------------------|-------------------------------------------------------------------|-------------|
-| `angular_symmetry` | Angular symmetry of locule distribution (lower = more symmetric) | Mean angular error after optimal alignment with ideal distribution | `float` ≥ 0 |
-| `radial_symmetry` | Radial symmetry of locule distances from center (0 = perfect) | `std(radii) / mean(radii)` (CV of radial distances) | `float` ≥ 0 |
+| `angular_symmetry` | Angular symmetry of locule distribution (lower = more symmetric): <p align="center"><img src="images/SYMMETRY.png" width="85"></p>  | Mean angular error after optimal alignment with ideal distribution | `float` ≥ 0 |
+| `radial_symmetry` | Radial symmetry of locule distances from center (0 = perfect): : <p align="center"><img src="images/SYMMETRY.png" width="85"></p>  | `std(radii) / mean(radii)` (CV of radial distances) | `float` ≥ 0 |
 | `rotational_symmetry` | Combined rotational symmetry (angular + radial, 0 = perfect) | Weighted, normalized combination of angular and radial errors | `float` 0–1 |
 
 ---
@@ -123,13 +163,7 @@ About the table:
 ### 6. DERIVED METRICS
 
 | Trait | Description | Formula | Type/Range |
-|------------------------------------------------------|----------------------------------------------------------------|--------------------------------------------------|-----------------|
-| `compactness_index` | Fruit compactness index relative to bounding box | `fruit_area / (box_length × box_width)` | `float` 0–1 |
-| `outer_pericarp_area_cm2` / `outer_pericarp_area_px` | Outer pericarp area (between outer contour and inner region) | `fruit_area - inner_pericarp_area` | `float` ≥ 0 |
-| `internal_flesh_area_cm2` / `internal_flesh_area_px` | Internal flesh area (inner pericarp minus locules) | `inner_pericarp_area - total_locule_area` | `float` ≥ 0 |
-| `internal_cavity_area_cm2` / `internal_cavity_area_px` | Total internal cavity area (same as inner pericarp) | `inner_pericarp_area` | `float` ≥ 0 |
-| `locule_cavity_area_cm2` / `locule_cavity_area_px` | Total locule cavity area | `total_locule_area` | `float` ≥ 0 |
-| `outer_pericarp_ratio` | Proportion of outer pericarp relative to total fruit | `(fruit_area - inner_area) / fruit_area` | `float` 0–1 |
+|------------------------------------------------|-------------------------------------------------------|-------------------------------------------------|-----------------|
 | `internal_cavity_ratio` | Proportion of internal cavity relative to total fruit | `inner_area / fruit_area` | `float` 0–1 |
 | `locule_to_fruit_ratio` | Proportion of locules relative to total fruit | `total_locule_area / fruit_area` | `float` 0–1 |
 | `locule_to_cavity_ratio` | Proportion of locules relative to internal cavity | `total_locule_area / inner_area` | `float` 0–1 |
@@ -174,6 +208,8 @@ About the table:
 - `mean`: Arithmetic mean (default)
 - `median`: Median value (when `color_stat='median'`)
 
+</br>
+
 --- 
 
 ## Notes
@@ -189,6 +225,9 @@ About the table:
 * **Angular symmetry**: Mean angular error in radians (0 = perfect)
 * **Radial symmetry**: CV of radii (0 = perfect)
 * **Rotational symmetry**: Normalized 0–1 (0 = perfect)
+
+Example:
+<p align="center"><img src="images/symmetry.png" width="1000"></p>
 
 ### Typical Ranges
 
@@ -246,32 +285,4 @@ These reference values can guide you in setting **filtering parameters** during 
   - Excellent (0.10–0.20): Near-perfect rotational balance
   - Good (0.20–0.30): Acceptable commercial quality
   - Poor (>0.35): Noticeable asymmetry
-
----
-
-#### Quick Filtering Guide
-
-**For high-quality fruit selection:**
-
-### Key Formulas
-
-**Circularity**:
-```
-C = (4π × A) / P²
-```
-
-**Solidity**:
-```
-S = A / A_convex
-```
-
-**Coefficient of Variation (CV)**:
-```
-CV = (σ / μ) × 100
-```
-
-**Aspect Ratio**:
-```
-AR = box_width / box_length
-```
 
