@@ -23,6 +23,7 @@ Traitly processes fruit images to measure:
 
 
 **👉 For a complete list of extracted traits, see:** [Trait Tables](docs/documentation.md)
+**👉 Para ver la lista completa de traits extraidos, ir a:** [Trait Tables](docs/documentation_ES.md)
 
 </br>
 
