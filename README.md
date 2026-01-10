@@ -2,8 +2,12 @@
 
 The tool supports both single-image and batch processing workflows, allowing users to analyze large image datasets with only a few lines of code, making it suitable for plant breeding and research.
 
-> **Note**  
+</br>
+
+> **Note:**  
 > A manuscript describing this software is currently under preparation and is expected to be released in **Spring-Summer, 2026**.
+
+</br>
 
 ### What can Traitly do?
 
@@ -15,11 +19,13 @@ Traitly processes fruit images to measure:
 * **Color phenotypes**: Multi-channel analysis (RGB, HSV, Lab) across different fruit regions
 
 
-**👉 For a complete list of extracted traits, see:** [Trait Tables](documentation.md)
+**👉 For a complete list of extracted traits, see:** [Trait Tables](docs/documentation.md)
+
+</br>
 
 ## Project Status
 
-**Traitly is currently in pre-release and under active development.** 
+**Traitly is in pre-release and under active development.** 
 The source code is not yet publicly available.
 
 The current documentation corresponds to a **preliminary version of the manual** and is subject to change.
@@ -28,6 +34,18 @@ Additional details, examples, and clarifications will be provided in future upda
 Updates regarding the public release will be announced through this repository and [LinkedIn](https://www.linkedin.com/in/alemeraz/).
 Interested users are encouraged to follow or watch the repository to stay informed.
 
+</br>
+
+## Publications & Presentations
+
+Posters and presentations related to Traitly are available in this repository:
+
+- [Posters](docs/posters/) ★ˎˊ˗
+- [Presentations](docs/presentations/) ★ˎˊ˗
+
+These materials provide additional methodological details and example results.
+
+</br>
 
 ## Usage
 
@@ -60,9 +78,13 @@ analyzer.analyze_folder()       # Run the analysis on all valid images in the fo
                                 # A single CSV file and the corresponding annotated images will be saved.
 ```
 
-More detailed examples:
-👉 [https://github.com/mariameraz/traitly/blob/main/traitly-examples.ipynb](https://github.com/mariameraz/traitly/blob/main/traitly-examples.ipynb)
+</br>
 
-## Contact
+More detailed examples:
+👉 [https://github.com/mariameraz/traitly/blob/main/traitly-examples.ipynb](https://github.com/mariameraz/traitly/blob/main/docs/traitly-examples.ipynb)
+
+</br>
+
+## Contact ˖᯽ ݁˖
 
 For inquiries regarding the project or potential collaborations, please send a message to ma.torresmeraz@gmail.com or torresmeraz@wisc.edu
