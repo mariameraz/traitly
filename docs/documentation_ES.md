@@ -225,7 +225,7 @@ Acerca de la tabla:
 * **Simetría rotacional**: Normalizado 0–1 (0 = perfecto)
 
 Ejemplo:
-<p align="center"><img src="images/symmetry.png" width="1000"></p>
+<p align="center"><img src="images/SYMMETRY.png" width="1000"></p>
 
 ### Rangos Típicos
 
