@@ -38,12 +38,11 @@ Interested users are encouraged to follow or watch the repository to stay inform
 
 ## Publications & Presentations
 
-Posters and presentations related to Traitly are available in this repository:
+Posters related to Traitly can be found in this folder:
 
-- [Posters](docs/posters/) ★ˎˊ˗
-- [Presentations](docs/presentations/) ★ˎˊ˗
+- [Posters]([docs/posters/](https://drive.google.com/drive/folders/1AvlHWKcDvoE9m9QcmCJ5o-ma9W-LNQMe?usp=share_link)) ★ˎˊ˗
 
-These materials provide additional methodological details and example results.
+These materials provide additional methodological details and related research results.
 
 </br>
 
