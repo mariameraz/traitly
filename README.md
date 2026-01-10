@@ -45,7 +45,7 @@ Interested users are encouraged to follow or watch the repository to stay inform
 
 Posters related to Traitly can be found in this folder:
 
-- [Posters][docs/posters/](https://drive.google.com/drive/folders/1AvlHWKcDvoE9m9QcmCJ5o-ma9W-LNQMe?usp=share_link) ★ˎˊ˗
+- [Posters](https://drive.google.com/drive/folders/1AvlHWKcDvoE9m9QcmCJ5o-ma9W-LNQMe?usp=share_link) ★ˎˊ˗
 
 These materials provide additional methodological details and related research results.
 
