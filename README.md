@@ -24,7 +24,7 @@ Traitly processes fruit images to measure:
 
 **👉 For a complete list of extracted traits, see:** 
 - [![Documentation_EN](https://img.shields.io/badge/Documentation-English-lightblue)](docs/documentation.md)
-- [![Documentation_ES](https://img.shields.io/badge/Documentacion-Espa%C3%B1ol-red)](docs/documentation_ES.md)
+- [![Documentation_ES](https://img.shields.io/badge/Documentaci%C3%B3n-Espa%C3%B1ol-red)](docs/documentation_ES.md)
 
 </br>
 
