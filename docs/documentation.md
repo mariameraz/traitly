@@ -227,7 +227,7 @@ About the table:
 * **Rotational symmetry**: Normalized 0–1 (0 = perfect)
 
 Example:
-<p align="center"><img src="images/symmetry.png" width="1000"></p>
+<p align="center"><img src="images/SYMMETRY.png" width="1000"></p>
 
 ### Typical Ranges
 
