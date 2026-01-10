@@ -43,9 +43,9 @@ Se recomienda a las personas interesadas seguir el repositorio para mantenerse i
 
 ## Publicaciones y presentaciones
 
-Los pósteres relacionados con Traitly pueden encontrarse en esta carpeta:
+Los pósters relacionados con Traitly pueden encontrarse en esta carpeta:
 
-- [Pósteres](https://drive.google.com/drive/folders/1AvlHWKcDvoE9m9QcmCJ5o-ma9W-LNQMe?usp=share_link) ★ˎˊ˗
+- [Pósters](https://drive.google.com/drive/folders/1AvlHWKcDvoE9m9QcmCJ5o-ma9W-LNQMe?usp=share_link) ★ˎˊ˗
 
 Estos materiales proporcionan detalles metodológicos adicionales y resultados de investigaciones relacionadas.
 
