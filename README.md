@@ -22,9 +22,9 @@ Traitly processes fruit images to measure:
 * **Color phenotypes**: Multi-channel analysis (RGB, HSV, Lab) across different fruit regions
 
 
-**👉 For a complete list of extracted traits, see:** [Trait Tables](docs/documentation.md)
-
-**👉 Para ver la lista completa de traits extraidos, ir a:** [Trait Tables](docs/documentation_ES.md)
+**👉 For a complete list of extracted traits, see:** 
+- [![Documentation_EN](https://img.shields.io/badge/Documentation-English-lightblue)](docs/documentation.md)
+- [![Documentation_ES](https://img.shields.io/badge/Documentacion-Espa%C3%B1ol-red)](docs/documentation_ES.md)
 
 </br>
 
