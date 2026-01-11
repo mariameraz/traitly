@@ -53,7 +53,9 @@ Estos materiales proporcionan detalles metodológicos adicionales y resultados d
 
 ## Uso
 
-A continuación se muestra un ejemplo básico de cómo usar **traitly**:
+A continuación se muestra un ejemplo básico de cómo utilizar **traitly**:
+
+Uso con Python
 
 ```python
 from traitly.internal_structure import FruitAnalyzer
@@ -81,6 +83,12 @@ analyzer = FruitAnalyzer(path)  # Inicializar la clase FruitAnalyzer
 analyzer.analyze_folder()       # Ejecutar el análisis en todas las imágenes válidas de la carpeta.
                                 # Se guardará un único archivo CSV y las imágenes anotadas correspondientes.
 ````
+
+Uso desde la línea de comandos 
+
+```bash
+traitly internal_structure -i PATH/my_folder
+```
 
 </br>
 
