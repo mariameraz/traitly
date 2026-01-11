@@ -104,5 +104,4 @@ Para consultas sobre el proyecto o posibles colaboraciones, por favor envíe un 
 * [ma.torresmeraz@gmail.com](mailto:ma.torresmeraz@gmail.com)
 * [torresmeraz@wisc.edu](mailto:torresmeraz@wisc.edu)
 
-```
 
