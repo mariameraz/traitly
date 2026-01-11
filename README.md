@@ -53,9 +53,12 @@ These materials provide additional methodological details and related research r
 
 ## Usage
 
-Below is a basic example of how to use **traitly**:
+Below is a basic example of how to use **traitly**.
+
+### Running with Python
 
 ```python
+
 from traitly.internal_structure import FruitAnalyzer
 
 ##########################
@@ -82,7 +85,14 @@ analyzer.analyze_folder()       # Run the analysis on all valid images in the fo
                                 # A single CSV file and the corresponding annotated images will be saved.
 ```
 
+### Command-line usage
+
+```bash
+traitly internal_struture -i 'PATH/my_folder' 
+```
 </br>
+
+
 
 More detailed examples:
 👉 [https://github.com/mariameraz/traitly/blob/main/traitly-examples.ipynb](https://github.com/mariameraz/traitly/blob/main/docs/traitly-examples.ipynb)
