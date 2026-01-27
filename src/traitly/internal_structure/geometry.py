@@ -20,8 +20,9 @@ from .processing import get_fruit_contour
 
 
 #################################################################################################
-# Calculate minor axis (fruit width approximation)
+# Calculate minor axis (fruit width/length approximation)
 #################################################################################################
+
 def calculate_axes(fruit_contour: np.ndarray, 
                    px_per_cm: Optional[float] = None,  
                    img: Optional[np.ndarray] = None, 
@@ -52,14 +53,14 @@ def calculate_axes(fruit_contour: np.ndarray,
             - min_dist_px: Minor axis length in pixels.
     """
     # Reshape and convert contour to float32 (consistent dtype)
-    points_px = fruit_contour.reshape(-1, 2).astype(np.float32)
-    n = points_px.shape[0]
+    points_px = fruit_contour.reshape(-1, 2).astype(np.float32) # Only needed here for compatibility with scipy.dist, which requires 2D array
+    n = points_px.shape[0] # Number of points in contour
     
     # Early exit for invalid contours
     if n < 2: 
         return 0.0, 0.0, 0.0, 0.0
     
-    ## Major axis calculation - OPTIMIZED with pdist
+    ## MAJOR AXIS CALCULATION
     if hull_verts is None:
         if n >= 3:
             verts = ConvexHull(points_px).vertices
@@ -88,7 +89,7 @@ def calculate_axes(fruit_contour: np.ndarray,
     if max_dist_px == 0:
         return 0.0, 0.0, 0.0, 0.0
     
-    # Major axis length in cm (use multiplication instead of division)
+    # Major axis length in cm calculation
     # Validate px_per_cm is a number before any operations
     if px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
         inv_px_per_cm = 1.0 / px_per_cm
@@ -100,9 +101,11 @@ def calculate_axes(fruit_contour: np.ndarray,
     p1_px = points_px[point1_idx]
     p2_px = points_px[point2_idx]
     
-    ## Minor axis calculation 
+    ## MINOR AXIS CALCULATION
+
+    # Vector along major axis
     major_vec = p2_px - p1_px
-    major_norm = np.linalg.norm(major_vec)
+    major_norm = max_dist_px 
     
     if major_norm < 1e-10:
         min_dist_cm = 0.0 if (isinstance(px_per_cm, (int, float)) and px_per_cm > 0) else np.nan
@@ -112,8 +115,6 @@ def calculate_axes(fruit_contour: np.ndarray,
     perp_unit = np.array([-major_vec[1], major_vec[0]], dtype=np.float32) / major_norm
     
     # Vectorized projection calculation
-    #proj = (points_px[:, 0] - p1_px[0]) * perp_unit[0] + \
-    #       (points_px[:, 1] - p1_px[1]) * perp_unit[1]
     centered_points = points_px - p1_px
     proj = centered_points @ perp_unit
     
@@ -147,6 +148,7 @@ def calculate_axes(fruit_contour: np.ndarray,
 #################################################################################################
 # Determine rotated bounding box around fruits
 #################################################################################################
+
 def rotate_box(contour: np.ndarray, 
                px_per_cm: Optional[float] = None, 
                img: Optional[np.ndarray] = None, 
@@ -155,7 +157,6 @@ def rotate_box(contour: np.ndarray,
                box_thickness: int = 3):
     """
     Calculates the rotated bounding box (minimum area rectangle) of a contour.
-    OPTIMIZED VERSION - Uses multiplication instead of division for conversions.
     
     Args:
         contour: Contour of the object (e.g., fruit) as returned by cv2.findContours().
@@ -178,7 +179,7 @@ def rotate_box(contour: np.ndarray,
         - The "length" is always the longer side, and "width" the shorter side, regardless of orientation.
     """
     if draw_box and img is None:
-        raise ValueError("img cannot be None when draw_box=True")
+        raise ValueError(f"img must be provided when draw_box=True")
     
     # Compute the smallest rotated rectangle that encloses the contour (fruit)
     rotated_rect = cv2.minAreaRect(contour)
@@ -194,7 +195,6 @@ def rotate_box(contour: np.ndarray,
     box_length_px = max(width_px, height_px)
     box_width_px = min(width_px, height_px)
     
-    # OPTIMIZED: Use multiplication instead of division (faster)
     if px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
         inv_px_per_cm = 1.0 / px_per_cm
         box_length_cm = box_length_px * inv_px_per_cm
@@ -210,10 +210,12 @@ def rotate_box(contour: np.ndarray,
     return box_length_cm, box_width_cm, box_length_px, box_width_px
 
 
-def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon=0.001):
+def get_fruit_morphology(contour: np.ndarray, 
+                         px_per_cm: Optional[float] = None, 
+                         contour_mode: str = 'raw', 
+                         epsilon: float = 0.001):
     """
     Calculate comprehensive fruit morphology metrics with contour transformation options.
-    OPTIMIZED VERSION - Returns only metrics in the active unit (px or cm).
     
     Args:
         contour (np.ndarray): Fruit contour points
@@ -222,7 +224,7 @@ def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon=0.
         epsilon (float): Epsilon factor for polygon approximation
     
     Returns:
-        dict: Dictionary containing fruit morphology metrics in single unit
+        dict: Dictionary containing fruit morphology metrics in single unit (px or cm)
     """
     # Determine unit
     has_calibration = px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0
@@ -240,13 +242,16 @@ def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon=0.
             f'fruit_convex_hull_area_{unit_area}': np.nan
         }
     
-    # Apply contour transformation according to specified mode
-    transformed_contour = get_fruit_contour(
-        contours=[contour],  # Pass as list with single element
-        fruit_id=0,          # Index 0 since there's only one contour
-        contour_mode=contour_mode,
+    if contour_mode == 'raw':
+        transformed_contour = contour
+    else:
+        # Apply contour transformation according to specified mode
+        transformed_contour = get_fruit_contour(
+            contours=[contour],  # Pass as list with single element
+            fruit_id=0,          # Index 0 since there's only one contour
+            contour_mode=contour_mode,
         epsilon=epsilon
-    )
+        )
     
     # Early exit after transformation
     if len(transformed_contour) < 3:
@@ -274,7 +279,6 @@ def get_fruit_morphology(contour, px_per_cm=None, contour_mode='raw', epsilon=0.
             f'fruit_convex_hull_area_{unit_area}': np.nan
         }
     
-    # OPTIMIZED: Use multiplication instead of division
     if has_calibration:
         inv_px_per_cm = 1.0 / px_per_cm
         inv_px_per_cm_sq = inv_px_per_cm * inv_px_per_cm

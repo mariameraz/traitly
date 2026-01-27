@@ -5,7 +5,7 @@
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict
 
 # ============================================================================
 # THIRD-PARTY LIBRARIES
@@ -24,68 +24,105 @@ from ..utils.common_functions import is_contour_valid, plot_img
 #################################################################################################
 
 def create_mask(
-    img_hsv,lower_hsv=None, upper_hsv=None,
-    n_iteration=1, n_kernel=7, kernel_open = None,
-    kernel_close = None, canny_min=30, canny_max=100,
-    plot=True, plot_size=(20,10), fig_axis = False,
-):
+    img_hsv: np.ndarray,
+    lower_hsv: Optional[Tuple[int,int,int]] = None, 
+    upper_hsv: Optional[Tuple[int,int,int]] = None,
+    n_iteration: int = 1,
+    kernel_blur: Optional[int] = None, 
+    kernel_open: Optional[int] = None,
+    kernel_close: Optional[int] = None, 
+    canny_min: Optional[int] = None,
+    canny_max: Optional[int] = None,
+    plot: bool = True,  # ← Cambio aquí
+    plot_size: Tuple[int,int] = (5,5)
+) -> np.ndarray:  # ← Cambio aquí
     """
-    Creates a binary mask to segment objects from an HSV image using color thresholding, morphological operations and edge detection
+    Creates a binary mask to segment objects from an HSV image using color 
+    thresholding, morphological operations and edge detection.
+    
+    PIPELINE:
+        1. HSV color thresholding
+        2. Invert mask (background → foreground)
+        3. Opening (optional) - removes small noise
+        4. Closing (optional) - fills small holes
+        5. Gaussian blur (optional) - smooths edges
+        6. Canny edge detection (optional)
+        7. Combine mask with edges
     
     Arguments:
-    
-    REQUIRED:
-        - img_hsv (numpy.ndarray): Image in HSV format.
-
-    OPTIONAL:
-        - lower_hsv (Tuple[int, int, int]): Lower bound for HSV background detection (default: (0,0,0)).
-        - upper_hsv (Tuple[int, int, int]): Upper bound for HSV background detection default: (180,255,30).
-        - n_iteration (int): Number of iterations for morphological operations.
-        - n_kernel (int): Kernel size (odd) for morphological ops when kernel_open/kernel_close are None (default: 7).
-        - kernel_open (int): Custom kernel size for opening (overrides n_kernel if set).
-        - kernel_close (int): Custom kernel size for closing (overrides n_kernel if set).
-        - canny_min (int): First threshold for Canny edge detection.
-        - canny_max (int): Second threshold for Canny edge detection.
-        - plot (numpy.ndarray): Whether to plot the resulting mask as a binary image.
-        - figsize (Tuple[int, int]): Figure size for plotting.
+        img_hsv: Image in HSV format (H: 0-180, S: 0-255, V: 0-255)
+        lower_hsv: Lower HSV bound for background (default: [0,0,0])
+        upper_hsv: Upper HSV bound for background (default: [180,250,50])
+        n_iteration: Iterations for morphological operations (default: 1)
+        kernel_blur: Kernel size for Gaussian blur (must be odd). If None, skipped.
+        kernel_open: Kernel size for opening (must be odd). If None, skipped.
+        kernel_close: Kernel size for closing (must be odd). If None, skipped.
+        canny_min: Lower threshold for Canny. Requires canny_max. If None, skipped.
+        canny_max: Upper threshold for Canny. Requires canny_min. If None, skipped.
+        plot: Whether to display the resulting mask                                                   
+        plot_size: Figure size for plotting (width, height)
         
     Returns:
-        - Binary mask as 2D numpy array (numpy.dnarray)
+        Binary mask as 2D numpy array (uint8)
     
     Raises:
-        - ValueError: If parameters are invalid
-        - TypeError: If input types are incorrect
-        - RuntimeError: If image processing fails
+        TypeError: If input types are incorrect
+        ValueError: If parameters are invalid
+        RuntimeError: If image processing fails
     """
     try:
-        # Input validation
+        ### Validation ###################################################################
+
+        # VALIDA INPUT: 
         if not isinstance(img_hsv, np.ndarray):
             raise TypeError("Input image must be a numpy array")
             
         if img_hsv.ndim != 3 or img_hsv.shape[2] != 3:
             raise ValueError("Image must be in HSV format (3 channels)")
-            
-        if not isinstance(n_iteration, int) or n_iteration < 1:
-            raise ValueError("n_iteration must be a positive integer")
-            
-        if not isinstance(n_kernel, int) or n_kernel < 1 or n_kernel % 2 == 0:
-            raise ValueError("n_kernel must be a positive odd integer")
-            
+        
         if img_hsv.dtype != np.uint8:
             raise ValueError("HSV image must be uint8 type (0-180 for H, 0-255 for S/V)")
-    
+        
+        # VALIDATE KERNELS (open/close/blur): 
+        if not isinstance(n_iteration, int) or n_iteration < 1:
+            raise ValueError("n_iteration must be a positive integer")
+        
+        if kernel_open is not None:
+            if not isinstance(kernel_open, int) or kernel_open < 1 or kernel_open % 2 == 0:
+                raise ValueError("kernel_open must be a positive odd integer")
+        
+        if kernel_close is not None:
+            if not isinstance(kernel_close, int) or kernel_close < 1 or kernel_close % 2 == 0:
+                raise ValueError("kernel_close must be a positive odd integer")
+        
+        if kernel_blur is not None:
+            if not isinstance(kernel_blur, int) or kernel_blur < 1 or kernel_blur % 2 == 0:
+                raise ValueError("blur_kernel must be a positive odd integer")
+        
+        # VALIDATE CANNY PARAMETERS:
+        if (canny_min is None) != (canny_max is None):
+            raise ValueError("Both canny_min and canny_max must be provided together or both None")
+        
+        if canny_min is not None and canny_max is not None:
+            if not isinstance(canny_min, int) or not isinstance(canny_max, int):
+                raise ValueError("canny_min and canny_max must be integers")
+            if canny_min >= canny_max:
+                raise ValueError("canny_min must be < canny_max")
+        
+        #####################################################################################        
+
         # Set default HSV values for black/dark backgrounds if not provided
         if lower_hsv is None:
             lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
-        elif isinstance(lower_hsv, list):
+        elif isinstance(lower_hsv, (list, tuple)):  # ← Cambio aquí
             lower_hsv = np.array(lower_hsv, dtype=np.uint8)
             
         if upper_hsv is None:
             upper_hsv = np.array([180, 250, 50], dtype=np.uint8)
-        elif isinstance(upper_hsv, list):
+        elif isinstance(upper_hsv, (list, tuple)):  # ← Cambio aquí
             upper_hsv = np.array(upper_hsv, dtype=np.uint8)
 
-        # Validate HSV bounds
+        # VALIDATE HSV THRESH VALUES
         if not isinstance(lower_hsv, np.ndarray) or lower_hsv.shape != (3,):
             raise ValueError("lower_hsv must be a numpy array with shape (3,)")
         if not isinstance(upper_hsv, np.ndarray) or upper_hsv.shape != (3,):
@@ -94,32 +131,45 @@ def create_mask(
         if (lower_hsv > upper_hsv).any():
             raise ValueError("All values in lower_hsv must be <= corresponding values in upper_hsv")
 
+        ### Processing image #################################################################
         
-        mask_background = cv2.inRange(img_hsv, lower_hsv, upper_hsv) # Create binary mask where [lower_hsv, upper_hsv] are white (255) (background) and others black (0) (fruits/label)
+        # Create binary mask where [lower_hsv, upper_hsv] are white (255) (background) 
+        # and others black (0) (fruits/label)
+        mask_background = cv2.inRange(img_hsv, lower_hsv, upper_hsv) 
         if mask_background is None:
             raise RuntimeError("Failed to create initial mask")
 
-        mask_inverted = cv2.bitwise_not(mask_background) # Invert the binary mask to focus on foreground objects (fruits/label)
-        
-        kernel_open = kernel_open if kernel_open is not None else n_kernel
-        kernel_close = kernel_close if kernel_close is not None else n_kernel
+        # Invert the binary mask to focus on foreground objects (fruits/label)
+        mask = cv2.bitwise_not(mask_background) 
 
-        kernel_o = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_open, kernel_open)) # Creates an elliptical kernel for morphological operations
-        kernel_c = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_close, kernel_close)) 
+        # Creates an elliptical kernel for morphological operations:
+        if kernel_open is not None:        
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_open, kernel_open)) 
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=n_iteration)
 
-        mask_open = cv2.morphologyEx(mask_inverted, cv2.MORPH_OPEN, kernel_o, iterations=n_iteration) # Opening (erosion followed by dilation) to remove small noise
-        mask_closed = cv2.morphologyEx(mask_open, cv2.MORPH_CLOSE, kernel_c, iterations=n_iteration) # Closing (dilation followed by erosion) to fill small holes
+        if kernel_close is not None:
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_close, kernel_close))
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=n_iteration)
         
-        blurred = cv2.GaussianBlur(mask_closed, (n_kernel, n_kernel), 0) # Applies Gaussian blur to smooth edges
-        edges = cv2.Canny(blurred, canny_min, canny_max) # Detects edges using the Canny algorithm
+        if kernel_blur is not None:
+            mask = cv2.GaussianBlur(mask, (kernel_blur, kernel_blur), 0)
         
-        final_mask = cv2.bitwise_or(mask_closed, edges) # Combines the closed mask with edges to refine boundaries
+        edges = None
+        if canny_min is not None and canny_max is not None: 
+            mask_canny = mask if kernel_blur is not None else cv2.GaussianBlur(mask, (5,5), 0)
+            edges = cv2.Canny(mask_canny, canny_min, canny_max)
 
-        if plot:# Displays the final mask with/without axes based on the `axis` parameter
+        if edges is not None:
+            final_mask = cv2.bitwise_or(mask, edges)
+        else:
+            final_mask = mask
+
+        if plot:
             plot_img(final_mask, 
-                     fig_axis=fig_axis, 
+                     fig_axis=False, 
                      plot_size=plot_size, 
-                     metadata = False, gray = True)
+                     metadata=False, 
+                     gray=True)
 
         return final_mask
         
@@ -134,123 +184,177 @@ def create_mask(
 #################################################################################################
 
 def find_fruits(
-    binary_mask,
-    min_locule_area = 50,
-    min_locules_per_fruit = 1,
-    min_circularity = 0.4,
-    max_circularity = 1.0,
-    min_aspect_ratio = 0.3,
-    max_aspect_ratio = 3.0,
-    rescale_factor = None,
-    contour_approximation = cv2.CHAIN_APPROX_SIMPLE,
-    contour_filters = None):
-    """
-    Detects fruit contours in a binary mask using morphological filtering criteria and returns 
-    a mapping of fruits to their internal cavities (locules).
+    binary_mask: np.ndarray,
+    min_locule_area: int = 50,
+    min_locules_per_fruit: int = 1,
+    min_circularity: float = 0.4,
+    max_circularity: float = 1.0,
+    min_aspect_ratio: float = 0.3,
+    max_aspect_ratio: float = 3.0,
+    rescale_factor: Optional[float] = None
+) -> Tuple[List[np.ndarray], Dict[int, List[int]]]:
+    """                 
+    Detects fruit contours in a binary mask using morphological filtering and maps 
+    fruits to their internal cavities (locules).
+    
+    This function identifies fruit structures by detecting outer contours that contain 
+    smaller internal contours (locules/seed cavities). Applies multiple morphological 
+    filters to distinguish valid fruits from noise.
 
-    Args:
-        REQUIRED:
-            - binary_mask (np.ndarray): Binary image where white represents objects (fruits) and black background (uint8).
-        
-        OPTIONAL:
-            - min_locule_area (int): Minimum pixel area for a locule to be considered valid (default: 50).
-            - min_locules_per_fruit (int): Minimum number of locules required to classify as fruit (default: 1).
-            - min_circularity (float): Minimum circularity threshold (0-1, 1=perfect circle) (default: 0.4).
-            - max_circularity (float): Maximum circularity threshold (default: 1.0).
-            - min_aspect_ratio (float): Minimum width/height ratio for valid contours (default: 0.3).
-            - max_aspect_ratio (float): Maximum width/height ratio (default: 3.0).
-            - rescale_factor (float): Scaling factor (0.0-1.0) for faster processing (None=no rescaling).
-            - contour_approximation: OpenCV contour approximation method (default: CHAIN_APPROX_SIMPLE).
-            - contour_filters (Dict): Dictionary to override default filter values.
+    Pipeline:
+        1. Optional rescaling for speed (processes smaller image)
+        2. Contour detection with hierarchy
+        3. Vectorized computation of morphological features
+        4. Vectorized filtering of valid fruits
+        5. Fruit-locule mapping
+        6. Rescale contours back to original coordinates
 
+    Arguments:
+        binary_mask: Binary image (uint8) where white (255) represents fruits, 
+            black (0) background. Must be a 2D array.
+        min_locule_area: Minimum area in square pixels (px²) for a valid locule.
+            **Specified in original image coordinates.** Automatically scaled 
+            when rescale_factor is used.
+        min_locules_per_fruit: Minimum number of valid locules required to classify 
+            as fruit. Set to 0 to detect fruits without visible locules.
+        min_circularity: Minimum circularity (0-1, where 1.0 = perfect circle).
+            Formula: 4π*Area / Perimeter²
+        max_circularity: Maximum circularity threshold.
+        min_aspect_ratio: Minimum width/height ratio for valid contours.
+            Uses rotation-invariant minAreaRect (not affected by object orientation).
+        max_aspect_ratio: Maximum width/height ratio for valid contours.
+        rescale_factor: Image scaling factor (0.0, 1.0] for faster processing.
+            Example: 0.5 = 50% size (~4× faster).
+            **Note:** All processing is done on scaled image, then contours are 
+            rescaled back to original coordinates.
+    
     Returns:
-        Tuple[List[np.ndarray], Dict[int, List[int]]] containing:
-            - contours: List of all detected contours (in original coordinates)
-            - fruit_locules_map: Dictionary mapping fruit indices to lists of locule indices
+        contours: List of all detected contours in **original image coordinates**.
+            Each contour is (N, 1, 2) array.
+        fruit_locules_map: Maps fruit indices to their locule indices.
+            Example: {0: [1, 2], 5: [6]} means contour 0 contains locules 1 and 2.
 
     Raises:
-        ValueError: If input parameters are invalid
-        cv2.error: If OpenCV contour detection fails
+        ValueError: Invalid input parameters
+        cv2.error: OpenCV contour detection failure
     """
-    # Validate rescale_factor
+
+    # INPUT VALIDATION
+    if not isinstance(binary_mask, np.ndarray) or binary_mask.dtype != np.uint8:
+        raise ValueError("binary_mask must be uint8 numpy array")
+    
+    if len(binary_mask.shape) != 2:
+        raise ValueError("binary_mask must be 2D array")
+    
     if rescale_factor is not None and not (0 < rescale_factor <= 1):
-        raise ValueError('rescale_factor must be between 0 and 1')
+        raise ValueError('rescale_factor must be in range (0, 1]')
+    
+    if min_locule_area <= 0 or min_locules_per_fruit < 0:
+        raise ValueError("Area and locule count must be positive")
+    
+    if not (0 <= min_circularity <= max_circularity <= 1):
+        raise ValueError("Circularity: 0 ≤ min ≤ max ≤ 1")
+    
+    if not (0 < min_aspect_ratio <= max_aspect_ratio):
+        raise ValueError("Aspect ratio: 0 < min ≤ max")
 
-    # Store original dimensions for later rescaling
-    original_shape = binary_mask.shape[:2] if rescale_factor is not None else None
-
-    # Conditional image resizing
-    if rescale_factor is not None and rescale_factor < 1: # Check that rescale_factor is a value between 0 and 1
-        new_size = (int(binary_mask.shape[1] * rescale_factor), 
-                   int(binary_mask.shape[0] * rescale_factor))
-        resized_mask = cv2.resize(binary_mask, new_size, interpolation=cv2.INTER_NEAREST)
-        min_locule_area = int(min_locule_area * (rescale_factor ** 2))
+    # PREPROCESSING: RESCALE IMAGE (if requested)
+    should_rescale = rescale_factor is not None and rescale_factor < 1
+    
+    if should_rescale:
+        original_h, original_w = binary_mask.shape
+        new_w = int(original_w * rescale_factor)
+        new_h = int(original_h * rescale_factor)
+        resized_mask = cv2.resize(binary_mask, (new_w, new_h), 
+                                  interpolation=cv2.INTER_NEAREST)
+        
+        # Area scales with square of linear scale factor (2D geometry)
+        adjusted_min_area = int(min_locule_area * (rescale_factor ** 2))
+        
+        # Pre-compute scale factors for final coordinate transformation
+        scale_x = original_w / new_w
+        scale_y = original_h / new_h
     else:
-        resized_mask = binary_mask.copy()
+        resized_mask = binary_mask
+        adjusted_min_area = min_locule_area
 
-    # Configure filters with validation
-    default_filters = {
-        'min_area': min_locule_area, 
-        'min_circularity': min_circularity,
-        'max_circularity': max_circularity,
-        'min_aspect_ratio': min_aspect_ratio,
-        'max_aspect_ratio': max_aspect_ratio
-    }
-    
-    if contour_filters:
-        invalid_keys = set(contour_filters.keys()) - set(default_filters.keys())
-        if invalid_keys:
-            raise ValueError(f"Invalid filter keys: {invalid_keys}. Valid keys are: {list(default_filters.keys())}")
-    
-    filters = {**default_filters, **(contour_filters or {})}
-
-    # Input validation
-    if not isinstance(resized_mask, np.ndarray) or resized_mask.dtype != np.uint8:
-        raise ValueError("Input mask must be uint8 numpy array")
-    
-    if any(v <= 0 for v in [min_locule_area, *filters.values()]):
-        raise ValueError("All parameters must be positive values")
-
-    # Contour detection
+    # CONTOUR DETECTION WITH HIERARCHY
     contours, hierarchy = cv2.findContours(
-        resized_mask, 
-        cv2.RETR_TREE,
-        contour_approximation
+        resized_mask,
+        cv2.RETR_TREE,  # Get full tree hierarchy (parent-child relationships)
+        cv2.CHAIN_APPROX_SIMPLE 
     )
     
     if not contours or hierarchy is None:
         return [], {}
 
-    hierarchy = hierarchy[0]  # Simplify hierarchy structure
+    hierarchy = hierarchy[0]  # (1, N, 4) to (N, 4)
+    
+    # Normize contours for downstream processing
+    normalized_contours = [
+        cnt.reshape(-1, 2).astype(np.float32) for cnt in contours
+    ]
+    
+    
+    # COMPUTE BASIC GEOMETRICS
+    # Area and perimeter
+    areas = np.array([cv2.contourArea(c) for c in contours])
+    perimeters = np.array([cv2.arcLength(c, True) for c in contours])
+    
+    # Circularity
+    with np.errstate(divide='ignore', invalid='ignore'):
+        circularities = (4 * np.pi * areas) / (perimeters ** 2)
+        circularities = np.nan_to_num(circularities, nan=0.0, posinf=0.0, neginf=0.0)
+    
+    # Aspect ratios using rotated bounding boxes
+    min_area_rects = [cv2.minAreaRect(c) for c in contours]
+    aspect_ratios = np.array([
+        max(w, h) / min(w, h) if min(w, h) > 0 else 0.0
+        for _, (w, h), _ in min_area_rects
+    ])
 
-    # Process contours and build fruit-locules mapping
+    # IDENTIFY VALID FRUITS
+    # Potential fruits: no parent (only top level contours)
+    is_top_level = hierarchy[:, 3] == -1
+    
+    # Apply morphological filters
+    passes_area = areas >= adjusted_min_area #Filter by area
+    passes_circularity = (circularities >= min_circularity) & (circularities <= max_circularity) # Filter by circularity
+    passes_aspect = (aspect_ratios >= min_aspect_ratio) & (aspect_ratios <= max_aspect_ratio) # Filter by aspect ratio
+    
+    # Combine all filters (vectorized boolean operations)
+    valid_fruits_mask = is_top_level & passes_area & passes_circularity & passes_aspect # Compare ALL the filters
+    
+    # Get indices of valid fruits
+    valid_fruit_indices = np.where(valid_fruits_mask)[0]
+    
+    # FRUIT-LOCULE MAPPING
     fruit_locules_map = {}
-    for i, contour in enumerate(contours):
-        # Check if contour is top-level (fruit candidate) and passes filters
-        if hierarchy[i][3] == -1 and is_contour_valid(contour, filters):
-            # Find all valid child contours (locules)
-            locules = [
-                j for j, h in enumerate(hierarchy)
-                if h[3] == i and  # Is direct child
-                cv2.contourArea(contours[j]) >= filters['min_area']
-            ]
-            
-            # Only register as fruit if minimum locules count is met
-            if len(locules) >= min_locules_per_fruit:
-                fruit_locules_map[i] = locules
-
-    # Rescale contours back to original coordinates if needed
-    if rescale_factor is not None and rescale_factor < 1:
-        scale_x = original_shape[1] / resized_mask.shape[1]
-        scale_y = original_shape[0] / resized_mask.shape[0]
+    
+    for fruit_idx in valid_fruit_indices:
+        # Find all child contours (locules)
+        # NOTE: A contour is a child if hierarchy[i, 3] == fruit_idx
+        is_child_of_fruit = hierarchy[:, 3] == fruit_idx
         
-        rescaled_contours = [
-            (contour.astype(np.float32) * np.array([scale_x, scale_y])).astype(np.int32)
-            for contour in contours
+        # Filter locules by minimum area
+        valid_locules_mask = is_child_of_fruit & (areas >= adjusted_min_area) # Using previously calculated area
+        locule_indices = np.where(valid_locules_mask)[0].tolist()
+        
+        # Only keep fruit if it has minimum required locules (default = 1)
+        if len(locule_indices) >= min_locules_per_fruit:
+            fruit_locules_map[int(fruit_idx)] = locule_indices
+    
+    # RESCALE CONTOURS BACK TO ORIGINAL COORDINATES
+    if should_rescale:
+        scale_factors = np.array([[scale_x, scale_y]], dtype=np.float32)
+        
+        contours = [
+            (c.astype(np.float32) * scale_factors).astype(np.int32)
+            for c in contours
         ]
-        contours = rescaled_contours
-            
+    
     return contours, fruit_locules_map
+
 
 #################################################################################################
 # Merge close locules
@@ -259,7 +363,6 @@ def find_fruits(
 def merge_locules_func(locules_indices, contours, min_distance=0, max_distance=50, min_area=10):
     """
     Merge close locules based on proximity.
-    OPTIMIZED VERSION with identical behavior to original.
     
     Args:
         locules_indices (list): Indices of locule contours to process
@@ -271,10 +374,6 @@ def merge_locules_func(locules_indices, contours, min_distance=0, max_distance=5
     Returns:
         list: List of merged contour arrays
     
-    Optimizations:
-        - Pre-filter candidates using centroid distances (10x faster initial filtering)
-        - Only perform expensive pointPolygonTest on promising pairs
-        - Vectorized distance matrix calculation using scipy.pdist
     """
     if not locules_indices:
         return []
@@ -301,7 +400,7 @@ def merge_locules_func(locules_indices, contours, min_distance=0, max_distance=5
     if not valid_locules:
         return []
     
-    # Step 2: OPTIMIZATION - Build centroid distance matrix (vectorized)
+    # Step 2: Build centroid distance matrix (vectorized)
     # This allows fast pre-filtering before expensive pointPolygonTest
     centroids_valid = [(i, c) for i, c in enumerate(centroids) if c is not None]
     
@@ -317,7 +416,7 @@ def merge_locules_func(locules_indices, contours, min_distance=0, max_distance=5
     from scipy.spatial.distance import pdist, squareform
     centroid_distances = squareform(pdist(centroid_coords))
     
-    # Step 3: Merge logic (same as original, but with pre-filtering)
+    # Step 3: Merge locules based on distance thresholds
     merged = [False] * len(valid_locules)
     result_locules = []
     
@@ -332,7 +431,7 @@ def merge_locules_func(locules_indices, contours, min_distance=0, max_distance=5
             merged[i] = True
             to_merge = [current_contour]
             
-            # OPTIMIZATION: Pre-filter candidates using centroid distances
+            # Pre-filter candidates using centroid distances
             # Only check locules whose centroids are within a reasonable range
             # Use a conservative upper bound (max_distance * 3) to avoid false negatives
             if centroids[i] is not None:
@@ -443,8 +542,8 @@ def gamma_contrast(L: np.ndarray,
     L_norm = L / 255.0
     
     # Apply gamma correction
-    L_corrected = np.power(L_norm, gamma)
-    
+    L_corrected = np.power(L_norm, gamma) # L_norm ** gamma, so no linear transformation
+
     # Convert back to [0, 255]
     l_gamma_corrected = (L_corrected * 255).astype(np.uint8)
     
@@ -480,14 +579,14 @@ def sigmoid_contrast(L: np.ndarray,
 
 def exp_transform(L: np.ndarray, c: float = 1.0) -> np.ndarray:
     """
-    Applies exponential transformation - expands high values.
+    Applies exponential transformation: expands high values.
     
     Args:
         L: Luminance channel (grayscale image)
         c: Exponential coefficient (controls expansion intensity)
     
     Returns:
-        Exponentially-transformed luminance channel
+        Exponentially transformed luminance channel
     """
     L = _ensure_uint8(L)
     L_norm = L / 255.0
@@ -506,7 +605,7 @@ def apply_contrast(img: np.ndarray,
                    cutoff: Optional[float] = 0.5,
                    c: Optional[float] = 0.5,
                    plot: Optional[bool] = False,
-                   plot_size: Optional[Tuple[int, int]] = (12, 12),
+                   plot_size: Optional[Tuple[int, int]] = (5, 5),
                    compare: Optional[bool] = False,
                    kernel_blur: Optional[int] = 1,
                    clip_limit: Optional[int] = None,
@@ -683,7 +782,7 @@ def create_mask_locules(l_transformed,
     
     # Find all contours
     inv_locule_mask = cv2.bitwise_not(locule_mask)
-    contours, hierarchy = cv2.findContours(inv_locule_mask, cv2.RETR_TREE, 
+    contours, hierarchy = cv2.findContours(inv_locule_mask, cv2.RETR_CCOMP, 
                                           cv2.CHAIN_APPROX_SIMPLE)
     
     # Create black mask and fill ONLY fruits (large contours without parent)
@@ -701,7 +800,6 @@ def create_mask_locules(l_transformed,
     
     # Apply fruits mask to original locule_mask
     # This removes ALL background, keeping only fruits and their structures
-    locule_mask_clean = cv2.bitwise_and(locule_mask, fruits_only_mask)
     
     # Invert locules mask if requested
     if invert_locules:
@@ -710,6 +808,8 @@ def create_mask_locules(l_transformed,
             cv2.bitwise_not(locule_mask_clean),
             fruits_only_mask
         )
+    else:
+        locule_mask_clean = cv2.bitwise_and(locule_mask, fruits_only_mask)
     
     # Fuse fruit mask with locules mask
     mask_fruits_rgb = cv2.cvtColor(cv2.bitwise_not(fruit_mask), cv2.COLOR_GRAY2BGR)

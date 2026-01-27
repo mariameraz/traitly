@@ -1008,7 +1008,10 @@ def diameter_px_per_cm(all_circles: List[Tuple[int, int, int]], verbose: bool = 
         print(f"  - Diameter range (mean ± {std_threshold}): {lower_limit:.2f} px to {upper_limit:.2f} px")
         print(f"  - Total circles after removing outliers (std < 2): {len(filtered)}")
         print(f"  - Mean diameter of filtered circles: {np.mean(filtered):.2f} px")
-        print(f"\n >>> Estimated px/cm density: {px_cm_density:.2f} px/cm (Reference diameter: {diameter_cm} cm)")
+        print("\n                       ------------------------------------------------------")
+        print(f"                            Estimated px/cm density: {px_cm_density:.2f} px/cm")
+        print(f"                            (Reference diameter: {diameter_cm} cm)")
+        print("                       ------------------------------------------------------")
     
     return px_cm_density
 

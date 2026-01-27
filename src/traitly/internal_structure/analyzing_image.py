@@ -183,9 +183,9 @@ class FruitAnalyzer:
         self.img_name = cf.detect_img_name(self.image_path)
         img_copy = self.img.copy()
 
-        print("\n" + "="*60)
-        print("LABEL DETECTION:")
-        print("="*60)
+        print("\n" + "="*55)
+        print("1. LABEL DETECTION:")
+        print("="*55)
 
         # Step 1: Try to detect QR code first
         self.label_text, img_copy = cf.detect_qr(img=img_copy)
@@ -258,9 +258,9 @@ class FruitAnalyzer:
         h, w, _ = self.img.shape
         
         # Detect reference size for physical calibration
-        print("\n" + "="*60)
-        print("REFERENCE SIZE:")
-        print("="*60)
+        print("\n" + "="*55)
+        print("2. REFERENCE SIZE:")
+        print("="*55)
         
         print("Image dimensions:")
         print(f"    - Width:  {w:,} pixels")
@@ -292,8 +292,8 @@ class FruitAnalyzer:
             # Automatic calibration successful (reference circles detected)
             print()  # Empty line before diameter message
             if using_default_diameter:
-                print('Using default reference diameter: 2.5 cm')
-                print('   (To use a different diameter, specify the diameter_cm parameter)')
+                print('! NOTE: Using default reference diameter: 2.5 cm')
+                print('To use a different diameter, specify the diameter_cm parameter')
         else:
             # No reference circles detected - try manual calibration
             if width_cm is not None and length_cm is not None:
@@ -301,7 +301,9 @@ class FruitAnalyzer:
                 print('Reference circles not detected. Using provided physical dimensions:')
                 print(f"    - Width:  {width_cm} cm")
                 print(f"    - Length: {length_cm} cm")
-                print(f'\n>>> Calculated px/cm density: {self.px_per_cm:.2f} px/cm')
+                print("\n       #########################################################")
+                print(f'       ## Calculated px/cm density: {self.px_per_cm:.2f} px/cm ##')
+                print("       #########################################################")
             
             else:
                 # Missing required parameters - cannot calibrate
@@ -314,7 +316,7 @@ class FruitAnalyzer:
                 print(f'Missing parameters: {", ".join(missing)}')
                 print('\n IMPORTANT: Measurements will be returned in >> PIXEL << units')
         
-        print("="*60)
+        print("="*55)
 
         # Display annotated image if requested
         if plot:
@@ -324,17 +326,18 @@ class FruitAnalyzer:
                 plt.axis('off')
                 plt.show()
 
-    def create_mask(self, n_kernel: int = 5, plot: bool = False, 
+    def create_mask(self, plot: bool = False, 
                     plot_size: Tuple[int, int] = (5, 5), 
-                    stamp: bool = False, plot_axis: bool = False, 
-                    n_iteration: int = 1, 
-                    canny_min: int = 30, canny_max: int = 100, 
+                    stamp: bool = False,  
                     lower_hsv: Optional[List[int]] = None,
                     upper_hsv: Optional[List[int]] = None, 
-                    locules_filled: bool = False, 
-                    min_locule_size: int = 300, n_blur: int = 11, 
-                    clip_limit: int = 4, 
-                    tile_grid_size: int = 8, remove_roi: bool = True, 
+                    n_iteration: int = 1,
+                    kernel_blur: Optional[int] = None, 
+                    kernel_open: Optional[int] = None,
+                    kernel_close: Optional[int] = None, 
+                    canny_min: Optional[int] = None,
+                    canny_max: Optional[int] = None,
+                    remove_roi: bool = True, 
                     roi_expansion: int = 10) -> None:
         """
         Create a mask for fruit detection and segmentation.
@@ -376,11 +379,12 @@ class FruitAnalyzer:
         # Create base mask - only calculate once
         self.mask = create_mask(
             self.img_bgr,
-            n_kernel=n_kernel, 
             n_iteration=n_iteration,
             plot=False,
             plot_size=plot_size,
-            fig_axis=plot_axis,
+            kernel_blur = kernel_blur,
+            kernel_open = kernel_open,
+            kernel_close = kernel_close,
             canny_max=canny_max,
             canny_min=canny_min,
             lower_hsv=lower_hsv,
@@ -425,7 +429,7 @@ class FruitAnalyzer:
             self.mask = cv2.bitwise_and(self.mask, cv2.bitwise_not(mask_rois))
 
         if plot:
-            cf.plot_img(self.mask, plot_size=plot_size, fig_axis=plot_axis)
+            cf.plot_img(self.mask, plot_size=plot_size, fig_axis=False)
 
         return None
 
@@ -532,7 +536,7 @@ class FruitAnalyzer:
                     min_locule_area: int = 50, min_locule_per_fruit: int = 1, 
                     max_circularity: float = 1.0, min_aspect_ratio: float = 0.3, 
                     max_aspect_ratio: float = 3.0, 
-                    contour_filters: Optional[Dict] = None) -> None:
+                    rescale_factor: Optional[float] = None) -> None:
         """
         Detect fruits and their locules in the mask.
         
@@ -544,7 +548,6 @@ class FruitAnalyzer:
             max_circularity: Maximum circularity for filtering. Default is 1.0.
             min_aspect_ratio: Minimum aspect ratio for filtering. Default is 0.3.
             max_aspect_ratio: Maximum aspect ratio for filtering. Default is 3.0.
-            contour_filters: Additional contour filters. Default is None.
         """
         if self.mask_locules is not None:
             mask = self.mask_locules
@@ -559,7 +562,7 @@ class FruitAnalyzer:
             min_locules_per_fruit=min_locule_per_fruit,
             min_aspect_ratio=min_aspect_ratio,
             max_aspect_ratio=max_aspect_ratio,
-            contour_filters=contour_filters
+            rescale_factor=rescale_factor
         )
         
         if self.fruit_locus_map is not None:

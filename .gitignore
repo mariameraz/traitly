@@ -15,6 +15,7 @@ __pycache__/
 internal_structure/mask_unet.py
 src/example.ipynb
 src/traitly_app.py
+./optimization_timeit.ipynb
 
 # Build
 build/
