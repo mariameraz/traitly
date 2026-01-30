@@ -18,7 +18,7 @@ from dataclasses import dataclass
 # LOCAL/INTERNAL IMPORTS
 # ===========================================================================
 from .geometry import calculate_axes, rotate_box, get_fruit_morphology
-from .symmetry import angular_symmetry, radial_symmetry, rotational_symmetry
+from .symmetry import angular_symmetry, radial_symmetry
 from .processing import (
     get_inner_pericarp_area,
     calculate_fruit_centroids,
@@ -45,10 +45,9 @@ class FruitConfig:
     max_distance: int = 10
     
     # Symmetry settings
-    num_shifts: int = 100
+    n_shifts: int = 100
     angle_weight: float = 0.5
     radius_weight: float = 0.5
-    min_radius_threshold: float = 0.1
     
     # Pericarp settings
     num_rays: int = 180
@@ -111,7 +110,18 @@ def analyze_fruits(
     original_img = original_img_clean if original_img_clean is not None else img
     
     fruit_centroids = calculate_fruit_centroids(contours)
+
+    ## Precalculate data
     
+    # Symmetry
+    from .symmetry import get_unique_locule_counts, precompute_ideal_angles
+
+    unique_counts = get_unique_locule_counts(fruit_locus_map)
+    precomputed_ideals = precompute_ideal_angles(unique_counts, 
+                                                 n_shifts=config.n_shifts)
+    
+
+
     results = []
     color_results = []
     sequential_id = 1
@@ -133,7 +143,8 @@ def analyze_fruits(
                 sequential_id=sequential_id,
                 img_shape=img.shape[:2],
                 config=config,
-                original_img=original_img
+                original_img=original_img,
+                precomputed_ideals=precomputed_ideals
             )
             
             if result is not None:
@@ -178,7 +189,8 @@ def _analyze_single_fruit(
     sequential_id: int,
     img_shape: Tuple[int, int],
     config: FruitConfig,
-    original_img: Optional[np.ndarray] = None  # for color extraction
+    original_img: Optional[np.ndarray] = None,  # for color extraction
+    precomputed_ideals: Optional[Dict] = None
 ) -> Optional[Tuple[Dict[str, Any], Optional[Dict[str, Any]]]]:  
     """Analyze a single fruit and return its metrics."""
     
@@ -227,7 +239,9 @@ def _analyze_single_fruit(
     
     # 5. Calculate symmetry
     symmetry_metrics = _calculate_symmetry_metrics(
-        locule_metrics['data'], config
+        locule_metrics['data'],
+        config,
+        precomputed_ideals
     )
     
     # 6. Calculate derived metrics
@@ -471,10 +485,6 @@ def _calculate_locule_statistics(
             'cv_circularity': np.nan
         }
     
-
-
-
-    
     
     # Reuse 'areas' array for circularity calculation
     # Note: Use original pixel areas for circularity (dimensionless metric)
@@ -563,30 +573,33 @@ def _calculate_pericarp_metrics(
         **thickness_filtered
     }
 
-
 def _calculate_symmetry_metrics(
     locules_data: List[Dict],
-    config: FruitConfig
+    config: FruitConfig,
+    precomputed_ideals: Optional[Dict] = None  
 ) -> Dict[str, float]:
+    
     """Calculate angular, radial, and rotational symmetry (unitless)."""
     
     if not locules_data or len(locules_data) < 2:
         return {
             'angular_symmetry': np.nan,
-            'radial_symmetry': np.nan,
-            'rotational_symmetry': np.nan
+            'radial_symmetry': np.nan
         }
     
+    # Calcular angular_symmetry con precomputed
+    angular_sym = angular_symmetry(
+        locules_data, 
+        n_shifts=config.n_shifts,
+        precomputed_ideals=precomputed_ideals  
+    )
+    
+    radial_sym = radial_symmetry(locules_data)
+
     return {
-        'angular_symmetry': angular_symmetry(locules_data, num_shifts=config.num_shifts),
-        'radial_symmetry': radial_symmetry(locules_data),
-        'rotational_symmetry': rotational_symmetry(
-            locules_data,
-            angle_error=None,
-            angle_weight=config.angle_weight,
-            radius_weight=config.radius_weight,
-            min_radius_threshold=config.min_radius_threshold
-        )
+        'angular_symmetry': angular_sym,
+        'radial_symmetry': radial_sym
+        
     }
 
 

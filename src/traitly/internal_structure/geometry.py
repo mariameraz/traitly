@@ -238,8 +238,7 @@ def get_fruit_morphology(contour: np.ndarray,
             f'fruit_perimeter_{unit}': np.nan,
             'fruit_circularity': np.nan,
             'fruit_solidity': np.nan,
-            'fruit_compactness': np.nan,
-            f'fruit_convex_hull_area_{unit_area}': np.nan
+            'fruit_convexity': np.nan
         }
     
     if contour_mode == 'raw':
@@ -260,8 +259,7 @@ def get_fruit_morphology(contour: np.ndarray,
             f'fruit_perimeter_{unit}': np.nan,
             'fruit_circularity': np.nan,
             'fruit_solidity': np.nan,
-            'fruit_compactness': np.nan,
-            f'fruit_convex_hull_area_{unit_area}': np.nan
+            'fruit_convexity': np.nan
         }
     
     # Calculate area and perimeter on transformed contour
@@ -275,8 +273,7 @@ def get_fruit_morphology(contour: np.ndarray,
             f'fruit_perimeter_{unit}': np.nan,
             'fruit_circularity': np.nan,
             'fruit_solidity': np.nan,
-            'fruit_compactness': np.nan,
-            f'fruit_convex_hull_area_{unit_area}': np.nan
+            'fruit_convexity': np.nan
         }
     
     if has_calibration:
@@ -291,30 +288,25 @@ def get_fruit_morphology(contour: np.ndarray,
     # Calculate shape metrics using transformed contour
     circularity = (4 * np.pi * area_px) / (perimeter_px ** 2) if perimeter_px > 0 else np.nan
     
-    # OPTIMIZED: Reuse hull if contour_mode is 'hull'
+    # Reuse hull if contour_mode is 'hull'
     if contour_mode == 'hull':
         hull = transformed_contour  # Already is the convex hull
         hull_area_px = area_px  # Area is already the hull area
+        hull_perimeter_px = perimeter_px  # Perimeter is already the hull perimeter
     else:
         hull = cv2.convexHull(transformed_contour)
+        hull_perimeter_px = cv2.arcLength(hull, True)
         hull_area_px = cv2.contourArea(hull)
-    
-    # Convert hull area to correct unit
-    if has_calibration:
-        hull_area_val = hull_area_px * inv_px_per_cm_sq
-    else:
-        hull_area_val = hull_area_px
     
     solidity = area_px / hull_area_px if hull_area_px > 0 else np.nan
     
-    # Compactness (perimeter² / area)
-    compactness = (perimeter_px ** 2) / area_px if area_px > 0 else np.nan
-    
+    # Convexity 
+    convexity = hull_perimeter_px / perimeter_px if perimeter_px > 0 else np.nan
+
     return {
         f'fruit_area_{unit_area}': float(area_val),
         f'fruit_perimeter_{unit}': float(perimeter_val),
         'fruit_circularity': float(circularity),
         'fruit_solidity': float(solidity),
-        'fruit_compactness': float(compactness),
-        f'fruit_convex_hull_area_{unit_area}': float(hull_area_val)
+        'fruit_convexity': float(convexity)
     }

@@ -161,17 +161,17 @@ class FruitAnalyzer:
                 - self.ref_roi: Coordinates of reference regions
         
         Examples:
-            Basic usage with automatic detection:
-            >>> analyzer.setup_measurements(verbose=True, plot=True)
+            1. Basic usage with automatic detection:
+            analyzer.setup_measurements(verbose=True, plot=True)
             
-            With custom reference diameter:
-            >>> analyzer.setup_measurements(diameter_cm=3.0, plot=True)
+            2. With custom reference diameter:
+            analyzer.setup_measurements(diameter_cm=3.0, plot=True)
             
-            Manual calibration without reference circles:
-            >>> analyzer.setup_measurements(width_cm=10.0, length_cm=15.0, plot=True)
+            3. Manual calibration without reference circles:
+            analyzer.setup_measurements(width_cm=10.0, length_cm=15.0, plot=True)
             
-            Skip label detection:
-            >>> analyzer.setup_measurements(label=False, plot=True)
+            4. Skip label detection:
+            analyzer.setup_measurements(label=False, plot=True)
         
         Notes:
             - If no QR code is found, the method attempts OCR on rectangular regions
@@ -597,10 +597,9 @@ class FruitAnalyzer:
                     max_distance: int = 100,
                     max_locule_area: Optional[int] = None, 
                     merge_locules: bool = False,
-                    n_shifts: int = 100, 
+                    n_shifts: int = 500, 
                     angle_weight: float = 0.5, 
                     radius_weight: float = 0.5,
-                    min_radius_threshold: float = 0.1, 
                     num_rays: int = 180,
                     extract_color: bool = False,  # By default, only extract morphology data
                     color_stat: str = 'mean', # mean or median
@@ -644,10 +643,9 @@ class FruitAnalyzer:
             min_distance=min_distance,
             max_distance=max_distance,
             path=self.image_path,
-            num_shifts=n_shifts,
+            n_shifts=n_shifts,
             angle_weight=angle_weight,
             radius_weight=radius_weight,
-            min_radius_threshold=min_radius_threshold,
             num_rays=num_rays,
             centroid_locules=centroid_locules,
             centroid_fruit=centroid_fruit,
@@ -800,7 +798,6 @@ class FruitAnalyzer:
                 n_shifts=config['n_shifts'],
                 angle_weight=config['angle_weight'],
                 radius_weight=config['radius_weight'],
-                min_radius_threshold=config['min_radius_threshold'],
                 num_rays=config.get('num_rays', 360),
                 centroid_fruit=config.get('centroid_fruit', 2),
                 centroid_locules=config.get('centroid_locules', 2),
@@ -870,7 +867,6 @@ class FruitAnalyzer:
                     n_shifts: int = 100, 
                     angle_weight: float = 0.5, 
                     radius_weight: float = 0.5,
-                    min_radius_threshold: float = 0.1,
                     num_rays: int = 180,
                     centroid_fruit: int = 2,
                     centroid_locules: int = 2,
@@ -912,9 +908,6 @@ class FruitAnalyzer:
             max_locule_area: Maximum locule area. Default is None.
             merge_locules: Whether to merge close locules. Default is False.
             n_shifts: Number of shifts for angular symmetry. Default is 500.
-            angle_weight: Weight for angle in rotational symmetry. Default is 0.5.
-            radius_weight: Weight for radius in rotational symmetry. Default is 0.5.
-            min_radius_threshold: Minimum radius threshold for symmetry. Default is 0.1.
             num_rays: Number of rays for pericarp thickness. Default is 360.
             centroid_fruit: Radius for fruit centroid marker. Default is 2.
             centroid_locules: Radius for locule centroid marker. Default is 2.
@@ -1008,7 +1001,6 @@ class FruitAnalyzer:
             'n_shifts': n_shifts,
             'angle_weight': angle_weight,
             'radius_weight': radius_weight,
-            'min_radius_threshold': min_radius_threshold,
             'num_rays': num_rays,
             'centroid_fruit': centroid_fruit,
             'centroid_locules': centroid_locules,
