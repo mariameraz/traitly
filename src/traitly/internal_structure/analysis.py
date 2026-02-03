@@ -206,7 +206,8 @@ def _analyze_single_fruit(
     
     if fruit_data is None:
         return None
-    
+    print('Debug fruit data: Ok!')
+
     # 2. Calculate fruit metrics
     fruit_metrics = _calculate_fruit_metrics(
         fruit_data['contour'],
@@ -217,6 +218,7 @@ def _analyze_single_fruit(
         config,
         unit
     )
+    print('Debug fruit metrics: Ok!')
     
     # 3. Process locules
     locule_metrics = _process_locules(
@@ -236,6 +238,8 @@ def _analyze_single_fruit(
         config,
         unit
     )
+
+    print('Debug pericarp metrics: Ok!')
     
     # 5. Calculate symmetry
     symmetry_metrics = _calculate_symmetry_metrics(
@@ -244,6 +248,8 @@ def _analyze_single_fruit(
         precomputed_ideals
     )
     
+    print('Debug symmetry metrics: Ok!')
+
     # 6. Calculate derived metrics
     derived_metrics = _calculate_derived_metrics(
     fruit_metrics,
@@ -263,11 +269,12 @@ def _analyze_single_fruit(
         config
     )
     
+    print('Debug annotation: Ok!')
 
     # 8. Extract color features if requested
     color_metrics = None
     if config.extract_color:
-        from .color import analyze_fruit_color
+        from ..utils.color import analyze_fruit_color
         from .processing import get_inner_pericarp_contour
         
         # Use original image (not annotated) for color extraction
@@ -280,11 +287,15 @@ def _analyze_single_fruit(
                 locules=locule_metrics['filtered_ids'],
                 contours=contours
             )
+
+        print('Debug inner contour for color: Ok!')
         
         # NEW: Get locule contours for exclusion
         locule_contours = None
         if not config.locules_filled and locule_metrics['filtered_ids']:
             locule_contours = [contours[i] for i in locule_metrics['filtered_ids']]
+
+        print('Debug locule contours for color: Ok!')
         
         color_metrics = analyze_fruit_color(
             img=img_for_color,
@@ -294,6 +305,7 @@ def _analyze_single_fruit(
             img_shape=img_shape,
             stat=config.color_stat
         )
+        print('Debug color metrics: Ok!')
 
     return _format_results(
         img_name=img_name,
@@ -390,9 +402,10 @@ def _calculate_fruit_metrics(
     
     # Filter morphology to only include the active unit
     filtered_metrics = {
-        k: v for k, v in morphology.items() 
-        if k.endswith(f'_{unit}') or not (k.endswith('_cm') or k.endswith('_px'))
-    }
+    k: v for k, v in morphology.items() 
+    if (k.endswith(f'_{unit}') or k.endswith(f'_{unit}2')) or 
+       not (k.endswith('_cm') or k.endswith('_cm2') or k.endswith('_px') or k.endswith('_px2'))
+    }   
     
     return {
         **filtered_metrics,
@@ -469,11 +482,10 @@ def _calculate_locule_statistics(
 ) -> Dict[str, float]:
     """
     Calculate area and circularity statistics for locules in single unit.
-    OPTIMIZED: Reuses computed arrays instead of recalculating.
     """
     # Use cm2 for areas when unit is cm, px when unit is px
-    unit_suffix = 'cm2' if unit == 'cm' else 'px'
-    
+    unit_suffix = 'cm2' if unit == 'cm' else 'px2'
+
     if not locules_data:
         return {
             f'mean_area_{unit_suffix}': np.nan,
@@ -532,7 +544,7 @@ def _calculate_pericarp_metrics(
     """Calculate pericarp area and thickness metrics in single unit."""
     
     # Inner pericarp area (returns both cm2 and px)
-    inner_area_cm2, inner_area_px = get_inner_pericarp_area(
+    inner_area_cm2, inner_area_px2 = get_inner_pericarp_area(
         locules=filtered_locule_ids,
         contours=contours,
         px_per_cm=px_per_cm,
@@ -557,7 +569,7 @@ def _calculate_pericarp_metrics(
     )
     
     # Select correct area values based on unit
-    inner_area = inner_area_cm2 if unit == 'cm' else inner_area_px
+    inner_area = inner_area_cm2 if unit == 'cm' else inner_area_px2
     
     # Filter thickness stats to only include the active unit
     thickness_filtered = {
@@ -566,7 +578,7 @@ def _calculate_pericarp_metrics(
     }
     
     # Use cm2 for area when unit is cm, px when unit is px
-    unit_suffix = 'cm2' if unit == 'cm' else 'px'
+    unit_suffix = 'cm2' if unit == 'cm' else 'px2'
     
     return {
         f'inner_pericarp_area_{unit_suffix}': inner_area,
@@ -611,7 +623,7 @@ def _calculate_derived_metrics(
 ) -> Dict[str, float]:
     """Calculate derived metrics (ratios, percentages) in single unit."""
     
-    unit_suffix = 'cm2' if unit == 'cm' else 'px'
+    unit_suffix = 'cm2' if unit == 'cm' else 'px2'
     
     # Reuse fruit, pericarp and locule metrics for optimization
     fruit_area = fruit_metrics.get(f'fruit_area_{unit_suffix}', 0)
@@ -636,10 +648,10 @@ def _calculate_derived_metrics(
     
     # Ratios y percentages
     'outer_pericarp_ratio': (fruit_area - inner_area) / fruit_area if fruit_area > 0 else 0,
-    'internal_cavity_ratio': inner_area / fruit_area,
-    'locule_to_fruit_ratio': total_locule_area / fruit_area,
-    'locule_to_cavity_ratio': total_locule_area / inner_area,
-    'flesh_to_cavity_ratio': (inner_area - total_locule_area) / inner_area,
+    'internal_cavity_ratio': inner_area / fruit_area if fruit_area > 0 else 0,
+    'locule_to_fruit_ratio': total_locule_area / fruit_area if fruit_area > 0 else 0,
+    'locule_to_cavity_ratio': total_locule_area / inner_area if inner_area > 0 else 0,
+    'flesh_to_cavity_ratio': (inner_area - total_locule_area) / inner_area if inner_area > 0 else 0,
     
     # Percentages
     'locule_to_fruit_percentage': locule_pct,

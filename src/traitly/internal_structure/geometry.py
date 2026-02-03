@@ -229,7 +229,7 @@ def get_fruit_morphology(contour: np.ndarray,
     # Determine unit
     has_calibration = px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0
     unit = 'cm' if has_calibration else 'px'
-    unit_area = 'cm2' if has_calibration else 'px'
+    unit_area = 'cm2' if has_calibration else 'px2'
     
     # Early exit for invalid contours
     if len(contour) < 3:

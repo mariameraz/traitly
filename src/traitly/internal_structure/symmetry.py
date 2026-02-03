@@ -54,6 +54,7 @@ def precompute_ideal_angles(unique_locule_counts: np.ndarray,
     for n in unique_locule_counts:
         if n < 2:
             continue
+
         ideal_angles = np.linspace(0, 2*np.pi, n, endpoint=False)
         shifted_ideals = (ideal_angles[None, :] + shifts[:, None]) % (2 * np.pi)
         precomputed[n] = shifted_ideals
