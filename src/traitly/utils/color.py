@@ -462,7 +462,7 @@ def renumber_fruit_locule_map(
     return renumbered_map, fruit_id_map
 
 # Create the masks: 
-def get_single_fruit_masks_fast(
+def get_single_fruit_masks(
     img: np.ndarray,
     contours: List[np.ndarray],
     fruit_locule_map: Dict[int, List[int]],
