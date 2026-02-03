@@ -14,6 +14,7 @@ import numpy as np
 from scipy.stats import circmean
 from scipy.optimize import linear_sum_assignment
 
+
 #################################################################################################   
 # Precomputation utilities
 #################################################################################################

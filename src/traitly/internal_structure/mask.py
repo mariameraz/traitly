@@ -15,7 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # ============================================================================
-# LOCAL/INTERNAL IMPORTS
+# INTERNAL IMPORTS
 # ===========================================================================
 from ..utils.common_functions import is_contour_valid, plot_img
 

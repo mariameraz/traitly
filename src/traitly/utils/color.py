@@ -3,7 +3,7 @@
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
-from typing import List, Dict, Tuple, Optional, Any
+from typing import List, Dict, Tuple, Optional
 
 # ============================================================================
 # THIRD-PARTY LIBRARIES
@@ -11,9 +11,18 @@ from typing import List, Dict, Tuple, Optional, Any
 import cv2
 import numpy as np
 from scipy.stats import circmean, circstd
+import matplotlib.pyplot as plt
 
+
+# ============================================================================
+# INTERNAL IMPORTS
+# ============================================================================
 from traitly.internal_structure.processing import get_fruit_contour, get_inner_pericarp_contour
 
+
+############################################
+# Normalization functions for color spaces #
+############################################
 
 def normalize_lab_values(l_values: np.ndarray, 
                          a_values: np.ndarray, 
@@ -46,6 +55,9 @@ def normalize_hsv_values(h_values: np.ndarray, s_values: np.ndarray,
     
     return h_normalized, s_normalized, v_normalized
 
+################################
+# Get stats for color channels #
+################################
 
 def calculate_statistics(values: np.ndarray, stat: str = 'mean') -> float:
     """Calculate statistics with option to use mean or median."""
@@ -59,7 +71,6 @@ def calculate_statistics(values: np.ndarray, stat: str = 'mean') -> float:
     else:
         raise ValueError(f"stat must be 'mean' or 'median', got '{stat}'")
 
-
 def calculate_std_and_cv(values: np.ndarray) -> Tuple[float, float]:
     """Calculate standard deviation and coefficient of variation."""
     if len(values) == 0:
@@ -71,6 +82,9 @@ def calculate_std_and_cv(values: np.ndarray) -> Tuple[float, float]:
     
     return std, cv
 
+###################################################
+# Calculate circular mean and std for hue values #
+##################################################
 
 def circular_mean_and_std_hue(hue_values: np.ndarray, 
                               hue_degree_values: Optional[np.ndarray] = None) -> tuple[float, float]:
@@ -104,93 +118,10 @@ def circular_mean_and_std_hue(hue_values: np.ndarray,
     return float(mean_deg), float(std_deg)
 
 
-# def extract_color_features(
-#     img: np.ndarray,
-#     mask: np.ndarray,
-#     stat: str = 'mean'
-# ) -> Dict[str, float]:
-#     """
-#     Extract comprehensive color features from a masked region.
-    
-#     Args:
-#         img: Input BGR image
-#         mask: Binary mask (255=foreground, 0=background)
-#         stat: Statistical measure to use ('mean' or 'median')
-    
-#     Returns:
-#         Dictionary with color features
-#     """
-#     if mask.sum() == 0:
-#         return _get_nan_color_dict()
-    
-#     # Convert to different color spaces
-#     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-#     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-#     img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
-#     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
-#     # Extract channel values
-#     # RGB
-#     r_values = img_rgb[:, :, 0][mask == 255]
-#     g_values = img_rgb[:, :, 1][mask == 255]
-#     b_values = img_rgb[:, :, 2][mask == 255]
-    
-#     # HSV
-#     h_values = img_hsv[:, :, 0][mask == 255]
-#     s_values = img_hsv[:, :, 1][mask == 255]
-#     v_values = img_hsv[:, :, 2][mask == 255]
-    
-#     # Lab
-#     l_values = img_lab[:, :, 0][mask == 255]
-#     a_values = img_lab[:, :, 1][mask == 255]
-#     b_lab_values = img_lab[:, :, 2][mask == 255]
-    
-#     # Grayscale
-#     gray_values = img_gray[mask == 255]
-    
-#     # Normalize values
-#     # Convert H from 0-180 to 0-360, S and V to 0-100
-#     h_norm, s_norm, v_norm = normalize_hsv_values(h_values, s_values, v_values)
-#     # Conver L from 0-255 to 0-100, a and b to -128 to 127
-#     l_norm, a_norm, b_norm = normalize_lab_values(l_values, a_values, b_lab_values)
-#     # Grayscale as float32 for calculations 
-#     gray_norm = gray_values.astype(np.float32)
-    
-#     # Circular statistics for Hue
-#     hue_circular, hue_homogeneity = circular_mean_and_std_hue(h_values)
-    
-#     # Calculate main statistics
-#     results = {
-#         f'R_{stat}': calculate_statistics(r_values, stat),
-#         f'G_{stat}': calculate_statistics(g_values, stat),
-#         f'B_{stat}': calculate_statistics(b_values, stat),
-#         f'H_{stat}': calculate_statistics(h_norm, stat),
-#         f'S_{stat}': calculate_statistics(s_norm, stat),
-#         f'V_{stat}': calculate_statistics(v_norm, stat),
-#         f'L_{stat}': calculate_statistics(l_norm, stat),
-#         f'a_{stat}': calculate_statistics(a_norm, stat),
-#         f'b_{stat}': calculate_statistics(b_norm, stat),
-#         f'Gray_{stat}': calculate_statistics(gray_norm, stat),
-#         f'hue_circular_{stat}': hue_circular,
-#         'hue_homogeneity': hue_homogeneity
-#     }
-    
 
-    
-#     # Standard deviation and CV
-#     results['R_std'], results['R_cv'] = calculate_std_and_cv(r_values)
-#     results['G_std'], results['G_cv'] = calculate_std_and_cv(g_values)
-#     results['B_std'], results['B_cv'] = calculate_std_and_cv(b_values)
-#     results['H_std'], results['H_cv'] = calculate_std_and_cv(h_norm)
-#     results['S_std'], results['S_cv'] = calculate_std_and_cv(s_norm)
-#     results['V_std'], results['V_cv'] = calculate_std_and_cv(v_norm)
-#     results['L_std'], results['L_cv'] = calculate_std_and_cv(l_norm)
-#     results['a_std'], results['a_cv'] = calculate_std_and_cv(a_norm)
-#     results['b_std'], results['b_cv'] = calculate_std_and_cv(b_norm)
-#     results['Gray_std'], results['Gray_cv'] = calculate_std_and_cv(gray_norm)
-    
-#     return results
-
+####################################
+# Extract color and get statistics #
+####################################
 def extract_color_features(
     img: np.ndarray,
     mask: np.ndarray,
@@ -286,6 +217,13 @@ def extract_color_features(
     return results
 
 
+
+#####################################################################
+# Extract color for whole fruit, outer pericarp, and inner pericarp #
+#####################################################################
+
+# Helper function to return NaN dictionary
+
 def _get_nan_color_dict() -> Dict[str, float]:
     """Return dictionary with NaN values for empty masks."""
     return {
@@ -335,18 +273,18 @@ def analyze_fruit_color(
     
     # Inner and outer pericarp
     if inner_pericarp_contour is not None and len(inner_pericarp_contour) > 0:
-        # Inner pericarp mask (FILLED)
+        # Inner pericarp mask (filled)
         mask_inner = np.zeros((height, width), dtype=np.uint8)
         cv2.drawContours(mask_inner, [inner_pericarp_contour], -1, 255, thickness=cv2.FILLED)
         
-        # >> NEW: Exclude locules from inner pericarp mask when provided
+        # Exclude locules from inner pericarp mask when provided
         if locule_contours is not None:
             for locule_contour in locule_contours:
                 if len(locule_contour) > 0:
-                    # "Erase" each locule by drawing it as 0 (black)
+                    # Erase each locule by drawing it as 0 (black)
                     cv2.drawContours(mask_inner, [locule_contour], -1, 0, thickness=cv2.FILLED)
         
-        # Outer pericarp = fruit - inner
+        # Outer pericarp (fruit - inner)
         mask_outer = mask_fruit.copy()
         mask_outer[mask_inner == 255] = 0
         
@@ -363,6 +301,9 @@ def analyze_fruit_color(
         'inner_pericarp': inner_color
     }
 
+########################################################
+# Analyze color for all fruits in the fruit_locule_map #
+########################################################
 
 def analyze_all_fruits_color(
     img: np.ndarray,
@@ -370,37 +311,11 @@ def analyze_all_fruits_color(
     fruit_locule_map: Dict[int, List[int]],
     stat: str = 'mean',
     color_spaces: str = 'all',
-    tissues: str = 'all'  # NUEVO parámetro
+    tissues: str = 'all' 
 ) -> Dict[int, Dict[str, Dict[str, float]]]:
     """
     Analyze color for all fruits in the fruit_locule_map.
-    
-    Args:
-        img: Input BGR image
-        contours: List of all contours (from cv2.findContours)
-        fruit_locule_map: Dictionary mapping fruit_id to list of locule indices
-                         Example: {33: [37], 72: [75, 78, 83, 84]}
-        stat: Statistical measure ('mean' or 'median')
-        color_spaces: Which color spaces to compute ('rgb', 'hsv', 'lab', 'gray', 'all')
-        tissues: Which tissues to analyze. Options:
-                - 'all': All tissues (whole_fruit, outer_pericarp, inner_flesh, locules)
-                - Combinations like: 'whole_fruit,locules' or 'outer_pericarp,inner_flesh'
-                - Valid tissues: 'whole_fruit', 'outer_pericarp', 'inner_flesh', 'locules'
-    
-    Returns:
-        Dictionary mapping fruit_id to color analysis:
-        {
-            fruit_id: {
-                'whole_fruit': {color features...},
-                'outer_pericarp': {color features...},
-                'inner_flesh': {color features...},
-                'locules': {color features...}
-            },
-            ...
-        }
-
     """
-    # Procesar el parámetro tissues
     tissues = tissues.lower().replace(' ', '')
     
     if tissues == 'all':
@@ -408,75 +323,89 @@ def analyze_all_fruits_color(
     else:
         tissues_to_compute = set(tissues.split(','))
     
-    # Validar tejidos
     valid_tissues = {'whole_fruit', 'outer_pericarp', 'inner_flesh', 'locules'}
     if not tissues_to_compute.issubset(valid_tissues):
         invalid = tissues_to_compute - valid_tissues
         raise ValueError(f"Invalid tissues: {invalid}. Valid options: {valid_tissues}")
     
-    height, width = img.shape[:2]
     results = {}
     
     for fruit_id, locule_indices in fruit_locule_map.items():
         fruit_results = {}
         
-        # Paso 1: Crear máscara del fruto específico (siempre necesaria como base)
+        # Create a ROI around the fruit to optimize processing
         fruit_contour = get_fruit_contour(contours, fruit_id, contour_mode='raw')
-        mask_fruit = np.zeros((height, width), dtype=np.uint8)
-        cv2.drawContours(mask_fruit, [fruit_contour], -1, 255, thickness=cv2.FILLED)
+        x, y, w, h = cv2.boundingRect(fruit_contour)
         
-        # Paso 2: Extraer color del fruto completo (si se solicita)
+        roi_img = img[y:y+h, x:x+w]
+        
+        fruit_contour_roi = fruit_contour.copy()
+        fruit_contour_roi[:, :, 0] -= x
+        fruit_contour_roi[:, :, 1] -= y
+        
+        mask_fruit = np.zeros((h, w), dtype=np.uint8)
+        cv2.drawContours(mask_fruit, [fruit_contour_roi], -1, 255, thickness=cv2.FILLED)
+        
+        # Get color for whole fruit
         if 'whole_fruit' in tissues_to_compute:
-            whole_fruit_color = extract_color_features(img, mask_fruit, stat, color_spaces)
-            fruit_results['whole_fruit'] = whole_fruit_color
+            fruit_results['whole_fruit'] = extract_color_features(
+                roi_img, mask_fruit, stat, color_spaces
+            )
         
-        # Paso 3: Procesar regiones internas si hay lóculos
+        # Early exit
+        if tissues_to_compute == {'whole_fruit'}:
+            results[fruit_id] = fruit_results
+            continue
+        
+        # Process inner flesh and outer pericarp
         if locule_indices:
-            # Obtener el hull que rodea todos los lóculos
             inner_flesh_contour = get_inner_pericarp_contour(locule_indices, contours)
             
             if len(inner_flesh_contour) > 0:
-                # Crear máscara de lóculos
-                mask_locules = np.zeros((height, width), dtype=np.uint8)
-                for locule_idx in locule_indices:
-                    locule_contour = contours[locule_idx]
-                    if len(locule_contour) > 0:
-                        cv2.drawContours(mask_locules, [locule_contour], -1, 255, thickness=cv2.FILLED)
+                inner_flesh_contour_roi = inner_flesh_contour.copy()
+                inner_flesh_contour_roi[:, :, 0] -= x
+                inner_flesh_contour_roi[:, :, 1] -= y
                 
-                # Extraer color de lóculos (si se solicita)
+                # Create masks for locules and inner flesh
+                if 'locules' in tissues_to_compute or 'inner_flesh' in tissues_to_compute:
+                    mask_locules = np.zeros((h, w), dtype=np.uint8)
+                    for locule_idx in locule_indices:
+                        loc_contour = contours[locule_idx].copy()
+                        loc_contour[:, :, 0] -= x
+                        loc_contour[:, :, 1] -= y
+                        cv2.drawContours(mask_locules, [loc_contour], -1, 255, cv2.FILLED)
+            
                 if 'locules' in tissues_to_compute:
-                    if mask_locules.sum() > 0:
-                        locules_color = extract_color_features(img, mask_locules, stat, color_spaces)
+                    if np.any(mask_locules):
+                        fruit_results['locules'] = extract_color_features(
+                            roi_img, mask_locules, stat, color_spaces
+                        )
                     else:
-                        locules_color = _get_nan_color_dict()
-                    fruit_results['locules'] = locules_color
+                        fruit_results['locules'] = _get_nan_color_dict()
                 
-                # Crear máscara del inner flesh (hull - lóculos)
                 if 'inner_flesh' in tissues_to_compute:
-                    mask_inner_flesh = np.zeros((height, width), dtype=np.uint8)
-                    cv2.drawContours(mask_inner_flesh, [inner_flesh_contour], -1, 255, thickness=cv2.FILLED)
-                    mask_inner_flesh[mask_locules == 255] = 0  # Excluir lóculos
+                    mask_inner = np.zeros((h, w), dtype=np.uint8)
+                    cv2.drawContours(mask_inner, [inner_flesh_contour_roi], -1, 255, cv2.FILLED)
+                    mask_inner[mask_locules == 255] = 0
                     
-                    if mask_inner_flesh.sum() > 0:
-                        inner_flesh_color = extract_color_features(img, mask_inner_flesh, stat, color_spaces)
+                    if np.any(mask_inner):
+                        fruit_results['inner_flesh'] = extract_color_features(
+                            roi_img, mask_inner, stat, color_spaces
+                        )
                     else:
-                        inner_flesh_color = _get_nan_color_dict()
-                    fruit_results['inner_flesh'] = inner_flesh_color
+                        fruit_results['inner_flesh'] = _get_nan_color_dict()
                 
-                # Crear máscara del outer pericarp
                 if 'outer_pericarp' in tissues_to_compute:
-                    hull_complete = np.zeros((height, width), dtype=np.uint8)
-                    cv2.drawContours(hull_complete, [inner_flesh_contour], -1, 255, thickness=cv2.FILLED)
-                    mask_outer_pericarp = mask_fruit.copy()
-                    mask_outer_pericarp[hull_complete == 255] = 0
+                    mask_outer = mask_fruit.copy()
+                    mask_outer[mask_inner == 255] = 0
                     
-                    if mask_outer_pericarp.sum() > 0:
-                        outer_pericarp_color = extract_color_features(img, mask_outer_pericarp, stat, color_spaces)
+                    if np.any(mask_outer):
+                        fruit_results['outer_pericarp'] = extract_color_features(
+                            roi_img, mask_outer, stat, color_spaces
+                        )
                     else:
-                        outer_pericarp_color = _get_nan_color_dict()
-                    fruit_results['outer_pericarp'] = outer_pericarp_color
+                        fruit_results['outer_pericarp'] = _get_nan_color_dict()
             else:
-                # Hull vacío - llenar con NaN los tejidos solicitados
                 if 'inner_flesh' in tissues_to_compute:
                     fruit_results['inner_flesh'] = _get_nan_color_dict()
                 if 'outer_pericarp' in tissues_to_compute:
@@ -484,7 +413,6 @@ def analyze_all_fruits_color(
                 if 'locules' in tissues_to_compute:
                     fruit_results['locules'] = _get_nan_color_dict()
         else:
-            # No hay lóculos - llenar con NaN los tejidos solicitados
             if 'inner_flesh' in tissues_to_compute:
                 fruit_results['inner_flesh'] = _get_nan_color_dict()
             if 'outer_pericarp' in tissues_to_compute:
@@ -495,3 +423,300 @@ def analyze_all_fruits_color(
         results[fruit_id] = fruit_results
     
     return results
+
+
+#############################################################
+# Create masks for a single fruit and its different tissues #
+#############################################################
+
+# Helper function to renumber fruit IDs
+
+def renumber_fruit_locule_map(
+    fruit_locule_map: Dict[int, List[int]]
+) -> Tuple[Dict[int, List[int]], Dict[int, int]]:
+    """
+    Renumber fruit IDs from 1 to n sequentially.
+    
+    Args:
+        fruit_locule_map: Original mapping of fruit_id -> list of locule_ids
+        
+    Returns:
+        - New mapping with sequential fruit IDs (1, 2, 3, ..., n)
+        - Mapping from new fruit_id -> original fruit_id
+        
+    Example:
+        Original: {5: [10, 11], 12: [20, 21], 8: [15]}
+        Result map:   {1: [10, 11], 2: [20, 21], 3: [15]}
+        ID mapping:  {1: 5, 2: 8, 3: 12}
+    """
+    # Get original fruit IDs sorted (optional, for consistency)
+    original_ids = sorted(fruit_locule_map.keys())
+    
+    renumbered_map = {}
+    fruit_id_map = {}
+
+    for new_id, original_id in enumerate(original_ids, start=1):
+        renumbered_map[new_id] = fruit_locule_map[original_id]
+        fruit_id_map[new_id] = original_id
+    
+    return renumbered_map, fruit_id_map
+
+# Create the masks: 
+def get_single_fruit_masks_fast(
+    img: np.ndarray,
+    contours: List[np.ndarray],
+    fruit_locule_map: Dict[int, List[int]],
+    fruit_id: Optional[int] = None,
+    renumber: bool = True
+) -> Dict[str, np.ndarray]:
+    """
+    Obtain masks for the different tissues of a single fruit.
+    
+    Args:
+        fruit_id: id of the fruit to analyze. If None, the first fruit with locules is selected.
+        renumber: If True, renumber fruit IDs from 1 to n before selecting.
+    
+    Returns:
+        Dict with masks for:
+            - 'whole_fruit': mask of the whole fruit
+            - 'outer_pericarp': mask of the outer pericarp
+            - 'inner_flesh': mask of the inner flesh
+            - 'locules': mask of the locules
+            - 'cropped_img': cropped image of the fruit
+            - 'bounding_box': bounding box of the fruit in the original image (x, y, w, h)
+    """
+    
+    if not fruit_locule_map:
+        raise ValueError("No fruits found in the fruit_locule_map")
+    
+    # Renumber fruit IDs from 1 to n if requested
+    if renumber:
+        fruit_locule_map, fruit_id_map = renumber_fruit_locule_map(fruit_locule_map)
+    else:
+        # Identity mapping if no renumbering
+        fruit_id_map = {k: k for k in fruit_locule_map.keys()}
+    
+    # Select fruit if fruit_id is not provided
+    if fruit_id is None:
+        # Look for the first fruit with locules
+        for fid, locules in fruit_locule_map.items():
+            if locules:
+                fruit_id = fid
+                break
+        
+        # If don't find any valid fruit, use the first one
+        if fruit_id is None:
+            fruit_id = list(fruit_locule_map.keys())[0]
+
+    # Map to original fruit ID
+    original_fruit_id = fruit_id_map[fruit_id]
+    
+    # Get the contour of the selected fruit (using original IDs)
+    fruit_contour = get_fruit_contour(contours, original_fruit_id)
+    if len(fruit_contour) == 0:
+        raise ValueError(f"Contour not found for fruit {original_fruit_id}")
+    
+    # Get the bounding box of the fruit
+    x, y, w, h = cv2.boundingRect(fruit_contour)
+    
+    # Add a small margin around the bounding box
+    margin = 10
+    x_start = max(0, x - margin)
+    y_start = max(0, y - margin)
+    x_end = min(img.shape[1], x + w + margin)
+    y_end = min(img.shape[0], y + h + margin)
+    
+    # Cut the image
+    cropped_img = img[y_start:y_end, x_start:x_end]
+    crop_height, crop_width = cropped_img.shape[:2]
+    
+    # Adjust fruit contour to the cropped image space
+    fruit_contour_adj = fruit_contour.copy()
+    fruit_contour_adj[:, :, 0] -= x_start  
+    fruit_contour_adj[:, :, 1] -= y_start 
+    
+    # Create an empty dictionary to hold the masks
+    masks = {}
+    
+    # Create a mask for the whole fruit
+    masks['whole_fruit'] = np.zeros((crop_height, crop_width), dtype=np.uint8)
+    cv2.drawContours(masks['whole_fruit'], [fruit_contour_adj], -1, 255, cv2.FILLED)
+    
+    # Get the locule indices for the selected fruit
+    # NOTE: locule indices correspond to original contour IDs
+    locule_indices = fruit_locule_map.get(fruit_id, [])
+    
+    if locule_indices:
+        # Get the inner pericarp contour
+        inner_contour = get_inner_pericarp_contour(locule_indices, contours)
+        
+        # For the inner pericarp and locules:
+        if len(inner_contour) > 0:
+            inner_contour_adj = inner_contour.copy()
+            inner_contour_adj[:, :, 0] -= x_start
+            inner_contour_adj[:, :, 1] -= y_start
+            
+            # Create an inner area mask
+            inner_area = np.zeros((crop_height, crop_width), dtype=np.uint8)
+            cv2.drawContours(inner_area, [inner_contour_adj], -1, 255, cv2.FILLED)
+            
+            # Create a mask for the locules
+            masks['locules'] = np.zeros((crop_height, crop_width), dtype=np.uint8)
+            for loc_idx in locule_indices:
+                loc_contour = contours[loc_idx].copy()
+                loc_contour[:, :, 0] -= x_start
+                loc_contour[:, :, 1] -= y_start
+                cv2.drawContours(masks['locules'], [loc_contour], -1, 255, cv2.FILLED)
+            
+            # create a mask for the inner_flesh (inner_area - locules)
+            masks['inner_flesh'] = cv2.subtract(inner_area, masks['locules'])
+            
+            # create a mask for the outer_pericarp (whole_fruit - inner_area)
+            masks['outer_pericarp'] = cv2.subtract(masks['whole_fruit'], inner_area)
+        else:
+            # Just in case there is no valid inner contour, all fruit is outer pericarp
+            masks['outer_pericarp'] = masks['whole_fruit'].copy()
+            masks['inner_flesh'] = np.zeros_like(masks['whole_fruit'])
+            masks['locules'] = np.zeros_like(masks['whole_fruit'])
+    else:
+        # For fruits with no locules, all fruit is outer pericarp too
+        masks['outer_pericarp'] = masks['whole_fruit'].copy()
+        masks['inner_flesh'] = np.zeros((crop_height, crop_width), dtype=np.uint8)
+        masks['locules'] = np.zeros((crop_height, crop_width), dtype=np.uint8)
+    
+    # Add cropped image and bounding box to the masks dict
+    masks['cropped_img'] = cropped_img
+    masks['bounding_box'] = (x_start, y_start, x_end - x_start, y_end - y_start)
+
+    # (Optional but useful for debugging)
+    masks['fruit_id'] = fruit_id                     # renumbered ID (1..n)
+    masks['fruit_id_original'] = original_fruit_id   # original contour ID
+    
+    return masks
+
+# Option 1 to visualizate single fruit masks - Individual plots for each tissue (binary masks)
+def visualize_single_fruit_masks(
+    masks: Dict[str, np.ndarray],
+    figsize: Tuple[int, int] = (12, 4)
+):
+    """
+    Plot the masks of different tissues of a single fruit.
+    """
+    tissue_display_names = {
+        'whole_fruit': 'Whole Fruit',
+        'outer_pericarp': 'Outer Pericarp',
+        'inner_flesh': 'Inner Flesh',
+        'locules': 'Locules'
+    }
+    
+    # Determine the order of display:
+    display_order = ['whole_fruit', 'outer_pericarp', 'inner_flesh', 'locules']
+    
+    # Get only existing masks
+    valid_masks = [m for m in display_order if m in masks]
+    
+    if not valid_masks:
+        print("There are no masks to display.")
+        return
+    
+    n_masks = len(valid_masks)
+    
+    # Create an array of subplots
+    fig, axes = plt.subplots(1, n_masks + 1, figsize=figsize)
+    
+    if n_masks + 1 == 1:
+        axes = [axes]
+    
+    if 'cropped_img' in masks:
+        cropped_img = masks['cropped_img']
+        if cropped_img.ndim == 3 and cropped_img.shape[2] == 3:
+            img_display = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2RGB)
+        else:
+            img_display = cropped_img
+        
+        axes[0].imshow(img_display)
+        axes[0].set_title('Original Fruit', fontweight='bold', fontsize=10)
+        axes[0].axis('off')
+    
+    # Show each mask on the plots
+    for idx, mask_type in enumerate(valid_masks, 1):
+        mask = masks[mask_type]
+        axes[idx].imshow(mask, cmap='gray')
+        display_name = tissue_display_names.get(mask_type, mask_type.replace('_', ' ').title())
+        axes[idx].set_title(display_name, fontweight='bold', fontsize=10)
+        axes[idx].axis('off')
+    
+    plt.tight_layout()
+    plt.show()
+
+# Option 2 to visualizate single fruit masks - Overlay masks on the original image
+
+
+def visualize_single_fruit_overlay(
+    masks: Dict[str, np.ndarray],
+    figsize: Tuple[int, int] = (10, 8)
+):
+    """
+    Plot an overlay of the different tissue masks on the cropped fruit image.
+    Args:
+        masks: Dict with tissue masks and cropped image.
+        figsize: Size of the figure.
+    """
+    if 'cropped_img' not in masks:
+        return
+    
+    cropped_img = masks['cropped_img'].copy()
+    
+    # Create the overlay image
+    if cropped_img.ndim == 3:
+        overlay_img = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2RGB)
+    else:
+        overlay_img = cv2.cvtColor(cropped_img, cv2.COLOR_GRAY2RGB)
+    
+    # Determine colors for each tissue
+    tissue_colors = {
+        'outer_pericarp': (255, 200, 0, 100),    # Yellow
+        'inner_flesh': (255, 100, 100, 100),     #  Light Red
+        'locules': (100, 200, 255, 150)          # Light Blue
+    }
+    
+    fig, axes = plt.subplots(1, 2, figsize=figsize)
+    
+    # Plot the original cropped image
+    axes[0].imshow(overlay_img)
+    axes[0].set_title('Original', fontweight='bold')
+    axes[0].axis('off')
+    
+    # Create a copy for overlay
+    overlay_display = overlay_img.copy().astype(float) / 255
+    
+    for tissue, color in tissue_colors.items():
+        if tissue in masks and np.any(masks[tissue] > 0):
+            mask = masks[tissue] > 0
+            if mask.any():
+                # Create the colored overlay
+                color_rgb = np.array(color[:3]) / 255.0
+                alpha = color[3] / 255.0
+                
+                for c in range(3):
+                    overlay_display[:, :, c][mask] = (
+                        overlay_display[:, :, c][mask] * (1 - alpha) + 
+                        color_rgb[c] * alpha
+                    )
+    
+    # Plot the overlay
+    axes[1].imshow(overlay_display)
+    axes[1].set_title('Tissue Overlay', fontweight='bold')
+    axes[1].axis('off')
+    
+    from matplotlib.patches import Patch
+    legend_elements = [
+        Patch(facecolor=np.array(color[:3])/255, alpha=color[3]/255, 
+              label=tissue.replace('_', ' ').title())
+        for tissue, color in tissue_colors.items() if tissue in masks
+    ]
+    
+    axes[1].legend(handles=legend_elements, loc='upper right', fontsize=9)
+    
+    plt.tight_layout()
+    plt.show()

@@ -5,8 +5,7 @@
 # ============================================================================
 from typing import List, Dict, Tuple, Optional, Any
 
-# ======================================================
-# ======================
+# ===========================================================================
 # THIRD-PARTY LIBRARIES
 # ===========================================================================
 import cv2
@@ -15,7 +14,7 @@ import pandas as pd
 from dataclasses import dataclass
 
 # ============================================================================
-# LOCAL/INTERNAL IMPORTS
+# INTERNAL IMPORTS
 # ===========================================================================
 from .geometry import calculate_axes, rotate_box, get_fruit_morphology
 from .symmetry import angular_symmetry, radial_symmetry
@@ -206,7 +205,7 @@ def _analyze_single_fruit(
     
     if fruit_data is None:
         return None
-    print('Debug fruit data: Ok!')
+    
 
     # 2. Calculate fruit metrics
     fruit_metrics = _calculate_fruit_metrics(
@@ -218,7 +217,7 @@ def _analyze_single_fruit(
         config,
         unit
     )
-    print('Debug fruit metrics: Ok!')
+    
     
     # 3. Process locules
     locule_metrics = _process_locules(
@@ -239,7 +238,6 @@ def _analyze_single_fruit(
         unit
     )
 
-    print('Debug pericarp metrics: Ok!')
     
     # 5. Calculate symmetry
     symmetry_metrics = _calculate_symmetry_metrics(
@@ -247,8 +245,7 @@ def _analyze_single_fruit(
         config,
         precomputed_ideals
     )
-    
-    print('Debug symmetry metrics: Ok!')
+
 
     # 6. Calculate derived metrics
     derived_metrics = _calculate_derived_metrics(
@@ -269,7 +266,6 @@ def _analyze_single_fruit(
         config
     )
     
-    print('Debug annotation: Ok!')
 
     # 8. Extract color features if requested
     color_metrics = None
@@ -288,24 +284,21 @@ def _analyze_single_fruit(
                 contours=contours
             )
 
-        print('Debug inner contour for color: Ok!')
         
-        # NEW: Get locule contours for exclusion
+        # Get locule contours for exclusion
         locule_contours = None
         if not config.locules_filled and locule_metrics['filtered_ids']:
             locule_contours = [contours[i] for i in locule_metrics['filtered_ids']]
 
-        print('Debug locule contours for color: Ok!')
         
         color_metrics = analyze_fruit_color(
             img=img_for_color,
             fruit_contour=fruit_data['contour'],
             inner_pericarp_contour=inner_contour,
-            locule_contours=locule_contours,  # NEW parameter for locule exclusion
+            locule_contours=locule_contours,  
             img_shape=img_shape,
             stat=config.color_stat
         )
-        print('Debug color metrics: Ok!')
 
     return _format_results(
         img_name=img_name,

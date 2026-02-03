@@ -14,7 +14,7 @@ from scipy.spatial import ConvexHull
 from scipy.spatial.distance import pdist, squareform
 
 # ============================================================================
-# LOCAL/INTERNAL IMPORTS
+# INTERNAL IMPORTS
 # ===========================================================================
 from .processing import get_fruit_contour
 

@@ -25,7 +25,7 @@ import psutil
 
 
 # ============================================================================
-# LOCAL/INTERNAL IMPORTS
+# INTERNAL IMPORTS
 # ============================================================================
 from .mask import create_mask, find_fruits, apply_contrast, create_mask_locules
 from .analysis import analyze_fruits
