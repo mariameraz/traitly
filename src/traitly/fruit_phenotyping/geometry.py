@@ -53,14 +53,15 @@ def calculate_axes(fruit_contour: np.ndarray,
             - min_dist_px: Minor axis length in pixels.
     """
     # Reshape and convert contour to float32 (consistent dtype)
-    points_px = fruit_contour.reshape(-1, 2).astype(np.float32) # Only needed here for compatibility with scipy.dist, which requires 2D array
+    points_px = fruit_contour.reshape(-1, 2).astype(np.float32)
     n = points_px.shape[0] # Number of points in contour
     
-    # Early exit for invalid contours
+    # Early exit for invalid contours - DEVOLVER NaN
     if n < 2: 
-        return 0.0, 0.0, 0.0, 0.0
+        nan_cm = np.nan if px_per_cm is not None else np.nan
+        return nan_cm, nan_cm, np.nan, np.nan
     
-    ## MAJOR AXIS CALCULATION
+    ## Major axis calculation --------------
     if hull_verts is None:
         if n >= 3:
             verts = ConvexHull(points_px).vertices
@@ -73,7 +74,8 @@ def calculate_axes(fruit_contour: np.ndarray,
     hull_points = points_px[verts]
     
     if len(hull_points) < 2:
-        return 0.0, 0.0, 0.0, 0.0
+        nan_cm = np.nan if px_per_cm is not None else np.nan
+        return nan_cm, nan_cm, np.nan, np.nan
     
     if len(hull_points) == 2:
         # Special case: only 2 points
@@ -87,10 +89,10 @@ def calculate_axes(fruit_contour: np.ndarray,
         max_dist_px = dist_matrix[max_idx]
     
     if max_dist_px == 0:
-        return 0.0, 0.0, 0.0, 0.0
+        nan_cm = np.nan if px_per_cm is not None else np.nan
+        return nan_cm, nan_cm, 0.0, 0.0
     
     # Major axis length in cm calculation
-    # Validate px_per_cm is a number before any operations
     if px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
         inv_px_per_cm = 1.0 / px_per_cm
         max_dist_cm = max_dist_px * inv_px_per_cm
@@ -101,14 +103,14 @@ def calculate_axes(fruit_contour: np.ndarray,
     p1_px = points_px[point1_idx]
     p2_px = points_px[point2_idx]
     
-    ## MINOR AXIS CALCULATION
-
+    ## Minor axis calculation ------------------
+    
     # Vector along major axis
     major_vec = p2_px - p1_px
     major_norm = max_dist_px 
     
     if major_norm < 1e-10:
-        min_dist_cm = 0.0 if (isinstance(px_per_cm, (int, float)) and px_per_cm > 0) else np.nan
+        min_dist_cm = np.nan if (isinstance(px_per_cm, (int, float)) and px_per_cm > 0) else np.nan
         return max_dist_cm, min_dist_cm, max_dist_px, 0.0
     
     # Calculate perpendicular unit vector
@@ -213,7 +215,7 @@ def rotate_box(contour: np.ndarray,
 def get_fruit_morphology(contour: np.ndarray, 
                          px_per_cm: Optional[float] = None, 
                          contour_mode: str = 'raw', 
-                         epsilon: float = 0.001):
+                         epsilon: float = 0.002):
     """
     Calculate comprehensive fruit morphology metrics with contour transformation options.
     

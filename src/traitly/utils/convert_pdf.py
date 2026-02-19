@@ -15,7 +15,7 @@ import re
 # ============================================================================
 # LOCAL LIBRARIES
 # ============================================================================
-from traitly.utils.common_functions import detect_qr
+from traitly.utils.basic_functions import detect_qr
 
 try:
     import fitz  # pymupdf

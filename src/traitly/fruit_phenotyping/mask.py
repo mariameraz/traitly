@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 # ============================================================================
 # INTERNAL IMPORTS
 # ===========================================================================
-from ..utils.common_functions import is_contour_valid, plot_img
+from ..utils.basic_functions import is_contour_valid, plot_img
 
 #################################################################################################
 # Create fruit mask
@@ -33,9 +33,12 @@ def create_mask(
     kernel_close: Optional[int] = None, 
     canny_min: Optional[int] = None,
     canny_max: Optional[int] = None,
-    plot: bool = True,  # ← Cambio aquí
-    plot_size: Tuple[int,int] = (5,5)
-) -> np.ndarray:  # ← Cambio aquí
+    plot: bool = True, 
+    plot_size: Tuple[int,int] = (5,5),
+    background_color: Optional[str] = None,
+    fill_holes: bool = False,
+    apply_convex_hull: bool = False
+) -> np.ndarray: 
     """
     Creates a binary mask to segment objects from an HSV image using color 
     thresholding, morphological operations and edge detection.
@@ -112,14 +115,30 @@ def create_mask(
         #####################################################################################        
 
         # Set default HSV values for black/dark backgrounds if not provided
+        background_color_list = {
+            'blue', 'white', 'black'
+        }
+        if background_color is not None:
+            if background_color == 'blue':
+                lower_hsv = np.array([90, 100, 80], dtype=np.uint8)
+                upper_hsv = np.array([130, 255, 255], dtype=np.uint8)
+            elif background_color == 'white':
+                lower_hsv = np.array([0, 0, 85], dtype=np.uint8)   
+                upper_hsv = np.array([180, 66, 255], dtype=np.uint8)
+            elif background_color == 'black':
+                lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
+                upper_hsv = np.array([180, 250, 50], dtype=np.uint8)
+            else:
+                raise ValueError(f"Invalid background_color: {background_color}. Use: {background_color_list}")
+
         if lower_hsv is None:
             lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
-        elif isinstance(lower_hsv, (list, tuple)):  # ← Cambio aquí
+        elif isinstance(lower_hsv, (list, tuple)): 
             lower_hsv = np.array(lower_hsv, dtype=np.uint8)
             
         if upper_hsv is None:
             upper_hsv = np.array([180, 250, 50], dtype=np.uint8)
-        elif isinstance(upper_hsv, (list, tuple)):  # ← Cambio aquí
+        elif isinstance(upper_hsv, (list, tuple)):
             upper_hsv = np.array(upper_hsv, dtype=np.uint8)
 
         # VALIDATE HSV THRESH VALUES
@@ -164,12 +183,16 @@ def create_mask(
         else:
             final_mask = mask
 
+        if fill_holes:
+            final_mask = fill_holes_to_mask(final_mask)
+        
+        if apply_convex_hull:
+            final_mask = apply_convex_hull_to_mask(final_mask)
+
         if plot:
             plot_img(final_mask, 
                      fig_axis=False, 
-                     plot_size=plot_size, 
-                     metadata=False, 
-                     gray=True)
+                     plot_size=plot_size)
 
         return final_mask
         
@@ -177,69 +200,287 @@ def create_mask(
         raise RuntimeError(f"OpenCV error: {str(e)}")
     except Exception as e:
         raise RuntimeError(f"Unexpected error: {str(e)}")
+    
+
+#################################################################################################
+# Fill contour holes with floodfill
+#################################################################################################
+def fill_holes_to_mask(mask: np.ndarray) -> np.ndarray:
+    if mask.ndim != 2:
+        raise ValueError("mask must be a 2D array")
+    m = (mask > 0).astype(np.uint8) * 255
+
+    h, w = m.shape
+    flood = m.copy()
+
+    ff_mask = np.zeros((h + 2, w + 2), np.uint8)
+
+    cv2.floodFill(flood, ff_mask, (0, 0), 255)
+
+    flood_inv = cv2.bitwise_not(flood)
+    filled = cv2.bitwise_or(m, flood_inv)
+    return filled
+
+#################################################################################################
+# Close contours slit with convex hull 
+#################################################################################################
+def apply_convex_hull_to_mask(mask: np.ndarray, min_area: int = 50, contours: Optional[Dict] = None) -> np.ndarray:
+    m = (mask > 0).astype(np.uint8) * 255
+
+    if contours is None:
+        contours, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    out = np.zeros_like(m)
+    for c in contours:
+        if cv2.contourArea(c) < min_area:
+            continue
+        hull = cv2.convexHull(c)
+        cv2.drawContours(out, [hull], -1, 255, thickness=-1)
+    return out
+
+
+
+
 
 
 #################################################################################################
 # Detect fruit contours in a binary mask
 #################################################################################################
+# def find_fruits(
+#     binary_mask: np.ndarray,
+#     min_locule_area: int = 50,
+#     min_locules_per_fruit: int = 1,
+#     min_fruit_area: Optional[int] = None,
+#     max_fruit_area: Optional[int] = None,
+#     min_circularity: float = 0.4,
+#     max_circularity: float = 1.0,
+#     rescale_factor: Optional[float] = None
+# ) -> Tuple[List[np.ndarray], Dict[int, List[int]]]:
+#     """                 
+#     Detects fruit contours in a binary mask using morphological filtering and maps 
+#     fruits to their internal cavities (locules).
+    
+#     This function identifies fruit structures by detecting outer contours that contain 
+#     smaller internal contours (locules/seed cavities). Applies multiple morphological 
+#     filters to distinguish valid fruits from noise.
+
+#     Pipeline:
+#         1. Optional rescaling for speed (processes smaller image)
+#         2. Contour detection with hierarchy
+#         3. Vectorized computation of morphological features
+#         4. Vectorized filtering of valid fruits
+#         5. Fruit-locule mapping
+#         6. Rescale contours back to original coordinates
+
+#     Arguments:
+#         binary_mask: Binary image (uint8) where white (255) represents fruits, 
+#             black (0) background. Must be a 2D array.
+#         min_locule_area: Minimum area in square pixels (px²) for a valid locule.
+#             **Specified in original image coordinates.** Automatically scaled 
+#             when rescale_factor is used.
+#         min_locules_per_fruit: Minimum number of valid locules required to classify 
+#             as fruit. Set to 0 to detect fruits without visible locules.
+#         min_fruit_area: Minimum area in square pixels (px²) for a valid fruit.
+#             If None, no minimum filter is applied. Specified in original coordinates.
+#         max_fruit_area: Maximum area in square pixels (px²) for a valid fruit.
+#             If None, no maximum filter is applied. Specified in original coordinates.
+#         min_circularity: Minimum circularity (0-1, where 1.0 = perfect circle).
+#             Formula: 4π*Area / Perimeter²
+#         max_circularity: Maximum circularity threshold.
+#         min_aspect_ratio: Minimum width/height ratio for valid contours.
+#             Uses rotation-invariant minAreaRect (not affected by object orientation).
+#         max_aspect_ratio: Maximum width/height ratio for valid contours.
+#         rescale_factor: Image scaling factor (0.0, 1.0] for faster processing.
+#             Example: 0.5 = 50% size (~4× faster).
+#             **Note:** All processing is done on scaled image, then contours are 
+#             rescaled back to original coordinates.
+    
+#     Returns:
+#         contours: List of all detected contours in **original image coordinates**.
+#             Each contour is (N, 1, 2) array.
+#         fruit_locules_map: Maps fruit indices to their locule indices.
+#             Example: {0: [1, 2], 5: [6]} means contour 0 contains locules 1 and 2.
+
+#     Raises:
+#         ValueError: Invalid input parameters
+#         cv2.error: OpenCV contour detection failure
+#     """
+#     min_aspect_ratio = 0.3
+#     max_aspect_ratio = 3
+#     # =========================================================================
+#     # INPUT VALIDATION
+#     # =========================================================================
+#     if not isinstance(binary_mask, np.ndarray) or binary_mask.dtype != np.uint8:
+#         raise ValueError("binary_mask must be uint8 numpy array")
+    
+#     if len(binary_mask.shape) != 2:
+#         raise ValueError("binary_mask must be 2D array")
+    
+#     if rescale_factor is not None and not (0 < rescale_factor <= 1):
+#         raise ValueError('rescale_factor must be in range (0, 1]')
+    
+#     if min_locule_area <= 0 or min_locules_per_fruit < 0:
+#         raise ValueError("Area and locule count must be positive")
+    
+#     # Validate fruit area parameters
+#     if min_fruit_area is not None and min_fruit_area <= 0:
+#         raise ValueError("min_fruit_area must be positive")
+    
+#     if max_fruit_area is not None and max_fruit_area <= 0:
+#         raise ValueError("max_fruit_area must be positive")
+    
+#     if min_fruit_area is not None and max_fruit_area is not None:
+#         if min_fruit_area > max_fruit_area:
+#             raise ValueError("min_fruit_area cannot be greater than max_fruit_area")
+    
+#     if not (0 <= min_circularity <= max_circularity <= 1):
+#         raise ValueError("Circularity: 0 ≤ min ≤ max ≤ 1")
+    
+#     if not (0 < min_aspect_ratio <= max_aspect_ratio):
+#         raise ValueError("Aspect ratio: 0 < min ≤ max")
+
+#     # =========================================================================
+#     # PREPROCESSING: RESCALE IMAGE (if requested)
+#     # =========================================================================
+#     should_rescale = rescale_factor is not None and rescale_factor < 1
+    
+#     if should_rescale:
+#         original_h, original_w = binary_mask.shape
+#         new_w = int(original_w * rescale_factor)
+#         new_h = int(original_h * rescale_factor)
+#         resized_mask = cv2.resize(binary_mask, (new_w, new_h), 
+#                                   interpolation=cv2.INTER_NEAREST)
+        
+#         # Area scales with square of linear scale factor (2D geometry)
+#         adjusted_min_locule_area = int(min_locule_area * (rescale_factor ** 2))
+        
+#         # Adjust fruit area thresholds according to scale
+#         adjusted_min_fruit_area = (int(min_fruit_area * (rescale_factor ** 2)) 
+#                                   if min_fruit_area is not None else None)
+#         adjusted_max_fruit_area = (int(max_fruit_area * (rescale_factor ** 2)) 
+#                                   if max_fruit_area is not None else None)
+        
+#         # Pre-compute scale factors for final coordinate transformation
+#         scale_x = original_w / new_w
+#         scale_y = original_h / new_h
+#     else:
+#         resized_mask = binary_mask
+#         adjusted_min_locule_area = min_locule_area
+#         adjusted_min_fruit_area = min_fruit_area
+#         adjusted_max_fruit_area = max_fruit_area
+
+#     # =========================================================================
+#     # CONTOUR DETECTION WITH HIERARCHY
+#     # =========================================================================
+#     contours, hierarchy = cv2.findContours(
+#         resized_mask,
+#         cv2.RETR_TREE,  # Get full tree hierarchy (parent-child relationships)
+#         cv2.CHAIN_APPROX_SIMPLE 
+#     )
+    
+#     if not contours or hierarchy is None:
+#         return [], {}
+
+#     hierarchy = hierarchy[0]  # (1, N, 4) to (N, 4)
+    
+#     # =========================================================================
+#     # COMPUTE BASIC GEOMETRICS (VECTORIZED)
+#     # =========================================================================
+#     # Area and perimeter
+#     areas = np.array([cv2.contourArea(c) for c in contours])
+#     perimeters = np.array([cv2.arcLength(c, True) for c in contours])
+    
+#     # Circularity: 4π*Area/Perimeter²
+#     with np.errstate(divide='ignore', invalid='ignore'):
+#         circularities = (4 * np.pi * areas) / (perimeters ** 2)
+#         circularities = np.nan_to_num(circularities, nan=0.0, posinf=0.0, neginf=0.0)
+    
+#     # Aspect ratios using rotated bounding boxes (orientation-invariant)
+#     min_area_rects = [cv2.minAreaRect(c) for c in contours]
+#     aspect_ratios = np.array([
+#         max(w, h) / min(w, h) if min(w, h) > 0 else 0.0
+#         for _, (w, h), _ in min_area_rects
+#     ])
+
+#     # =========================================================================
+#     # IDENTIFY VALID FRUITS (VECTORIZED FILTERING)
+#     # =========================================================================
+#     # Potential fruits: no parent (only top level contours)
+#     is_top_level = hierarchy[:, 3] == -1
+    
+#     # Apply morphological filters
+#     passes_circularity = (circularities >= min_circularity) & (circularities <= max_circularity)
+#     passes_aspect = (aspect_ratios >= min_aspect_ratio) & (aspect_ratios <= max_aspect_ratio)
+    
+#     # Fruit area filters (optional)
+#     passes_min_fruit_area = True
+#     if adjusted_min_fruit_area is not None:
+#         passes_min_fruit_area = areas >= adjusted_min_fruit_area
+    
+#     passes_max_fruit_area = True
+#     if adjusted_max_fruit_area is not None:
+#         passes_max_fruit_area = areas <= adjusted_max_fruit_area
+    
+#     passes_fruit_area = passes_min_fruit_area & passes_max_fruit_area
+    
+#     # Combine all filters using boolean operations
+#     valid_fruits_mask = is_top_level & passes_fruit_area & passes_circularity & passes_aspect
+    
+#     # Get indices of valid fruits
+#     valid_fruit_indices = np.where(valid_fruits_mask)[0]
+
+#     # =========================================================================
+#     # FRUIT-LOCULE MAPPING
+#     # =========================================================================
+#     fruit_locules_map = {}
+    
+#     for fruit_idx in valid_fruit_indices:
+#         # Find all child contours (potential locules)
+#         # Note: A contour is a child if hierarchy[i, 3] == fruit_idx
+#         is_child_of_fruit = hierarchy[:, 3] == fruit_idx
+        
+#         # Filter locules by minimum area
+#         valid_locules_mask = is_child_of_fruit & (areas >= adjusted_min_locule_area)
+#         locule_indices = np.where(valid_locules_mask)[0].tolist()
+        
+#         # Only keep fruit if it has minimum required locules
+#         if len(locule_indices) >= min_locules_per_fruit:
+#             fruit_locules_map[int(fruit_idx)] = locule_indices
+
+#     # =========================================================================
+#     # RESCALE CONTOURS BACK TO ORIGINAL COORDINATES
+#     # =========================================================================
+#     if should_rescale:
+#         scale_factors = np.array([[scale_x, scale_y]], dtype=np.float32)
+        
+#         contours = [
+#             (c.astype(np.float32) * scale_factors).astype(np.int32)
+#             for c in contours
+#         ]
+    
+#     return contours, fruit_locules_map
+
 
 def find_fruits(
     binary_mask: np.ndarray,
     min_locule_area: int = 50,
     min_locules_per_fruit: int = 1,
+    min_fruit_area: Optional[int] = None,
+    max_fruit_area: Optional[int] = None,
     min_circularity: float = 0.4,
     max_circularity: float = 1.0,
-    min_aspect_ratio: float = 0.3,
-    max_aspect_ratio: float = 3.0,
     rescale_factor: Optional[float] = None
 ) -> Tuple[List[np.ndarray], Dict[int, List[int]]]:
     """                 
     Detects fruit contours in a binary mask using morphological filtering and maps 
     fruits to their internal cavities (locules).
-    
-    This function identifies fruit structures by detecting outer contours that contain 
-    smaller internal contours (locules/seed cavities). Applies multiple morphological 
-    filters to distinguish valid fruits from noise.
-
-    Pipeline:
-        1. Optional rescaling for speed (processes smaller image)
-        2. Contour detection with hierarchy
-        3. Vectorized computation of morphological features
-        4. Vectorized filtering of valid fruits
-        5. Fruit-locule mapping
-        6. Rescale contours back to original coordinates
-
-    Arguments:
-        binary_mask: Binary image (uint8) where white (255) represents fruits, 
-            black (0) background. Must be a 2D array.
-        min_locule_area: Minimum area in square pixels (px²) for a valid locule.
-            **Specified in original image coordinates.** Automatically scaled 
-            when rescale_factor is used.
-        min_locules_per_fruit: Minimum number of valid locules required to classify 
-            as fruit. Set to 0 to detect fruits without visible locules.
-        min_circularity: Minimum circularity (0-1, where 1.0 = perfect circle).
-            Formula: 4π*Area / Perimeter²
-        max_circularity: Maximum circularity threshold.
-        min_aspect_ratio: Minimum width/height ratio for valid contours.
-            Uses rotation-invariant minAreaRect (not affected by object orientation).
-        max_aspect_ratio: Maximum width/height ratio for valid contours.
-        rescale_factor: Image scaling factor (0.0, 1.0] for faster processing.
-            Example: 0.5 = 50% size (~4× faster).
-            **Note:** All processing is done on scaled image, then contours are 
-            rescaled back to original coordinates.
-    
-    Returns:
-        contours: List of all detected contours in **original image coordinates**.
-            Each contour is (N, 1, 2) array.
-        fruit_locules_map: Maps fruit indices to their locule indices.
-            Example: {0: [1, 2], 5: [6]} means contour 0 contains locules 1 and 2.
-
-    Raises:
-        ValueError: Invalid input parameters
-        cv2.error: OpenCV contour detection failure
     """
-
-    # INPUT VALIDATION
+    min_aspect_ratio = 0.3
+    max_aspect_ratio = 3
+    
+    # =========================================================================
+    # INPUT VALIDATION (sin cambios)
+    # =========================================================================
     if not isinstance(binary_mask, np.ndarray) or binary_mask.dtype != np.uint8:
         raise ValueError("binary_mask must be uint8 numpy array")
     
@@ -252,13 +493,25 @@ def find_fruits(
     if min_locule_area <= 0 or min_locules_per_fruit < 0:
         raise ValueError("Area and locule count must be positive")
     
+    if min_fruit_area is not None and min_fruit_area <= 0:
+        raise ValueError("min_fruit_area must be positive")
+    
+    if max_fruit_area is not None and max_fruit_area <= 0:
+        raise ValueError("max_fruit_area must be positive")
+    
+    if min_fruit_area is not None and max_fruit_area is not None:
+        if min_fruit_area > max_fruit_area:
+            raise ValueError("min_fruit_area cannot be greater than max_fruit_area")
+    
     if not (0 <= min_circularity <= max_circularity <= 1):
         raise ValueError("Circularity: 0 ≤ min ≤ max ≤ 1")
     
     if not (0 < min_aspect_ratio <= max_aspect_ratio):
         raise ValueError("Aspect ratio: 0 < min ≤ max")
 
-    # PREPROCESSING: RESCALE IMAGE (if requested)
+    # =========================================================================
+    # PREPROCESSING: RESCALE IMAGE (sin cambios)
+    # =========================================================================
     should_rescale = rescale_factor is not None and rescale_factor < 1
     
     if should_rescale:
@@ -268,89 +521,141 @@ def find_fruits(
         resized_mask = cv2.resize(binary_mask, (new_w, new_h), 
                                   interpolation=cv2.INTER_NEAREST)
         
-        # Area scales with square of linear scale factor (2D geometry)
-        adjusted_min_area = int(min_locule_area * (rescale_factor ** 2))
+        adjusted_min_locule_area = int(min_locule_area * (rescale_factor ** 2))
+        adjusted_min_fruit_area = (int(min_fruit_area * (rescale_factor ** 2)) 
+                                  if min_fruit_area is not None else None)
+        adjusted_max_fruit_area = (int(max_fruit_area * (rescale_factor ** 2)) 
+                                  if max_fruit_area is not None else None)
         
-        # Pre-compute scale factors for final coordinate transformation
         scale_x = original_w / new_w
         scale_y = original_h / new_h
     else:
         resized_mask = binary_mask
-        adjusted_min_area = min_locule_area
+        adjusted_min_locule_area = min_locule_area
+        adjusted_min_fruit_area = min_fruit_area
+        adjusted_max_fruit_area = max_fruit_area
 
-    # CONTOUR DETECTION WITH HIERARCHY
-    contours, hierarchy = cv2.findContours(
-        resized_mask,
-        cv2.RETR_TREE,  # Get full tree hierarchy (parent-child relationships)
-        cv2.CHAIN_APPROX_SIMPLE 
-    )
+    # =========================================================================
+    # CONTOUR DETECTION WITH HIERARCHY (OPTIMIZADO)
+    # =========================================================================
+    needs_locules = min_locules_per_fruit > 0
     
-    if not contours or hierarchy is None:
-        return [], {}
+    if needs_locules:
+        contours, hierarchy = cv2.findContours(
+            resized_mask,
+            cv2.RETR_TREE,
+            cv2.CHAIN_APPROX_SIMPLE 
+        )
+        
+        if not contours or hierarchy is None:
+            return [], {}
+        
+        hierarchy = hierarchy[0]
+        is_top_level = hierarchy[:, 3] == -1
+        
+    else:
+        contours, _ = cv2.findContours(
+            resized_mask,
+            cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE
+        )
+        
+        if not contours:
+            return [], {}
+        
+        n_contours = len(contours)
+        # Versión vectorizada de creación de hierarchy
+        hierarchy = np.full((n_contours, 4), -1, dtype=np.int32)
+        
+        # Vectorización parcial del next/prev (aún necesita loop pero más eficiente)
+        if n_contours > 1:
+            hierarchy[:-1, 0] = np.arange(1, n_contours)  # next
+            hierarchy[1:, 1] = np.arange(n_contours - 1)   # prev
+        
+        is_top_level = np.ones(n_contours, dtype=bool)
 
-    hierarchy = hierarchy[0]  # (1, N, 4) to (N, 4)
+    # =========================================================================
+    # COMPUTE GEOMETRICS (COMPLETAMENTE VECTORIZADO)
+    # =========================================================================
+    n_contours = len(contours)
     
-    # Normize contours for downstream processing
-    normalized_contours = [
-        cnt.reshape(-1, 2).astype(np.float32) for cnt in contours
-    ]
+    # Pre-allocar arrays
+    areas = np.zeros(n_contours, dtype=np.float64)
+    perimeters = np.zeros(n_contours, dtype=np.float64)
+    aspect_ratios = np.zeros(n_contours, dtype=np.float64)
     
+    # Calcular todo en un solo loop (más cache-friendly)
+    for i, contour in enumerate(contours):
+        areas[i] = cv2.contourArea(contour)
+        perimeters[i] = cv2.arcLength(contour, True)
+        
+        # minAreaRect directamente
+        rect = cv2.minAreaRect(contour)
+        w, h = rect[1]
+        if min(w, h) > 0:
+            aspect_ratios[i] = max(w, h) / min(w, h)
     
-    # COMPUTE BASIC GEOMETRICS
-    # Area and perimeter
-    areas = np.array([cv2.contourArea(c) for c in contours])
-    perimeters = np.array([cv2.arcLength(c, True) for c in contours])
-    
-    # Circularity
+    # Circularity vectorizada
     with np.errstate(divide='ignore', invalid='ignore'):
         circularities = (4 * np.pi * areas) / (perimeters ** 2)
         circularities = np.nan_to_num(circularities, nan=0.0, posinf=0.0, neginf=0.0)
-    
-    # Aspect ratios using rotated bounding boxes
-    min_area_rects = [cv2.minAreaRect(c) for c in contours]
-    aspect_ratios = np.array([
-        max(w, h) / min(w, h) if min(w, h) > 0 else 0.0
-        for _, (w, h), _ in min_area_rects
-    ])
 
-    # IDENTIFY VALID FRUITS
-    # Potential fruits: no parent (only top level contours)
-    is_top_level = hierarchy[:, 3] == -1
+    # =========================================================================
+    # FILTRADO VECTORIZADO
+    # =========================================================================
+    # Crear máscaras de filtrado
+    filters = np.ones(n_contours, dtype=bool)
     
-    # Apply morphological filters
-    passes_area = areas >= adjusted_min_area #Filter by area
-    passes_circularity = (circularities >= min_circularity) & (circularities <= max_circularity) # Filter by circularity
-    passes_aspect = (aspect_ratios >= min_aspect_ratio) & (aspect_ratios <= max_aspect_ratio) # Filter by aspect ratio
+    # Aplicar filtros secuencialmente (short-circuit evaluation implícito)
+    filters &= is_top_level
     
-    # Combine all filters (vectorized boolean operations)
-    valid_fruits_mask = is_top_level & passes_area & passes_circularity & passes_aspect # Compare ALL the filters
+    if adjusted_min_fruit_area is not None:
+        filters &= (areas >= adjusted_min_fruit_area)
+    if adjusted_max_fruit_area is not None:
+        filters &= (areas <= adjusted_max_fruit_area)
     
-    # Get indices of valid fruits
-    valid_fruit_indices = np.where(valid_fruits_mask)[0]
+    filters &= (circularities >= min_circularity) & (circularities <= max_circularity)
+    filters &= (aspect_ratios >= min_aspect_ratio) & (aspect_ratios <= max_aspect_ratio)
     
-    # FRUIT-LOCULE MAPPING
-    fruit_locules_map = {}
-    
-    for fruit_idx in valid_fruit_indices:
-        # Find all child contours (locules)
-        # NOTE: A contour is a child if hierarchy[i, 3] == fruit_idx
-        is_child_of_fruit = hierarchy[:, 3] == fruit_idx
+    valid_fruit_indices = np.where(filters)[0]
+
+    # =========================================================================
+    # FRUIT-LOCULE MAPPING (OPTIMIZADO)
+    # =========================================================================
+    if needs_locules:
         
-        # Filter locules by minimum area
-        valid_locules_mask = is_child_of_fruit & (areas >= adjusted_min_area) # Using previously calculated area
-        locule_indices = np.where(valid_locules_mask)[0].tolist()
+        parents = hierarchy[:, 3]
         
-        # Only keep fruit if it has minimum required locules (default = 1)
-        if len(locule_indices) >= min_locules_per_fruit:
-            fruit_locules_map[int(fruit_idx)] = locule_indices
-    
-    # RESCALE CONTOURS BACK TO ORIGINAL COORDINATES
+        # Para cada fruto válido, encontrar sus hijos
+        fruit_locules_map = {}
+        
+        if len(valid_fruit_indices) > 0:
+            # Vectorizado: encontrar todos los hijos de todos los frutos a la vez
+            for fruit_idx in valid_fruit_indices:
+                # Máscara de hijos directos
+                child_mask = (parents == fruit_idx)
+                
+                # Filtrar por área mínima
+                valid_locules_mask = child_mask & (areas >= adjusted_min_locule_area)
+                locule_indices = np.where(valid_locules_mask)[0]
+                
+                if len(locule_indices) >= min_locules_per_fruit:
+                    fruit_locules_map[int(fruit_idx)] = locule_indices.tolist()
+    else:
+        # Construcción directa del diccionario (sin loop explícito)
+        fruit_locules_map = dict.fromkeys(valid_fruit_indices.astype(int), [])
+
+    # =========================================================================
+    # RESCALE CONTOURS (OPTIMIZADO)
+    # =========================================================================
     if should_rescale:
+        # Pre-calcular factor de escala como array 2D para broadcasting
         scale_factors = np.array([[scale_x, scale_y]], dtype=np.float32)
         
+        # Versión con list comprehension (ya es eficiente)
         contours = [
-            (c.astype(np.float32) * scale_factors).astype(np.int32)
-            for c in contours
+            (contour.astype(np.float32) * scale_factors).astype(np.int32)
+            for contour in contours
         ]
     
     return contours, fruit_locules_map
@@ -360,7 +665,11 @@ def find_fruits(
 # Merge close locules
 #################################################################################################
 
-def merge_locules_func(locules_indices, contours, min_distance=0, max_distance=50, min_area=10):
+def merge_locules_func(locules_indices, 
+                       contours, 
+                       min_distance=0, 
+                       max_distance=50, 
+                       min_area=10):
     """
     Merge close locules based on proximity.
     
@@ -597,7 +906,6 @@ def exp_transform(L: np.ndarray, c: float = 1.0) -> np.ndarray:
     
     return L_exp.astype(np.uint8)
 
-
 def apply_contrast(img: np.ndarray, 
                    contrast_method: Optional[str] = 'gamma',
                    gamma: Optional[float] = 1.5,
@@ -639,31 +947,24 @@ def apply_contrast(img: np.ndarray,
         raise TypeError("Input image must be a numpy array")
     if img.ndim != 3 or img.shape[2] != 3:
         raise ValueError("Image must be in BGR format (3 channels)")
+
+    # Validate method early (avoid extra work if wrong)
+    if contrast_method not in ('gamma', 'sigmoid', 'exp', 'none'):
+        raise ValueError("contrast_method must be one of ['gamma', 'sigmoid', 'exp', 'none']")
     
     # Convert to LAB color space
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
     
     # Extract L channel
     l_channel = lab[:, :, 0]
-    
-    # Dictionary of contrast methods
-    contrast_methods = {
-        'gamma': lambda: gamma_contrast(l_channel, gamma=gamma, plot=False),
-        'sigmoid': lambda: sigmoid_contrast(l_channel, gain=gain, cutoff=cutoff),
-        'exp': lambda: exp_transform(l_channel, c=c),
-        'none': lambda: l_channel.copy()  # No transformation, return L channel as-is
-    }
-    
-    # Validate method
-    if contrast_method not in contrast_methods:
-        raise ValueError(f"contrast_method must be one of {list(contrast_methods.keys())}")
-    
-    # If compare=True, display all 3 methods (excluding 'none')
+
+    # If compare=True, compute all 3 once (and reuse for selected output)
+    l_gamma = l_sigmoid = l_exp = None
     if compare:
         l_gamma = gamma_contrast(l_channel, gamma=gamma, plot=False)
         l_sigmoid = sigmoid_contrast(l_channel, gain=gain, cutoff=cutoff)
         l_exp = exp_transform(l_channel, c=c)
-        
+
         plt.figure(figsize=plot_size)
         
         plt.subplot(2, 2, 1)
@@ -688,12 +989,20 @@ def apply_contrast(img: np.ndarray,
         
         plt.tight_layout()
         plt.show()
-    
+
     # Apply transformation to the L channel using the selected method
-    l_transformed = contrast_methods[contrast_method]()
-    
-    # Apply median blur
-    l_transformed = cv2.medianBlur(l_transformed, kernel_blur)
+    if contrast_method == 'gamma':
+        l_transformed = l_gamma if compare else gamma_contrast(l_channel, gamma=gamma, plot=False)
+    elif contrast_method == 'sigmoid':
+        l_transformed = l_sigmoid if compare else sigmoid_contrast(l_channel, gain=gain, cutoff=cutoff)
+    elif contrast_method == 'exp':
+        l_transformed = l_exp if compare else exp_transform(l_channel, c=c)
+    else:  # 'none'
+        l_transformed = l_channel.copy()
+
+    # Apply median blur (kernel 1 is a no-op; skip to save time)
+    if kernel_blur is not None and kernel_blur > 1:
+        l_transformed = cv2.medianBlur(l_transformed, kernel_blur)
     
     # Apply CLAHE only if clip_limit is specified
     if clip_limit is not None:
@@ -729,6 +1038,7 @@ def apply_contrast(img: np.ndarray,
         plt.show()
     
     return l_transformed
+
 
 def create_mask_locules(l_transformed,
                         fruit_mask,
@@ -780,7 +1090,7 @@ def create_mask_locules(l_transformed,
                                               (kernel_open, kernel_open))
         locule_mask = cv2.morphologyEx(locule_mask, cv2.MORPH_OPEN, kernel_op)
     
-    # Find all contours
+    # Find all contours (findContours modifies the input, so keep this as a fresh array)
     inv_locule_mask = cv2.bitwise_not(locule_mask)
     contours, hierarchy = cv2.findContours(inv_locule_mask, cv2.RETR_CCOMP, 
                                           cv2.CHAIN_APPROX_SIMPLE)
@@ -789,32 +1099,27 @@ def create_mask_locules(l_transformed,
     fruits_only_mask = np.zeros_like(locule_mask)
     
     if contours and hierarchy is not None:
+        h0 = hierarchy[0]
         for i, cnt in enumerate(contours):
-            parent = hierarchy[0][i][3]
-            area = cv2.contourArea(cnt)
-            
             # If no parent (external contour) and large (fruit, not noise)
-            if parent == -1 and area > min_fruit_size:
+            if h0[i][3] == -1 and cv2.contourArea(cnt) > min_fruit_size:
                 # Fill this fruit completely (includes all internal structures)
                 cv2.drawContours(fruits_only_mask, [cnt], -1, 255, -1)
-    
-    # Apply fruits mask to original locule_mask
-    # This removes ALL background, keeping only fruits and their structures
     
     # Invert locules mask if requested
     if invert_locules:
         # Invert only within fruits (keep background black)
         locule_mask_clean = cv2.bitwise_and(
-            cv2.bitwise_not(locule_mask_clean),
+            cv2.bitwise_not(locule_mask),
             fruits_only_mask
         )
     else:
         locule_mask_clean = cv2.bitwise_and(locule_mask, fruits_only_mask)
     
-    # Fuse fruit mask with locules mask
-    mask_fruits_rgb = cv2.cvtColor(cv2.bitwise_not(fruit_mask), cv2.COLOR_GRAY2BGR)
-    mask_fruits_rgb[locule_mask_clean == 255] = [255, 255, 255]
-    final_mask = cv2.bitwise_not(mask_fruits_rgb[:, :, 0])
+    # Fuse fruit mask with locules mask (same logic as before but single-channel, no BGR conversion)
+    mask_fruits_inv = cv2.bitwise_not(fruit_mask)
+    mask_fruits_inv[locule_mask_clean == 255] = 255
+    final_mask = cv2.bitwise_not(mask_fruits_inv)
     
     if plot:
         plt.figure(figsize=plot_size)
@@ -839,3 +1144,60 @@ def create_mask_locules(l_transformed,
         plt.show()
     
     return final_mask
+
+
+
+######################################################################
+# Create a scatter plot to visualize pixel colors (HSV) on the image #
+######################################################################
+
+def generate_scatter_plot(img_hsv: np.ndarray = None, 
+                          img_rgb: np.ndarray = None, 
+                          sample_size: int = 10000,
+                          plot_size = (18,5)):
+    # Reuse HSV image
+    h, s, v = cv2.split(img_hsv)
+    indices = np.random.choice(h.size, min(sample_size, h.size), replace=False) # Sample a random number of pixels
+
+    h_sample = h.ravel()[indices]
+    s_sample = s.ravel()[indices]
+    v_sample = v.ravel()[indices]
+
+    # Reuse RGB image
+    rgb_sample = img_rgb.reshape(-1, 3)[indices] / 255.0
+    
+    # Create subplot canvas
+    fig, axes = plt.subplots(1, 3, figsize=plot_size)
+
+    # Precalculate font size based on plot width size
+    width = plot_size[0]
+    title_fontsize = int(np.clip(8 + width * 0.6, 10, 24)) 
+    label_fontsize = int(np.clip(6 + width * 0.4, 8, 18))
+    tick_fontsize = int(np.clip( 5 + width * 0.3, 7, 14))
+
+    # H vs S (RGB colored pixels)
+    axes[0].scatter(h_sample, s_sample, c=rgb_sample, alpha=0.6, s=10)
+    axes[0].set_xlabel('Hue (0-180)', fontsize = label_fontsize)
+    axes[0].set_ylabel('Saturation (0-255)', fontsize = label_fontsize)
+    axes[0].set_title('H vs S', fontweight='bold', fontsize = title_fontsize)
+    axes[1].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[0].grid(alpha=0.3)
+
+    # H vs V (RGB colored pixels)
+    axes[1].scatter(h_sample, v_sample, c=rgb_sample, alpha=0.6, s=10)
+    axes[1].set_xlabel('Hue (0-180)', fontsize = label_fontsize)
+    axes[1].set_ylabel('Value (0-255)', fontsize = label_fontsize)
+    axes[1].set_title('H vs V', fontweight='bold', fontsize = title_fontsize)
+    axes[1].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[1].grid(alpha=0.3)
+
+    # S vs V (RGB colored pixels)
+    axes[2].scatter(s_sample, v_sample, c=rgb_sample, alpha=0.6, s=10)
+    axes[2].set_xlabel('Saturation (0-255)', fontsize = label_fontsize)
+    axes[2].set_ylabel('Value (0-255)', fontsize = label_fontsize)
+    axes[2].set_title('S vs V', fontweight='bold', fontsize = title_fontsize)
+    axes[1].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[2].grid(alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()

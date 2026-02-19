@@ -224,7 +224,7 @@ Examples:
 
 def analyze_internal(args):
     """Execute internal structure analysis."""
-    from .internal_structure import FruitAnalyzer
+    from .fruit_phenotyping import FruitAnalyzer
     
     # Validate path
     path = Path(args.path)

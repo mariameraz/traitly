@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "traitly" 
-version = "0.1a0"
+version = "0.1.0"
 requires-python = ">=3.9" 
 description = """
     Open-source computer vision toolkit for high-throughput fruit and locule phenotyping. 
@@ -13,7 +13,7 @@ description = """
 """
 readme = "README.md"
 license = { text = "AGPL-3.0-or-later" }
-license-files = ["LICENSE*"]
+#license-files = ["LICENSE*"]
 
 authors = [
   { name = "Maria Alejandra Torres Meraz", email = "ma.torresmeraz@gmail.com" },
@@ -21,7 +21,7 @@ authors = [
 ]
 
 dependencies = [
-  "opencv-python",
+  "opencv-contrib-python",
   "numpy",
   "pandas",
   "scipy",
@@ -50,7 +50,7 @@ keywords = [
 ]
 
 classifiers = [
-  "Development Status :: 3 - Alpha", # 4 - beta, 5 - Production/Stable
+  ""Development Status :: 4 - Beta"
   "Operating System :: OS Independent",  
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX :: Linux",
@@ -68,16 +68,31 @@ dev = [
   ]
 
 
-
+[tool.hatch.build]
+include = [
+  "traitly/**",
+  "LICENSE*",
+  "README.md",
+]
 
 # CLI configuration
 [project.scripts]
 traitly = "traitly.cli:main"
 
-[tool.setuptools.package-data]
-traitly = [
-    "package_data/models/*.pt",
-    "package_data/**/*",
+[tool.hatch.build.targets.wheel]
+packages = ["traitly"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"traitly/package_data" = "traitly/package_data"
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12"
 ]
 
 [project.urls]
@@ -85,5 +100,4 @@ Repository = "https://github.com/mariameraz/traitly"
 Source = "https://github.com/mariameraz/traitly/src"
 Issues = "https://github.com/mariameraz/traitly/issues"
 Discussion = "https://github.com/mariameraz/traitly/discussions"
-#Documentation
-#Homepage
+Documentation = "https://github.com/mariameraz/traitly/blob/main/docs/documentation.md"

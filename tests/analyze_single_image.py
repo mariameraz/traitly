@@ -1,6 +1,4 @@
-from traitly.internal_structure import FruitAnalyzer
-
-
+from traitly.fruit_phenotyping import FruitAnalyzer
 
 path_image = "tests/sample_data/DP14-106.jpg"
 analyzer = FruitAnalyzer(path_image)

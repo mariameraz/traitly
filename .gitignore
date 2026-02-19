@@ -12,10 +12,14 @@ __pycache__/
 .LSOverride
 
 # Specific files
-internal_structure/mask_unet.py
-src/example.ipynb
-src/traitly_app.py
 ./optimization_timeit.ipynb
+./testing_color.ipynb
+.traitly/src/traitly-examples.ipynb
+./traitly.csv
+./traitly/src/traitly_app.py
+./traitly/src/example.ipynb
+./traitly/src/traitly/fruit_phenotyping/color_plot.py
+./traitly/tests/sample_data
 
 # Build
 build/

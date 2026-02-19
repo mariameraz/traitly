@@ -37,19 +37,19 @@ def get_unique_locule_counts(fruit_locules_map: dict):
 ##################################################################################################
 
 def precompute_ideal_angles(unique_locule_counts: np.ndarray, 
-                            n_shifts: int =1000):
+                            angle_shifts: int =1000):
     """
     Precompute ideal angles and shifts for each unique locule count.
     
     Args:
         unique_locule_counts (array-like): Array of unique locule counts in dataset
-        n_shifts (int): Number of angular shifts to test
+        angle_shifts (int): Number of angular shifts to test
         
     Returns:
         dict: Dictionary mapping locule_count -> shifted_ideal_angles matrix
-              Each matrix has shape (n_shifts, locule_count)
+              Each matrix has shape (angle_shifts, locule_count)
     """
-    shifts = np.linspace(0, 2*np.pi, n_shifts, endpoint=False)
+    shifts = np.linspace(0, 2*np.pi, angle_shifts, endpoint=False)
     precomputed = {}
     
     for n in unique_locule_counts:
@@ -67,7 +67,7 @@ def precompute_ideal_angles(unique_locule_counts: np.ndarray,
 #################################################################################################
 
 def angular_symmetry(locules_data: list, 
-                     n_shifts: int = 500, 
+                     angle_shifts: int = 500, 
                      precomputed_ideals: Optional[dict] = None):
     """
     Calculate angular symmetry by comparing actual locule angles with the most symmetrical arrangement.
@@ -77,13 +77,13 @@ def angular_symmetry(locules_data: list,
             - locules_data (List[Dict]): List of dictionaries, each containing at least the 'polar_coord'
               of a locule, where 'polar_coord'[0] is the angle in radians from the reference centroid.
         OPTIONAL:
-            - n_shifts (int): Number of angular shifts to test (default = 100).
+            - angle_shifts (int): Number of angular shifts to test (default = 100).
             - precomputed_ideals (dict): Precomputed shifted ideal angles. If None, computes on-the-fly.
               
     Returns:
         float: Normalized angular error in range [0, 1]
     """
-    if len(locules_data) < 2:
+    if not locules_data or len(locules_data) < 2:
         return np.nan
     
     angles = np.array([d['polar_coord'][0] for d in locules_data]) % (2 * np.pi)
@@ -97,7 +97,7 @@ def angular_symmetry(locules_data: list,
         shifted_ideals = precomputed_ideals[n]
     else:
         ideal_angles = np.linspace(0, 2*np.pi, n, endpoint=False)
-        shifts = np.linspace(0, 2*np.pi, n_shifts, endpoint=False)
+        shifts = np.linspace(0, 2*np.pi, angle_shifts, endpoint=False)
         shifted_ideals = (ideal_angles[None, :] + shifts[:, None]) % (2 * np.pi)
     
     # Compute cost matrices
@@ -131,13 +131,13 @@ def radial_symmetry(locules_data: list):
         radii (List[float]): List of radial distances for each locule.
         float: CV of distances (0 = perfect symmetry, nan = undefined).
     """
-    if len(locules_data) < 2: # If there is fewer than 2 locules, symettry is undefined (no symmetry) 
+    if not locules_data or len(locules_data) < 2: # If there is fewer than 2 locules, symettry is undefined (no symmetry) 
         return np.nan
 
     # Extract precalculated radii for each locule's data
     radii = [data['polar_coord'][1] for data in locules_data] 
     
     # Calculate the coefficient of variation (CV = standard deviation / mean)
-    radii_cv = np.std(radii) / np.mean(radii) if np.mean(radii) > 0 else np.nan 
+    radii_cv = (np.std(radii) / np.mean(radii) * 100) if np.mean(radii) > 0 else np.nan 
     return radii_cv
 

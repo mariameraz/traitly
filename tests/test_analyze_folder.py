@@ -10,7 +10,7 @@ import pytest
 ####################
 # Internal library #
 ####################
-from traitly.internal_structure import FruitAnalyzer
+from traitly.fruit_phenotyping import FruitAnalyzer
 
 ################################
 # Test analyze_folder function #

@@ -1,9 +1,6 @@
 # convert pdf to images
 pymupdf
 
-# iu (streamlite)
-
-
 # testing
 pytest
 pytest-cov
