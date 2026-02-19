@@ -133,7 +133,7 @@ def analyze_fruits_morphology(
     # ## Create a clean copied image for annotations -----
     # annotated_img = cv2.bitwise_not(img.copy()) if config.stamp else img.copy()
     
-    original_img = original_img_clean if original_img_clean is not None else img
+    original_img = original_img_clean.copy() if original_img_clean is not None else img.copy()
     
     ## Precalculate angular symmetry data ---
     unique_counts = get_unique_locule_counts(fruit_locule_map)
@@ -166,7 +166,7 @@ def analyze_fruits_morphology(
                 locules=locules,
                 contours=contours,
                 fruit_centroids=fruit_centroids,
-                annotated_img=img,
+                annotated_img=original_img,
                 px_per_cm=px_per_cm,
                 img_name=img_name,
                 label_text=label_text,
@@ -202,7 +202,7 @@ def analyze_fruits_morphology(
         plt.show()
    
     return ResultsImage(
-        img, 
+        original_img, 
         results, 
         image_path=path
     )
