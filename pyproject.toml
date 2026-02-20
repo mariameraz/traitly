@@ -1,17 +1,13 @@
 [build-system]
-requires = ["hatchling >= 1.26"]
+requires = ["hatchling>=1.26"]
 build-backend = "hatchling.build"
 
 [project]
-name = "traitly" 
+name = "traitly"
 version = "0.1a0"
-requires-python = ">=3.9" 
-description = """
-    Open-source computer vision toolkit for high-throughput fruit and locule phenotyping. 
-    Analyze fruit morphology (size, shape), internal anatomy (locule number, shape, size, symmetry), 
-    pericarp thickness, and extract tissue color metrics (RGB, LAB, HSV, grayscale).
-"""
+description = "Open-source computer vision toolkit for high-throughput fruit and locule phenotyping. Analyze fruit morphology (size, shape), internal anatomy (locule number, shape, size, symmetry), pericarp thickness, and extract tissue color metrics (RGB, LAB, HSV, grayscale)."
 readme = "README.md"
+requires-python = ">=3.9"
 license = { text = "AGPL-3.0-or-later" }
 license-files = ["LICENSE*"]
 
@@ -29,7 +25,6 @@ dependencies = [
   "tqdm",
   "psutil",
   "easyocr",
-# "pyzbar",
   "PyMuPDF",
   "ultralytics",
 ]
@@ -38,8 +33,8 @@ keywords = [
   "plant-phenotyping",
   "fruit-morphology",
   "crop-anatomy",
-  "fruit-phenotyping",  
-  "locule-analysis",  
+  "fruit-phenotyping",
+  "locule-analysis",
   "locule-detection",
   "pericarp-thickness",
   "computer-vision",
@@ -50,40 +45,45 @@ keywords = [
 ]
 
 classifiers = [
-  "Development Status :: 3 - Alpha", # 4 - beta, 5 - Production/Stable
-  "Operating System :: OS Independent",  
+  "Development Status :: 3 - Alpha",
+  "Operating System :: OS Independent",
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX :: Linux",
   "Operating System :: MacOS :: MacOS X",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12"
 ]
-
 
 [project.optional-dependencies]
 dev = [
-  "pytest", 
+  "pytest",
   "black",
   "isort",
   "flake8",
-  "mypy" 
-  ]
+  "mypy"
+]
 
-
-
-
-# CLI configuration
 [project.scripts]
 traitly = "traitly.cli:main"
-
-[tool.setuptools.package-data]
-traitly = [
-    "package_data/models/*.pt",
-    "package_data/**/*",
-]
 
 [project.urls]
 Repository = "https://github.com/mariameraz/traitly"
 Source = "https://github.com/mariameraz/traitly/src"
 Issues = "https://github.com/mariameraz/traitly/issues"
 Discussion = "https://github.com/mariameraz/traitly/discussions"
-#Documentation
-#Homepage
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/traitly"]
+
+[tool.hatch.build]
+include = [
+  "src/traitly/**",
+  "README.md",
+  "LICENSE*",
+]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/traitly/package_data/models" = "traitly/package_data/models"
