@@ -7,6 +7,18 @@ Provides the :class:`FruitExternalAnalyzer` class, which extends
 for analyzing whole-fruit morphology and color without locule or internal
 pericarp segmentation. Includes support for single-image and batch folder
 processing with optional multiprocessing.
+
+The typical analysis pipeline follows this order:
+
+1. :meth:`~FruitExternalAnalyzer.load_image`
+2. :meth:`~FruitExternalAnalyzer.setup_measurements`
+3. :meth:`~FruitExternalAnalyzer.generate_fruit_mask`
+6. :meth:`~FruitExternalAnalyzer.detect_fruits`
+7. :meth:`~FruitExternalAnalyzer.analyze_morphology` and/or :meth:`~FruitExternalAnalyzer.analyze_color`
+
+For batch processing, steps 1–7 are orchestrated automatically by
+:meth:`~FruitExternalAnalyzer.analyze_folder` or
+:meth:`~FruitExternalAnalyzer.process_single_file`.
 """
 
 # ============================================================================
@@ -340,9 +352,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         # Contour
         contour_mode: str = 'raw',
         epsilon: float = 0.001,
-        # Morphology
-        angle_shifts: int = 500,
-        num_rays: int = 90,
         # Output
         display_table: bool = True,
         # Plot
@@ -405,8 +414,8 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         plot=False,
         contour_mode=contour_mode,
         epsilon=epsilon,
-        angle_shifts=angle_shifts,
-        num_rays=num_rays,
+        angle_shifts=0,
+        num_rays=0,
         font_size=font_size,
         font_thickness=font_thickness,
         font_color=font_color,
@@ -570,6 +579,8 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             'min_locule_per_fruit',
         ),
         'analyze_morphology_params': (
+            'angle_shifts',
+            'num_rays',
             'min_locule_area',
             'max_locule_area',
             'pericarp_int_color',

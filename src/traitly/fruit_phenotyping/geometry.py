@@ -1,5 +1,14 @@
 # traitly/fruit_phenotyping/geometry.py
+"""
+Geometric shape descriptors for fruit phenotyping pipelines.
 
+Provides functions to compute axes, rotated bounding boxes, and
+area- and perimeter-based morphological metrics from fruit contours.
+Designed to be called from :func:`~traitly.fruit_phenotyping.analysis._calculate_fruit_metrics`.
+
+All functions support dual-unit output (pixels and centimetres) via
+``px_per_cm``; when ``None`` or invalid, centimetre values are ``NaN``.
+"""
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
@@ -21,16 +30,65 @@ from .processing import get_fruit_contour
 #################################################################################################
 # Calculate minor axis (fruit width/length approximation)
 #################################################################################################
-def calculate_axes(fruit_contour: np.ndarray, 
-                   px_per_cm: Optional[float] = None,  
-                   img: Optional[np.ndarray] = None, 
-                   draw_axes: bool = False, 
-                   major_axis_color: Tuple[int, int, int] = (0, 255, 0), 
-                   minor_axis_color: Tuple[int, int, int] = (255, 0, 0), 
-                   axis_thickness: int = 2,
-                   hull_verts: Optional[np.ndarray] = None): 
+def calculate_axes(
+    fruit_contour: np.ndarray,
+    px_per_cm: Optional[float] = None,
+    img: Optional[np.ndarray] = None,
+    draw_axes: bool = False,
+    major_axis_color: Tuple[int, int, int] = (0, 255, 0),
+    minor_axis_color: Tuple[int, int, int] = (255, 0, 0),
+    axis_thickness: int = 2,
+    hull_verts: Optional[np.ndarray] = None,
+) -> Tuple[float, float, float, float]:
     """
- 
+    Calculate the major and minor axes of a fruit contour.
+
+    The major axis is the longest chord of the convex hull, computed via
+    pairwise distances using :func:`scipy.spatial.distance.pdist` and
+    :class:`scipy.spatial.ConvexHull`. The minor axis is the maximum
+    perpendicular width to the major axis, projected across all contour
+    points. Axis lines are optionally drawn onto ``img`` in-place.
+
+    Parameters
+    ----------
+    fruit_contour : np.ndarray
+        Contour points of shape ``(N, 1, 2)`` or ``(N, 2)``, as returned
+        by ``cv2.findContours`` or :func:`get_fruit_contour`.
+    px_per_cm : float or None, optional
+        Pixel-to-centimeter conversion factor. If ``None`` or invalid,
+        cm values are returned as ``NaN``. Default is ``None``.
+    img : np.ndarray or None, optional
+        BGR image modified in-place with axis lines when ``draw_axes=True``.
+        Default is ``None``.
+    draw_axes : bool, optional
+        Whether to draw the major and minor axes onto ``img``. Default
+        is ``False``.
+    major_axis_color : tuple of int, optional
+        BGR color for the major axis line. Default is ``(0, 255, 0)``.
+    minor_axis_color : tuple of int, optional
+        BGR color for the minor axis line. Default is ``(255, 0, 0)``.
+    axis_thickness : int, optional
+        Line thickness in pixels for both axis lines. Default is 2.
+    hull_verts : np.ndarray or None, optional
+        Precomputed convex hull vertex indices into ``fruit_contour``.
+        If ``None``, the hull is computed internally via
+        :class:`scipy.spatial.ConvexHull`. Passing precomputed vertices
+        avoids redundant computation when called in a loop. Default is
+        ``None``.
+
+    Returns
+    -------
+    tuple of float
+        ``(major_cm, minor_cm, major_px, minor_px)`` where:
+
+        - ``major_cm`` – major axis length in centimetres, or ``NaN`` if
+          ``px_per_cm`` is ``None`` or invalid.
+        - ``minor_cm`` – minor axis length in centimetres, or ``NaN`` if
+          ``px_per_cm`` is ``None`` or invalid.
+        - ``major_px`` – major axis length in pixels, or ``NaN`` if the
+          contour has fewer than 2 points.
+        - ``minor_px`` – minor axis length in pixels, or ``NaN`` / ``0.0``
+          for degenerate contours.
     """
 
     # Reshape and convert contour to float32
@@ -129,35 +187,66 @@ def calculate_axes(fruit_contour: np.ndarray,
 # Determine rotated bounding box around fruits
 #################################################################################################
 
-def rotate_box(contour: np.ndarray, 
-               px_per_cm: Optional[float] = None, 
-               img: Optional[np.ndarray] = None, 
-               draw_box: bool = False, 
-               box_color: Tuple[int, int, int] = (255, 180, 0), 
-               box_thickness: int = 3):
+def rotate_box(
+    contour: np.ndarray,
+    px_per_cm: Optional[float] = None,
+    img: Optional[np.ndarray] = None,
+    draw_box: bool = False,
+    box_color: Tuple[int, int, int] = (255, 180, 0),
+    box_thickness: int = 3,
+) -> Tuple[float, float, float, float]:
     """
-    Calculates the rotated bounding box (minimum area rectangle) of a contour.
-    
-    Args:
-        contour: Contour of the object (e.g., fruit) as returned by cv2.findContours().
-        px_per_cm: Average pixels per centimeter conversion factor. If None, dimensions in cm will be np.nan.
-        img: BGR image where the bounding box will be drawn (if draw_box=True).
-        draw_box: If True, draws the bounding box on `img`.
-        box_color: BGR color for the bounding box (default: light blue).
-        box_thickness: Thickness of the bounding box lines in pixels.
-    
-    Returns:
-        tuple: (box_length_cm, box_width_cm, box_length_px, box_width_px)
-            - box_length_cm: Length (longer side) in centimeters (np.nan if px_per_cm is None).
-            - box_width_cm: Width (shorter side) in centimeters (np.nan if px_per_cm is None).
-            - box_length_px: Length (longer side) in pixels.
-            - box_width_px: Width (shorter side) in pixels.
-    
-    Notes:
-        - The bounding box is axis-independent (rotated to fit the contour tightly).
-        - Dimensions are converted to cm using the average px_per_cm.
-        - The "length" is always the longer side, and "width" the shorter side, regardless of orientation.
+    Calculate the minimum-area rotated bounding box of a contour.
+
+    Wraps ``cv2.minAreaRect`` and ``cv2.boxPoints`` to compute the tightest
+    axis-independent rectangle enclosing ``contour``. The longer side is
+    always assigned as the length and the shorter side as the width,
+    regardless of orientation. The box is optionally drawn onto ``img``
+    in-place via ``cv2.drawContours``.
+
+    Parameters
+    ----------
+    contour : np.ndarray
+        Contour of the object (e.g., fruit) as returned by
+        ``cv2.findContours``.
+    px_per_cm : float or None, optional
+        Pixel-to-centimeter conversion factor. If ``None`` or invalid,
+        cm values are returned as ``NaN``. Default is ``None``.
+    img : np.ndarray or None, optional
+        BGR image modified in-place with the bounding box when
+        ``draw_box=True``. Default is ``None``.
+    draw_box : bool, optional
+        Whether to draw the rotated bounding box onto ``img``. Raises
+        ``ValueError`` if ``True`` and ``img`` is ``None``.
+        Default is ``False``.
+    box_color : tuple of int, optional
+        BGR color for the bounding box lines. Default is ``(255, 180, 0)``.
+    box_thickness : int, optional
+        Line thickness in pixels for the bounding box. Default is 3.
+
+    Returns
+    -------
+    tuple of float
+        ``(box_length_cm, box_width_cm, box_length_px, box_width_px)`` where:
+
+        - ``box_length_cm`` – longer side in centimetres, or ``NaN`` if
+          ``px_per_cm`` is ``None`` or invalid.
+        - ``box_width_cm`` – shorter side in centimetres, or ``NaN`` if
+          ``px_per_cm`` is ``None`` or invalid.
+        - ``box_length_px`` – longer side in pixels.
+        - ``box_width_px`` – shorter side in pixels.
+
+    Raises
+    ------
+    ValueError
+        If ``draw_box=True`` and ``img`` is ``None``.
+
+    Notes
+    -----
+    The bounding box is rotation-invariant: it is fitted to the contour's
+    orientation, not to the image axes.
     """
+
     if draw_box and img is None:
         raise ValueError(f"img must be provided when draw_box=True")
     
@@ -190,21 +279,62 @@ def rotate_box(contour: np.ndarray,
     return box_length_cm, box_width_cm, box_length_px, box_width_px
 
 
-def get_fruit_morphology(contour: np.ndarray, 
-                         px_per_cm: Optional[float] = None, 
-                         contour_mode: str = 'raw', 
-                         epsilon: float = 0.002):
+def get_fruit_morphology(
+    contour: np.ndarray,
+    px_per_cm: Optional[float] = None,
+    contour_mode: str = 'raw',
+    epsilon: float = 0.002,
+) -> dict:
     """
-    Calculate comprehensive fruit morphology metrics with contour transformation options.
-    
-    Args:
-        contour (np.ndarray): Fruit contour points
-        px_per_cm (float, optional): Pixel to cm conversion factor
-        contour_mode (str): Contour transformation mode ('raw', 'hull', 'approx', 'ellipse', 'circle')
-        epsilon (float): Epsilon factor for polygon approximation
-    
-    Returns:
-        dict: Dictionary containing fruit morphology metrics in single unit (px or cm)
+    Calculate comprehensive morphological metrics for a fruit contour.
+
+    Applies an optional contour transformation via :func:`get_fruit_contour`
+    (modes ``'hull'``, ``'approx'``, ``'ellipse'``, ``'circle'``), then
+    computes area and perimeter with ``cv2.contourArea`` and
+    ``cv2.arcLength``. Shape descriptors (circularity, solidity, convexity)
+    are derived from the transformed contour and its convex hull.
+    When ``contour_mode='hull'``, the hull is reused directly to avoid
+    redundant computation.
+
+    Parameters
+    ----------
+    contour : np.ndarray
+        Fruit contour points as returned by ``cv2.findContours``.
+        Must contain at least 3 points; shorter contours return all
+        ``NaN``.
+    px_per_cm : float or None, optional
+        Pixel-to-centimeter conversion factor. If ``None`` or invalid,
+        all dimensional outputs are in pixels. Default is ``None``.
+    contour_mode : str, optional
+        Contour transformation applied before metric computation,
+        forwarded to :func:`get_fruit_contour`. One of:
+
+        - ``'raw'`` – no transformation (default).
+        - ``'hull'`` – convex hull.
+        - ``'approx'`` – Douglas-Peucker polygon approximation.
+        - ``'ellipse'`` – fitted ellipse.
+        - ``'circle'`` – fitted minimum enclosing circle.
+
+    epsilon : float, optional
+        Approximation factor forwarded to :func:`get_fruit_contour` when
+        ``contour_mode='approx'``. Ignored for other modes. Default is
+        0.002.
+
+    Returns
+    -------
+    dict of {str : float}
+        Dictionary with keys suffixed by the active unit:
+
+        - ``fruit_area_{unit}2`` – contour area in cm² or px².
+        - ``fruit_perimeter_{unit}`` – contour perimeter in cm or px.
+        - ``'fruit_circularity'`` – ``4π·area / perimeter²``, unitless.
+        - ``'fruit_solidity'`` – contour area divided by convex hull area,
+          unitless.
+        - ``'fruit_convexity'`` – hull perimeter divided by contour
+          perimeter, unitless.
+
+        All values are ``NaN`` for degenerate contours (fewer than 3
+        points, zero area, or zero perimeter).
     """
     # Determine unit
     has_calibration = px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0

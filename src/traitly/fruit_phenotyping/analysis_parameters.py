@@ -1,4 +1,13 @@
 # traitly/fruit_phenotyping/analysis_parameters.py
+"""
+Analysis metadata tracking for traitly `FruitInternalAnalyzer` and 
+`FruitExternalAnalyzer` pipelines.
+
+Provides the :class:`AnalysisMetadata` dataclass for capturing and
+exporting the processing parameters used in each stage of the fruit
+phenotyping pipeline, supporting reproducibility and traceability.
+"""
+
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
@@ -7,6 +16,7 @@ from typing import Dict, Any
 from datetime import datetime
 import importlib.metadata
 import sys
+import json
 
 # ============================================================================
 # INTERNAL IMPORTS
@@ -19,6 +29,30 @@ from traitly import __version__
 
 @dataclass
 class AnalysisMetadata:
+    """
+    Save and report processing parameters for each analysis step.
+
+    Captures the parameters used in each stage of the analysis pipeline
+    and provides methods to export them as formatted text or JSON for
+    reproducibility and traceability.
+
+    Attributes
+    ----------
+    setup_measurements_params : Dict[str, Any]
+        Parameters used in the setup measurements step.
+    generate_fruit_mask_params : Dict[str, Any]
+        Parameters used in the fruit mask generation step.
+    enhance_locule_contrast_params : Dict[str, Any]
+        Parameters used in the locule contrast enhancement step.
+    generate_locule_mask_params : Dict[str, Any]
+        Parameters used in the locule mask generation step.
+    detect_fruits_params : Dict[str, Any]
+        Parameters used in the fruit detection step.
+    analyze_morphology_params : Dict[str, Any]
+        Parameters used in the morphology analysis step.
+    analyze_color_params : Dict[str, Any]
+        Parameters used in the color analysis step.
+    """
     # Create a dictionary for each step
     setup_measurements_params: Dict[str, Any] = field(default_factory=dict)
     generate_fruit_mask_params: Dict[str, Any] = field(default_factory=dict)
@@ -29,11 +63,29 @@ class AnalysisMetadata:
     analyze_color_params: Dict[str, Any] = field(default_factory=dict)
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert dicts to easier to read format"""
+        """
+        Convert dataclass fields to a dictionary.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary representation of all analysis parameter fields.
+        """
         return asdict(self)
     
+    
     def to_formatted_string(self) -> str:
-        """Return parameters as formated strings."""
+        """
+        Return analysis parameters as a readable formatted string.
+
+        Includes version info, run date, per-step parameters, and
+        dependency versions.
+
+        Returns
+        -------
+        str
+            Formatted string with all processing parameters and metadata.
+        """
 
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
@@ -97,21 +149,53 @@ class AnalysisMetadata:
         return "\n".join(lines)
     
     def save_to_file(self, filepath: str) -> None:
-        """Save parameters in .txt."""
+        """ 
+        Save formatted parameters to a plain text file.
+
+        Parameters
+        ----------
+        filepath : str
+            Destination path for the output .txt file.
+
+        Raises
+        ------
+        OSError
+            If the file cannot be created or written to ``filepath``.
+        """
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(self.to_formatted_string())
 
     
     def save_to_json(self, filepath: str) -> None:
-        """Save parameters in .json """
-        import json
+        """
+        Save parameters to a JSON file.
+
+        Parameters
+        ----------
+        filepath : str
+            Destination path for the output .json file.
+
+        Raises
+        ------
+        OSError
+            If the file cannot be created or written to ``filepath``.
+        """
         data = self.to_dict()
         
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
     
     def get_package_versions(self) -> Dict[str, str]:
-        """Get versions of key packages used in traitly."""
+        """
+        Return installed versions of key dependencies used by traitly.
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary mapping package names to their installed version
+            strings. Includes Python version under the key ``'python'``.
+            Packages not found are reported as ``'not installed'``.
+        """
         packages = [
               "opencv-contrib-python",
             "numpy",

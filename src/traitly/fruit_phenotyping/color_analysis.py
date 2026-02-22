@@ -1,5 +1,15 @@
 # traitly/fruit_phenotyping/color_analysis.py
 
+"""
+Color analysis tools for fruit phenotyping pipelines.
+
+Provides functions to extract, normalize, and analyze color features
+from fruit images across multiple color spaces (RGB, Lab, HSV, Grayscale).
+Supports per-tissue analysis (total pericarp, outer pericarp, internal
+pericarp, and locules), pixel-level histograms, and hue-based color
+classification.
+"""
+
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
@@ -28,7 +38,25 @@ from traitly.utils.constants import valid_contours
 def normalize_lab_values(l_values: np.ndarray, 
                          a_values: np.ndarray, 
                          b_values: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Normalize Lab values to standard range."""
+    """
+    Normalize raw OpenCV Lab channel values to standard ranges.
+
+    Rescales L to [0, 100] and a, b channels to [-128, 127].
+
+    Parameters
+    ----------
+    l_values : np.ndarray
+        Raw L channel values in the OpenCV range [0, 255].
+    a_values : np.ndarray
+        Raw a channel values in the OpenCV range [0, 255].
+    b_values : np.ndarray
+        Raw b channel values in the OpenCV range [0, 255].
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray, np.ndarray]
+        Normalized (L, a, b) arrays as float32.
+    """
     l_values = l_values.astype(np.float32)
     a_values = a_values.astype(np.float32)
     b_values = b_values.astype(np.float32)
@@ -41,9 +69,30 @@ def normalize_lab_values(l_values: np.ndarray,
     return l_normalized, a_normalized, b_normalized
 
 
-def normalize_hsv_values(h_values: np.ndarray, s_values: np.ndarray, 
-                         v_values: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Normalize HSV values."""
+def normalize_hsv_values(h_values: np.ndarray, 
+                         s_values: np.ndarray, 
+                         v_values: np.ndarray
+                         ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Normalize raw OpenCV HSV channel values to standard ranges.
+
+    Converts H from [0, 180] to [0, 360] degrees, and S, V from
+    [0, 255] to [0, 100].
+
+    Parameters
+    ----------
+    h_values : np.ndarray
+        Raw hue values in the OpenCV range [0, 180].
+    s_values : np.ndarray
+        Raw saturation values in the OpenCV range [0, 255].
+    v_values : np.ndarray
+        Raw value/brightness values in the OpenCV range [0, 255].
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray, np.ndarray]
+        Normalized (H, S, V) arrays as float32.
+    """
     h_values = h_values.astype(np.float32)
     s_values = s_values.astype(np.float32)
     v_values = v_values.astype(np.float32)
@@ -62,10 +111,33 @@ def normalize_hsv_values(h_values: np.ndarray, s_values: np.ndarray,
 ##################################################
 
 def circular_mean_and_std_hue(hue_values: np.ndarray,
-                              hue_degree_values: Optional[np.ndarray] = None) -> tuple[float, float]:
+                              hue_degree_values: Optional[np.ndarray] = None
+                              ) -> tuple[float, float]:
+    """
+    Calculate the circular mean and standard deviation of hue values.
+
+    Uses circular statistics to correctly handle the angular wrap-around
+    of hue (e.g., values near 0° and 360° are treated as close).
+
+    Parameters
+    ----------
+    hue_values : np.ndarray
+        Raw hue values in the OpenCV range [0, 180]. Used when
+        ``hue_degree_values`` is not provided.
+    hue_degree_values : np.ndarray, optional
+        Hue values already converted to degrees [0, 360]. If provided,
+        ``hue_values`` is ignored.
+
+    Returns
+    -------
+    tuple[float, float]
+        Circular mean and circular standard deviation in degrees.
+        Returns ``(nan, nan)`` if input is empty or None.
+    """
+
     if hue_values is None or len(hue_values) == 0:
         return np.nan, np.nan
-
+    # Ensure we are always working with [0, 360] degrees 
     hue_deg = hue_degree_values.astype(np.float32) if hue_degree_values is not None \
               else hue_values.astype(np.float32) * 2.0
 
@@ -79,12 +151,47 @@ def circular_mean_and_std_hue(hue_values: np.ndarray,
 # Extract color and get statistics #
 ####################################
 
-def extract_color_features(
-    img: np.ndarray,
-    mask: np.ndarray,
-    stat: str = 'mean',
-    color_space: str = 'all'
-) -> Dict[str, float]:
+def extract_color_features(img: np.ndarray,
+                            mask: np.ndarray,
+                            stat: str = 'mean',
+                            color_space: str = 'all'
+                        ) -> Dict[str, float]:
+    
+    """
+    Extract summary color statistics from masked pixels of an image.
+
+    Calculates mean or median for each channel across the valid (non-dark,
+    non-background) pixels within the mask region. Supports RGB, Lab,
+    HSV, and Grayscale color spaces. For HSV, hue is summarized using
+    circular statistics and a homogeneity index is also returned.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Input image in BGR format.
+    mask : np.ndarray
+        Binary mask where 255 indicates pixels to include.
+    stat : str, optional
+        Summary statistic to compute. Either ``'mean'`` or ``'median'``.
+        Default is ``'mean'``.
+    color_space : str, optional
+        Color spaces to compute. Either ``'all'`` or a comma-separated
+        subset of ``'rgb'``, ``'lab'``, ``'hsv'``, ``'gray'``.
+        Default is ``'all'``.
+
+    Returns
+    -------
+    Dict[str, float]
+        Dictionary of color features keyed by channel name and statistic
+        suffix (e.g., ``'R_mean'``, ``'L_mean'``, ``'H_mean'``).
+        Returns NaN values if no valid pixels are found.
+
+    Raises
+    ------
+    ValueError
+        If ``color_space`` contains invalid entries or ``stat`` is not
+        ``'mean'`` or ``'median'``.
+    """
     stat = stat.lower().strip()
     color_space = color_space.lower().replace(' ', '')
 
@@ -178,33 +285,34 @@ def extract_color_features(
 #####################################################################
 
 # Helper function to return NaN dictionary
-def _get_nan_color_dict(stat_suffix: str = "mean") -> Dict[str, float]:
+def _get_nan_color_dict(stat_suffix: str = "mean"
+                        ) -> Dict[str, float]:
     """
-    Return dictionary with NaN values for empty masks.
-    stat_suffix: "mean" or "median":
+    Return a color feature dictionary with NaN values.
 
-    {'R_mean': nan,
-    'G_mean': nan,
-    'B_mean': nan,
-    'L_mean': nan,
-    'a_mean': nan,
-    'b_mean': nan,
-    'H_mean': nan,
-    'S_mean': nan,
-    'V_mean': nan,
-    'hue_circular_mean': nan,
-    'hue_circular_std': nan,
-    'hue_homogeneity': nan,
-    'Gray_mean': nan}
+    Used as a fallback when a mask contains no valid pixels.
+
+    Parameters
+    ----------
+    stat_suffix : str, optional
+        Suffix used for column naming, either ``'mean'`` or ``'median'``.
+        Default is ``'mean'``.
+
+    Returns
+    -------
+    Dict[str, float]
+        Dictionary with NaN values for all color channels across RGB,
+        Lab, HSV, and Grayscale color spaces.
+
     """
     return {
-        # RGB (0..255)
+        # RGB (0 to 255)
         f'R_{stat_suffix}': np.nan, f'G_{stat_suffix}': np.nan, f'B_{stat_suffix}': np.nan,
 
-        # L in (0,100), a,b in (-128,127)
+        # L in (0 to 100), a,b in (-128 to 127)
         f'L_{stat_suffix}': np.nan, f'a_{stat_suffix}': np.nan, f'b_{stat_suffix}': np.nan,
 
-        # Hue in degrees (0,360), S,V in (0,100)
+        # Hue in degrees (0 to 360), S,V in (0 to 100)
         f'H_{stat_suffix}': np.nan, f'S_{stat_suffix}': np.nan, f'V_{stat_suffix}': np.nan,
 
         # Circular hue stats in degrees
@@ -212,81 +320,33 @@ def _get_nan_color_dict(stat_suffix: str = "mean") -> Dict[str, float]:
         'hue_circular_std': np.nan,
         'hue_homogeneity': np.nan,
 
-        # Gray (0..255)
+        # Gray (0 to 255)
         f'Gray_{stat_suffix}': np.nan,
     }
 
-
-def analyze_fruit_color(
-    img: np.ndarray,
-    fruit_contour: np.ndarray,
-    inner_pericarp_contour: Optional[np.ndarray],
-    img_shape: Tuple[int, int],
-    stat: str = 'mean',
-    locule_contours: Optional[List[np.ndarray]] = None
-) -> Dict[str, Dict[str, float]]:
-    """
-    Analyze color for whole fruit, outer pericarp, and inner pericarp.
-    
-    Args:
-        img: Input BGR image
-        fruit_contour: Outer fruit contour
-        inner_pericarp_contour: Inner pericarp contour (can be None)
-        img_shape: Image shape (height, width)
-        stat: Statistical measure ('mean' or 'median')
-    
-    Returns:
-        Dictionary with three keys: 'whole_fruit', 'outer_pericarp', 'inner_pericarp'
-    """
-    height, width = img_shape[:2]
-    
-    # Create masks
-    mask_fruit = np.zeros((height, width), dtype=np.uint8)
-    cv2.drawContours(mask_fruit, [fruit_contour], -1, 255, thickness=cv2.FILLED)
-    
-    # Whole fruit color
-    whole_fruit_color = extract_color_features(img, mask_fruit, stat)
-    
-    # Inner and outer pericarp
-    if inner_pericarp_contour is not None and len(inner_pericarp_contour) > 0:
-        # Inner pericarp mask (filled)
-        mask_inner = np.zeros((height, width), dtype=np.uint8)
-        cv2.drawContours(mask_inner, [inner_pericarp_contour], -1, 255, thickness=cv2.FILLED)
-        
-        # Exclude locules from inner pericarp mask when provided
-        if locule_contours is not None:
-            for locule_contour in locule_contours:
-                if len(locule_contour) > 0:
-                    # Erase each locule by drawing it as 0 (black)
-                    cv2.drawContours(mask_inner, [locule_contour], -1, 0, thickness=cv2.FILLED)
-        
-        # Outer pericarp (fruit - inner)
-        mask_outer = mask_fruit.copy()
-        mask_outer[mask_inner == 255] = 0
-        
-        inner_color = extract_color_features(img, mask_inner, stat)
-        outer_color = extract_color_features(img, mask_outer, stat)
-    else:
-        # No inner pericarp detected
-        inner_color = _get_nan_color_dict()
-        outer_color = _get_nan_color_dict()
-    
-    return {
-        'whole_fruit': whole_fruit_color,
-        'outer_pericarp': outer_color,
-        'inner_pericarp': inner_color
-    }
 
 #########################################
 # Helper function to renumber fruit IDs #
 #########################################
 
-def renumber_fruit_locule_map(
-    fruit_locule_map: Dict[int, List[int]]
-) -> Tuple[Dict[int, List[int]], Dict[int, int]]:
+def renumber_fruit_locule_map(fruit_locule_map: Dict[int, List[int]]
+                            ) -> Tuple[Dict[int, List[int]], Dict[int, int]]:
     """
-    Renumber fruit IDs from 1 to n sequentially.
+    Renumber fruit IDs sequentially from 1 to n.
+
+    Parameters
+    ----------
+    fruit_locule_map : Dict[int, List[int]]
+        Original mapping of fruit IDs to lists of locule contour indices.
+
+    Returns
+    -------
+    Tuple[Dict[int, List[int]], Dict[int, int]]
+        A tuple of:
+        - Renumbered fruit-locule map with sequential IDs starting at 1.
+        - Mapping from new sequential IDs to original fruit IDs.
     """
+
     # Get original fruit IDs sorted (optional, for consistency)
     original_ids = sorted(fruit_locule_map.keys())
     
@@ -303,29 +363,55 @@ def renumber_fruit_locule_map(
 # Analyze color for all fruits in the fruit_locule_map #
 ########################################################
 
-def analyze_all_fruits_color(
-          img: np.ndarray,
-          mask: np.ndarray,
-          contours: List[np.ndarray],
-          fruit_locule_map: Dict[int, List[int]],
-          stat: str = 'mean',
-          tissue: str = 'all',
-          renumber: bool = True,
-          color_space: str = 'all',
-          contour_mode: Optional[str] = 'raw'
-) -> Dict[int, Dict[str, Dict[str, float]]]:
-
+def analyze_all_fruits_color(img: np.ndarray,
+                            mask: np.ndarray,
+                            contours: List[np.ndarray],
+                            fruit_locule_map: Dict[int, List[int]],
+                            stat: str = 'mean',
+                            tissue: str = 'all',
+                            renumber: bool = True,
+                            color_space: str = 'all'
+                    ) -> Dict[int, Dict[str, Dict[str, float]]]:
     """
-    Analyze color for all fruits in the fruit_locule_map.
+    Analyze color features for all fruits in the fruit-locule map.
 
+    Iterates over each fruit, crops it to its bounding box, builds
+    tissue-specific masks, and extracts color features per tissue.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Input image in BGR format.
+    mask : np.ndarray
+        Binary segmentation mask where fruit pixels are > 0.
+    contours : List[np.ndarray]
+        List of all contours (fruits and locules).
+    fruit_locule_map : Dict[int, List[int]]
+        Mapping of fruit contour indices to their locule contour indices.
+    stat : str, optional
+        Summary statistic: ``'mean'`` or ``'median'``. Default is ``'mean'``.
+    tissue : str, optional
+        Tissues to analyze. Either ``'all'`` or a comma-separated subset of
+        ``'total_pericarp'``, ``'outer_pericarp'``, ``'internal_pericarp'``,
+        ``'locules'``. Default is ``'all'``.
+    renumber : bool, optional
+        If True, fruit IDs are renumbered from 1 to n. Default is True.
+    color_space : str, optional
+        Color spaces to compute. Either ``'all'`` or a comma-separated
+        subset of ``'rgb'``, ``'lab'``, ``'hsv'``, ``'gray'``.
+        Default is ``'all'``.
+
+    Returns
+    -------
+    Dict[int, Dict[str, Dict[str, float]]]
+        Nested dictionary keyed by fruit ID, then tissue name, then
+        color feature name.
+
+    Raises
+    ------
+    ValueError
+        If ``contour_mode`` or ``tissue`` contains invalid entries.
     """
-
-    # Check if inputs are valid:
-
-    if contour_mode not in valid_contours:
-            raise ValueError(
-                f"Invalid contour_mode: {contour_mode}. Valid options are: {valid_contours}"
-            )
 
     tissue = tissue.lower().replace(' ', '')
 
@@ -467,32 +553,69 @@ def analyze_all_fruits_color(
 #############################################################
 # Create masks for a single fruit and its different tissue #
 #############################################################
-def get_single_fruit_masks(
-    img: np.ndarray,
-    mask: np.ndarray,
-    contours: List[np.ndarray],
-    fruit_locule_map: Dict[int, List[int]],
-    fruit_id: Optional[int] = None,
-    renumber: bool = True,
-    plot: bool = True,
-    plot_size: Tuple[int, int] = (7, 5),
-    overlay:bool = False,
-    margin: int = 5,
-    overlay_legend: bool = True,
-    only_fruit: bool = False
-) -> Dict[str, np.ndarray]:
-    """
-    Same goal as get_single_fruit_masks(), but reuses an existing binary mask
-    (fruit/total_pericarp = 255, background = 0) cropped to the fruit ROI.
 
-    Returns masks for:
-      - 'outer_pericarp'
-      - 'internal_pericarp'
-      - 'locules'
-      - 'total_pericarp'
-      - 'cropped_img'
-      - 'bounding_box'
-      - 'fruit_id'
+def get_single_fruit_masks(img: np.ndarray,
+                            mask: np.ndarray,
+                            contours: List[np.ndarray],
+                            fruit_locule_map: Dict[int, List[int]],
+                            fruit_id: Optional[int] = None,
+                            renumber: bool = True,
+                            plot: bool = True,
+                            plot_size: Tuple[int, int] = (7, 5),
+                            overlay:bool = False,
+                            margin: int = 5,
+                            overlay_legend: bool = True,
+                            only_fruit: bool = False
+                        ) -> Dict[str, np.ndarray]:
+    """
+    Generate tissue masks for a single fruit cropped to its bounding box.
+
+    Builds binary masks for each tissue region of the selected fruit and
+    optionally visualizes them.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Input image in BGR format.
+    mask : np.ndarray
+        Binary segmentation mask where fruit pixels are white [255].
+    contours : List[np.ndarray]
+        List of all contours (fruits and locules).
+    fruit_locule_map : Dict[int, List[int]]
+        Mapping of fruit contour indices to their locule contour indices.
+    fruit_id : int, optional
+        ID of the fruit to analyze. If None, the first fruit with locules
+        is selected automatically.
+    renumber : bool, optional
+        If True, fruit IDs are renumbered from 1 to n. Default is True.
+    plot : bool, optional
+        If True, display tissue masks. Default is True.
+    plot_size : Tuple[int, int], optional
+        Figure size for visualization. Default is (7, 5).
+    overlay : bool, optional
+        If True, display an overlay visualization instead of individual masks.
+        Default is False.
+    margin : int, optional
+        Pixel margin to add around the fruit bounding box. Default is 5.
+    overlay_legend : bool, optional
+        If True, include a legend in the overlay plot. Default is True.
+    only_fruit : bool, optional
+        If True, display only the total pericarp mask. Default is False.
+
+    Returns
+    -------
+    Dict[str, np.ndarray]
+        Dictionary containing masks and metadata with keys:
+        ``'total_pericarp'``, ``'outer_pericarp'``, ``'internal_pericarp'``,
+        ``'locules'``, ``'cropped_img'``, ``'bounding_box'``, ``'fruit_id'``.
+
+    Raises
+    ------
+    ValueError
+        If ``fruit_locule_map`` is empty, ``fruit_id`` is out of range,
+        or no contour is found for the requested fruit.
+    TypeError
+        If ``fruit_id`` is not an integer.
     """
 
     if not fruit_locule_map:
@@ -621,13 +744,24 @@ def get_single_fruit_masks(
 # Visualize different tissues of a single fruit #
 #################################################
 
-def visualize_single_fruit_masks(
-    masks: Dict[str, np.ndarray],
-    plot_size: Tuple[int, int] = (12, 4),
-    only_fruit: Optional[bool] = None
-):
+def visualize_single_fruit_masks(masks: Dict[str, np.ndarray],
+                                plot_size: Tuple[int, int] = (12, 4),
+                                only_fruit: Optional[bool] = None
+                                ):
     """
-    Plot the masks of different tissue of a single fruit.
+    Display individual binary masks for each tissue of a single fruit.
+
+    Parameters
+    ----------
+    masks : Dict[str, np.ndarray]
+        Dictionary of tissue masks as returned by :func:`get_single_fruit_masks`.
+        Expected keys: ``'total_pericarp'``, ``'outer_pericarp'``,
+        ``'internal_pericarp'``, ``'locules'``, ``'cropped_img'``.
+    plot_size : Tuple[int, int], optional
+        Figure size for the matplotlib plot. Default is (12, 4).
+    only_fruit : bool, optional
+        If True, display only the total pericarp mask alongside the
+        original image. Default is None (show all tissues).
     """
     
     if only_fruit:
@@ -730,20 +864,28 @@ def visualize_single_fruit_masks(
 # Visualize different tissues overlying on a single fruit #
 ###########################################################
 
-def visualize_single_fruit_overlay(
-    masks: Dict[str, np.ndarray],
-    plot_size: Tuple[int, int] = (12, 4),
-    overlay_legend: bool = True,
+def visualize_single_fruit_overlay(masks: Dict[str, np.ndarray],
+                                plot_size: Tuple[int, int] = (12, 4),
+                                overlay_legend: bool = True
 ):
     """
-    Plot an overlay of the different tissue masks on the cropped fruit image.
+    Display a color overlay of tissue masks on the cropped fruit image.
 
-    Args:
-        masks: Dict with tissue masks and cropped image. Expected key: 'cropped_img'
-               Optional keys: 'outer_pericarp', 'internal_pericarp', 'locules'
-        plot_size: Size of the figure.
-        overlay_legend: If True, show legend explaining overlay colors.
+    Applies semi-transparent color overlays for each tissue region
+    on top of the original fruit image using alpha blending.
+
+    Parameters
+    ----------
+    masks : Dict[str, np.ndarray]
+        Dictionary of tissue masks as returned by :func:`get_single_fruit_masks`.
+        Must contain ``'cropped_img'``. Optional tissue keys:
+        ``'outer_pericarp'``, ``'internal_pericarp'``, ``'locules'``.
+    plot_size : Tuple[int, int], optional
+        Figure size for the matplotlib plot. Default is (12, 4).
+    overlay_legend : bool, optional
+        If True, display a legend identifying tissue colors. Default is True.
     """
+
     if "cropped_img" not in masks:
         return
 
@@ -816,29 +958,38 @@ def visualize_single_fruit_overlay(
 ########################################
 
 def annotate_fruits_on_image(
-    img: np.ndarray,
-    contours: List[np.ndarray],
-    fruit_locule_map: Dict[int, List[int]],
-    renumber: bool = True,
-    color: Tuple[int, int, int] = (0, 255, 0),
-    thickness: int = 2,
-    font_scale: float = 0.6
-) -> np.ndarray:
+                            img: np.ndarray,
+                            contours: List[np.ndarray],
+                            fruit_locule_map: Dict[int, List[int]],
+                            renumber: bool = True,
+                            color: Tuple[int, int, int] = (0, 255, 0),
+                            thickness: int = 2,
+                            font_scale: float = 0.6
+                        ) -> np.ndarray:
     """
-    Annotate the original image with fruit IDs (renumbered if requested)
-    and bounding boxes derived from contours.
+    Annotate an image with fruit IDs and bounding boxes.
 
-    Args:
-        img: Original image (BGR).
-        contours: List of contours (fruit + locules).
-        fruit_locule_map: Mapping fruit_id -> locule indices.
-        renumber: If True, fruit IDs are renumbered from 1..n.
-        color: Bounding box and text color (BGR).
-        thickness: Line thickness for bounding box.
-        font_scale: Font scale for fruit ID text.
+    Parameters
+    ----------
+    img : np.ndarray
+        Input image in BGR format.
+    contours : List[np.ndarray]
+        List of all contours (fruits and locules).
+    fruit_locule_map : Dict[int, List[int]]
+        Mapping of fruit contour indices to their locule contour indices.
+    renumber : bool, optional
+        If True, fruit IDs are renumbered from 1 to n. Default is True.
+    color : Tuple[int, int, int], optional
+        BGR color for bounding boxes and text. Default is green (0, 255, 0).
+    thickness : int, optional
+        Line thickness for bounding boxes. Default is 2.
+    font_scale : float, optional
+        Font scale for fruit ID labels. Default is 0.6.
 
-    Returns:
-        Annotated image (copy of input).
+    Returns
+    -------
+    np.ndarray
+        Annotated copy of the input image in BGR format.
     """
 
     annotated = img.copy()
@@ -893,7 +1044,6 @@ def annotate_fruits_on_image(
     return annotated
 
 
-
 ############################################################
 # Get pixel-level color histograms for all fruits       #
 ############################################################
@@ -912,9 +1062,56 @@ def get_fruit_color_histograms(
     normalize: bool = False
 ) -> List[Dict[str, float]]:
     """
-    For each fruit, compute the pixel-value histogram (histogram) of each
-    color channel over the total_pericarp mask (fruit region, locules excluded).
+    Create pixel-level color histograms for all fruits.
 
+    For each fruit, extracts the pixel distribution across each color
+    channel for the total pericarp region (or total fruit region if 
+    external analysis) only. 
+    
+    Each bin in the histogram corresponds to one integer intensity value
+    within the channel's valid range.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Input image in BGR format.
+    hsv_img : np.ndarray or None
+        Precomputed HSV image. If None, it is created internally.
+    mask : np.ndarray
+        Binary segmentation mask where fruit pixels are > 0.
+    contours : List[np.ndarray]
+        List of all contours (fruits and locules).
+    fruit_locule_map : Dict[int, List[int]]
+        Mapping of fruit contour indices to their locule contour indices.
+    image_name : str, optional
+        Image identifier included in each output row. Default is ``''``.
+    label : str, optional
+        Sample label included in each output row. Default is ``''``.
+    color_space : str, optional
+        Color spaces to include. Either ``'all'`` or a comma-separated
+        subset of ``'rgb'``, ``'lab'``, ``'hsv'``, ``'gray'``.
+        Default is ``'all'``.
+    renumber : bool, optional
+        If True, fruit IDs are renumbered from 1 to n. Default is True.
+    dark_threshold : int, optional
+        Grayscale intensity threshold below which pixels are excluded.
+        Default is 0 (no exclusion).
+    normalize : bool, optional
+        If True, bin counts are divided by the total number of valid pixels.
+        Default is False.
+
+    Returns
+    -------
+    List[Dict[str, float]]
+        One dictionary per fruit with keys ``'image_name'``, ``'label'``,
+        ``'fruit_id'``, and one key per histogram bin (e.g., ``'R_0'``
+        through ``'R_255'``). Returns NaN values for fruits with no
+        valid pixels.
+
+    Raises
+    ------
+    ValueError
+        If ``color_space`` contains invalid entries.
     """
 
     # Validate color_space
@@ -1076,7 +1273,6 @@ def get_fruit_color_histograms(
 
     return rows
 
-
 # ============================================================================
 # Calculate hue index for fruit color variation (red-yellow)
 # ============================================================================
@@ -1089,9 +1285,45 @@ def calculate_hue_index(
     homogeneity_threshold: float = 0.80,
 ) -> pd.DataFrame:
     """
-    Calculate a red/yellow/orange color index per fruit from Hue histogram columns.
+    Calculate a red/yellow/orange color index per fruit from hue histograms.
 
+    Classifies each fruit into a dominant color category based on the
+    proportion of pixels falling within defined hue ranges. A fruit is
+    labeled with its dominant color only if that color exceeds the
+    homogeneity threshold; otherwise it is labeled ``'mixed'``.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing hue histogram columns (``'H_0'`` through
+        ``'H_359'``) as produced by :func:`get_fruit_color_histograms`.
+    red_hue_ranges : List[Tuple[int, int]], optional
+        List of (min, max) hue degree ranges considered red.
+        Default is ``[(0, 21), (250, 360)]``.
+    yellow_hue_range : Tuple[int, int], optional
+        (min, max) hue degree range considered yellow. Default is ``(40, 80)``.
+    orange_hue_range : Tuple[int, int] or None, optional
+        (min, max) hue degree range considered orange. Set to None to
+        disable orange classification. Default is ``(22, 39)``.
+    homogeneity_threshold : float, optional
+        Minimum dominant color ratio required to assign a single color
+        category. Default is 0.80.
+
+    Returns
+    -------
+    pd.DataFrame
+        One row per fruit with columns: ``'image_name'``, ``'fruit_id'``,
+        ``'red_pixels'``, ``'yellow_pixels'``, ``'orange_pixels'`` (if enabled),
+        ``'total_hue_pixels'``, ``'red_ratio'``, ``'yellow_ratio'``,
+        ``'orange_ratio'`` (if enabled), ``'color_homogeneity'``,
+        ``'color_category'``, and ``'dominant_color'``.
+
+    Raises
+    ------
+    ValueError
+        If required hue histogram columns are missing from ``df``.
     """
+     
     h_cols_all = [f'H_{i}' for i in range(360)]
     missing = [c for c in h_cols_all if c not in df.columns]
     if missing:

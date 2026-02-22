@@ -1,4 +1,11 @@
 # traitly/fruit_phenotyping/color.py
+"""
+Color visualization and analysis tools for fruit phenotyping pipelines.
+
+Provides functions to plot pixel-level color histograms, pairwise scatter
+plots, and correlation matrices across multiple color spaces (RGB, Lab, HSV).
+Designed to work with outputs from the color_analysis module.
+"""
 
 # ============================================================================
 # STANDARD LIBRARY
@@ -34,15 +41,52 @@ def plot_color_histogram(
     xlabel_font_size: float = 11.0,
     ylabel_font_size: float = 10.0,
     axes_font_size: float = 9.0,
-    overlay: bool = False,       
-    alpha: float = 0.72,         
+    overlay: bool = False,
+    alpha: float = 0.72
 ) -> None:
     """
-    Plot pixel-value histograms.
-    One row per color space.
+    Plot pixel-value histograms for each color channel.
 
-    overlay=False  → one column per channel (default)
-    overlay=True   → all channels of a space overlaid in a single plot
+    Displays one row per color space. In default mode, each channel
+    is shown in a separate subplot. In overlay mode, all channels of
+    a space are overlaid in a single plot (RGB only).
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with histogram columns as produced by
+        :func:`~traitly.fruit_phenotyping.color_analysis.get_fruit_color_histograms`.
+    fruit_id : int, optional
+        Fruit ID to plot. If None, histograms are summed across all fruits.
+    color_space : str, optional
+        Color spaces to display. Either ``'all'`` or a comma-separated subset
+        of ``'rgb'``, ``'lab'``, ``'hsv'``, ``'gray'``. If None, all
+        detected spaces in the DataFrame are plotted.
+    legend_position : str, optional
+        Legend placement. One of ``'top-right'``, ``'top-left'``,
+        ``'bottom-right'``, ``'bottom-left'``, ``'none'``.
+        Default is ``'top-right'``.
+    legend_font_size : float, optional
+        Font size for the legend. Default is 9.5.
+    xlabel_font_size : float, optional
+        Font size for x-axis labels. Default is 11.0.
+    ylabel_font_size : float, optional
+        Font size for y-axis labels. Default is 10.0.
+    axes_font_size : float, optional
+        Font size for tick labels. Default is 9.0.
+    overlay : bool, optional
+        If True, overlay all RGB channels in a single subplot.
+        Only supported for ``color_space='rgb'``. Default is False.
+    alpha : float, optional
+        Transparency of histogram bars. Default is 0.72.
+
+    Raises
+    ------
+    ValueError
+        If ``legend_position`` is invalid, ``color_space`` contains
+        unknown entries, required histogram columns are missing from
+        ``df``, ``fruit_id`` is not found, or ``overlay=True`` is used
+        with non-RGB color spaces.
     """
 
     _LOC_MAP = {
@@ -215,8 +259,6 @@ def plot_color_histogram(
             ax.set_title(space_label, fontsize=11, fontweight='bold',
                          loc='left', pad=6, color='#333333')
 
-
-
             for ch, n_bins, lo, hi, bar_type, plot_color, xlabel in channels:
                 counts = _get_counts(ch, lo, hi)
                 x_vals = np.arange(lo, hi + 1)
@@ -300,37 +342,70 @@ def get_fruit_color_samples(
     fruit_locule_map: Dict[int, List[int]],
     fruit_id: Optional[int] = None,
     color_space: str = 'hsv',
-    sample_size: Optional[int] = 5000,
+    sample_size: int = 5000,
     renumber: bool = True,
     dark_threshold: int = 15,
     jitter: bool = False,
     jitter_strength: float = 0.5,
-    erosion_px: int = 3,   
+    erosion_px: int = 3,
 ) -> pd.DataFrame:
     """
-    Extract raw pixel values from total_pericarp for scatter plotting.
+    Extract raw pixel values from the total pericarp region (or total fruit 
+    region if external analysis) for scatter plotting.
+
+    Optionally applies mask erosion to reduce border artifacts, and
+    returns one row per pixel with the requested color channel values.
 
     Parameters
     ----------
-    img, mask, contours, fruit_locule_map : same as get_fruit_color_histogram()
-    fruit_id         : None → all fruits; int → single fruit
-    color_space      : 'all' or comma-separated subset of {'rgb','lab','hsv','gray'}
-    sample_size       : Max pixels to sample randomly (None = all)
-    renumber         : Renumber fruit IDs from 1..n
-    dark_threshold   : Exclude pixels with gray <= threshold
-    jitter           : Add small gaussian noise to smooth discretization (for plots only)
-    jitter_strength  : Scale of jitter noise
-    edge_erosion_px  : Erode the mask by this many pixels before sampling to exclude
-                       border artifacts caused by background bleed-in. Only affects
-                       color extraction — does not modify the original mask.
-                       Use 0 (default) to disable.
+    img : np.ndarray
+        Input image in BGR format.
+    mask : np.ndarray
+        Binary segmentation mask where fruit pixels are white [255].
+    contours : List[np.ndarray]
+        List of all contours (fruits and locules).
+    fruit_locule_map : Dict[int, List[int]]
+        Mapping of fruit contour indices to their locule contour indices.
+    fruit_id : int, optional
+        Fruit ID to extract. If None, all fruits are included.
+    color_space : str, optional
+        Color spaces to extract. Either ``'all'`` or a comma-separated
+        subset of ``'rgb'``, ``'lab'``, ``'hsv'``, ``'gray'``.
+        Default is ``'hsv'``.
+    sample_size : int or None, optional
+        Maximum number of pixels to sample randomly. If None, all valid
+        pixels are returned. Default is 5000.
+    renumber : bool, optional
+        If True, fruit IDs are renumbered from 1 to n. Default is True.
+    dark_threshold : int, optional
+        Grayscale intensity threshold below which pixels are excluded.
+        Default is 15.
+    jitter : bool, optional
+        If True, adds small Gaussian noise to reduce visual discretization
+        in scatter plots. Intended for display purposes only. Default is False.
+    jitter_strength : float, optional
+        Scale factor for jitter noise. Default is 0.5.
+    erosion_px : int, optional
+        Erosion radius in pixels applied to the mask before sampling to
+        exclude border artifacts. Use 0 to disable. Default is 3.
 
     Returns
     -------
-    pd.DataFrame — one row per pixel:
-        fruit_id, [R, G, B], [L, a, b], [H, S, V], [Gray]
-        + R_norm, G_norm, B_norm (0-1, always present for point coloring)
+    pd.DataFrame
+        One row per sampled pixel with columns: ``'fruit_id'``,
+        ``'R_norm'``, ``'G_norm'``, ``'B_norm'`` (always present for
+        point coloring), and channel columns depending on ``color_space``
+        (``'R'``, ``'G'``, ``'B'``, ``'L'``, ``'a'``, ``'b'``,
+        ``'H'``, ``'S'``, ``'V'``, ``'Gray'``).
+        Returns an empty DataFrame if no valid pixels are found.
+
+    Raises
+    ------
+    ValueError
+        If ``color_space`` contains invalid entries or ``fruit_id``
+        is not found in the fruit-locule map.
     """
+
     color_space = color_space.lower().replace(' ', '')
     spaces = {'rgb', 'lab', 'hsv', 'gray'} if color_space == 'all' else set(color_space.split(','))
     valid_spaces = {'rgb', 'lab', 'hsv', 'gray'}
@@ -469,19 +544,69 @@ def plot_color_scatter(
     fruit_id: Optional[int] = None,
     color_space: Optional[str] = None,
     sample_size: int = 10000,
-    plot_size: Tuple[int, int] = (18, 5),
     renumber: bool = True,
     dark_threshold: int = 15,
+    erosion_px: int = 3,
+    plot_size: Tuple[int, int] = (18, 5),
+    alpha: float = 0.6,
+    img_name: Optional[str] = None,
     title_font_size: Optional[float] = None,
     xlabel_font_size: Optional[float] = None,
     ylabel_font_size: Optional[float] = None,
     axes_font_size: Optional[float] = None,
-    img_name: Optional[str] = None,
-    alpha: float = 0.6,
-    erosion_px: int = 3
 ) -> None:
     """
+    Plot pairwise scatter plots of color channels colored by actual fruit RGB.
 
+    Displays all pairwise channel combinations for the selected color
+    space(s), with each point colored by its true RGB value extracted
+    from the image.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Input image in BGR format.
+    mask : np.ndarray
+        Binary segmentation mask where fruit pixels are white [255].
+    contours : List[np.ndarray]
+        List of all contours.
+    fruit_map : Dict[int, List[int]]
+        Mapping of fruit contour indices.
+    fruit_id : int, optional
+        Fruit ID to plot. If None, all fruits are included.
+    color_space : str, optional
+        Single color space to plot: ``'rgb'``, ``'lab'``, or ``'hsv'``.
+        If None, all three spaces are plotted. Comma-separated values
+        are not accepted.
+    sample_size : int, optional
+        Maximum number of pixels to sample. Default is 10000.
+    plot_size : Tuple[int, int], optional
+        Base figure size per row. Default is (18, 5).
+    renumber : bool, optional
+        If True, fruit IDs are renumbered from 1 to n. Default is True.
+    dark_threshold : int, optional
+        Grayscale intensity threshold below which pixels are excluded.
+        Default is 0.
+    title_font_size : float, optional
+        Font size for plot titles. If None, scaled automatically.
+    xlabel_font_size : float, optional
+        Font size for x-axis labels. If None, scaled automatically.
+    ylabel_font_size : float, optional
+        Font size for y-axis labels. If None, scaled automatically.
+    axes_font_size : float, optional
+        Font size for tick labels. If None, scaled automatically.
+    img_name : str, optional
+        Image name shown in the plot title. Default is None.
+    alpha : float, optional
+        Transparency of scatter points. Default is 0.6.
+    erosion_px : int, optional
+        Erosion radius in pixels applied to the mask before sampling.
+        Default is 3.
+
+    Raises
+    ------
+    ValueError
+        If ``color_space`` is invalid or comma-separated values are provided.
     """
     # Determinate channel information
     _space_channels = {
@@ -623,23 +748,71 @@ def plot_color_scatter(
 def plot_color_correlation(
     df: pd.DataFrame,
     fruit_id: Optional[int] = None,
-    color_space: Optional[str] = None, 
+    color_space: Optional[str] = None,
     method: str = 'pearson',
-    plot_size: Tuple[int, int] = (8, 6),
     cluster: bool = False,
-    annotate: bool = True,
-    triangle: str = 'full',
     plot: bool = True,
-    # Font sizes
-    title_font_size: Optional[float] = None, 
+    plot_size: Tuple[int, int] = (8, 6),
+    triangle: str = 'full',
+    annotate: bool = True,
+    title_font_size: Optional[float] = None,
     axes_font_size: Optional[float] = None,
     annot_font_size: Optional[float] = None,
 ) -> pd.DataFrame:
     """
-    Compute and plot correlation matrix between color channels.
+    Calculate and optionally plot a correlation matrix between color channels.
 
+    Derives per-fruit mean values from histogram columns and computes
+    pairwise correlations. Hue is summarized using circular statistics.
+    Optionally clusters channels by correlation similarity.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with histogram columns as produced by
+        :func:`~traitly.fruit_phenotyping.color_analysis(get_color_histogram = True)`.
+    fruit_id : int, optional
+        Fruit ID to analyze. If None, all fruits are used. If only one
+        row matches, falls back to all fruits with a warning.
+    color_space : str, optional
+        Color spaces to include. Either ``'all'`` or a comma-separated
+        subset of ``'rgb'``, ``'lab'``, ``'hsv'``, ``'gray'``.
+        If None, all detected spaces in the DataFrame are used.
+    method : str, optional
+        Correlation method: ``'pearson'`` or ``'spearman'``.
+        Default is ``'pearson'``.
+    plot_size : Tuple[int, int], optional
+        Figure size. Default is (8, 6).
+    cluster : bool, optional
+        If True, reorder channels by hierarchical clustering of the
+        correlation matrix. Default is False.
+    annotate : bool, optional
+        If True, display correlation values inside each cell.
+        Default is True.
+    triangle : str, optional
+        Which portion of the matrix to display: ``'full'``, ``'upper'``,
+        or ``'lower'``. Default is ``'full'``.
+    plot : bool, optional
+        If True, render the heatmap. Default is True.
+    title_font_size : float, optional
+        Font size for the plot title. If None, scaled automatically.
+    axes_font_size : float, optional
+        Font size for axis tick labels. If None, scaled automatically.
+    annot_font_size : float, optional
+        Font size for cell annotations. If None, scaled automatically.
+
+    Returns
+    -------
+    pd.DataFrame
+        Square correlation matrix with channel names as index and columns.
+
+    Raises
+    ------
+    ValueError
+        If ``method`` or ``triangle`` are invalid, ``color_space``
+        contains unknown entries, required histogram columns are missing,
+        or ``fruit_id`` is not found.
     """
-
 
     # Validate
     method = method.lower()
