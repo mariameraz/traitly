@@ -1,5 +1,12 @@
 # traitly/fruit_phenotyping/mask.py
+"""
+Mask generation and fruit detection utilities for fruit phenotyping pipelines.
 
+Provides functions to segment fruits from HSV images, enhance locule
+contrast, detect and filter fruit contours, and merge nearby locules.
+Designed to be called from
+:class:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer`.
+"""
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
@@ -23,53 +30,98 @@ from ..utils.basic_functions import plot_img
 
 def create_mask(
     img_hsv: np.ndarray,
-    lower_hsv: Optional[Tuple[int,int,int]] = None, 
-    upper_hsv: Optional[Tuple[int,int,int]] = None,
+    lower_hsv: Optional[Tuple[int, int, int]] = None,
+    upper_hsv: Optional[Tuple[int, int, int]] = None,
     n_iteration: int = 1,
-    kernel_blur: Optional[int] = None, 
+    kernel_blur: Optional[int] = None,
     kernel_open: Optional[int] = None,
-    kernel_close: Optional[int] = None, 
+    kernel_close: Optional[int] = None,
     canny_min: Optional[int] = None,
     canny_max: Optional[int] = None,
-    plot: bool = True, 
-    plot_size: Tuple[int,int] = (5,5),
+    plot: bool = True,
+    plot_size: Tuple[int, int] = (5, 5),
     background_color: Optional[str] = None,
     fill_holes: bool = False,
-    apply_convex_hull: bool = False
-) -> np.ndarray: 
+    apply_convex_hull: bool = False,
+) -> np.ndarray:
     """
-    Creates a binary mask to segment objects from an HSV image using color 
-    thresholding, morphological operations and edge detection.
-    
-    PIPELINE:
-        1. HSV color thresholding
-        2. Invert mask (background → foreground)
-        3. Opening (optional) - removes small noise
-        4. Closing (optional) - fills small holes
-        5. Gaussian blur (optional) - smooths edges
-        6. Canny edge detection (optional)
-        7. Combine mask with edges
-    
-    Arguments:
-        img_hsv: Image in HSV format (H: 0-180, S: 0-255, V: 0-255)
-        lower_hsv: Lower HSV bound for background (default: [0,0,0])
-        upper_hsv: Upper HSV bound for background (default: [180,250,50])
-        n_iteration: Iterations for morphological operations (default: 1)
-        kernel_blur: Kernel size for Gaussian blur (must be odd). If None, skipped.
-        kernel_open: Kernel size for opening (must be odd). If None, skipped.
-        kernel_close: Kernel size for closing (must be odd). If None, skipped.
-        canny_min: Lower threshold for Canny. Requires canny_max. If None, skipped.
-        canny_max: Upper threshold for Canny. Requires canny_min. If None, skipped.
-        plot: Whether to display the resulting mask                                                   
-        plot_size: Figure size for plotting (width, height)
-        
-    Returns:
-        Binary mask as 2D numpy array (uint8)
-    
-    Raises:
-        TypeError: If input types are incorrect
-        ValueError: If parameters are invalid
-        RuntimeError: If image processing fails
+    Generate a binary mask segmenting foreground objects from an HSV image.
+
+    Applies HSV color thresholding to isolate the background, then inverts
+    to obtain the foreground mask. The following refinement steps are applied
+    in order when their parameters are provided:
+
+    1. Morphological opening via ``kernel_open`` — removes small noise.
+    2. Morphological closing via ``kernel_close`` — fills small holes.
+    3. Gaussian blur via ``kernel_blur`` — smooths edges.
+    4. Canny edge detection via ``canny_min`` / ``canny_max`` — recovers
+       detail lost by blurring; edges are OR-combined with the mask.
+    5. Hole filling via :func:`fill_holes_to_mask` when ``fill_holes=True``.
+    6. Convex hull per contour via :func:`apply_convex_hull_to_mask` when
+       ``apply_convex_hull=True``.
+
+    Parameters
+    ----------
+    img_hsv : np.ndarray
+        Input image in HSV format (uint8, H: 0–180, S: 0–255, V: 0–255).
+    lower_hsv : tuple of int or None, optional
+        Lower HSV bound for background thresholding. If ``None`` and
+        ``background_color`` is also ``None``, defaults to
+        ``[0, 0, 0]``. Default is ``None``.
+    upper_hsv : tuple of int or None, optional
+        Upper HSV bound for background thresholding. If ``None`` and
+        ``background_color`` is also ``None``, defaults to
+        ``[180, 250, 50]``. Default is ``None``.
+    n_iteration : int, optional
+        Number of iterations for morphological operations. Default is 1.
+    kernel_blur : int or None, optional
+        Odd kernel size for Gaussian blur. If ``None``, blur is skipped.
+        Default is ``None``.
+    kernel_open : int or None, optional
+        Odd kernel size for morphological opening. If ``None``, opening
+        is skipped. Default is ``None``.
+    kernel_close : int or None, optional
+        Odd kernel size for morphological closing. If ``None``, closing
+        is skipped. Default is ``None``.
+    canny_min : int or None, optional
+        Lower threshold for Canny edge detection. Must be provided together
+        with ``canny_max``. Default is ``None``.
+    canny_max : int or None, optional
+        Upper threshold for Canny edge detection. Must be provided together
+        with ``canny_min``. Default is ``None``.
+    plot : bool, optional
+        If True, display the final mask. Default is True.
+    plot_size : tuple of int, optional
+        Figure size for the mask plot. Default is (5, 5).
+    background_color : str or None, optional
+        Preset background color that overrides ``lower_hsv`` and
+        ``upper_hsv``. One of ``'blue'``, ``'white'``, or ``'black'``.
+        Default is ``None``.
+    fill_holes : bool, optional
+        If True, fill enclosed holes in the mask via
+        :func:`fill_holes_to_mask`. Default is False.
+    apply_convex_hull : bool, optional
+        If True, replace each contour with its convex hull via
+        :func:`apply_convex_hull_to_mask`. Default is False.
+
+    Returns
+    -------
+    np.ndarray
+        Binary mask of shape ``(H, W)`` with dtype uint8, where 255
+        indicates foreground (fruit) and 0 indicates background.
+
+    Raises
+    ------
+    TypeError
+        If ``img_hsv`` is not a numpy array.
+    ValueError
+        If ``img_hsv`` is not a 3-channel uint8 array, kernel sizes are
+        not positive odd integers, ``canny_min >= canny_max``, only one
+        of ``canny_min`` / ``canny_max`` is provided, ``lower_hsv`` has
+        values greater than ``upper_hsv``, or ``background_color`` is
+        not a supported preset.
+    RuntimeError
+        If the initial mask creation fails or an OpenCV error occurs.
     """
     try:
        
@@ -109,8 +161,6 @@ def create_mask(
             if canny_min >= canny_max:
                 raise ValueError("canny_min must be < canny_max")
         
-      
-
         # Set default HSV values for black/dark backgrounds if not provided
         background_color_list = {
             'blue', 'white', 'black'
@@ -202,6 +252,30 @@ def create_mask(
 # Fill contour holes with floodfill
 #################################################################################################
 def fill_holes_to_mask(mask: np.ndarray) -> np.ndarray:
+    """
+    Fill enclosed holes in a binary mask using flood fill.
+
+    Flood-fills from the top-left corner of a padded copy to identify
+    all background-connected regions, then inverts and OR-combines with
+    the original mask to close interior holes.
+
+    Parameters
+    ----------
+    mask : np.ndarray
+        2D binary mask (any dtype). Non-zero pixels are treated as
+        foreground.
+
+    Returns
+    -------
+    np.ndarray
+        Binary mask of the same shape with dtype uint8, where all
+        enclosed holes are filled (set to 255).
+
+    Raises
+    ------
+    ValueError
+        If ``mask`` is not a 2D array.
+    """
     if mask.ndim != 2:
         raise ValueError("mask must be a 2D array")
     m = (mask > 0).astype(np.uint8) * 255
@@ -220,7 +294,37 @@ def fill_holes_to_mask(mask: np.ndarray) -> np.ndarray:
 #################################################################################################
 # Close contours slit with convex hull 
 #################################################################################################
-def apply_convex_hull_to_mask(mask: np.ndarray, min_area: int = 50, contours: Optional[Dict] = None) -> np.ndarray:
+def apply_convex_hull_to_mask(
+    mask: np.ndarray,
+    min_area: int = 50,
+    contours: Optional[Dict] = None,
+) -> np.ndarray:
+    """
+    Replace each contour in a binary mask with its convex hull.
+
+    Finds external contours via ``cv2.findContours`` (unless precomputed
+    contours are provided), filters by ``min_area``, and draws filled
+    convex hulls onto a blank canvas.
+
+    Parameters
+    ----------
+    mask : np.ndarray
+        2D binary mask (any dtype). Non-zero pixels are treated as
+        foreground.
+    min_area : int, optional
+        Minimum contour area in pixels to include. Smaller contours are
+        skipped. Default is 50.
+    contours : dict or None, optional
+        Precomputed contours to use instead of running
+        ``cv2.findContours``. If ``None``, contours are detected
+        internally. Default is ``None``.
+
+    Returns
+    -------
+    np.ndarray
+        Binary mask of the same shape and dtype uint8, where each
+        qualifying contour region is replaced by its filled convex hull.
+    """
     m = (mask > 0).astype(np.uint8) * 255
 
     if contours is None:
@@ -245,12 +349,63 @@ def find_fruits(
     max_fruit_area: Optional[int] = None,
     min_circularity: float = 0.4,
     max_circularity: float = 1.0,
-    rescale_factor: Optional[float] = None
+    rescale_factor: Optional[float] = None,
 ) -> Tuple[List[np.ndarray], Dict[int, List[int]]]:
-    """                 
-    Detects fruit contours in a binary mask using morphological filtering and maps 
-    fruits to their internal cavities (locules).
     """
+    Detect fruit contours and map each fruit to its internal locules.
+
+    Uses ``cv2.RETR_TREE`` hierarchy when ``min_locules_per_fruit > 0``
+    to associate child contours (locules) with their parent fruits.
+    Uses ``cv2.RETR_EXTERNAL`` otherwise for efficiency. Contours are
+    filtered by area, circularity, and aspect ratio. When
+    ``rescale_factor`` is provided, the mask is downscaled before
+    detection and contours are scaled back to full resolution.
+
+    Parameters
+    ----------
+    binary_mask : np.ndarray
+        2D binary mask (uint8) where foreground pixels are non-zero.
+    min_locule_area : int, optional
+        Minimum contour area in pixels to accept a child contour as a
+        locule. Default is 50.
+    min_locules_per_fruit : int, optional
+        Minimum number of valid locules required to retain a fruit.
+        Set to 0 to disable locule filtering. Default is 1.
+    min_fruit_area : int or None, optional
+        Minimum contour area in pixels to accept a top-level contour as
+        a fruit. If ``None``, no lower bound is applied. Default is
+        ``None``.
+    max_fruit_area : int or None, optional
+        Maximum contour area in pixels. If ``None``, no upper bound is
+        applied. Default is ``None``.
+    min_circularity : float, optional
+        Minimum circularity score in [0, 1]. Default is 0.4.
+    max_circularity : float, optional
+        Maximum circularity score in [0, 1]. Default is 1.0.
+    rescale_factor : float or None, optional
+        Factor in (0, 1] to downscale the mask before detection. Area
+        thresholds are adjusted automatically. If ``None`` or 1, no
+        rescaling is applied. Default is ``None``.
+
+    Returns
+    -------
+    contours : list of np.ndarray
+        All detected contours (including locules), indexed consistently
+        with ``fruit_locule_map``.
+    fruit_locule_map : dict of {int : list of int}
+        Mapping from fruit contour index to list of locule contour
+        indices. Fruits with fewer than ``min_locules_per_fruit`` locules
+        are excluded.
+
+    Raises
+    ------
+    ValueError
+        If ``binary_mask`` is not a 2D uint8 array, area thresholds are
+        non-positive or inverted, circularity range is invalid,
+        ``rescale_factor`` is outside (0, 1], or locule count is
+        negative.
+    """
+
     min_aspect_ratio = 0.3
     max_aspect_ratio = 3
     
@@ -417,25 +572,48 @@ def find_fruits(
 # Merge close locules
 #################################################################################################
 
-def merge_locules_func(locules_indices, 
-                       contours, 
-                       min_distance=0, 
-                       max_distance=50, 
-                       min_area=10):
+def merge_locules_func(
+    locules_indices: List[int],
+    contours: List[np.ndarray],
+    min_distance: int = 0,
+    max_distance: int = 50,
+    min_area: int = 10,
+) -> List[np.ndarray]:
     """
-    Merge close locules based on proximity.
-    
-    Args:
-        locules_indices (list): Indices of locule contours to process
-        contours (list): List of all contours
-        min_distance (int): Minimum distance threshold for merging (default: 0)
-        max_distance (int): Maximum distance threshold for merging (default: 50)
-        min_area (int): Minimum contour area to consider valid (default: 10)
-    
-    Returns:
-        list: List of merged contour arrays
-    
+    Merge spatially close locule contours into single contours.
+
+    Filters locules by ``min_area``, computes pairwise centroid distances
+    via :func:`scipy.spatial.distance.pdist`, and merges pairs whose
+    actual point-to-polygon distance falls in
+    ``(min_distance, max_distance)``. Merged contours are approximated
+    with :func:`cv2.approxPolyDP` to reduce point count.
+
+    Parameters
+    ----------
+    locules_indices : list of int
+        Indices into ``contours`` identifying the locule contours to
+        process.
+    contours : list of np.ndarray
+        Full list of all detected contours.
+    min_distance : int, optional
+        Minimum point-to-polygon distance in pixels for two locules to
+        be eligible for merging. Default is 0.
+    max_distance : int, optional
+        Maximum point-to-polygon distance in pixels for merging.
+        Locule pairs farther apart than this are kept separate. Default
+        is 50.
+    min_area : int, optional
+        Minimum contour area in pixels. Locules below this threshold are
+        discarded before merging. Default is 10.
+
+    Returns
+    -------
+    list of np.ndarray
+        List of merged (or unchanged) contour arrays. Empty if
+        ``locules_indices`` is empty or no valid locules remain after
+        area filtering.
     """
+
     if not locules_indices:
         return []
     
@@ -561,7 +739,20 @@ def merge_locules_func(locules_indices,
 #################################################
 
 def _ensure_uint8(L: np.ndarray) -> np.ndarray:
-    """Ensures the image is in uint8 format."""
+    """
+    Convert an array to uint8, handling float [0, 1] and other ranges.
+
+    Parameters
+    ----------
+    L : np.ndarray
+        Input array. If float with values in [0, 1], scaled to [0, 255].
+        If in another range, clipped to [0, 255] before conversion.
+
+    Returns
+    -------
+    np.ndarray
+        Array of dtype uint8.
+    """
     if L.dtype != np.uint8:
         # If in float [0, 1], scale to [0, 255]
         if L.max() <= 1.0:
@@ -571,23 +762,34 @@ def _ensure_uint8(L: np.ndarray) -> np.ndarray:
             L = np.clip(L, 0, 255).astype(np.uint8)
     return L
 
-def gamma_contrast(L: np.ndarray, 
-                   gamma: float = 1.0, 
-                   plot: bool = False) -> np.ndarray:
+def gamma_contrast(
+    L: np.ndarray,
+    gamma: float = 1.0,
+    plot: bool = False,
+) -> np.ndarray:
     """
-    Applies gamma correction to enhance contrast.
-    
-    Args:
-        L: Luminance channel (grayscale image)
-        gamma: Gamma value for correction
-            - gamma < 1: Brightens shadows (expands low values)
-            - gamma > 1: Darkens highlights (compresses high values)
-            - gamma = 1: No change
-        plot: If True, displays the result
-    
-    Returns:
-        Gamma-corrected luminance channel
+    Apply gamma correction to a luminance channel.
+
+    Normalizes ``L`` to [0, 1], raises to the power of ``gamma``, and
+    scales back to [0, 255].
+
+    Parameters
+    ----------
+    L : np.ndarray
+        Grayscale luminance channel (2D). Converted to uint8 via
+        :func:`_ensure_uint8` before processing.
+    gamma : float, optional
+        Gamma exponent. Values below 1 brighten shadows; values above 1
+        darken highlights; 1 applies no change. Default is 1.0.
+    plot : bool, optional
+        If True, display the corrected channel. Default is False.
+
+    Returns
+    -------
+    np.ndarray
+        Gamma-corrected luminance channel with dtype uint8.
     """
+
     # Normalize to [0, 1]
     L = _ensure_uint8(L)
     L_norm = L / 255.0
@@ -603,20 +805,36 @@ def gamma_contrast(L: np.ndarray,
 
     return l_gamma_corrected
 
-def sigmoid_contrast(L: np.ndarray, 
-                     gain: float = 10, 
-                     cutoff: float = 0.5) -> np.ndarray:
+def sigmoid_contrast(
+    L: np.ndarray,
+    gain: float = 10,
+    cutoff: float = 0.5,
+) -> np.ndarray:
     """
-    Applies sigmoidal contrast enhancement.
-    
-    Args:
-        L: Luminance channel (grayscale image)
-        gain: Intensity of the contrast (5-20 recommended)
-        cutoff: Central point of the sigmoid (0.3-0.7 recommended)
-    
-    Returns:
-        Sigmoid-transformed luminance channel
+    Apply sigmoidal contrast enhancement to a luminance channel.
+
+    Normalizes ``L`` to [0, 1], applies the sigmoid function
+    ``1 / (1 + exp(-gain * (x - cutoff)))``, renormalizes to [0, 1],
+    and scales back to [0, 255].
+
+    Parameters
+    ----------
+    L : np.ndarray
+        Grayscale luminance channel (2D). Converted to uint8 via
+        :func:`_ensure_uint8` before processing.
+    gain : float, optional
+        Steepness of the sigmoid curve. Recommended range is 5–20.
+        Default is 10.
+    cutoff : float, optional
+        Midpoint of the sigmoid in normalized [0, 1] space. Recommended
+        range is 0.3–0.7. Default is 0.5.
+
+    Returns
+    -------
+    np.ndarray
+        Sigmoid-enhanced luminance channel with dtype uint8.
     """
+
     L = _ensure_uint8(L)
     L_norm = L / 255.0
     
@@ -628,17 +846,32 @@ def sigmoid_contrast(L: np.ndarray,
     
     return (L_sigmoid * 255).astype(np.uint8)
 
-def exp_transform(L: np.ndarray, c: float = 1.0) -> np.ndarray:
+def exp_transform(
+    L: np.ndarray,
+    c: float = 1.0,
+) -> np.ndarray:
     """
-    Applies exponential transformation: expands high values.
-    
-    Args:
-        L: Luminance channel (grayscale image)
-        c: Exponential coefficient (controls expansion intensity)
-    
-    Returns:
-        Exponentially transformed luminance channel
+    Apply an exponential transformation to a luminance channel.
+
+    Normalizes ``L`` to [0, 1], applies ``expm1(c * x)``, rescales the
+    result to [0, 255]. Expands high-value regions more than low-value
+    regions.
+
+    Parameters
+    ----------
+    L : np.ndarray
+        Grayscale luminance channel (2D). Converted to uint8 via
+        :func:`_ensure_uint8` before processing.
+    c : float, optional
+        Exponential coefficient controlling the expansion intensity.
+        Default is 1.0.
+
+    Returns
+    -------
+    np.ndarray
+        Exponentially transformed luminance channel with dtype uint8.
     """
+
     L = _ensure_uint8(L)
     L_norm = L / 255.0
     
@@ -648,41 +881,79 @@ def exp_transform(L: np.ndarray, c: float = 1.0) -> np.ndarray:
     
     return L_exp.astype(np.uint8)
 
-def apply_contrast(img: np.ndarray, 
-                   contrast_method: Optional[str] = 'gamma',
-                   gamma: Optional[float] = 1.5,
-                   gain: Optional[float] = 5,
-                   cutoff: Optional[float] = 0.5,
-                   c: Optional[float] = 0.5,
-                   plot: Optional[bool] = False,
-                   plot_size: Optional[Tuple[int, int]] = (5, 5),
-                   compare: Optional[bool] = False,
-                   kernel_blur: Optional[int] = 1,
-                   clip_limit: Optional[int] = None,
-                   tile_grid_size: Optional[int] = 12) -> np.ndarray:
+def apply_contrast(
+    img: np.ndarray,
+    contrast_method: str = 'gamma',
+    gamma: float = 1.5,
+    gain: float = 5,
+    cutoff: float = 0.5,
+    c: float = 0.5,
+    plot: bool = False,
+    plot_size: Tuple[int, int] = (5, 5),
+    compare: bool = False,
+    kernel_blur: int = 1,
+    clip_limit: Optional[int] = None,
+    tile_grid_size: int = 12,
+) -> np.ndarray:
     """
-    Applies contrast transformation to the L channel of a LAB image.
-    
-    Args:
-        img: Image in BGR format
-        contrast_method: Contrast method to apply ('gamma', 'sigmoid', 'exp', or 'none')
-        gamma: Parameter for gamma_contrast (default: 1.5)
-        gain: Parameter for sigmoid_contrast (default: 5)
-        cutoff: Parameter for sigmoid_contrast (default: 0.5)
-        c: Parameter for exp_transform (default: 0.5)
-        plot: If True, displays the result of the selected method
-        plot_size: Figure size for plotting (default: (12, 12))
-        compare: If True, visually compares all 3 methods (overrides plot)
-        kernel_blur: Median blur kernel size (default: 1, must be odd)
-        clip_limit: CLAHE clip limit (default: None = no CLAHE applied)
-        tile_grid_size: CLAHE tile grid size (default: 12)
-    
-    Returns:
-        Transformed L channel (2D numpy array)
-    
-    Raises:
-        TypeError: If input image is not a numpy array
-        ValueError: If image format is invalid or contrast_method is unknown
+    Apply contrast enhancement to the L channel of a BGR image.
+
+    Converts ``img`` to LAB color space, extracts the L channel, and
+    applies the selected contrast method via :func:`gamma_contrast`,
+    :func:`sigmoid_contrast`, or :func:`exp_transform`. Optionally
+    applies median blur and CLAHE afterward. When ``compare=True``, all
+    three methods are computed and displayed side by side before
+    returning the result of the selected method.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Input image in BGR format (3-channel uint8).
+    contrast_method : str or None, optional
+        Enhancement method: ``'gamma'``, ``'sigmoid'``, ``'exp'``, or
+        ``'none'``. Default is ``'gamma'``.
+    gamma : float or None, optional
+        Gamma exponent forwarded to :func:`gamma_contrast`. Default is
+        1.5.
+    gain : float or None, optional
+        Sigmoid gain forwarded to :func:`sigmoid_contrast`. Default is 5.
+    cutoff : float or None, optional
+        Sigmoid cutoff forwarded to :func:`sigmoid_contrast`. Default is
+        0.5.
+    c : float or None, optional
+        Exponential coefficient forwarded to :func:`exp_transform`.
+        Default is 0.5.
+    plot : bool or None, optional
+        If True and ``compare=False``, display a side-by-side comparison
+        of the original and transformed L channel. Default is False.
+    plot_size : tuple of int or None, optional
+        Figure size for plots. Default is (5, 5).
+    compare : bool or None, optional
+        If True, compute all three methods and display them together.
+        The selected ``contrast_method`` is still returned. Default is
+        False.
+    kernel_blur : int or None, optional
+        Odd kernel size for median blur applied after contrast
+        enhancement. Set to 1 or ``None`` to skip. Default is 1.
+    clip_limit : int or None, optional
+        CLAHE clip limit applied after contrast and blur. If ``None``,
+        CLAHE is skipped. Default is ``None``.
+    tile_grid_size : int or None, optional
+        CLAHE tile grid size. Used only when ``clip_limit`` is set.
+        Default is 12.
+
+    Returns
+    -------
+    np.ndarray
+        Transformed L channel as a 2D uint8 array.
+
+    Raises
+    ------
+    TypeError
+        If ``img`` is not a numpy array.
+    ValueError
+        If ``img`` is not a 3-channel array or ``contrast_method`` is
+        not one of the supported options.
     """
     # Validate input
     if not isinstance(img, np.ndarray):
@@ -781,34 +1052,71 @@ def apply_contrast(img: np.ndarray,
     
     return l_transformed
 
-def create_mask_locules(l_transformed,
-                        fruit_mask,
-                        kernel_close=None,
-                        thresh_min=100,
-                        thresh_max=255,
-                        kernel_open=None,
-                        min_fruit_size=5000,
-                        invert_locules=False,
-                        plot=False,
-                        plot_size=(15, 5)):
+def create_mask_locules(
+    l_transformed: np.ndarray,
+    fruit_mask: np.ndarray,
+    kernel_close: Optional[int] = None,
+    thresh_min: int = 100,
+    thresh_max: int = 255,
+    kernel_open: Optional[int] = None,
+    min_fruit_size: int = 5000,
+    invert_locules: bool = False,
+    plot: bool = False,
+    plot_size: Tuple[int, int] = (15, 5),
+) -> np.ndarray:
     """
-    Creates a fused mask containing fruits with their internal locules.
-    
-    Args:
-        l_transformed: Transformed L channel from LAB color space
-        fruit_mask: Binary mask of fruits (from create_mask)
-        kernel_close: Kernel size for closing operation (optional, None = no closing)
-        thresh_min: Minimum threshold value for binarization (default: 100)
-        thresh_max: Maximum threshold value for binarization (default: 255)
-        kernel_open: Kernel size for opening operation (optional, None = no opening)
-        min_fruit_size: Minimum area to consider a contour as a fruit (default: 5000)
-        invert_locules: If True, inverts locules mask before fusion (default: False)
-        plot: If True, displays the masks (default: False)
-        plot_size: Figure size for plotting (default: (15, 5))
-    
-    Returns:
-        Binary mask with fruits and internal locules fused (numpy array)
+    Generate a fused binary mask containing fruits with their internal locules.
+
+    Thresholds ``l_transformed`` to extract locule regions, applies
+    optional morphological refinement, and retains only locules that fall
+    inside large fruit contours identified from the inverted locule mask.
+    The locule mask is then fused with ``fruit_mask`` so that locule
+    cavities appear as foreground holes within each fruit.
+
+    Parameters
+    ----------
+    l_transformed : np.ndarray
+        Contrast-enhanced L channel (2D uint8) as returned by
+        :func:`apply_contrast`.
+    fruit_mask : np.ndarray
+        Binary fruit mask (2D uint8) as returned by :func:`create_mask`.
+    kernel_close : int or None, optional
+        Odd kernel size for morphological closing applied to the thresholded
+        locule mask. If ``None``, closing is skipped. Default is ``None``.
+    thresh_min : int, optional
+        Lower threshold for ``cv2.THRESH_BINARY_INV`` binarization of
+        ``l_transformed``. Default is 100.
+    thresh_max : int, optional
+        Upper threshold for binarization. Default is 255.
+    kernel_open : int or None, optional
+        Odd kernel size for morphological opening applied after closing.
+        If ``None``, opening is skipped. Default is ``None``.
+    min_fruit_size : int, optional
+        Minimum contour area in pixels to classify a region as a fruit
+        during mask fusion. Smaller contours are ignored. Default is
+        5000.
+    invert_locules : bool, optional
+        If True, invert the locule mask within fruit regions before
+        fusion. Useful when locules are brighter than the surrounding
+        pericarp. Default is False.
+    plot : bool, optional
+        If True, display the L channel, cleaned locule mask, and final
+        fused mask side by side. Default is False.
+    plot_size : tuple of int, optional
+        Figure size for the three-panel plot. Default is (15, 5).
+
+    Returns
+    -------
+    np.ndarray
+        Binary mask (uint8) with fruit regions fused with their internal
+        locule cavities.
+
+    Raises
+    ------
+    TypeError
+        If ``l_transformed`` or ``fruit_mask`` is not a numpy array.
     """
+
     # Validate input
     if not isinstance(l_transformed, np.ndarray):
         raise TypeError("l_transformed must be a numpy array")
@@ -890,10 +1198,40 @@ def create_mask_locules(l_transformed,
 # Create a scatter plot to visualize pixel colors (HSV) on the image #
 ######################################################################
 
-def generate_scatter_plot(img_hsv: np.ndarray = None, 
-                          img_rgb: np.ndarray = None, 
-                          sample_size: int = 10000,
-                          plot_size = (18,5)):
+def generate_scatter_plot(
+    img_hsv: np.ndarray,
+    img_rgb: np.ndarray,
+    sample_size: int = 10000,
+    plot_size: Tuple[int, int] = (18, 5),
+) -> None:
+    """
+    Display a scatterplot of pixel colors in HSV channel pairs.
+
+    Randomly samples ``sample_size`` pixels from ``img_hsv`` and plots
+    three pairwise HSV scatterplots (H vs S, H vs V, S vs V), colored
+    by their true RGB values from ``img_rgb``. Useful for choosing HSV
+    thresholds before calling :func:`create_mask`.
+
+    Parameters
+    ----------
+    img_hsv : np.ndarray
+        Image in HSV format (3-channel uint8), H: 0–180, S: 0–255,
+        V: 0–255.
+    img_rgb : np.ndarray
+        Corresponding image in RGB format (3-channel uint8), used to
+        color the scatter points.
+    sample_size : int, optional
+        Number of pixels to sample randomly. Capped at the total number
+        of pixels. Default is 10000.
+    plot_size : tuple of int, optional
+        Figure size ``(width, height)`` for the three-panel plot.
+        Font sizes scale with ``plot_size[0]``. Default is (18, 5).
+
+    Returns
+    -------
+    None
+    """
+    
     # Reuse HSV image
     h, s, v = cv2.split(img_hsv)
     

@@ -51,7 +51,7 @@ def create_parser():
         ])
     )
 
-    # ── Mode (mutually exclusive) ────────────────────────────────────────────
+    # Mode (mutually exclusive)
     mode_group = parser.add_mutually_exclusive_group(required=True)
     mode_group.add_argument(
         '--fruit_internal',
@@ -64,7 +64,7 @@ def create_parser():
         help='Analyze external fruit structure (morphology, color)'
     )
 
-    # ── Required ─────────────────────────────────────────────────────────────
+    # Required
     parser.add_argument(
         '-i', '--input',
         type=str,
@@ -73,7 +73,7 @@ def create_parser():
         help='Path to image file or folder'
     )
 
-    # ── Optional ─────────────────────────────────────────────────────────────
+    # Optional
     parser.add_argument(
         '-o', '--output',
         type=str,

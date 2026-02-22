@@ -1,5 +1,28 @@
 # traitly/fruit_phenotyping/internal_analysis.py
 
+"""
+Internal fruit analysis pipeline for traitly.
+
+Provides :class:`FruitInternalAnalyzer`, the core analyzer class for
+whole-fruit and internal morphology, color, and symmetry analysis.
+Supports single-image and batch folder processing with optional
+multiprocessing via :func:`_process_image_worker`.
+
+The typical analysis pipeline follows this order:
+
+1. :meth:`~FruitInternalAnalyzer.load_image`
+2. :meth:`~FruitInternalAnalyzer.setup_measurements`
+3. :meth:`~FruitInternalAnalyzer.generate_fruit_mask`
+4. :meth:`~FruitInternalAnalyzer.enhance_locule_contrast` *(optional)*
+5. :meth:`~FruitInternalAnalyzer.generate_locule_mask` *(optional)*
+6. :meth:`~FruitInternalAnalyzer.detect_fruits`
+7. :meth:`~FruitInternalAnalyzer.analyze_morphology` and/or :meth:`~FruitInternalAnalyzer.analyze_color`
+
+For batch processing, steps 1–7 are orchestrated automatically by
+:meth:`~FruitInternalAnalyzer.analyze_folder` or
+:meth:`~FruitInternalAnalyzer.process_single_file`.
+"""
+
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
@@ -64,8 +87,41 @@ warnings.filterwarnings('ignore', message='Using CPU')
 # Worker function for parallel processing 
 ##########################################################################################
 
-def _process_image_worker(img_path: str,
-                          config: Dict, analyze_morphology: bool, analyze_color: bool):
+def _process_image_worker(
+    img_path: str,
+    config: Dict,
+    analyze_morphology: bool,
+    analyze_color: bool,
+) -> Tuple:
+    """
+    Worker function for parallel processing of a single image.
+
+    Instantiates a :class:`FruitInternalAnalyzer`, loads the image, and
+    runs the full pipeline via :meth:`~FruitInternalAnalyzer.process_single_file`.
+    Designed to be called inside a
+    :class:`~concurrent.futures.ProcessPoolExecutor`.
+
+    Parameters
+    ----------
+    img_path : str
+        Absolute path to the image file to process.
+    config : dict
+        Analysis configuration dictionary forwarded to
+        :meth:`~FruitInternalAnalyzer.process_single_file`.
+    analyze_morphology : bool
+        If True, run morphology analysis.
+    analyze_color : bool
+        If True, run color analysis.
+
+    Returns
+    -------
+    tuple
+        ``(df_morphology, df_color, error_dict, n_fruits, annotated_img,
+        filename, elapsed)``. On failure, ``df_morphology`` and
+        ``df_color`` are ``None`` and ``error_dict`` contains the error
+        message.
+    """
+
     t0 = time.time()
     try:
         analyzer = FruitInternalAnalyzer(img_path)
@@ -92,15 +148,36 @@ def _process_image_worker(img_path: str,
 ##########################################################################################
 
 class FruitInternalAnalyzer:
-    """Class for analyzing fruit images with morphological measurements."""
+    """
+    Core analyzer for fruit morphology and color from segmented images.
+
+    Manages the full single-image pipeline: image loading, scale
+    calibration, label detection, mask generation, fruit and locule
+    detection, morphological feature extraction, and color analysis.
+    Results are stored in :attr:`results` as a :class:`ResultsImage`
+    and analysis metadata is tracked in :attr:`parameters`.
+
+    For external (whole-fruit only) analysis without locule segmentation,
+    use :class:`~traitly.fruit_phenotyping.external_analysis.FruitExternalAnalyzer`.
+
+    Parameters
+    ----------
+    image_path : str
+        Path to an image file or a folder containing images. Raises
+        :exc:`FileNotFoundError` if the path does not exist.
+    """
     
-    def __init__(self, image_path: str):
+    def __init__(self, image_path: str) -> None:
         """
-        Initialize the image analyzer.
-        
-        Args:
-            image_path: Path to image file or directory
+        Initialize the analyzer and validate the image path.
+
+        Parameters
+        ----------
+        image_path : str
+            Path to an image file or a directory. Raises
+            :exc:`FileNotFoundError` if the path does not exist.
         """
+    
         ## Verify image path exists
         # Assign the path first
         self.img_path = image_path
@@ -148,17 +225,30 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     ## Load and display an image 
     ##########################################################################################
-    def load_image(self, 
-                   plot: Optional[bool] = True, 
-                   plot_size: Optional[Tuple[int, int]] = (5, 5), 
-                   ) -> None:
+    def load_image(
+        self,
+        plot: bool = True,
+        plot_size: Tuple[int, int] = (5, 5),
+    ) -> None:
         """
-        Load and display the image.
-        
-        Args:
-            plot: Display the image (Optional, default = True)
-            plot_size: Figure size for plotting (default: (5,5))
+        Load the image from :attr:`img_path` and prepare internal representations.
 
+        Delegates to :func:`~traitly.utils.basic_functions.load_img` and
+        populates :attr:`img`, :attr:`img_copy`, :attr:`img_rgb`,
+        :attr:`img_hsv`, :attr:`img_shape`, and :attr:`img_name`.
+
+        Parameters
+        ----------
+        plot : bool, optional
+            If True, display the loaded image. Default is True.
+        plot_size : tuple of int, optional
+            Figure size ``(width, height)`` for the plot. Default is (5, 5).
+
+        Raises
+        ------
+        ValueError
+            If no image path was set, the file extension is unsupported, or
+            the image failed to load.
         """
 
         if self.img_path is None:
@@ -200,16 +290,42 @@ class FruitInternalAnalyzer:
         skip_label_detection: bool = False,
     ) -> None:
         """
-        Detect:
-            - QR (Optional skip_qr, default = False)
-            - Label ROI (YOLO -> shape threshold) (Optional skip_label_detection, default = False)
-            - Label text by OCR (only if there is a label ROI y no QR text was detected)
+        Detect QR code, label ROI, and label text for the loaded image.
 
-        Return:
-            self.label_text
-            self.label_roi
+        Runs up to three detection steps in order:
+
+        1. QR code detection via :func:`~traitly.utils.basic_functions.detect_qr`
+        (skipped if ``skip_qr=True``).
+        2. Label ROI detection via
+        :func:`~traitly.utils.basic_functions.detect_label_box_yolo` then
+        :func:`~traitly.utils.basic_functions.detect_label_box` as fallback
+        (skipped if ``skip_label_detection=True``).
+        3. OCR via :func:`~traitly.utils.basic_functions.detect_label_text`
+        only if a ROI was found and no QR text was detected.
+
+        Populates :attr:`label_text` and :attr:`label_roi`.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            If True, print detection results. Default is True.
+        detect_label : bool, optional
+            If False, skip OCR and only attempt ROI detection. Default is
+            False.
+        language_label : list of str, optional
+            OCR language codes forwarded to
+            :func:`~traitly.utils.basic_functions.detect_label_text`.
+            Default is ``["es", "en"]``.
+        blur_label : tuple of int, optional
+            Gaussian blur kernel size applied before OCR. Default is
+            ``(11, 11)``.
+        gpu : bool, optional
+            If True, use GPU acceleration for OCR. Default is True.
+        skip_qr : bool, optional
+            If True, skip QR code detection. Default is False.
+        skip_label_detection : bool, optional
+            If True, skip both ROI detection and OCR. Default is False.
         """
-
 
         if verbose:
             print("\n" + "=" * 55)
@@ -315,13 +431,39 @@ class FruitInternalAnalyzer:
         fast_calibration: bool = False,
     ) -> None:
         """
-        Detect and save:
-            self.px_per_cm
-            self.img_annotated
-            self.ref_roi
+        Detect the size reference and calculate the pixel-to-centimetre factor.
 
-        When fast_calibration=True, use width_cm y length_cm instead of looking
-        for the size reference box with YOLO
+        When ``fast_calibration=True`` and both ``width_cm`` and ``length_cm``
+        are provided, the scale is derived geometrically without YOLO detection.
+        Otherwise, delegates to
+        :func:`~traitly.utils.basic_functions.px_cm_density` for automatic
+        reference detection.
+
+        Populates :attr:`px_per_cm` and :attr:`ref_roi`.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            If True, print calibration results and warnings. Default is True.
+        confidence : float, optional
+            Minimum detection confidence forwarded to
+            :func:`~traitly.utils.basic_functions.px_cm_density`. Default is
+            0.6.
+        font_size : int, optional
+            Font size for annotations drawn on the image by
+            :func:`~traitly.utils.basic_functions.px_cm_density`. Default is 3.
+        width_cm : float or None, optional
+            Known physical width of the reference object in centimetres.
+            Used in both fast and standard calibration modes. Default is None.
+        length_cm : float or None, optional
+            Known physical length of the reference object in centimetres.
+            Required for fast calibration. Default is None.
+        diameter_cm : float or None, optional
+            Known diameter of the reference object. Defaults to 2.5 cm if
+            not provided. Default is None.
+        fast_calibration : bool, optional
+            If True and ``width_cm`` and ``length_cm`` are set, skip YOLO
+            detection and calculate scale geometrically. Default is False.
         """
 
         h, w, _ = self.img.shape
@@ -402,20 +544,68 @@ class FruitInternalAnalyzer:
         skip_qr: bool = False,
         fast_calibration: bool = False,
         detect_color_checker: bool = False,
-        scale_factor: float = 0.5
+        scale_factor: float = 0.5,
     ) -> None:
         """
-        Detect label text and calculate px_per_cm using:
-            - setup_label()
-            - setup_calibration()
+        Detect label text and calculate the pixel-to-centimetre scale factor.
 
-        Saves: 
-                - self.label_text
-                - self.label_roi
-                - self.ref_roi
-                - self.px_per_cm
-        Returns:
-            None
+        Orchestrates :meth:`setup_label` and :meth:`setup_calibration` in
+        order, and optionally runs :meth:`detect_color_checker`. Populates
+        :attr:`label_text`, :attr:`label_roi`, :attr:`ref_roi`, and
+        :attr:`px_per_cm`.
+
+        Parameters
+        ----------
+        plot_reference : bool, optional
+            If True, display a cropped view of each detected reference ROI.
+            Default is False.
+        plot_color_checker : bool, optional
+            If True, display the detected color checker region. Default is
+            False.
+        font_size : int, optional
+            Font size forwarded to :meth:`setup_calibration`. Default is 3.
+        confidence : float, optional
+            Detection confidence forwarded to :meth:`setup_calibration`.
+            Default is 0.6.
+        detect_label : bool, optional
+            If True, run full label detection including OCR in
+            :meth:`setup_label`. Default is False.
+        verbose : bool, optional
+            If True, print progress and results. Default is True.
+        plot_size : tuple of int, optional
+            Figure size for reference ROI plots. Default is (5, 5).
+        language_label : list of str, optional
+            OCR language codes forwarded to :meth:`setup_label`. Default is
+            ``["es", "en"]``.
+        width_cm : float or None, optional
+            Known reference width in centimetres, forwarded to
+            :meth:`setup_calibration`. Default is None.
+        length_cm : float or None, optional
+            Known reference length in centimetres, forwarded to
+            :meth:`setup_calibration`. Default is None.
+        diameter_cm : float or None, optional
+            Known reference diameter in centimetres, forwarded to
+            :meth:`setup_calibration`. Default is None.
+        gpu : bool, optional
+            If True, use GPU for OCR in :meth:`setup_label`. Default is False.
+        skip_qr : bool, optional
+            If True, skip QR detection in :meth:`setup_label`. Default is
+            False.
+        fast_calibration : bool, optional
+            If True and ``width_cm`` and ``length_cm`` are set, skip YOLO
+            detection in :meth:`setup_calibration`. Default is False.
+        detect_color_checker : bool, optional
+            If True, run :meth:`detect_color_checker` after calibration.
+            Default is False.
+        scale_factor : float, optional
+            Downscaling factor for color checker detection in
+            :meth:`detect_color_checker`. Must be in [0.1, 1.0]. Default is
+            0.5.
+
+        Raises
+        ------
+        ValueError
+            If no image is loaded or ``scale_factor`` is outside [0.1, 1.0].
         """
         if self.img is None:
             raise ValueError("No image loaded. Run load_img() first.")
@@ -516,9 +706,32 @@ class FruitInternalAnalyzer:
     # OPTIONAL : Create a scatterplot to visualize pixel colors (HSV space) 
     ##########################################################################################
 
-    def generate_color_scatterplot(self,
-                                   sample_size: int = 10000, 
-                                   plot_size: Tuple[int,int] = (18,5)):
+    def generate_color_scatterplot(
+        self,
+        sample_size: int = 10000,
+        plot_size: Tuple[int, int] = (18, 5),
+    ) -> None:
+        """
+        Display a scatterplot of pixel colors in HSV space.
+
+        Delegates to :func:`~traitly.fruit_phenotyping.mask.generate_scatter_plot`
+        using a random pixel sample. Useful for choosing HSV thresholds before
+        calling :meth:`generate_fruit_mask`.
+
+        Parameters
+        ----------
+        sample_size : int, optional
+            Number of pixels to sample for the plot. Must be a positive
+            integer. Default is 10000.
+        plot_size : tuple of int, optional
+            Figure size ``(width, height)`` for the scatterplot. Default is
+            (18, 5).
+
+        Raises
+        ------
+        ValueError
+            If no image is loaded or ``sample_size`` is not a positive integer.
+        """
         if self.img is None:
             raise ValueError("No image loaded. Run load_img() first.")
         
@@ -535,45 +748,98 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     # Create a binary mask for fruits
     ##########################################################################################
-    def generate_fruit_mask(self, plot: bool = True, 
-                    plot_size: Tuple[int, int] = (5, 5), 
-                    stamp: bool = False,  
-                    lower_hsv: Optional[List[int]] = None,
-                    upper_hsv: Optional[List[int]] = None, 
-                    n_iteration: int = 1,
-                    kernel_blur: Optional[int] = None, 
-                    kernel_open: Optional[int] = None,
-                    kernel_close: Optional[int] = None, 
-                    canny_min: Optional[int] = None,
-                    canny_max: Optional[int] = None,
-                    remove_roi: bool = True, 
-                    roi_expansion: int = 10,
-                    background_color: Optional[str] = None,
-                    fill_holes: bool = False,
-                    apply_convex_hull: bool = False,
-                    detect_color_checker: bool = False,
-                    erosion_px: int = 3) -> None:
+    def generate_fruit_mask(
+        self,
+        plot: bool = True,
+        plot_size: Tuple[int, int] = (5, 5),
+        stamp: bool = False,
+        lower_hsv: Optional[List[int]] = None,
+        upper_hsv: Optional[List[int]] = None,
+        n_iteration: int = 1,
+        kernel_blur: Optional[int] = None,
+        kernel_open: Optional[int] = None,
+        kernel_close: Optional[int] = None,
+        canny_min: Optional[int] = None,
+        canny_max: Optional[int] = None,
+        remove_roi: bool = True,
+        roi_expansion: int = 10,
+        background_color: Optional[str] = None,
+        fill_holes: bool = False,
+        apply_convex_hull: bool = False,
+        detect_color_checker: bool = False,
+        erosion_px: int = 3,
+    ) -> None:
         """
-        Create a mask for fruit detection and segmentation.
-        
-        This method generates a binary mask to identify fruits in the image with support
-        for stamp inversion, locule detection, and automatic ROI removal.
-        
-        Args:
-            stamp: Set to True if image has inverted colors (black background). Default is False.
-            plot: Whether to display the generated mask. Default is False.
-            plot_size: Figure size for plotting (width, height). Default is (5, 5).
-            remove_roi: Automatically remove label and reference regions from the mask. 
-                Default is True.
-        
-        Returns:
-            None: self.mask_fruit with the generated binary mask.
-        """
+        Generate a binary mask segmenting fruits from the background.
 
+        Delegates to :func:`~traitly.fruit_phenotyping.mask.create_mask`
+        for HSV-based segmentation. When ``remove_roi=True``, label, reference,
+        and color checker regions are blacked out from the mask using
+        :attr:`label_roi`, :attr:`ref_roi`, and :attr:`checker_coords`.
+        An elliptical erosion is applied afterward to reduce boundary noise.
+        Populates :attr:`mask_fruit`.
+
+        Parameters
+        ----------
+        plot : bool, optional
+            If True, display the generated mask. Default is True.
+        plot_size : tuple of int, optional
+            Figure size for the mask plot. Default is (5, 5).
+        stamp : bool, optional
+            If True, invert the image colors before masking (black background
+            images). Default is False.
+        lower_hsv : list of int or None, optional
+            Lower HSV threshold ``[H, S, V]`` forwarded to
+            :func:`~traitly.fruit_phenotyping.mask.create_mask`. If None,
+            automatic thresholding is applied. Default is None.
+        upper_hsv : list of int or None, optional
+            Upper HSV threshold ``[H, S, V]`` forwarded to
+            :func:`~traitly.fruit_phenotyping.mask.create_mask`. Default is
+            None.
+        n_iteration : int, optional
+            Number of morphological iterations forwarded to
+            :func:`~traitly.fruit_phenotyping.mask.create_mask`. Default is 1.
+        kernel_blur : int or None, optional
+            Gaussian blur kernel size. Default is None.
+        kernel_open : int or None, optional
+            Morphological opening kernel size. Default is None.
+        kernel_close : int or None, optional
+            Morphological closing kernel size. Default is None.
+        canny_min : int or None, optional
+            Minimum Canny edge threshold. Default is None.
+        canny_max : int or None, optional
+            Maximum Canny edge threshold. Default is None.
+        remove_roi : bool, optional
+            If True, remove label, reference, and color checker regions from
+            the mask. Default is True.
+        roi_expansion : int, optional
+            Pixel margin added around each ROI before removal, also used as
+            the dilation kernel size. Default is 10.
+        background_color : str or None, optional
+            Expected background color hint forwarded to
+            :func:`~traitly.fruit_phenotyping.mask.create_mask`. Default is
+            None.
+        fill_holes : bool, optional
+            If True, fill enclosed holes in the binary mask. Default is False.
+        apply_convex_hull : bool, optional
+            If True, apply convex hull to each fruit region in the mask.
+            Default is False.
+        detect_color_checker : bool, optional
+            If True, also remove the color checker region from the mask using
+            :attr:`checker_coords`. Default is False.
+        erosion_px : int, optional
+            Radius in pixels of the elliptical erosion kernel applied after
+            ROI removal. Set to 0 to skip erosion. Default is 3.
+
+        Raises
+        ------
+        ValueError
+            If no image is loaded.
+        """
+        
+        # Validation
         if self.img is None:
             raise ValueError("No image loaded. Run load_img() first.")
-        
-        
         
         metadata = self.is_metadata_saved
         if metadata:
@@ -703,38 +969,61 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     # OPTIONAL: Create locule-fruit contrast
     ##########################################################################################
-    def enhance_locule_contrast(self,
-                    contrast_method: str = 'gamma',
-                    gamma: float = 1.5,
-                    gain: float = 5,
-                    cutoff: float = 0.5,
-                    c: float = 0.5,
-                    plot: bool = True,
-                    plot_size: Tuple[int, int] = (8, 10),
-                    compare_method: bool = False,
-                    kernel_blur: int = 1,
-                    clip_limit: Optional[int] = None,
-                    tile_grid_size: Optional[int] = 12) -> np.ndarray:
+    def enhance_locule_contrast(
+        self,
+        contrast_method: str = 'gamma',
+        gamma: float = 1.5,
+        gain: float = 5,
+        cutoff: float = 0.5,
+        c: float = 0.5,
+        plot: bool = True,
+        plot_size: Tuple[int, int] = (8, 10),
+        compare_method: bool = False,
+        kernel_blur: int = 1,
+        clip_limit: Optional[int] = None,
+        tile_grid_size: Optional[int] = 12,
+    ) -> None:
         """
-        Applies contrast transformation to the L channel of a LAB image.
-        
-        Args:
-            img: Image in BGR format
-            contrast_method: Contrast method to apply ('gamma', 'sigmoid', or 'exp')
-            gamma: Parameter for gamma_contrast (default: 1.5)
-            gain: Parameter for sigmoid_contrast (default: 5)
-            cutoff: Parameter for sigmoid_contrast (default: 0.5)
-            c: Parameter for exp_transform (default: 0.5)
-            plot: If True, displays the result of the selected method
-            plot_size: Figure size for plotting (default: (12, 12))
-            compare: If True, visually compares all 3 methods (overrides plot)
-        
-        Returns:
-            Transformed L channel (2D numpy array)
-        
-        Raises:
-            TypeError: If input image is not a numpy array
-            ValueError: If image format is invalid or contrast_method is unknown
+        Apply contrast enhancement to the L channel to improve locule visibility.
+
+        Delegates to :func:`~traitly.fruit_phenotyping.mask.apply_contrast`
+        and stores the result in :attr:`l_transformed`. The enhanced L channel
+        is used by :meth:`generate_locule_mask` to threshold locule regions.
+
+        Parameters
+        ----------
+        contrast_method : str, optional
+            Enhancement method: ``'gamma'``, ``'sigmoid'``, or
+            ``'exponential'``. Default is ``'gamma'``.
+        gamma : float, optional
+            Gamma exponent, used when ``contrast_method='gamma'``. Default is
+            1.5.
+        gain : float, optional
+            Sigmoid gain, used when ``contrast_method='sigmoid'``. Default is
+            5.
+        cutoff : float, optional
+            Sigmoid cutoff, used when ``contrast_method='sigmoid'``. Default
+            is 0.5.
+        c : float, optional
+            Exponential factor, used when ``contrast_method='exponential'``.
+            Default is 0.5.
+        plot : bool, optional
+            If True, display the enhanced L channel. Default is True.
+        plot_size : tuple of int, optional
+            Figure size for the plot. Default is (8, 10).
+        compare_method : bool, optional
+            If True, display a side-by-side comparison of all methods via
+            :func:`~traitly.fruit_phenotyping.mask.apply_contrast`. Default
+            is False.
+        kernel_blur : int, optional
+            Gaussian blur kernel size applied before contrast enhancement.
+            Default is 1.
+        clip_limit : int or None, optional
+            CLAHE clip limit. If provided, CLAHE is applied after the selected
+            contrast method. Default is None.
+        tile_grid_size : int or None, optional
+            CLAHE tile grid size. Used only when ``clip_limit`` is set.
+            Default is 12.
         """
         metadata = self.is_metadata_saved
 
@@ -767,30 +1056,55 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     # OPTIONAL: Create fruit + locule mask
     ##########################################################################################
-    def generate_locule_mask(self, 
-                            thresh_min=120,
-                            thresh_max=255,
-                            kernel_close=None,
-                            kernel_open=None,
-                            min_fruit_area=5000,
-                            invert_locule=False,
-                            plot=True,
-                            plot_size=(5, 5)):
+    def generate_locule_mask(
+        self,
+        thresh_min: int = 120,
+        thresh_max: int = 255,
+        kernel_close: Optional[int] = None,
+        kernel_open: Optional[int] = None,
+        min_fruit_area: int = 5000,
+        invert_locule: bool = False,
+        plot: bool = True,
+        plot_size: Tuple[int, int] = (5, 5),
+    ) -> None:
         """
-        Creates and stores a fused mask containing fruits with internal locules.
-        
-        Args:
-            thresh_min: Minimum threshold value for binarization (default: 120)
-            thresh_max: Maximum threshold value for binarization (default: 255)
-            kernel_close: Kernel size for closing operation (optional, None = no closing)
-            kernel_open: Kernel size for opening operation (optional, None = no opening)
-            min_fruit_size: Minimum area to consider a contour as a fruit (default: 5000)
-            invert_locules: If True, inverts locules mask before fusion (default: False)
-            plot: If True, displays the masks (default: False)
-            plot_size: Figure size for plotting (default: (15, 5))
-        
-        Returns:
-            None (stores fused mask in self.mask_locules)
+        Generate a fused mask containing fruits with their internal locules.
+
+        Delegates to :func:`~traitly.fruit_phenotyping.mask.create_mask_locules`
+        using :attr:`l_transformed` (from :meth:`enhance_locule_contrast`) and
+        :attr:`mask_fruit`. Populates :attr:`mask_locules`, which replaces
+        :attr:`mask_fruit` as the active mask in downstream steps.
+
+        Parameters
+        ----------
+        thresh_min : int, optional
+            Minimum threshold value for L-channel binarization. Default is
+            120.
+        thresh_max : int, optional
+            Maximum threshold value for L-channel binarization. Default is
+            255.
+        kernel_close : int or None, optional
+            Kernel size for morphological closing applied to the locule mask.
+            Default is None.
+        kernel_open : int or None, optional
+            Kernel size for morphological opening applied to the locule mask.
+            Default is None.
+        min_fruit_area : int, optional
+            Minimum area in pixels to retain a fruit region during mask
+            fusion. Default is 5000.
+        invert_locule : bool, optional
+            If True, invert the locule binary mask before fusion. Useful when
+            locules are brighter than the surrounding pericarp. Default is
+            False.
+        plot : bool, optional
+            If True, display the fused mask. Default is True.
+        plot_size : tuple of int, optional
+            Figure size for the mask plot. Default is (5, 5).
+
+        Raises
+        ------
+        ValueError
+            If :attr:`mask_fruit` or :attr:`l_transformed` is not available.
         """
 
         if self.mask_fruit is None:
@@ -841,28 +1155,63 @@ class FruitInternalAnalyzer:
     # Detect fruits on the mask
     ##########################################################################################
 
-    def detect_fruits(self, 
-                    min_fruit_circularity: float = 0.5, 
-                    verbose: bool = True, 
-                    min_locule_area: int = 50, 
-                    min_locule_per_fruit: int = 1,  
-                    min_fruit_area: Optional[int] = None,
-                    max_fruit_area: Optional[int] = None,
-                    rescale_factor: Optional[float] = None,
-                    plot: bool = False,
-                    plot_size: Tuple[int,int] = (5,5),
-                    contour_color: Tuple[int,int,int] = (0,255,0),
-                    contour_thickness: int = 2) -> None:
+    def detect_fruits(
+        self,
+        min_fruit_circularity: float = 0.5,
+        verbose: bool = True,
+        min_locule_area: int = 50,
+        min_locule_per_fruit: int = 1,
+        min_fruit_area: Optional[int] = None,
+        max_fruit_area: Optional[int] = None,
+        rescale_factor: Optional[float] = None,
+        plot: bool = False,
+        plot_size: Tuple[int, int] = (5, 5),
+        contour_color: Tuple[int, int, int] = (0, 255, 0),
+        contour_thickness: int = 2,
+    ) -> None:
         """
-        Detect fruits and their locules in the mask.
+        Detect individual fruits and their locules from the binary mask.
 
-        Args:
-            min_circularity: Minimum circularity for fruit detection. Default is 0.5.
-            output_message: Whether to show detection results. Default is True.
-            min_locule_area: Minimum area for locule detection. Default is 50.
-            min_locule_per_fruit: Minimum locules per fruit. Default is 1.
-            max_circularity: Maximum circularity for filtering. Default is 1.0.
+        Delegates to :func:`~traitly.fruit_phenotyping.mask.find_fruits` using
+        :attr:`mask_locules` when available, otherwise :attr:`mask_fruit`.
+        Populates :attr:`contours` and :attr:`fruit_locule_map`.
 
+        Parameters
+        ----------
+        min_fruit_circularity : float, optional
+            Minimum circularity score in [0, 1] to accept a contour as a
+            fruit. Default is 0.5.
+        verbose : bool, optional
+            If True, print a summary of detected fruits and parameters used.
+            Default is True.
+        min_locule_area : int, optional
+            Minimum contour area in pixels to consider a region as a locule.
+            Default is 50.
+        min_locule_per_fruit : int, optional
+            Minimum number of locules required to accept a fruit. Default is
+            1.
+        min_fruit_area : int or None, optional
+            Minimum contour area in pixels to accept a fruit. If None, no
+            lower bound is applied. Default is None.
+        max_fruit_area : int or None, optional
+            Maximum contour area in pixels to accept a fruit. If None, no
+            upper bound is applied. Default is None.
+        rescale_factor : float or None, optional
+            Factor to rescale contours before detection. Default is None.
+        plot : bool, optional
+            If True, display detected fruit contours on the image. Default is
+            False.
+        plot_size : tuple of int, optional
+            Figure size for the detection plot. Default is (5, 5).
+        contour_color : tuple of int, optional
+            BGR color for drawing fruit contours. Default is ``(0, 255, 0)``.
+        contour_thickness : int, optional
+            Line thickness for contour drawing. Default is 2.
+
+        Raises
+        ------
+        ValueError
+            If :attr:`mask_fruit` is not available.
         """
         
         # Validation - if mask exists, mask_locules should also exist
@@ -938,14 +1287,49 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     # OPTIONAL: Create tissue masks for a single fruit
     ##########################################################################################
-    def generate_single_fruit_masks(self,
-            fruit_id: Optional[int] = None,
-            plot_size: Tuple[int, int] = (7, 5),
-            overlay: bool = False,
-            overlay_legend: bool = False,
-            margin: int = 5,
-            only_fruit: bool = False
-        ) -> Dict[str, np.ndarray]:
+    def generate_single_fruit_masks(
+        self,
+        fruit_id: Optional[int] = None,
+        plot_size: Tuple[int, int] = (7, 5),
+        overlay: bool = False,
+        overlay_legend: bool = False,
+        margin: int = 5,
+        only_fruit: bool = False,
+    ) -> Dict[str, np.ndarray]:
+        """
+        Generate and display tissue masks for a single fruit.
+
+        Delegates to
+        :func:`~traitly.fruit_phenotyping.color_analysis.get_single_fruit_masks`
+        using :attr:`mask_locules` when available, otherwise :attr:`mask_fruit`.
+        The fruit is cropped to its bounding box with an optional pixel margin.
+
+        Parameters
+        ----------
+        fruit_id : int or None, optional
+            Sequential fruit ID to visualize. If None, the first detected
+            fruit is used. Default is None.
+        plot_size : tuple of int, optional
+            Figure size for the tissue mask plot. Default is (7, 5).
+        overlay : bool, optional
+            If True, overlay all tissue masks on the original image. Default
+            is False.
+        overlay_legend : bool, optional
+            If True, include a legend in the overlay plot. Default is False.
+        margin : int, optional
+            Pixel margin added around the fruit bounding box crop. Default is
+            5.
+        only_fruit : bool, optional
+            If True, display only the whole-fruit mask without internal tissue
+            breakdown. Default is False.
+
+        Raises
+        ------
+        ValueError
+            If :attr:`mask_fruit`, :attr:`contours`, or
+            :attr:`fruit_locule_map` is not available, or if no fruits were
+            detected.
+        """
 
         # Validation
         if self.mask_fruit is None:
@@ -984,55 +1368,123 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     # Extract morphology measurements from the image
     ##########################################################################################
-    def analyze_morphology(self, 
-                    ## Plot
-                    plot: bool = True, 
-                    plot_size: Tuple[int, int] = (10, 10), 
-                    font_size: float = 1.5, 
-                    font_thickness: int = 2, 
-                    font_color: Tuple[int, int, int] = (0, 0, 0),
-                    label_position: str = 'top',
-                    label_color: Tuple[int, int, int] = (255, 255, 255),
-
-                    
-                    # Contour mode
-                    contour_mode: str = 'raw', 
-                    epsilon: float = 0.001, 
-                     
-                    # Filter locules
-                    min_locule_area: int = 100, 
-                    max_locule_area: Optional[int] = None, 
-                    
-                    # Symmetry
-                    angle_shifts: int = 500, 
-
-                    # Pericarp thickness
-                    num_rays: int = 90,
-
-                    # Contours style
-                    pericarp_int_color: Tuple[int, int, int] = (0, 240, 240),
-                    pericarp_int_thickness: int = 2,
-
-                    locule_color: Tuple[int,int,int] = (255, 0, 255),
-                    locule_thickness: int = 2,
-
-                    pericarp_ext_thickness: int = 2,
-                    pericarp_ext_color: Tuple[int, int, int] = (0, 240, 240),
-
-                    centroid_fruit_color: Tuple[int,int,int] = (255, 255, 51),
-                    centroid_fruit_thickness: int = 2,
-
-                    centroid_locule_color: Tuple[int,int,int] = (0, 255, 255),
-                    centroid_locule_thickness: int = 2,
-
-                    # Result table
-                    display_table: Optional[bool] = True,
-
-                    is_locule: bool = True
-                    ) -> ResultsImage:
+    def analyze_morphology(
+        self,
+        plot: bool = True,
+        plot_size: Tuple[int, int] = (10, 10),
+        font_size: float = 1.5,
+        font_thickness: int = 2,
+        font_color: Tuple[int, int, int] = (0, 0, 0),
+        label_position: str = 'top',
+        label_color: Tuple[int, int, int] = (255, 255, 255),
+        contour_mode: str = 'raw',
+        epsilon: float = 0.001,
+        min_locule_area: int = 100,
+        max_locule_area: Optional[int] = None,
+        angle_shifts: int = 500,
+        num_rays: int = 90,
+        pericarp_int_color: Tuple[int, int, int] = (0, 240, 240),
+        pericarp_int_thickness: int = 2,
+        locule_color: Tuple[int, int, int] = (255, 0, 255),
+        locule_thickness: int = 2,
+        pericarp_ext_thickness: int = 2,
+        pericarp_ext_color: Tuple[int, int, int] = (0, 240, 240),
+        centroid_fruit_color: Tuple[int, int, int] = (255, 255, 51),
+        centroid_fruit_thickness: int = 2,
+        centroid_locule_color: Tuple[int, int, int] = (0, 255, 255),
+        centroid_locule_thickness: int = 2,
+        display_table: Optional[bool] = True,
+        is_locule: bool = True,
+    ) -> Optional[pd.DataFrame]:
         """
-        Analyze detected fruits using analysis.analyze_fruits_morphology().
-        
+        Extract morphological metrics from detected fruits.
+
+        Delegates to
+        :func:`~traitly.fruit_phenotyping.fruit_config.analyze_fruits_morphology`
+        and stores results in :attr:`results`. Column order is normalized
+        by a predefined group ordering. Preserves any existing color results
+        in :attr:`results` across calls.
+
+        Parameters
+        ----------
+        plot : bool, optional
+            If True, display the annotated result image. Default is True.
+        plot_size : tuple of int, optional
+            Figure size for the annotated image. Default is (10, 10).
+        font_size : float, optional
+            Font scale for annotation labels. Default is 1.5.
+        font_thickness : int, optional
+            Thickness of annotation text in pixels. Default is 2.
+        font_color : tuple of int, optional
+            BGR color for annotation text. Default is black ``(0, 0, 0)``.
+        label_position : str, optional
+            Position of fruit ID labels: ``'top'``, ``'bottom'``, ``'left'``,
+            or ``'right'``. Default is ``'top'``.
+        label_color : tuple of int, optional
+            BGR background color for annotation labels. Default is white
+            ``(255, 255, 255)``.
+        contour_mode : str, optional
+            Contour representation mode forwarded to
+            :func:`~traitly.fruit_phenotyping.fruit_config.analyze_fruits_morphology`.
+            One of ``'raw'``, ``'hull'``, ``'approx'``, ``'ellipse'``,
+            ``'circle'``. Default is ``'raw'``.
+        epsilon : float, optional
+            Approximation factor for contour simplification when
+            ``contour_mode='approx'``. Default is 0.001.
+        min_locule_area : int, optional
+            Minimum locule area in pixels included in analysis. Default is
+            100.
+        max_locule_area : int or None, optional
+            Maximum locule area in pixels. If None, no upper limit is applied.
+            Default is None.
+        angle_shifts : int, optional
+            Number of angle steps for angular symmetry computation forwarded
+            to :func:`~traitly.fruit_phenotyping.symmetry.angular_symmetry`.
+            Default is 500.
+        num_rays : int, optional
+            Number of rays for radial pericarp thickness estimation forwarded
+            to :func:`~traitly.fruit_phenotyping.processing.calculate_pericarp_thickness_radial`.
+            Default is 90.
+        pericarp_int_color : tuple of int, optional
+            BGR color for the internal pericarp contour overlay. Default is
+            ``(0, 240, 240)``.
+        pericarp_int_thickness : int, optional
+            Line thickness for the internal pericarp contour. Default is 2.
+        locule_color : tuple of int, optional
+            BGR color for locule contours. Default is ``(255, 0, 255)``.
+        locule_thickness : int, optional
+            Line thickness for locule contours. Default is 2.
+        pericarp_ext_color : tuple of int, optional
+            BGR color for the external pericarp contour. Default is
+            ``(0, 240, 240)``.
+        pericarp_ext_thickness : int, optional
+            Line thickness for the external pericarp contour. Default is 2.
+        centroid_fruit_color : tuple of int, optional
+            BGR color for fruit centroid markers. Default is ``(255, 255, 51)``.
+        centroid_fruit_thickness : int, optional
+            Radius of fruit centroid markers in pixels. Default is 2.
+        centroid_locule_color : tuple of int, optional
+            BGR color for locule centroid markers. Default is ``(0, 255, 255)``.
+        centroid_locule_thickness : int, optional
+            Radius of locule centroid markers in pixels. Default is 2.
+        display_table : bool or None, optional
+            If True, return the morphology results DataFrame. Default is True.
+        is_locule : bool, optional
+            If False, skip locule, pericarp, and symmetry metrics. Default is
+            True.
+
+        Returns
+        -------
+        pd.DataFrame or None
+            Morphology results DataFrame if ``display_table=True``, otherwise
+            ``None``.
+
+        Raises
+        ------
+        ValueError
+            If :attr:`mask_fruit`, :attr:`contours`, or
+            :attr:`fruit_locule_map` is not available, or if no fruits were
+            detected.
         """
         # Validation
         if self.mask_fruit is None:
@@ -1186,11 +1638,17 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     def save_parameters(self, output_path: Optional[str] = None) -> None:
         """
-        Save parameter data as txt and json
-        
-        Args:
-            output_path: Output directory 
-                       If None, save it on the input folder
+        Save the analysis parameters used in the current session to disk.
+
+        Writes both a ``.txt`` and a ``.json`` file named after the loaded
+        image, via :meth:`~traitly.fruit_phenotyping.analysis_parameters.AnalysisMetadata.save_to_file`
+        and :meth:`~traitly.fruit_phenotyping.analysis_parameters.AnalysisMetadata.save_to_json`.
+
+        Parameters
+        ----------
+        output_path : str or None, optional
+            Directory where parameter files are saved. If None, files are
+            saved in the same directory as :attr:`img_path`. Default is None.
         """
         if output_path is None:
             output_path = os.path.dirname(self.img_path)
@@ -1217,26 +1675,96 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     # Extract color measurements for different fruit tissues
     ########################################################################################## 
-    def analyze_color(self, 
-                        stat: Optional[str] = 'mean',
-                        tissue: Optional[str] = 'all',
-                        color_space: Optional[str] = 'all',
-                        display_table: Optional[bool] = True,
-                        plot: bool = False,
-                        plot_size: Tuple[int,int] = (10,10),
+    def analyze_color(
+        self,
+        stat: Optional[str] = 'mean',
+        tissue: Optional[str] = 'all',
+        color_space: Optional[str] = 'all',
+        display_table: Optional[bool] = True,
+        plot: bool = False,
+        plot_size: Tuple[int, int] = (10, 10),
+        font_size: int = 2,
+        font_thickness: int = 2,
+        pericarp_ext_color: Tuple[int, int, int] = (0, 255, 0),
+        pericarp_ext_thickness: int = 2,
+        locule_thickness: int = 2,
+        locule_color: Tuple[int, int, int] = (255, 0, 255),
+        label_position: str = 'top',
+        font_color: Tuple[int, int, int] = (0, 0, 0),
+        label_color: Tuple[int, int, int] = (255, 255, 255),
+        label_opacity: float = 0.7,
+        get_color_histogram: bool = False,
+    ) -> Optional[pd.DataFrame]:
+        """
+        Extract color features from detected fruit tissues.
 
-                        # Annotation
-                        font_size: int = 2,
-                        font_thickness: int = 2,
-                        pericarp_ext_color: Tuple[int,int,int] = (0,255,0),
-                        pericarp_ext_thickness: int = 2,
-                        locule_thickness: int = 2,
-                        locule_color: Tuple[int, int, int] = (255,0,255),
-                        label_position: str = 'top',
-                        font_color: Tuple[int,int,int] = (0,0,0), 
-                        label_color: Tuple[int,int,int] = (255,255,255),
-                        label_opacity: float = 0.7,
-                        get_color_histogram: bool = False):
+        When ``get_color_histogram=False``, delegates to
+        :func:`~traitly.fruit_phenotyping.color_analysis.analyze_all_fruits_color`
+        and returns per-tissue summary statistics. When
+        ``get_color_histogram=True``, delegates to
+        :func:`~traitly.fruit_phenotyping.color_analysis.get_fruit_color_histograms`
+        instead. Uses :attr:`mask_locules` when available, otherwise
+        :attr:`mask_fruit`. Stores results in :attr:`results`.
+
+        Parameters
+        ----------
+        stat : str or None, optional
+            Summary statistic for color features: ``'mean'`` or ``'median'``.
+            Default is ``'mean'``.
+        tissue : str or None, optional
+            Tissue region to analyze: ``'all'``, ``'total_pericarp'``,
+            ``'outer_pericarp'``, ``'inner_pericarp'``, or ``'locules'``.
+            Default is ``'all'``.
+        color_space : str or None, optional
+            Color spaces to extract: ``'all'`` or a subset of ``'rgb'``,
+            ``'lab'``, ``'hsv'``, ``'gray'``. Default is ``'all'``.
+        display_table : bool or None, optional
+            If True, return the color results DataFrame. Default is True.
+        plot : bool, optional
+            If True, display the annotated image used for color extraction.
+            Default is False.
+        plot_size : tuple of int, optional
+            Figure size for the annotated image plot. Default is (10, 10).
+        font_size : int, optional
+            Font scale for annotation labels. Default is 2.
+        font_thickness : int, optional
+            Thickness of annotation text. Default is 2.
+        pericarp_ext_color : tuple of int, optional
+            BGR color for external pericarp contour overlays. Default is
+            ``(0, 255, 0)``.
+        pericarp_ext_thickness : int, optional
+            Line thickness for external pericarp contours. Default is 2.
+        locule_thickness : int, optional
+            Line thickness for locule contours. Default is 2.
+        locule_color : tuple of int, optional
+            BGR color for locule contours. Default is ``(255, 0, 255)``.
+        label_position : str, optional
+            Position of fruit ID labels: ``'top'``, ``'bottom'``, ``'left'``,
+            or ``'right'``. Default is ``'top'``.
+        font_color : tuple of int, optional
+            BGR color for annotation text. Default is black ``(0, 0, 0)``.
+        label_color : tuple of int, optional
+            BGR background color for labels. Default is white
+            ``(255, 255, 255)``.
+        label_opacity : float, optional
+            Opacity of label backgrounds in [0, 1]. Default is 0.7.
+        get_color_histogram : bool, optional
+            If True, compute pixel-level color histograms instead of summary
+            statistics. Default is False.
+
+        Returns
+        -------
+        pd.DataFrame or None
+            Color results DataFrame if ``display_table=True``, otherwise
+            ``None``.
+
+        Raises
+        ------
+        ValueError
+            If :attr:`mask_fruit`, :attr:`contours`, or
+            :attr:`fruit_locule_map` is not available, or if no fruits were
+            detected.
+        """
         
         # Validation
         if self.mask_fruit is None:
@@ -1359,119 +1887,146 @@ class FruitInternalAnalyzer:
     # Color correction
     ##########################################################################################
 
-    def detect_color_checker(self, plot: bool = False, plot_size=(5,5), verbose: bool = True, scale_factor: float = 0.5):
-            """
-            Detect color checker and store its ROI coordinates.
-            Args:
-                plot: If True, displays the image with detected color checker
-                plot_size: Figure size for plotting
-                scale_factor: Image scale for faster detection (0.2-0.5)
-            """
-            # Reduce the image size for faster detection
-            h_orig, w_orig = self.img_rgb.shape[:2]
-            img_small = cv2.resize(self.img_rgb, 
-                                (int(w_orig * scale_factor), int(h_orig * scale_factor)),
-                                interpolation=cv2.INTER_AREA)
-            
-            detector = cv2.mcc.CCheckerDetector.create()
-            detector.process(img_small, cv2.mcc.MCC24)  
-            checkers = detector.getListColorChecker()
-            
-            if not checkers:
-                if verbose:
-                    warnings.warn(
-                        "No color checker detected in the image. "
-                        "Check that the color checker is visible and try adjusting scale_factor.",
-                        UserWarning,
-                        stacklevel=2
-                    )
-                self.checker_roi = None
-                self.checker_coords = None
-                return None
-            
-            checker = checkers[0]
-            
-            # Draw color checker grid on the small image (coordinates are in small image space),
-            # then resize that drawn region back to full resolution and paste into img_copy.
-            # NOTE: img_small must be RGB since CCheckerDraw works in RGB space.
-            img_small_drawn = cv2.mcc.CCheckerDraw_create(checker).draw(img_small.copy())
+    def detect_color_checker(
+        self,
+        plot: bool = False,
+        plot_size: Tuple[int, int] = (5, 5),
+        verbose: bool = True,
+        scale_factor: float = 0.5,
+    ) -> None:
+        """
+        Detect a Macbeth color checker card and store its bounding coordinates.
 
-            # Get box points in small image space before scaling
-            box = checker.getBox()
-            box_points_small = np.int32(box)
+        Uses ``cv2.mcc.CCheckerDetector`` on a downscaled copy of the image
+        for speed, then scales detected coordinates back to full resolution.
+        Draws the detected grid onto :attr:`img_copy` and stores bounding
+        coordinates in :attr:`checker_coords` for ROI removal in
+        :meth:`generate_fruit_mask`.
 
-            # Compute tight bounding rect in small image space with a safety margin
-            x_s, y_s, w_s, h_s = cv2.boundingRect(box_points_small)
-            pad_s = 15  # px padding in small-image space
-            x_s1 = max(0, x_s - pad_s)
-            y_s1 = max(0, y_s - pad_s)
-            x_s2 = min(img_small.shape[1], x_s + w_s + pad_s)
-            y_s2 = min(img_small.shape[0], y_s + h_s + pad_s)
+        Parameters
+        ----------
+        plot : bool, optional
+            If True, display the cropped color checker region. Default is
+            False.
+        plot_size : tuple of int, optional
+            Figure size for the color checker plot. Default is (5, 5).
+        verbose : bool, optional
+            If True, print detection results and coordinates. Default is True.
+        scale_factor : float, optional
+            Downscaling factor applied before detection for speed. Recommended
+            range is [0.2, 0.5]. Default is 0.5.
 
-            # Corresponding region in full resolution image
-            x_f1 = int(x_s1 / scale_factor)
-            y_f1 = int(y_s1 / scale_factor)
-            x_f2 = min(w_orig, int(x_s2 / scale_factor))
-            y_f2 = min(h_orig, int(y_s2 / scale_factor))
-
-            # Crop the drawn checker region from small image, resize to full res patch size
-            patch_small = img_small_drawn[y_s1:y_s2, x_s1:x_s2]
-            patch_full  = cv2.resize(patch_small,
-                                    (x_f2 - x_f1, y_f2 - y_f1),
-                                    interpolation=cv2.INTER_LINEAR)
-
-            # Convert RGB patch to BGR to match self.img_copy
-            patch_full_bgr = cv2.cvtColor(patch_full, cv2.COLOR_RGB2BGR)
-
-            # Paste the drawn grid patch into img_copy at the correct location
-            self.img_copy[y_f1:y_f2, x_f1:x_f2] = patch_full_bgr
-
-            # Scale box_points to fullres for bounding rect / ROI extraction
-            box_points = (box_points_small / scale_factor).astype(np.int32)
-            
-            # Get bounding rectangle
-            x, y, w, h = cv2.boundingRect(box_points)
-            
-            # Add margin (0.1 = 10%)
-            margin_x = int(w * 0.1)
-            margin_y = int(h * 0.1)
-            x_expanded = max(0, x - margin_x)
-            y_expanded = max(0, y - margin_y)
-            w_expanded = min(self.img_rgb.shape[1] - x_expanded, w + 2 * margin_x)
-            h_expanded = min(self.img_rgb.shape[0] - y_expanded, h + 2 * margin_y)
-            
-            # Store coordinates as tuple (x, y, w, h) for mask removal
-            self.checker_coords = (x_expanded, y_expanded, w_expanded, h_expanded)
-            
-            # Extract ROI image 
-            checker_img = self.img_copy[y_expanded:y_expanded+h_expanded, 
-                                        x_expanded:x_expanded+w_expanded]
-            
-            # Draw rectangle on image copy for visualization
-            cv2.rectangle(self.img_copy, 
-                        (x_expanded, y_expanded), 
-                        (x_expanded + w_expanded, y_expanded + h_expanded), 
-                        (0, 255, 0), 3)
-            
-            # Add label
-            cv2.putText(self.img_copy, "Color Checker", 
-                        (x_expanded, y_expanded - 10), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
-            
+        Notes
+        -----
+        If no checker is detected, :attr:`checker_roi` and
+        :attr:`checker_coords` are set to ``None`` and a ``UserWarning`` is
+        issued. This does not raise an exception so the pipeline can continue.
+        """
+        # Reduce the image size for faster detection
+        h_orig, w_orig = self.img_rgb.shape[:2]
+        img_small = cv2.resize(self.img_rgb, 
+                            (int(w_orig * scale_factor), int(h_orig * scale_factor)),
+                            interpolation=cv2.INTER_AREA)
+        
+        detector = cv2.mcc.CCheckerDetector.create()
+        detector.process(img_small, cv2.mcc.MCC24)  
+        checkers = detector.getListColorChecker()
+        
+        if not checkers:
             if verbose:
-                print("\n" + "=" * 55)
-                print("★ COLOR CARD:")
-                print("=" * 55)
-                print(f"> Color checker detected: ")
-                print(f"    - Coordinates: x={x_expanded}, y={y_expanded}, w={w_expanded}, h={h_expanded}")
-            
-            if plot: 
-                plt.figure(figsize=plot_size)
-                plt.imshow(cv2.cvtColor(checker_img, cv2.COLOR_BGR2RGB))
-                plt.axis('off')
-                plt.show()
-            
+                warnings.warn(
+                    "No color checker detected in the image. "
+                    "Check that the color checker is visible and try adjusting scale_factor.",
+                    UserWarning,
+                    stacklevel=2
+                )
+            self.checker_roi = None
+            self.checker_coords = None
             return None
+        
+        checker = checkers[0]
+        
+        # Draw color checker grid on the small image (coordinates are in small image space),
+        # then resize that drawn region back to full resolution and paste into img_copy.
+        # NOTE: img_small must be RGB since CCheckerDraw works in RGB space.
+        img_small_drawn = cv2.mcc.CCheckerDraw_create(checker).draw(img_small.copy())
+
+        # Get box points in small image space before scaling
+        box = checker.getBox()
+        box_points_small = np.int32(box)
+
+        # Compute tight bounding rect in small image space with a safety margin
+        x_s, y_s, w_s, h_s = cv2.boundingRect(box_points_small)
+        pad_s = 15  # px padding in small-image space
+        x_s1 = max(0, x_s - pad_s)
+        y_s1 = max(0, y_s - pad_s)
+        x_s2 = min(img_small.shape[1], x_s + w_s + pad_s)
+        y_s2 = min(img_small.shape[0], y_s + h_s + pad_s)
+
+        # Corresponding region in full resolution image
+        x_f1 = int(x_s1 / scale_factor)
+        y_f1 = int(y_s1 / scale_factor)
+        x_f2 = min(w_orig, int(x_s2 / scale_factor))
+        y_f2 = min(h_orig, int(y_s2 / scale_factor))
+
+        # Crop the drawn checker region from small image, resize to full res patch size
+        patch_small = img_small_drawn[y_s1:y_s2, x_s1:x_s2]
+        patch_full  = cv2.resize(patch_small,
+                                (x_f2 - x_f1, y_f2 - y_f1),
+                                interpolation=cv2.INTER_LINEAR)
+
+        # Convert RGB patch to BGR to match self.img_copy
+        patch_full_bgr = cv2.cvtColor(patch_full, cv2.COLOR_RGB2BGR)
+
+        # Paste the drawn grid patch into img_copy at the correct location
+        self.img_copy[y_f1:y_f2, x_f1:x_f2] = patch_full_bgr
+
+        # Scale box_points to fullres for bounding rect / ROI extraction
+        box_points = (box_points_small / scale_factor).astype(np.int32)
+        
+        # Get bounding rectangle
+        x, y, w, h = cv2.boundingRect(box_points)
+        
+        # Add margin (0.1 = 10%)
+        margin_x = int(w * 0.1)
+        margin_y = int(h * 0.1)
+        x_expanded = max(0, x - margin_x)
+        y_expanded = max(0, y - margin_y)
+        w_expanded = min(self.img_rgb.shape[1] - x_expanded, w + 2 * margin_x)
+        h_expanded = min(self.img_rgb.shape[0] - y_expanded, h + 2 * margin_y)
+        
+        # Store coordinates as tuple (x, y, w, h) for mask removal
+        self.checker_coords = (x_expanded, y_expanded, w_expanded, h_expanded)
+        
+        # Extract ROI image 
+        checker_img = self.img_copy[y_expanded:y_expanded+h_expanded, 
+                                    x_expanded:x_expanded+w_expanded]
+        
+        # Draw rectangle on image copy for visualization
+        cv2.rectangle(self.img_copy, 
+                    (x_expanded, y_expanded), 
+                    (x_expanded + w_expanded, y_expanded + h_expanded), 
+                    (0, 255, 0), 3)
+        
+        # Add label
+        cv2.putText(self.img_copy, "Color Checker", 
+                    (x_expanded, y_expanded - 10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
+        
+        if verbose:
+            print("\n" + "=" * 55)
+            print("★ COLOR CARD:")
+            print("=" * 55)
+            print(f"> Color checker detected: ")
+            print(f"    - Coordinates: x={x_expanded}, y={y_expanded}, w={w_expanded}, h={h_expanded}")
+        
+        if plot: 
+            plt.figure(figsize=plot_size)
+            plt.imshow(cv2.cvtColor(checker_img, cv2.COLOR_BGR2RGB))
+            plt.axis('off')
+            plt.show()
+        
+        return None
         
 
     ##########################################################################################
@@ -1491,7 +2046,48 @@ class FruitInternalAnalyzer:
         output_path: Optional[str] = None,
     ) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], Optional[Dict], int, Optional[np.ndarray]]:
         """
-        Run the full pipeline on a single already-loaded image.
+        Run the full analysis pipeline on the already-loaded image.
+
+        Executes pipeline steps in order: :meth:`setup_measurements`,
+        :meth:`generate_fruit_mask`, optionally :meth:`enhance_locule_contrast`
+        and :meth:`generate_locule_mask`, :meth:`detect_fruits`, and
+        optionally :meth:`analyze_morphology` and :meth:`analyze_color`.
+        Configuration is resolved from ``json_path`` first, then ``config``,
+        then defaults. Each step is wrapped in a try/except so partial
+        failures are captured in ``error_dict`` without raising.
+
+        Parameters
+        ----------
+        config : dict or None, optional
+            Analysis configuration dictionary. Ignored if ``json_path`` is
+            provided. Default is None.
+        json_path : str or None, optional
+            Path to a JSON configuration file. Takes precedence over ``config``
+            if the file exists. Default is None.
+        analyze_morphology : bool, optional
+            If True, run :meth:`analyze_morphology`. Default is True.
+        analyze_color : bool, optional
+            If True, run :meth:`analyze_color`. Default is True.
+        save_image : bool, optional
+            If True, save the annotated result image to ``output_path``.
+            Default is False.
+        output_path : str or None, optional
+            Directory where the annotated image is saved when
+            ``save_image=True``. Defaults to the directory of
+            :attr:`img_path`.
+
+        Returns
+        -------
+        tuple
+            ``(df_morphology, df_color, error_dict, n_fruits, annotated_img)``
+            where:
+
+            - ``df_morphology`` – morphology results DataFrame or ``None``.
+            - ``df_color`` – color results DataFrame or ``None``.
+            - ``error_dict`` – dict with ``'filename'`` and ``'status'`` on
+            failure, otherwise ``None``.
+            - ``n_fruits`` – number of fruits detected (0 on failure).
+            - ``annotated_img`` – annotated BGR image or ``None``.
         """
         
         # Load parameters using json file
@@ -1705,9 +2301,150 @@ class FruitInternalAnalyzer:
         get_color_histogram: Optional[bool] = None,
     ) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
-        Process all images in the folder passed to FruitInternalAnalyzer.
-        Parameters can be passed individually (e.g. contour_mode='raw') or
-        grouped in a config dict — individual params always take priority.
+        Process all images in the folder passed to :class:`FruitInternalAnalyzer`.
+
+        Collects valid images from the input folder, builds a unified
+        configuration from ``json_path``, ``config``, and individual parameter
+        arguments (individual params always take priority), and runs the full
+        pipeline on each image via :meth:`process_single_file`. Supports
+        parallel execution via :func:`_process_image_worker` when
+        ``num_cores > 1``. Saves merged CSV results, a session report, and an
+        error report to ``output_path``.
+
+        Parameters
+        ----------
+        analyze_morphology : bool, optional
+            If True, run morphology analysis on each image. Default is True.
+        analyze_color : bool, optional
+            If True, run color analysis on each image. Default is True.
+        json_path : str or None, optional
+            Path to a JSON configuration file. Merged with ``config`` if both
+            are provided. Default is None.
+        config : dict or None, optional
+            Base configuration dictionary. Individual parameter arguments
+            override matching keys. Default is None.
+        output_path : str or None, optional
+            Directory where results are saved. Defaults to a ``Results/``
+            subfolder inside the input folder.
+        num_cores : int, optional
+            Number of parallel worker processes. Clamped to available CPUs.
+            Default is 1 (sequential).
+        verbose : bool, optional
+            If True, print progress and summary information. Default is True.
+        width_cm : float or None, optional
+            Known reference width in centimetres for scale calibration.
+        length_cm : float or None, optional
+            Known reference length in centimetres for scale calibration.
+        diameter_cm : float or None, optional
+            Known reference diameter in centimetres for scale calibration.
+        fast_calibration : bool or None, optional
+            If True, use geometric calibration without YOLO detection.
+        skip_qr : bool or None, optional
+            If True, skip QR code detection.
+        detect_label : bool or None, optional
+            If True, run full label detection including OCR.
+        confidence : float or None, optional
+            Minimum detection confidence for reference objects.
+        detect_color_checker : bool or None, optional
+            If True, detect and remove a color checker from the mask.
+        scale_factor : float or None, optional
+            Downscaling factor for color checker detection.
+        lower_hsv : list of int or None, optional
+            Lower HSV threshold for fruit segmentation.
+        upper_hsv : list of int or None, optional
+            Upper HSV threshold for fruit segmentation.
+        background_color : str or None, optional
+            Expected background color hint for segmentation.
+        n_iteration : int or None, optional
+            Number of morphological iterations for mask refinement.
+        kernel_blur : int or None, optional
+            Gaussian blur kernel size.
+        kernel_open : int or None, optional
+            Morphological opening kernel size.
+        kernel_close : int or None, optional
+            Morphological closing kernel size.
+        canny_min : int or None, optional
+            Minimum Canny edge threshold.
+        canny_max : int or None, optional
+            Maximum Canny edge threshold.
+        fill_holes : bool or None, optional
+            If True, fill holes in the binary mask.
+        apply_convex_hull : bool or None, optional
+            If True, apply convex hull to each fruit region.
+        remove_roi : bool or None, optional
+            If True, remove reference and label regions from the mask.
+        roi_expansion : int or None, optional
+            Pixel margin around ROIs before removal.
+        stamp : bool or None, optional
+            If True, invert image colors before masking.
+        contrast_method : str or None, optional
+            Contrast enhancement method for locule visibility.
+        gamma : float or None, optional
+            Gamma exponent for ``contrast_method='gamma'``.
+        gain : float or None, optional
+            Sigmoid gain for ``contrast_method='sigmoid'``.
+        cutoff : float or None, optional
+            Sigmoid cutoff for ``contrast_method='sigmoid'``.
+        c : float or None, optional
+            Exponential factor for ``contrast_method='exponential'``.
+        kernel_blur_contrast : int or None, optional
+            Blur kernel applied before contrast enhancement.
+        clip_limit : int or None, optional
+            CLAHE clip limit for contrast enhancement.
+        tile_grid_size : int or None, optional
+            CLAHE tile grid size.
+        thresh_min : int or None, optional
+            Minimum threshold for locule mask binarization.
+        thresh_max : int or None, optional
+            Maximum threshold for locule mask binarization.
+        min_fruit_area_locule : int or None, optional
+            Minimum fruit area used during locule mask fusion.
+        kernel_close_locule : int or None, optional
+            Closing kernel for locule mask.
+        kernel_open_locule : int or None, optional
+            Opening kernel for locule mask.
+        invert_locule : bool or None, optional
+            If True, invert the locule mask before fusion.
+        min_fruit_area : int or None, optional
+            Minimum contour area to accept as a fruit.
+        max_fruit_area : int or None, optional
+            Maximum contour area to accept as a fruit.
+        min_fruit_circularity : float or None, optional
+            Minimum circularity to accept as a fruit.
+        min_locule_area : int or None, optional
+            Minimum locule area for fruit detection.
+        min_locule_per_fruit : int or None, optional
+            Minimum locules required per fruit.
+        rescale_factor : float or None, optional
+            Contour rescaling factor before detection.
+        contour_mode : str or None, optional
+            Contour mode for morphology analysis.
+        epsilon : float or None, optional
+            Approximation factor for contour simplification.
+        min_locule_area_morph : int or None, optional
+            Minimum locule area for morphology analysis.
+        max_locule_area : int or None, optional
+            Maximum locule area for morphology analysis.
+        angle_shifts : int or None, optional
+            Number of angle steps for symmetry computation.
+        num_rays : int or None, optional
+            Number of rays for pericarp thickness estimation.
+        stat : str or None, optional
+            Color summary statistic: ``'mean'`` or ``'median'``.
+        tissue : str or None, optional
+            Tissue region for color analysis.
+        color_space : str or None, optional
+            Color spaces to extract.
+        label_opacity : float or None, optional
+            Opacity of annotation label backgrounds.
+        get_color_histogram : bool or None, optional
+            If True, compute pixel-level color histograms.
+
+        Raises
+        ------
+        ValueError
+            If the instance was not initialized with a directory path, or if
+            no valid images are found in the folder.
         """
 
         # Validate output directory
@@ -2044,8 +2781,28 @@ class FruitInternalAnalyzer:
 
         return None
     
-    def plot_image(self, annotated = False, plot_size = (10,10)):
+    def plot_image(
+        self,
+        annotated: bool = False,
+        plot_size: Tuple[int, int] = (10, 10),
+    ) -> None:
+        """
+        Display the original or annotated image.
 
+        Parameters
+        ----------
+        annotated : bool, optional
+            If True, display the annotated result image from :attr:`results`.
+            Falls back to the original image with a warning if no results are
+            available. Default is False.
+        plot_size : tuple of int, optional
+            Figure size ``(width, height)`` for the plot. Default is (10, 10).
+
+        Raises
+        ------
+        ValueError
+            If no image has been loaded.
+        """    
         if self.img is None:
             raise ValueError("No image loaded. Run load_img() first.")
         
