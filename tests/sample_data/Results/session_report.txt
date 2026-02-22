@@ -1,0 +1,32 @@
+======================================================================
+SESSION REPORT
+======================================================================
+traitly          : v0.1a0
+run date         : 2026-02-21 19:17:48
+folder           : /Users/alejandra/Documents/traitly/tests/sample_data/
+images found     : 5
+images ok        : 4
+images failed    : 1
+total fruits     : 100
+num_cores        : 1
+total time       : 4.0s
+avg per image    : 0.8s
+
+======================================================================
+ANALYSIS PARAMETERS
+======================================================================
+
+======================================================================
+DEPENDENCIES
+======================================================================
+   - python                         3.13.7
+   - opencv-contrib-python          4.13.0.92
+   - numpy                          2.4.2
+   - pandas                         3.0.1
+   - scipy                          1.17.0
+   - matplotlib                     3.10.8
+   - tqdm                           4.67.3
+   - psutil                         7.2.2
+   - easyocr                        1.7.2
+   - PyMuPDF                        1.27.1
+   - ultralytics                    8.4.14
