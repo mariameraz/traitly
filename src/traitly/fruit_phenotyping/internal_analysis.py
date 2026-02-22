@@ -1273,29 +1273,30 @@ class FruitInternalAnalyzer:
 
         # Always reannotate from clean image
         saved_color_results = getattr(self.results, 'color_results', None)
+        
+        if self.results is None:
+            self.results = ResultsImage(
+                bgr_img = self.img,
+                morphology_results=[],  
+                image_path=self.img_path
+            )
 
-        self.results = ResultsImage(
-            bgr_img = self.img,
-            morphology_results=[],  
-            image_path=self.img_path
-        )
-
-        # Annotate from clean image
-        annotate_all_fruits(annotated_img = self.results.annotated_image,
-                            contours =  self.contours, 
-                            fruit_locule_map = self.fruit_locule_map, 
-                            img_shape = self.img_shape,
-                            font_scale = font_size,
-                            font_thickness = font_thickness,
-                            pericarp_ext_color = pericarp_ext_color,
-                            pericarp_ext_thickness = pericarp_ext_thickness,
-                            locule_thickness = locule_thickness, 
-                            locule_color = locule_color,
-                            label_position = label_position, 
-                            margin = 10, 
-                            text_color = font_color, 
-                            label_background_color = label_color,
-                            label_opacity = label_opacity)
+            # Annotate from clean image
+            annotate_all_fruits(annotated_img = self.results.annotated_image,
+                                contours =  self.contours, 
+                                fruit_locule_map = self.fruit_locule_map, 
+                                img_shape = self.img_shape,
+                                font_scale = font_size,
+                                font_thickness = font_thickness,
+                                pericarp_ext_color = pericarp_ext_color,
+                                pericarp_ext_thickness = pericarp_ext_thickness,
+                                locule_thickness = locule_thickness, 
+                                locule_color = locule_color,
+                                label_position = label_position, 
+                                margin = 10, 
+                                text_color = font_color, 
+                                label_background_color = label_color,
+                                label_opacity = label_opacity)
 
         if saved_color_results is not None:
             self.results.color_results = saved_color_results
