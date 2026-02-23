@@ -1087,8 +1087,8 @@ def _calculate_derived_metrics(
     fruit_area = fruit_metrics.get(f'fruit_area_{unit_suffix}', 0)
     inner_area = pericarp_metrics.get(f'total_internal_fruit_area_{unit_suffix}', 0)
     total_locules_area = locule_metrics.get(f'locules_total_area_{unit_suffix}', 0)
-    box_len = fruit_metrics.get(f'box_length_{unit}', 0)
-    box_wid = fruit_metrics.get(f'box_width_{unit}', 0)
+    box_len = fruit_metrics.get(f'fruit_box_length_{unit}', 0)
+    box_wid = fruit_metrics.get(f'fruit_box_width_{unit}', 0)
     
     # Calculate derived metrics
     compactness = fruit_area / (box_len * box_wid) if (box_len > 0 and box_wid > 0) else np.nan
