@@ -137,7 +137,7 @@ traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --
 </br>
 
 Ejemplos más detallados:
-👉 [https://github.com/mariameraz/traitly/blob/main/docs/traitly-examples.ipynb](https://github.com/mariameraz/traitly/blob/main/docs/traitly-examples.ipynb)
+👉 [https://github.com/mariameraz/traitly/tutorials](https://github.com/mariameraz/traitly/blob/main/tutorials)
 
 </br>
 
