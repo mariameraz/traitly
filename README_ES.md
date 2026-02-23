@@ -1,6 +1,8 @@
-Disponible en: [![English](https://img.shields.io/badge/Language-English-purple)](README.md)
+# Traitly 
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green.svg)](https://www.gnu.org/licenses/agpl-3.0) [![Python](https://img.shields.io/badge/Python-3.8%2B-yellow)](https://www.python.org/) [![Version](https://img.shields.io/badge/Version-0.1.0--beta-orange)]() [![DOI](https://zenodo.org/badge/1122521844.svg)](https://doi.org/10.5281/zenodo.18058712)
+Available in: [![English](https://img.shields.io/badge/Language-English-purple)](README.md)
+
+[![Licencia: AGPL v3](https://img.shields.io/badge/Licencia-AGPL%20v3-green.svg)](https://github.com/mariameraz/traitly/blob/main/LICENSE) [![Python](https://img.shields.io/badge/Python-3.8%2B-yellow)](https://www.python.org/) [![Versión](https://img.shields.io/badge/Versión-0.1.0--beta-orange)]() [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18738367.svg)](https://doi.org/10.5281/zenodo.18738367)
 
 ***Traitly*** es una herramienta de código abierto en Python para el fenotipado de frutos de alto rendimiento, que extrae automáticamente rasgos cuantitativos a partir de imágenes digitales de frutos completos o en rodajas.
 
@@ -135,7 +137,7 @@ traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --
 </br>
 
 Ejemplos más detallados:
-👉 [https://github.com/mariameraz/traitly/blob/main/docs/traitly-examples.ipynb](https://github.com/mariameraz/traitly/blob/main/docs/traitly-examples.ipynb)
+👉 [https://github.com/mariameraz/traitly/tutorials](https://github.com/mariameraz/traitly/blob/main/tutorials)
 
 </br>
 

@@ -1,9 +1,9 @@
 
-# Welcome to Tratly
+# Traitly
 
 Disponible en: [![Spanish](https://img.shields.io/badge/Idioma-Espa%C3%B1ol-pink)](README_ES.md)
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green.svg)](https://www.gnu.org/licenses/agpl-3.0) [![Python](https://img.shields.io/badge/Python-3.8%2B-yellow)](https://www.python.org/) [![Version](https://img.shields.io/badge/Version-0.1.0--beta-orange)]() [![DOI](https://zenodo.org/badge/1122521844.svg)](https://doi.org/10.5281/zenodo.18058712)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green.svg)](https://github.com/mariameraz/traitly/blob/main/LICENSE) [![Python](https://img.shields.io/badge/Python-3.8%2B-yellow)](https://www.python.org/) [![Version](https://img.shields.io/badge/Version-0.1.0--beta-orange)]() [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18738367.svg)](https://doi.org/10.5281/zenodo.18738367)
 
 ***Traitly*** is an open-source Python tool for high-throughput fruit phenotyping that automatically extracts quantitative traits from digital images of whole fruits or fruit slices. It focuses on the phenotyping of internal fruit structures and external morphology, using computer vision–based methods to quantify morphology, anatomy, symmetry, and color traits.
 
@@ -139,7 +139,7 @@ traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --
 
 
 More detailed examples:
-👉 [https://github.com/mariameraz/traitly/blob/main/traitly-examples.ipynb](https://github.com/mariameraz/traitly/blob/main/docs/traitly-examples.ipynb)
+👉 [https://github.com/mariameraz/traitly/tutorials](https://github.com/mariameraz/traitly/blob/main/tutorials)
 
 </br>
 
