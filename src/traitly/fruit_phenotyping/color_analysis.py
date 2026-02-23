@@ -29,7 +29,7 @@ import pandas as pd
 # INTERNAL IMPORTS
 # ============================================================================
 from traitly.fruit_phenotyping.processing import get_internal_pericarp_contour
-from traitly.utils.constants import valid_contours
+
 
 ###########################################
 # Normalization functions for lab and hsv #

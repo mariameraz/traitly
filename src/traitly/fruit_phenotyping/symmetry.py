@@ -1,6 +1,17 @@
 
 
 # traitly/fruit_phenotyping/symmetry.py
+"""
+Locule symmetry metrics for fruit phenotyping pipelines.
+
+Provides functions to quantify the angular and radial arrangement of
+locules within a fruit. Designed to be called from
+:func:`~traitly.fruit_phenotyping.analysis._calculate_symmetry_metrics`.
+
+Precomputation utilities (:func:`get_unique_locule_counts` and
+:func:`precompute_ideal_angles`) are intended to be called once per
+image before the per-fruit loop to avoid redundant computation.
+"""
 
 # ============================================================================
 # STANDARD LIBRARIES
@@ -19,15 +30,27 @@ from scipy.optimize import linear_sum_assignment
 # Precomputation utilities
 #################################################################################################
 
-def get_unique_locule_counts(fruit_locules_map: dict):
+def get_unique_locule_counts(
+    fruit_locules_map: dict,
+) -> np.ndarray:
     """
-    Extract unique locule counts from fruit_locules_map.
-    
-    Args:
-        fruit_locules_map (Dict[int, List[int]]): Dictionary mapping fruit_id -> list of locule_ids
-        
-    Returns:
-        np.ndarray: Sorted array of unique locule counts
+    Extract the sorted unique locule counts across all fruits.
+
+    Used by :func:`precompute_ideal_angles` to determine which locule
+    counts need precomputed ideal angle matrices before the per-fruit
+    analysis loop.
+
+    Parameters
+    ----------
+    fruit_locules_map : dict of {int : list of int}
+        Mapping from fruit contour index to list of locule contour
+        indices, as returned by
+        :func:`~traitly.fruit_phenotyping.mask.find_fruits`.
+
+    Returns
+    -------
+    np.ndarray
+        Sorted 1-D array of unique locule counts across all fruits.
     """
     locule_counts = [len(locule_ids) for locule_ids in fruit_locules_map.values()]
     return np.unique(locule_counts)
@@ -36,18 +59,37 @@ def get_unique_locule_counts(fruit_locules_map: dict):
 # Precompute ideal angles for locule counts
 ##################################################################################################
 
-def precompute_ideal_angles(unique_locule_counts: np.ndarray, 
-                            angle_shifts: int =1000):
+def precompute_ideal_angles(
+    unique_locule_counts: np.ndarray,
+    angle_shifts: int = 500,
+) -> dict:
     """
-    Precompute ideal angles and shifts for each unique locule count.
-    
-    Args:
-        unique_locule_counts (array-like): Array of unique locule counts in dataset
-        angle_shifts (int): Number of angular shifts to test
-        
-    Returns:
-        dict: Dictionary mapping locule_count -> shifted_ideal_angles matrix
-              Each matrix has shape (angle_shifts, locule_count)
+    Precompute shifted ideal angle matrices for each unique locule count.
+
+    For each count ``n`` in ``unique_locule_counts``, generates ``n``
+    evenly spaced ideal angles in [0, 2π) and shifts them by
+    ``angle_shifts`` equally spaced offsets. The resulting matrix is
+    used directly by :func:`angular_symmetry` to avoid redundant
+    computation across fruits with the same locule count.
+
+    Counts below 2 are skipped because symmetry is undefined for fewer
+    than two locules.
+
+    Parameters
+    ----------
+    unique_locule_counts : np.ndarray
+        Sorted array of unique locule counts as returned by
+        :func:`get_unique_locule_counts`.
+    angle_shifts : int, optional
+        Number of angular offsets to test. Higher values improve
+        alignment accuracy at the cost of speed. Default is 500.
+
+    Returns
+    -------
+    dict of {int : np.ndarray}
+        Mapping from locule count ``n`` to a shifted ideal angle matrix
+        of shape ``(angle_shifts, n)``, where each row is a rotated
+        version of the ideal equally-spaced arrangement.
     """
     shifts = np.linspace(0, 2*np.pi, angle_shifts, endpoint=False)
     precomputed = {}
@@ -66,22 +108,48 @@ def precompute_ideal_angles(unique_locule_counts: np.ndarray,
 # Angular locule symmetry
 #################################################################################################
 
-def angular_symmetry(locules_data: list, 
-                     angle_shifts: int = 500, 
-                     precomputed_ideals: Optional[dict] = None):
+def angular_symmetry(
+    locules_data: list,
+    angle_shifts: int = 500,
+    precomputed_ideals: Optional[dict] = None,
+) -> float:
     """
-    Calculate angular symmetry by comparing actual locule angles with the most symmetrical arrangement.
-    
-    Args:
-        REQUIRED:
-            - locules_data (List[Dict]): List of dictionaries, each containing at least the 'polar_coord'
-              of a locule, where 'polar_coord'[0] is the angle in radians from the reference centroid.
-        OPTIONAL:
-            - angle_shifts (int): Number of angular shifts to test (default = 100).
-            - precomputed_ideals (dict): Precomputed shifted ideal angles. If None, computes on-the-fly.
-              
-    Returns:
-        float: Normalized angular error in range [0, 1]
+    Calculate angular symmetry of locule arrangement around the fruit centroid.
+
+    Extracts the polar angle of each locule from ``locules_data``,
+    centers them by subtracting the circular mean, and finds the rotation
+    of an ideal equally-spaced arrangement that best matches the observed
+    angles. Optimal assignment at each rotation is solved with the
+    Hungarian algorithm via :func:`scipy.optimize.linear_sum_assignment`.
+    The best (minimum) mean angular error across all rotations is
+    returned.
+
+    Lower values indicate better angular symmetry. The result is in
+    radians and can be normalized externally if needed.
+
+    Parameters
+    ----------
+    locules_data : list of dict
+        Per-locule data dicts as returned by
+        :func:`~traitly.fruit_phenotyping.processing.precalculate_locules_data`.
+        Each dict must contain ``'polar_coord'``, where
+        ``polar_coord[0]`` is the locule angle in radians relative to
+        the fruit centroid.
+    angle_shifts : int, optional
+        Number of angular offsets to test when ``precomputed_ideals``
+        is ``None`` or does not contain the required locule count.
+        Default is 500.
+    precomputed_ideals : dict of {int : np.ndarray} or None, optional
+        Precomputed shifted ideal angle matrices from
+        :func:`precompute_ideal_angles`, keyed by locule count. If
+        ``None`` or the current locule count is absent, ideal angles
+        are computed on the fly. Default is ``None``.
+
+    Returns
+    -------
+    float
+        Mean angular error in radians at the best-matching rotation,
+        or ``NaN`` if fewer than 2 locules are present.
     """
     if not locules_data or len(locules_data) < 2:
         return np.nan
@@ -118,17 +186,30 @@ def angular_symmetry(locules_data: list,
 # Radial locules symmetry
 #################################################################################################
 
-def radial_symmetry(locules_data: list):
+def radial_symmetry(locules_data: list) -> float:
     """
-    Calculate radial symmetry using coefficient of variation (CV) of distances.
-    Args:
-        REQUIRED:
-            - locules_data (List[Dict]): List of dictionaries, where each dictionary contains the centroid coordinates (x,y) of a locule and precalculated 'polar_coordinates'.
+    Calculate radial symmetry of locule arrangement using the CV of distances.
 
+    Extracts the radial distance of each locule from the fruit centroid
+    from ``locules_data`` and returns the coefficient of variation
+    (CV = std / mean × 100). Lower values indicate more uniform radial
+    spacing and thus better radial symmetry.
 
-    Returns:
-        radii (List[float]): List of radial distances for each locule.
-        float: CV of distances (0 = perfect symmetry, nan = undefined).
+    Parameters
+    ----------
+    locules_data : list of dict
+        Per-locule data dicts as returned by
+        :func:`~traitly.fruit_phenotyping.processing.precalculate_locules_data`.
+        Each dict must contain ``'polar_coord'``, where
+        ``polar_coord[1]`` is the radial distance in pixels from the
+        fruit centroid.
+
+    Returns
+    -------
+    float
+        Coefficient of variation of radial distances as a percentage,
+        or ``NaN`` if fewer than 2 locules are present or the mean
+        radius is zero.
     """
     if not locules_data or len(locules_data) < 2: # If there is fewer than 2 locules, symettry is undefined (no symmetry) 
         return np.nan

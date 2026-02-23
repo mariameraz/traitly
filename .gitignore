@@ -11,13 +11,18 @@ __pycache__/
 .AppleDouble
 .LSOverride
 
+# python environments
+.traitly_test/*
+
 # Specific files
-internal_structure/mask_unet.py
+./src/traitly_app.py
+./tutorials/example.ipynb
 
 # Build
 build/
 dist/
 *.egg-info/
+
 # pixi environments
 .pixi/*
 !.pixi/config.toml
