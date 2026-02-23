@@ -1,12 +1,18 @@
 # traitly/fruit_phenotyping/results_image.py
+"""
+Results container and output utilities for fruit phenotyping pipelines.
+
+Provides :class:`ResultsImage`, which stores the annotated image and
+morphology and color result tables produced by
+:class:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer`,
+and exposes methods to save them to disk.
+"""
 
 # ============================================================================
 # STANDARD LIBRARY
 # ===========================================================================
 from typing import Optional, Dict, Any
-from datetime import datetime
-import time
-import psutil
+
 
 # ============================================================================
 # THIRD-PARTY LIBRARIES
@@ -18,10 +24,33 @@ import numpy as np
 
 class ResultsImage:
     """
-    Handles annotated images and results management.
-    Stores analysis results and provides saving functionality.
+    Container for annotated images and analysis results.
+
+    Stores the RGB-converted annotated image alongside morphology and
+    color result tables, and provides methods to save them to disk.
+    Created and populated by
+    :func:`~traitly.fruit_phenotyping.analysis.analyze_fruits_morphology`
+    and :meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.analyze_color`.
+
+    Parameters
+    ----------
+    bgr_img : np.ndarray
+        Annotated image in BGR format. Converted to RGB internally for
+        display compatibility.
+    morphology_results : list, optional
+        List of per-fruit morphology result dictionaries. Default is an
+        empty list.
+    color_results : list, optional
+        List of per-fruit color result dictionaries. Default is an empty
+        list.
+    image_path : str or None, optional
+        Filesystem path to the original source image, used to derive
+        default output paths in save methods. Default is ``None``.
+    processing_metadata : dict or None, optional
+        Arbitrary metadata dictionary stored for reporting purposes.
+        Default is ``None``.
     """
-    
+
     def __init__(self, 
                  bgr_img: np.ndarray, 
                  morphology_results: list = None, 
@@ -42,14 +71,22 @@ class ResultsImage:
 
     def _ensure_dir_exists(self, path: str) -> str:
         """
-        Ensure the directory exists and return the absolute path.
-        (Uses caching to avoid repeated filesystem check)
-        
-        Args:
-            path (str): File path to check
-            
-        Returns:
-            str: Absolute path with ensured directory existence
+        Ensure the parent directory of ``path`` exists and return its absolute path.
+
+        Uses an internal cache (``_dir_cache``) to avoid redundant filesystem
+        checks across repeated calls with the same directory.
+
+        Parameters
+        ----------
+        path : str
+            File path whose parent directory should be created if absent.
+            Supports ``~`` expansion.
+
+        Returns
+        -------
+        str
+            Absolute version of ``path`` with its parent directory guaranteed
+            to exist.
         """
         abs_path = os.path.abspath(os.path.expanduser(path))
         dir_path = os.path.dirname(abs_path)
@@ -66,17 +103,49 @@ class ResultsImage:
         
         return abs_path
 
-    def save_img(self, path: Optional[str] = None, format: Optional[str] = None, 
-                 dpi: int = 75, output_message: bool = True, quality: int = 95, **kwargs):
+    def save_img(
+        self,
+        path: Optional[str] = None,
+        format: Optional[str] = None,
+        dpi: int = 75,
+        output_message: bool = True,
+        quality: int = 95,
+        **kwargs,
+    ) -> None:
         """
-        Save the image in the same directory as the original image.
-        
-        Args:
-            path (str, optional): Output path. If None, generated automatically.
-            format (str, optional): Image format. Defaults to extension inference.
-            dpi (int): Resolution for raster formats (used only for format info).
-            output_message (bool): Whether to show confirmation message.
-            quality (int): JPEG quality (0-100). Default is 95.
+        Save the annotated image to disk.
+
+        Converts :attr:`annotated_image` from RGB back to BGR before writing
+        via ``cv2.imwrite``. JPEG and PNG are written with explicit quality
+        and compression settings; all other formats use ``cv2.imwrite``
+        defaults.
+
+        Parameters
+        ----------
+        path : str or None, optional
+            Output file path. If ``None``, the image is saved next to
+            :attr:`image_path` with ``'_annotated'`` appended to the stem.
+            Default is ``None``.
+        format : str or None, optional
+            Image format extension (e.g. ``'jpg'``, ``'png'``). If ``None``,
+            inferred from ``path``. Used to determine the default filename
+            when ``path`` is ``None``. Default is ``None``.
+        dpi : int, optional
+            Stored for reference only; not applied by ``cv2.imwrite``.
+            Default is 75.
+        output_message : bool, optional
+            If True, print the saved file path. Default is True.
+        quality : int, optional
+            JPEG compression quality in [0, 100]. Default is 95.
+        **kwargs
+            Ignored. Accepted for forward-compatibility.
+
+        Raises
+        ------
+        ValueError
+            If ``path`` is ``None`` and :attr:`image_path` is not set.
+        RuntimeError
+            If the image cannot be saved due to an unexpected error.
         """
         try:
             if path is None:
@@ -111,24 +180,47 @@ class ResultsImage:
         except Exception as e:
             raise RuntimeError(f"Error saving image: {str(e)}")
     
-    
-    def save_all(self, base_name: Optional[str] = None, output_dir: Optional[str] = None, 
-                 format: str = 'jpg', dpi: int = 75, sep: str = ',', 
-                 output_message: bool = True, quality: int = 95):
+    def save_all(
+        self,
+        base_name: Optional[str] = None,
+        output_dir: Optional[str] = None,
+        format: str = 'jpg',
+        sep: str = ',',
+        output_message: bool = True,
+        quality: int = 95,
+    ) -> None:
         """
-        Save all files (image, CSV, and reports) using the base name.
-        
-        Args:
-            base_name (str, optional): Base name for files. 
-                If None, uses original image name.
-            output_dir (str, optional): Output directory. 
-                If None, uses original image directory.
-            format (str): Image format.
-            dpi (int): Image resolution (for reference only).
-            sep (str): CSV separator.
-            output_message (bool): Whether to show confirmation messages.
-            quality (int): JPEG quality (0-100). Default is 95.
-            include_reports (bool): Whether to save error and session reports. Default is True.
+        Save the annotated image, morphology CSV, and color CSV in one call.
+
+        Derives default output paths from :attr:`image_path` when
+        ``base_name`` or ``output_dir`` are not provided. CSV files are only
+        written when the corresponding result table is non-empty.
+
+        Parameters
+        ----------
+        base_name : str or None, optional
+            Stem used for all output filenames. If ``None``, derived from
+            :attr:`image_path`. Default is ``None``.
+        output_dir : str or None, optional
+            Directory where all files are saved. If ``None``, derived from
+            :attr:`image_path`. Default is ``None``.
+        format : str, optional
+            Image format extension for the annotated image. Default is
+            ``'jpg'``.
+        sep : str, optional
+            Column separator for CSV files. Default is ``','``.
+        output_message : bool, optional
+            If True, print each saved file path. Default is True.
+        quality : int, optional
+            JPEG compression quality in [0, 100]. Default is 95.
+
+        Raises
+        ------
+        ValueError
+            If ``base_name`` or ``output_dir`` cannot be determined because
+            :attr:`image_path` is not set.
+        RuntimeError
+            If any file cannot be saved due to an unexpected error.
         """
         try:
             # Determine base name
@@ -199,28 +291,54 @@ class ResultsImage:
     def save_csv(
         self,
         path: Optional[str] = None,
-        sep: str = ",",
+        sep: str = ',',
         output_message: bool = True,
-        data: str = "auto", 
+        data: str = 'auto',
         base_name: Optional[str] = None,
-    ):
+    ) -> None:
         """
-        Save results to CSV.
+        Save morphology results, color results, or both to CSV files.
+
+        Resolves output paths from ``path``, ``base_name``, and
+        :attr:`image_path`. Supports three path modes:
+
+        - ``path=None`` — saves next to :attr:`image_path` using
+        ``base_name`` as the filename stem.
+        - ``path`` is a directory — saves inside that directory using
+        ``base_name``.
+        - ``path`` ends with ``.csv`` — treated as the filename stem
+        (suffix ``_morphology_results.csv`` or ``_color_results.csv``
+        is appended as needed).
 
         Parameters
         ----------
-        path:
-            - If None: saves next to the original image, using base_name.
-            - If provided:
-                * If endswith ".csv": treated as a *base file* (stem) for saving one or both CSVs.
-                * If is a directory: saves inside that directory using base_name.
-        data:
-            - "morphology": saves morphology_results only
-            - "color": saves color_results only
-            - "both": saves both (two files)
-            - "auto": saves morphology if available; else color if available
-        base_name:
-            Base name for files when path is None or a directory.
+        path : str or None, optional
+            Output path. See above for resolution logic. Default is ``None``.
+        sep : str, optional
+            Column separator for CSV output. Default is ``','``.
+        output_message : bool, optional
+            If True, print each saved file path. Default is True.
+        data : str, optional
+            Which results to save:
+
+            - ``'auto'`` – saves morphology if available, then color if
+            available. Raises if neither is available.
+            - ``'morphology'`` – saves :attr:`morphology_results` only.
+            - ``'color'`` – saves :attr:`color_results` only.
+            - ``'both'`` – saves both; raises if neither is available.
+
+            Default is ``'auto'``.
+        base_name : str or None, optional
+            Filename stem used when ``path`` is ``None`` or a directory. If
+            ``None``, derived from :attr:`image_path`, or ``'results'`` if
+            :attr:`image_path` is not set. Default is ``None``.
+
+        Raises
+        ------
+        ValueError
+            If the requested result table is empty, ``path`` is ``None`` and
+            :attr:`image_path` is not set, ``path`` has a non-CSV extension,
+            or ``data`` is not one of the supported modes.
         """
 
         def to_df(obj) -> pd.DataFrame:

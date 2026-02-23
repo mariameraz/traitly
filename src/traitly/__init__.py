@@ -16,9 +16,9 @@ __author__ = "Maria Alejandra Torres Meraz"
 # Import functions from utils
 from .utils.basic_functions import (
     load_img, 
-    plot_img, 
-    detect_qr
+    plot_img
 )
+
 from .utils.convert_pdf import pdf_to_img
 
 __all__ = [
@@ -30,7 +30,6 @@ __all__ = [
     # Util functions
     'load_img', 
     'plot_img', 
-    'pdf_to_img', 
-    'detect_qr'
+    'pdf_to_img'
 
 ]

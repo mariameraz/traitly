@@ -1,4 +1,17 @@
 # traitly/fruit_phenotyping/processing.py
+"""
+Contour processing and pericarp measurement utilities for fruit phenotyping.
+
+Provides functions to extract and transform fruit contours, compute
+locule geometry, calculate internal pericarp areas, and estimate radial
+pericarp thickness. Designed to be called from
+:func:`~traitly.fruit_phenotyping.analysis.analyze_fruits_morphology`
+and its sub-functions.
+
+All area and distance outputs are returned in both pixel and centimetre
+units via ``px_per_cm``; when ``None`` or invalid, centimetre values
+are ``NaN``.
+"""
 
 # ============================================================================
 # STANDARD LIBRARY
@@ -16,16 +29,27 @@ import numpy as np
 # Calculate fruit centroids
 #################################################################################################
 
-def calculate_fruit_centroids(contours: List[np.ndarray]) -> List[Optional[Tuple[int, int]]]:
+def calculate_fruit_centroids(
+    contours: List[np.ndarray],
+) -> List[Optional[Tuple[float, float]]]:
     """
-    Calculates the centroid (cx, cy) for each contour in the list.
+    Calculate the centroid of each contour in a list.
 
-    Args:
-        contours: List of contours (OpenCV format).
+    Uses ``cv2.moments`` to compute ``(cx, cy)`` for each contour.
+    Returns ``None`` for contours whose zeroth moment (area) is zero,
+    which occurs for degenerate or empty contours.
 
-    Returns:
-        A list containing centroid coordinates (cx, cy) for each contour index. 
-        If the contour has zero area, returns None for that position.
+    Parameters
+    ----------
+    contours : list of np.ndarray
+        Contours in OpenCV format, as returned by ``cv2.findContours``.
+
+    Returns
+    -------
+    list of tuple of float or None
+        List of length ``len(contours)``. Each entry is a
+        ``(cx, cy)`` centroid tuple, or ``None`` if the contour has
+        zero area.
     """
     centroids = []
     for cnt in contours:
@@ -42,31 +66,43 @@ def calculate_fruit_centroids(contours: List[np.ndarray]) -> List[Optional[Tuple
 #################################################################################################
 
 def precalculate_locules_data(
-    contours: List[np.ndarray], 
-    locules: List[int], 
-    fruit_centroid: Tuple[int, int] 
+    contours: List[np.ndarray],
+    locules: List[int],
+    fruit_centroid: Tuple[float, float],
 ) -> List[Dict]:
-    """ 
-    Precalculates and stores geometric data about locules from image contours to optimize further processing.
+    """
+    Precalculate geometric properties for a set of locule contours.
 
-    Args:
-        contours: List of contour points (OpenCV format).
-        locules: Indices of contours that represent locules.
-        centroid: Fruit (reference) centroid as a tuple (x, y).
- 
-    Returns:
-        A list of dictionaries, each containing:
-            - 'contour_id' (int): Contour identifier.
-            - 'centroid' (Tuple[int, int]): (x, y) coordinates of the fruit's centroid.
-            - 'area' (float): Area of the locule in pixels.
-            - 'perimeter' (float): Perimeter of the locule in pixels.
-            - 'contour' (np.ndarray): Original contour points.
-            - 'polar_coord' (Tuple[float, float]): (angle_in_radians, radius) relative to reference centroid.
-            - 'circularity' (float): Circularity in range [0, 1], where 1 = perfect circle.
+    For each locule index in ``locules``, calcculates area, perimeter,
+    centroid, polar coordinates relative to ``fruit_centroid``, and
+    circularity using ``cv2.moments`` and ``cv2.arcLength``. Contours
+    with zero area (``m00 = 0``) are silently skipped.
 
-    Notes:
-        - Uses OpenCV moments for centroid calculation.
-        - Skips contours with zero area (m00 = 0).
+    Parameters
+    ----------
+    contours : list of np.ndarray
+        Full list of all detected contours in OpenCV format.
+    locules : list of int
+        Indices into ``contours`` identifying the locule contours to
+        process.
+    fruit_centroid : tuple of float
+        ``(cx, cy)`` centroid of the parent fruit, used as the origin
+        for polar coordinate computation.
+
+    Returns
+    -------
+    list of dict
+        One dictionary per valid locule, with keys:
+
+        - ``'contour_id'`` (int) – index into ``contours``.
+        - ``'centroid'`` (tuple of int) – ``(cx, cy)`` of the locule.
+        - ``'area'`` (float) – contour area in pixels².
+        - ``'perimeter'`` (float) – contour perimeter in pixels.
+        - ``'contour'`` (np.ndarray) – original contour points.
+        - ``'polar_coord'`` (tuple of float) – ``(angle_rad, radius_px)``
+          relative to ``fruit_centroid``, angle in [0, 2π).
+        - ``'circularity'`` (float) – ``4π·area / perimeter²`` in [0, 1],
+          or ``NaN`` if perimeter is zero.
     """
     locules_data = []
     cx_ref, cy_ref = fruit_centroid
@@ -112,27 +148,56 @@ def precalculate_locules_data(
 #################################################################################################
 
 def get_fruit_contour(
-    contours: List[np.ndarray], 
-    fruit_id: int, 
-    contour_mode: str = 'raw', 
-    epsilon: float = 0.002
+    contours: List[np.ndarray],
+    fruit_id: int,
+    contour_mode: str = 'raw',
+    epsilon: float = 0.002,
 ) -> np.ndarray:
     """
     Extract and optionally transform a fruit contour.
-    
-    Args:
-        contours: List of contours from cv2.findContours
-        fruit_id: Index of the fruit contour to extract
-        contour_mode: Transformation mode:
-            - 'raw': Original contour (default)
-            - 'hull': Convex hull approximation
-            - 'approx': Approximate polygon using Douglas-Peucker
-            - 'ellipse': Fit an ellipse around the contour
-            - 'circle': Fit minimum enclosing circle
-        epsilon: Approximation factor for 'approx' mode
-        
-    Returns:
-        Transformed contour points
+
+    Retrieves the contour at ``contours[fruit_id]`` and applies the
+    transformation specified by ``contour_mode``:
+
+    - ``'raw'`` – returns the original contour unchanged.
+    - ``'hull'`` – replaces with the convex hull via ``cv2.convexHull``.
+    - ``'approx'`` – simplifies with Douglas-Peucker via
+      ``cv2.approxPolyDP``, using ``epsilon * perimeter`` as the
+      tolerance.
+    - ``'ellipse'`` – fits an ellipse via ``cv2.fitEllipse`` and
+      converts to a polygon via ``cv2.ellipse2Poly``. Requires at least
+      5 contour points.
+    - ``'circle'`` – fits the minimum enclosing circle via
+      ``cv2.minEnclosingCircle`` and samples 36 equally spaced points.
+
+    Parameters
+    ----------
+    contours : list of np.ndarray
+        Full list of all detected contours in OpenCV format.
+    fruit_id : int
+        Index into ``contours`` identifying the fruit. Must be in
+        ``[0, len(contours) - 1]``.
+    contour_mode : str, optional
+        Transformation to apply. One of ``'raw'``, ``'hull'``,
+        ``'approx'``, ``'ellipse'``, ``'circle'``. Default is ``'raw'``.
+    epsilon : float, optional
+        Approximation factor for ``'approx'`` mode. Multiplied by the
+        contour perimeter to obtain the absolute tolerance. Default is
+        0.002.
+
+    Returns
+    -------
+    np.ndarray
+        Transformed contour in OpenCV format ``(N, 1, 2)``.
+
+    Raises
+    ------
+    ValueError
+        If ``contour_mode`` is not one of the supported modes, or if
+        ``'ellipse'`` mode is requested on a contour with fewer than 5
+        points.
+    IndexError
+        If ``fruit_id`` is outside ``[0, len(contours) - 1]``.
     """
     valid_modes = ['raw', 'hull', 'approx', 'ellipse', 'circle']
     if contour_mode not in valid_modes:
@@ -182,17 +247,29 @@ def get_fruit_contour(
 
 def get_internal_pericarp_contour(
     locules: List[int],
-    contours: List[np.ndarray]
+    contours: List[np.ndarray],
 ) -> np.ndarray:
     """
-    Get the convex hull that encloses all locules.
-    
-    Args:
-        locules: List of locule indices
-        contours: List of all contours
-        
-    Returns:
-        Convex hull contour enclosing all locules
+    Compute the convex hull enclosing all locule contours.
+
+    Stacks all points from the specified locule contours and computes
+    their joint convex hull via ``cv2.convexHull``. Used by
+    :func:`get_internal_pericarp_area` and
+    :func:`~traitly.fruit_phenotyping.analysis._calculate_pericarp_metrics`
+    to define the inner pericarp boundary.
+
+    Parameters
+    ----------
+    locules : list of int
+        Indices into ``contours`` for the locule contours to enclose.
+    contours : list of np.ndarray
+        Full list of all detected contours in OpenCV format.
+
+    Returns
+    -------
+    np.ndarray
+        Convex hull contour in OpenCV format ``(N, 1, 2)``, or an empty
+        array if ``locules`` is empty.
     """
     if not locules:
         return np.array([])
@@ -202,19 +279,52 @@ def get_internal_pericarp_contour(
 
 
 def get_internal_pericarp_area(
-    locules: List[int], 
-    contours: List[np.ndarray], 
-    px_per_cm: Optional[float] = None, 
+    locules: List[int],
+    contours: List[np.ndarray],
+    px_per_cm: Optional[float] = None,
     img: Optional[np.ndarray] = None,
-    draw_inner_pericarp: bool = False, 
-    contour_thickness: int = 2, 
-    contour_color: Tuple[int, int, int] = (0, 240, 240)
+    draw_inner_pericarp: bool = False,
+    contour_thickness: int = 2,
+    contour_color: Tuple[int, int, int] = (0, 240, 240),
 ) -> Tuple[float, float]:
     """
-    Calculates and visualizes the internal pericarp area.
-    
-    Returns:
-        tuple: (area_cm2, area_px)
+    Calculate the area of the convex hull enclosing all locules.
+
+    Delegates hull computation to :func:`get_internal_pericarp_contour`
+    and measures its area with ``cv2.contourArea``. Optionally draws the
+    hull onto ``img`` in-place.
+
+    Parameters
+    ----------
+    locules : list of int
+        Indices into ``contours`` for the locule contours.
+    contours : list of np.ndarray
+        Full list of all detected contours in OpenCV format.
+    px_per_cm : float or None, optional
+        Pixel-to-centimetre conversion factor. If ``None`` or invalid,
+        the cm² value is returned as ``NaN``. Default is ``None``.
+    img : np.ndarray or None, optional
+        BGR image modified in-place with the hull contour when
+        ``draw_inner_pericarp=True``. Default is ``None``.
+    draw_inner_pericarp : bool, optional
+        If True, draw the internal pericarp hull onto ``img``.
+        Default is False.
+    contour_thickness : int, optional
+        Line thickness for the hull contour. Default is 2.
+    contour_color : tuple of int, optional
+        BGR color for the hull contour. Default is ``(0, 240, 240)``.
+
+    Returns
+    -------
+    tuple of float
+        ``(area_cm2, area_px2)`` where ``area_cm2`` is ``NaN`` if
+        ``px_per_cm`` is ``None`` or invalid, and both are ``NaN`` if
+        ``locules`` is empty or the hull is degenerate.
+
+    Raises
+    ------
+    ValueError
+        If ``draw_inner_pericarp=True`` and ``img`` is ``None``.
     """
     
     if draw_inner_pericarp and img is None:
@@ -247,11 +357,60 @@ def get_internal_pericarp_area(
 ######################################################
 
 def calculate_pericarp_thickness_radial(
-    outer_contour, inner_contour, fruit_centroid, 
-    img_shape, num_rays=180, px_per_cm=None
-):
+    outer_contour: np.ndarray,
+    inner_contour: np.ndarray,
+    fruit_centroid: Tuple[float, float],
+    img_shape: Tuple[int, int],
+    num_rays: int = 180,
+    px_per_cm: Optional[float] = None,
+) -> Dict[str, float]:
     """
-    Calculate pericarp thickness using radial sampling (optimized version).
+    Estimate pericarp thickness and fruit lobedness using radial ray sampling.
+
+    Crops a tight ROI around ``outer_contour``, rasterizes both contours
+    into binary masks, and casts ``num_rays`` from ``fruit_centroid`` at
+    evenly spaced angles. For each ray, the outer boundary is located as
+    the last pixel inside the outer mask and the inner boundary as the
+    first pixel inside the inner mask. Thickness is the difference between
+    these two radii. Lobedness is the standard deviation of outer radii
+    across all rays, capturing shape irregularity.
+
+    Parameters
+    ----------
+    outer_contour : np.ndarray
+        Processed outer fruit contour in OpenCV format, used to define
+        the outer pericarp boundary.
+    inner_contour : np.ndarray
+        Convex hull of locules (from :func:`get_internal_pericarp_contour`),
+        used to define the inner pericarp boundary.
+    fruit_centroid : tuple of float
+        ``(cx, cy)`` centroid of the fruit, used as the ray origin.
+    img_shape : tuple of int
+        ``(height, width)`` of the full image, used to clamp the ROI
+        boundaries.
+    num_rays : int, optional
+        Number of evenly spaced rays cast from the centroid. Higher
+        values improve accuracy at the cost of speed. Default is 180.
+    px_per_cm : float or None, optional
+        Pixel-to-centimetre conversion factor. If ``None`` or invalid,
+        all distance outputs are in pixels. Default is ``None``.
+
+    Returns
+    -------
+    dict of {str : float}
+        Dictionary with keys suffixed by the active unit (``'cm'`` or
+        ``'px'``):
+
+        - ``outer_pericarp_mean_thickness_{unit}`` – mean thickness
+          across valid rays.
+        - ``outer_pericarp_std_thickness_{unit}`` – standard deviation
+          of thickness.
+        - ``'outer_pericarp_cv_thickness'`` – coefficient of variation
+          as a percentage (unitless).
+        - ``fruit_lobedness_{unit}`` – standard deviation of outer
+          radii, measuring shape irregularity.
+
+        All values are ``NaN`` if no valid rays could be measured.
     """
     
     # ROI computation for each fruit

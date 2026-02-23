@@ -1,12 +1,24 @@
 # traitly/cli.py
-
 """
-Command Line Interface for Traitly
-Allows analyzing fruit images directly from terminal.
+Command-line interface for Traitly fruit phenotyping.
 
-Usage:
-  traitly --fruit_internal -i PATH -o PATH_OUTPUT --json PATH/JSON --num_cores 1
-  traitly --fruit_external -i PATH -o PATH_OUTPUT --json PATH/JSON --num_cores 1
+Provides the ``traitly`` entry point for running internal and external
+fruit analysis pipelines directly from the terminal, on single images
+or entire folders.
+
+Usage
+-----
+.. code-block:: bash
+
+    traitly --fruit_internal -i PATH [-o PATH] [--json PATH] [--num_cores N]
+    traitly --fruit_external -i PATH [-o PATH] [--json PATH] [--num_cores N]
+
+For folder inputs, delegates to
+:meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.analyze_folder`
+or
+:meth:`~traitly.fruit_phenotyping.external_analysis.FruitExternalAnalyzer.analyze_folder`.
+For single images, delegates to
+:meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.process_single_file`.
 """
 
 import argparse
@@ -27,7 +39,19 @@ except ImportError:
 # Parser
 # ============================================================================
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
+    """
+    Build and return the CLI argument parser for Traitly.
+
+    Defines a mutually exclusive mode group (``--fruit_internal`` /
+    ``--fruit_external``), required and optional arguments, and a
+    formatted epilog with usage examples.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        Configured parser ready to call ``.parse_args()`` on.
+    """
     parser = argparse.ArgumentParser(
         prog='traitly',
         description='Traitly - Fruit Phenotyping Tool',
@@ -124,6 +148,22 @@ def create_parser():
 # ============================================================================
 
 def _validate_input(path_str: str) -> Path:
+    """
+    Validate that the input path exists and return it as a :class:`Path`.
+
+    Prints an error message and calls ``sys.exit(1)`` if the path does
+    not exist.
+
+    Parameters
+    ----------
+    path_str : str
+        Raw input path string from the CLI argument.
+
+    Returns
+    -------
+    Path
+        Validated :class:`~pathlib.Path` object.
+    """
     path = Path(path_str)
     if not path.exists():
         print(f">> Error: Path does not exist: {path_str}")
@@ -132,6 +172,22 @@ def _validate_input(path_str: str) -> Path:
 
 
 def _validate_json(json_str: str) -> str:
+    """
+    Validate that the JSON config file exists if provided.
+
+    Prints an error message and calls ``sys.exit(1)`` if ``json_str``
+    is not ``None`` and the file does not exist.
+
+    Parameters
+    ----------
+    json_str : str or None
+        Path to the JSON config file, or ``None`` if not provided.
+
+    Returns
+    -------
+    str or None
+        The original ``json_str`` if valid, or ``None``.
+    """
     if json_str is not None and not Path(json_str).exists():
         print(f">> Error: JSON config file does not exist: {json_str}")
         sys.exit(1)
@@ -142,8 +198,24 @@ def _validate_json(json_str: str) -> str:
 # Internal analysis
 # ============================================================================
 
-def run_internal(args):
-    """Run FruitInternalAnalyzer.analyze_folder() or process a single file."""
+def run_internal(args: argparse.Namespace) -> None:
+    """
+    Run the internal fruit analysis pipeline from the CLI.
+
+    Instantiates :class:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer`
+    and dispatches to:
+
+    - :meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.analyze_folder`
+      when ``args.input`` is a directory.
+    - :meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.process_single_file`
+      when ``args.input`` is a single image file.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments containing ``input``, ``output``, ``json``,
+        ``num_cores``, ``no_morphology``, and ``no_color``.
+    """
     from traitly.fruit_phenotyping.internal_analysis import FruitInternalAnalyzer
 
     path     = _validate_input(args.input)
@@ -205,8 +277,24 @@ def run_internal(args):
 # External analysis
 # ============================================================================
 
-def run_external(args):
-    """Run FruitExternalAnalyzer.analyze_folder() or process a single file."""
+def run_external(args: argparse.Namespace) -> None:
+    """
+    Run the external fruit analysis pipeline from the CLI.
+
+    Instantiates :class:`~traitly.fruit_phenotyping.external_analysis.FruitExternalAnalyzer`
+    and dispatches to:
+
+    - :meth:`~traitly.fruit_phenotyping.external_analysis.FruitExternalAnalyzer.analyze_folder`
+      when ``args.input`` is a directory.
+    - :meth:`~traitly.fruit_phenotyping.external_analysis.FruitExternalAnalyzer.process_single_file`
+      when ``args.input`` is a single image file.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed CLI arguments containing ``input``, ``output``, ``json``,
+        ``num_cores``, ``no_morphology``, and ``no_color``.
+    """
     from traitly.fruit_phenotyping.external_analysis import FruitExternalAnalyzer
 
     path      = _validate_input(args.input)
@@ -268,7 +356,14 @@ def run_external(args):
 # Entry point
 # ============================================================================
 
-def main():
+def main() -> None:
+    """
+    Entry point for the ``traitly`` CLI command.
+
+    Parses arguments via :func:`create_parser` and dispatches to
+    :func:`run_internal` or :func:`run_external` based on the selected
+    mode flag. Prints help and exits cleanly if neither flag is set.
+    """
     parser = create_parser()
     args   = parser.parse_args()
 
