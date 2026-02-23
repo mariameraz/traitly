@@ -2,7 +2,7 @@
 
 Available in: [![English](https://img.shields.io/badge/Language-English-purple)](README.md)
 
-[![Licencia: AGPL v3](https://img.shields.io/badge/Licencia-AGPL%20v3-green.svg)](https://github.com/mariameraz/traitly/blob/main/LICENSE) [![Python](https://img.shields.io/badge/Python-3.8%2B-yellow)](https://www.python.org/) [![Versión](https://img.shields.io/badge/Versión-0.1.0--beta-orange)]() [![DOI](https://zenodo.org/badge/1122521844.svg)](https://doi.org/10.5281/zenodo.18058712)
+[![Licencia: AGPL v3](https://img.shields.io/badge/Licencia-AGPL%20v3-green.svg)](https://github.com/mariameraz/traitly/blob/main/LICENSE) [![Python](https://img.shields.io/badge/Python-3.8%2B-yellow)](https://www.python.org/) [![Versión](https://img.shields.io/badge/Versión-0.1.0--beta-orange)]() [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18738367.svg)](https://doi.org/10.5281/zenodo.18738367)
 
 ***Traitly*** es una herramienta de código abierto en Python para el fenotipado de frutos de alto rendimiento, que extrae automáticamente rasgos cuantitativos a partir de imágenes digitales de frutos completos o en rodajas.
 
