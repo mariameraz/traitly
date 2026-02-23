@@ -1,4 +1,4 @@
-# Welcome to Traitly 
+# Traitly 
 
 Available in: [![English](https://img.shields.io/badge/Language-English-purple)](README.md)
 
