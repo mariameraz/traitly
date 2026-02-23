@@ -269,7 +269,6 @@ class FruitInternalAnalyzer:
                              "The file may be corrupted or not in a supported format.")
 
         self.img_shape = self.img.shape[:2]
-        self.img_copy = self.img.copy()
         self.img_hsv = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
         self.img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
         self.img_name = detect_img_name(self.img_path)
@@ -479,8 +478,9 @@ class FruitInternalAnalyzer:
             diameter_cm = 2.5
             using_default_diameter = True
 
-        #calibration_start = time.time()
-
+        # create an image copy to work with
+        self.img_copy = self.img.copy()
+        
         if fast_calibration and width_cm and length_cm:
             # Fast method: use physical dimensions 
             self.px_per_cm = np.sqrt((w * h) / (width_cm * length_cm))
