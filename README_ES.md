@@ -1,3 +1,5 @@
+# Welcome to Traitly 
+
 Available in: [![English](https://img.shields.io/badge/Language-English-purple)](README.md)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green.svg)](https://www.gnu.org/licenses/agpl-3.0) [![Python](https://img.shields.io/badge/Python-3.8%2B-yellow)](https://www.python.org/) [![Version](https://img.shields.io/badge/Version-0.1.0--beta-orange)]() [![DOI](https://zenodo.org/badge/1122521844.svg)](https://doi.org/10.5281/zenodo.18058712)
