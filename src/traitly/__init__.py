@@ -19,7 +19,6 @@ from .utils.basic_functions import (
     plot_img
 )
 
-from .utils.convert_pdf import pdf_to_img
 
 __all__ = [
     
@@ -29,7 +28,6 @@ __all__ = [
         
     # Util functions
     'load_img', 
-    'plot_img', 
-    'pdf_to_img'
+    'plot_img'
 
 ]
