@@ -1,33 +1,39 @@
 # traitly/__init__.py
-
 """
 Traitly: Phenotyping analysis of fruits in images using computer vision.
 """
-
-from importlib.metadata import version, PackageNotFoundError
+import re
+from importlib.metadata import version, metadata, PackageNotFoundError
 
 try:
+    _meta = metadata("traitly")
     __version__ = version("traitly")
+    
+    _raw = _meta.get("Author-email") or ""
+    # Separar por coma fuera de los < >
+    _entries = re.split(r",\s*(?=[^<>]*(?:<|$))", _raw)
+    __authors__ = [
+        re.match(r"^(.*?)\s*<", a).group(1).strip()
+        for a in _entries if "<" in a
+    ]
+    __author__ = ", ".join(__authors__)
+
 except PackageNotFoundError:
     __version__ = "unknown"
+    __authors__ = []
+    __author__ = "unknown"
 
-__author__ = "Maria Alejandra Torres Meraz"
 
 # Import functions from utils
 from .utils.basic_functions import (
-    load_img, 
+    load_img,
     plot_img
 )
 
-
 __all__ = [
-    
-    # Version
     '__version__',
     '__author__',
-        
-    # Util functions
-    'load_img', 
+    '__authors__',
+    'load_img',
     'plot_img'
-
 ]
