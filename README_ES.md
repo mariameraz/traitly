@@ -1,16 +1,19 @@
-Disponible en: [![Español](https://img.shields.io/badge/Language-English-purple)](README.md)
+Disponible en: [![English](https://img.shields.io/badge/Language-English-purple)](README.md)
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green.svg)](https://www.gnu.org/licenses/agpl-3.0) [![Python](https://img.shields.io/badge/Python-3.8%2B-yellow)](https://www.python.org/) [![Version](https://img.shields.io/badge/Version-0.1.0--beta-orange)]() [![DOI](https://zenodo.org/badge/1122521844.svg)](https://doi.org/10.5281/zenodo.18058712)
 
-***Traitly*** es una herramienta de código abierto en Python para el fenotipado de frutos de alto rendimiento, que extrae automáticamente rasgos cuantitativos a partir de imágenes digitales de rebanadas de fruta. 
-Se centra en el fenotipado de estructuras internas del fruto, utilizando métodos basados en visión por computadora para cuantificar rasgos de morfología, anatomía, simetría y color.
+***Traitly*** es una herramienta de código abierto en Python para el fenotipado de frutos de alto rendimiento, que extrae automáticamente rasgos cuantitativos a partir de imágenes digitales de frutos completos o en rodajas.
+
+Se centra en el fenotipado de estructuras internas y la morfología externa del fruto, utilizando métodos basados en visión por computadora para cuantificar rasgos de morfología, anatomía, simetría y color.
 
 La herramienta admite flujos de trabajo tanto de imágenes individuales como de procesamiento por lotes, lo que permite a los usuarios analizar grandes conjuntos de imágenes con solo unas pocas líneas de código, haciéndola adecuada para programas de mejoramiento vegetal e investigación.
-
 
 </br>
 
 > **Nota:**  
-> Actualmente se está preparando un manuscrito que describe este software, y se espera su publicación en **primavera–verano de 2026**.
+> Actualmente se está preparando un manuscrito que describe este software y su uso, y se espera su envío en **primavera–verano de 2026**. Mientras tanto, si utilizas Traitly en tu investigación, por favor cítalo como:
+>
+> Torres-Meraz, M. A., & Lopez-Moreno, H. (2026). Traitly: A Python Tool for High-Throughput Fruit Phenotyping. Zenodo. https://doi.org/10.5281/zenodo.18738367
 
 </br>
 
@@ -23,20 +26,23 @@ Traitly procesa imágenes de frutos para medir:
 * **Estructura del pericarpo**: grosor, uniformidad (CV) e irregularidad de la superficie (lobulación)  
 * **Cuantificación de color**: análisis multicanal (RGB, HSV, Lab) en diferentes regiones del fruto  
 
-
-**👉 Para consultar la lista completa de rasgos extraídos, ver:** [Tablas de rasgos](docs/documentation.md)
+**👉 Para consultar la lista completa de rasgos extraídos, ver:**
+- [![Documentation_EN](https://img.shields.io/badge/Documentation-English-lightblue)](docs/documentation.md)
+- [![Documentation_ES](https://img.shields.io/badge/Documentaci%C3%B3n-Espa%C3%B1ol-red)](docs/documentation_ES.md)
 
 </br>
 
 ## Estatus del proyecto
 
-**Traitly se encuentra en fase de pre-lanzamiento y en desarrollo activo.**  
-El código fuente aún no está disponible públicamente.
+**Traitly se encuentra actualmente en fase beta y en proceso de pruebas en diferentes sistemas y entornos.**
 
-La documentación actual corresponde a una **versión preliminar del manual** y está sujeta a cambios.  
-Se proporcionarán más detalles, ejemplos y aclaraciones en futuras actualizaciones.
+El código fuente ya está disponible públicamente. La arquitectura del proyecto y su lógica central están definidas, y un grupo de early testers está evaluando la herramienta en diferentes sistemas, flujos de trabajo y casos de uso.
 
-Las actualizaciones sobre el lanzamiento público se anunciarán a través de este repositorio y en [LinkedIn](https://www.linkedin.com/in/alemeraz/).  
+La documentación está en construcción activa, y se irán añadiendo más detalles, ejemplos y aclaraciones conforme avancen las pruebas.
+
+Actualmente se está desarrollando una aplicación web con Streamlit, con el objetivo de ofrecer una interfaz amigable para ejecutar Traitly sin necesidad de escribir código.
+
+Las actualizaciones se anunciarán a través de este repositorio y en [LinkedIn](https://www.linkedin.com/in/alemeraz/).  
 Se recomienda a las personas interesadas seguir el repositorio para mantenerse informadas.
 
 </br>
@@ -53,41 +59,77 @@ Estos materiales proporcionan detalles metodológicos adicionales y resultados d
 
 ## Uso
 
-A continuación se muestra un ejemplo básico de cómo utilizar **traitly**:
+A continuación se muestra un ejemplo básico de cómo utilizar **traitly**.
 
-Uso con Python
+### Uso con Python
 
+#### Análisis interno
 ```python
-from traitly.internal_structure import FruitAnalyzer
+from traitly.fruit_phenotyping import FruitInternalAnalyzer
 
 ##########################
 # Análisis de una imagen #
 ##########################
 path = 'PATH/my_image.jpg'
-
-analyzer = FruitAnalyzer(path)  # Inicializar la clase FruitAnalyzer
-
-analyzer.read_image()           # Leer la imagen
-analyzer.setup_measurements()   # Obtener información de etiquetas y tamaño de referencia
-analyzer.create_mask()          # Crear una máscara binaria para segmentar frutos y lóculos
-analyzer.find_fruits()          # Filtrar los frutos detectados
-analyzer.analyze_image()        # Ejecutar el análisis del fruto
-analyzer.results.save_all()     # Guardar el archivo CSV y la imagen anotada
+analyzer = FruitInternalAnalyzer(path)  # Inicializar la clase FruitInternalAnalyzer
+analyzer.load_image()                   # Leer la imagen
+analyzer.setup_measurements()           # Obtener información de etiquetas y tamaño de referencia
+analyzer.generate_fruit_mask()          # Crear una máscara binaria para segmentar frutos y lóculos
+analyzer.detect_fruits()                # Filtrar los frutos detectados
+analyzer.analyze_morphology()           # Ejecutar el análisis morfológico
+analyzer.analyze_color()                # Ejecutar el análisis de color
+analyzer.results.save_all()             # Guardar los archivos .csv de color y morfología, y la imagen anotada
+analyzer.save_parameters()              # Guardar los parámetros de sesión como archivos .txt y .json
 
 ######################
 # Análisis por lotes #
 ######################
 path = 'PATH/my_folder'
+json = 'my_parameters.json'
+analyzer = FruitInternalAnalyzer(path)          # Inicializar la clase FruitInternalAnalyzer
+analyzer.analyze_folder(json_path = json)       # Ejecutar el análisis en todas las imágenes válidas de la carpeta
+# Se guardará un único archivo CSV y las imágenes anotadas correspondientes.
+```
 
-analyzer = FruitAnalyzer(path)  # Inicializar la clase FruitAnalyzer
-analyzer.analyze_folder()       # Ejecutar el análisis en todas las imágenes válidas de la carpeta.
-                                # Se guardará un único archivo CSV y las imágenes anotadas correspondientes.
-````
+#### Análisis externo
+```python
+from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
-Uso desde la línea de comandos 
+##########################
+# Análisis de una imagen #
+##########################
+path = 'PATH/my_image.jpg'
+analyzer = FruitExternalAnalyzer(path)  # Inicializar la clase FruitExternalAnalyzer
+analyzer.load_image()                   # Leer la imagen
+analyzer.setup_measurements()           # Obtener información de etiquetas y tamaño de referencia
+analyzer.generate_fruit_mask()          # Crear una máscara binaria para segmentar frutos
+analyzer.detect_fruits()                # Filtrar los frutos detectados
+analyzer.analyze_morphology()           # Ejecutar el análisis morfológico
+analyzer.analyze_color(stat='median',
+    color_channel='RGB')                # Extraer los valores medianos de los canales RGB para cada fruto
+analyzer.results.save_all()             # Guardar los archivos .csv de color y morfología, y la imagen anotada
+analyzer.save_parameters()              # Guardar los parámetros de sesión como archivos .txt y .json
 
+######################
+# Análisis por lotes #
+######################
+path = 'PATH/my_folder'
+json = 'my_parameters.json'
+analyzer = FruitExternalAnalyzer(path)          # Inicializar la clase FruitExternalAnalyzer
+analyzer.analyze_folder(json_path = json)       # Ejecutar el análisis en todas las imágenes válidas de la carpeta
+# Se guardará un único archivo CSV y las imágenes anotadas correspondientes.
+```
+
+### Uso desde la línea de comandos
 ```bash
-traitly internal_structure -i PATH/my_folder
+# Análisis de estructura interna (imagen individual o carpeta)
+traitly --fruit_internal -i tests/sample_data/
+traitly --fruit_internal -i tests/sample_data/ -o results/ --num_cores 4
+traitly --fruit_internal -i tests/sample_data/ --json config.json
+
+# Análisis externo (imagen individual o carpeta)
+traitly --fruit_external -i tests/sample_data/
+traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --num_cores 4
 ```
 
 </br>
@@ -104,4 +146,4 @@ Para consultas sobre el proyecto o posibles colaboraciones, por favor envíe un 
 * [ma.torresmeraz@gmail.com](mailto:ma.torresmeraz@gmail.com)
 * [torresmeraz@wisc.edu](mailto:torresmeraz@wisc.edu)
 
-
+Estamos abiertos a colaboraciones, incluyendo el desarrollo de pipelines para especies específicas, la incorporación de nuevos rasgos o mediciones, y la creación de tutoriales o flujos de trabajo adaptados a cultivos o tejidos vegetales específicos.

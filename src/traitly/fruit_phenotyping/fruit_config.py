@@ -395,10 +395,10 @@ def _analyze_single_fruit_morphology(
     fruit_metrics = _calculate_fruit_metrics(
         fruit_data['contour'],
         contours[fruit_id],
-        annotated_img,
         px_per_cm,
-        config,
         unit,
+        config,
+        annotated_img,
     )
 
     unit_suffix = 'cm2' if unit == 'cm' else 'px2'

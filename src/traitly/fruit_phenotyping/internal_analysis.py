@@ -59,14 +59,14 @@ from .mask import (create_mask,
 
 from .fruit_config import analyze_fruits_morphology
 from ..utils.basic_functions import (load_img,
-                                      detect_qr,
-                                      detect_label_box_yolo,
-                                      detect_label_box,
-                                      detect_label_text,
-                                      px_cm_density,
                                       detect_img_name,
-                                      plot_img,
                                       annotate_all_fruits)
+
+from ..utils.calibration import px_cm_density
+from ..utils.label import (detect_qr,
+                        detect_label_box_yolo,
+                        detect_label_box,
+                        detect_label_text)
 
 from traitly import __version__
 from ..utils.constants import valid_extensions

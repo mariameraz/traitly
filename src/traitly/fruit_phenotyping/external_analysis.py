@@ -46,7 +46,6 @@ import matplotlib.pyplot as plt
 # INTERNAL IMPORTS
 # ============================================================================
 from traitly.fruit_phenotyping.internal_analysis import FruitInternalAnalyzer
-from traitly.fruit_phenotyping.color_analysis import get_single_fruit_masks
 from traitly import __version__
 from traitly.utils.constants import valid_extensions as _valid_ext
 
