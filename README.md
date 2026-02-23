@@ -1,5 +1,5 @@
 
-# Welcome to Tratly
+# Welcome to Traitly
 
 Disponible en: [![Spanish](https://img.shields.io/badge/Idioma-Espa%C3%B1ol-pink)](README_ES.md)
 
