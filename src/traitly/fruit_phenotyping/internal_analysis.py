@@ -462,7 +462,9 @@ class FruitInternalAnalyzer:
             not provided. Default is None.
         fast_calibration : bool, optional
             If True and ``width_cm`` and ``length_cm`` are set, skip YOLO
-            detection and calculate scale geometrically. Default is False.
+            detection and calculate scale using phyisical data; else, if 
+            ``width_cm`` and ``length_cm`` are None, return pixel measurements. 
+            Default is False.
         """
 
         h, w, _ = self.img.shape
