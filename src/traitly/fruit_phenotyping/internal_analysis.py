@@ -480,17 +480,21 @@ class FruitInternalAnalyzer:
 
         # create an image copy to work with
         self.img_copy = self.img.copy()
-        
-        if fast_calibration and width_cm and length_cm:
-            # Fast method: use physical dimensions 
-            self.px_per_cm = np.sqrt((w * h) / (width_cm * length_cm))
-            #self.img_annotated = self.img.copy()
-            self.ref_roi = None
 
-            if verbose:
-                print("> Size reference detection: SKIPPED.")
+        if fast_calibration:
+            if  width_cm and length_cm:
+                # Fast method: use physical dimensions
+                self.px_per_cm = np.sqrt((w * h) / (width_cm * length_cm))
+                self.ref_roi = None
+                if verbose:
+                    print("> Size reference detection: SKIPPED.")
+            else:
+                # No calibration available: measurements will be in pixels
+                self.px_per_cm = None
+                self.ref_roi = None
+                if verbose:
+                    print("> Size reference detection: SKIPPED.")
         else:
-            
             self.px_per_cm, self.img_copy, self.ref_roi = px_cm_density(
                 self.img_copy,
                 confidence_threshold=confidence,
