@@ -15,8 +15,8 @@ __pycache__/
 .traitly_test/*
 
 # Specific files
-./src/traitly_app.py
-./tutorials/example.ipynb
+src/traitly_app.py
+tutorials/example.ipynb
 
 # Build
 build/
