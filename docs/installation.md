@@ -17,7 +17,7 @@ For the purposes of this tutorial, we will be using a **Python virtual environme
 - Python 3.8 or higher ([download here](https://www.python.org/downloads/))
 - `pip` (comes included with Python)
 - `git` installed on your system ([download here](https://git-scm.com/downloads))
-- Minimum RAM: 4 GB (8 GB recommended)
+- RAM: 4 GB (8 GB recommended)
 - Disk space: ~2 GB for the full installation
 
 > **💡 Note (Windows only):** When running the Python installer, make sure to check the **"Add Python to PATH"** option to avoid issues with the following steps.
