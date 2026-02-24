@@ -59,8 +59,8 @@ def get_easyocr_reader(
     languages : list of str, optional
         Language codes for OCR. Default is ``['en', 'es']``.
     gpu : bool, optional
-        If True, attempt to use CUDA GPU acceleration. Has no effect on
-        Apple Silicon (MPS). Default is False.
+        If True, attempt to use CUDA GPU acceleration if available. 
+        Falls back to CPU if CUDA is not supported. Default is False.
 
     Returns
     -------
