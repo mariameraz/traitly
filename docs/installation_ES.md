@@ -55,10 +55,10 @@ cd ~/Documents/my-project
 
 La carperta de tu proyecto se verá algo así:
 ```
-my-project/
+mi-proyecto/
 ├── traitly-env/       <- entorno virtual (se crea en los siguientes pasos)
-├── my_notebook.ipynb
-├── my_images/
+├── mi_notebook.ipynb
+├── imagenes/
 └── ...
 ```
 
