@@ -107,7 +107,6 @@ class ResultsImage:
         self,
         path: Optional[str] = None,
         format: Optional[str] = None,
-        dpi: int = 75,
         output_message: bool = True,
         quality: int = 95,
         **kwargs,
@@ -130,9 +129,6 @@ class ResultsImage:
             Image format extension (e.g. ``'jpg'``, ``'png'``). If ``None``,
             inferred from ``path``. Used to determine the default filename
             when ``path`` is ``None``. Default is ``None``.
-        dpi : int, optional
-            Stored for reference only; not applied by ``cv2.imwrite``.
-            Default is 75.
         output_message : bool, optional
             If True, print the saved file path. Default is True.
         quality : int, optional

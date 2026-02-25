@@ -3,7 +3,7 @@
 Analysis metadata tracking for traitly `FruitInternalAnalyzer` and 
 `FruitExternalAnalyzer` pipelines.
 
-Provides the :class:`AnalysisMetadata` dataclass for capturing and
+Provides the :class:`AnalysisParameters` dataclass for capturing and
 exporting the processing parameters used in each stage of the fruit
 phenotyping pipeline, supporting reproducibility and traceability.
 """
@@ -28,7 +28,7 @@ from traitly import __version__
 # ============================================================================
 
 @dataclass
-class AnalysisMetadata:
+class AnalysisParameters:
     """
     Save and report processing parameters for each analysis step.
 

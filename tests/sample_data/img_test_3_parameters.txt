@@ -1,0 +1,84 @@
+======================================================================
+ANALYSIS PROCESSING PARAMETERS
+======================================================================
+traitly: v0.1.0
+run date: 2026-02-25 01:33:55
+
+SETUP_MEASUREMENTS:
+   - width_cm: None
+   - length_cm: None
+   - diameter_cm: None
+   - fast_calibration: False
+   - skip_qr: False
+   - detect_label: False
+   - language_label: ['es', 'en']
+   - confidence: 0.6
+   - gpu: False
+   - font_size: 3
+   - detect_color_checker: False
+   - scale_factor: 0.5
+
+GENERATE_FRUIT_MASK:
+   - stamp: False
+   - lower_hsv: None
+   - upper_hsv: None
+   - background_color: None
+   - kernel_blur: None
+   - kernel_open: None
+   - kernel_close: None
+   - canny_min: None
+   - canny_max: None
+   - n_iteration: 1
+   - fill_holes: False
+   - apply_convex_hull: False
+   - roi_expansion: 10
+   - remove_roi: True
+   - detect_color_checker: False
+   - erosion_px: 0
+
+DETECT_FRUITS:
+   - min_fruit_area: None
+   - max_fruit_area: None
+   - min_fruit_circularity: 0.5
+   - min_locule_area: 50
+   - min_locule_per_fruit: 1
+   - rescale_factor: None
+
+ANALYZE_MORPHOLOGY:
+   - contour_mode: raw
+   - epsilon: None
+   - min_locule_area: 10
+   - max_locule_area: None
+   - angle_shifts: 500
+   - num_rays: 90
+   - font_size: 1.5
+   - font_thickness: 2
+   - font_color: (0, 0, 0)
+   - label_position: top
+   - label_color: (255, 255, 255)
+   - pericarp_int_color: (0, 240, 240)
+   - pericarp_int_thickness: 2
+   - locule_color: (255, 0, 255)
+   - locule_thickness: 2
+   - pericarp_ext_thickness: 2
+   - pericarp_ext_color: (0, 240, 0)
+   - centroid_fruit_color: (255, 255, 51)
+   - centroid_fruit_thickness: 2
+   - centroid_locule_color: (0, 255, 255)
+   - centroid_locule_thickness: 2
+   - is_locule: True
+
+======================================================================
+
+DEPENDENCIES:
+   - python: 3.13.7
+   - opencv-contrib-python: 4.13.0.92
+   - numpy: 2.4.2
+   - pandas: 3.0.1
+   - scipy: 1.17.0
+   - matplotlib: 3.10.8
+   - tqdm: 4.67.3
+   - psutil: 7.2.2
+   - easyocr: 1.7.2
+   - PyMuPDF: 1.27.1
+   - ultralytics: 8.4.14
