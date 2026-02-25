@@ -74,7 +74,7 @@ from .results_image import ResultsImage
 from .color_analysis import (get_single_fruit_masks, 
                              analyze_all_fruits_color, 
                              get_fruit_color_histograms)
-from .analysis_parameters import AnalysisMetadata
+from .analysis_parameters import AnalysisParameters
 
 ##########################################################################################
 # Ignore warnings from torch 
@@ -218,7 +218,7 @@ class FruitInternalAnalyzer:
         self.results = None
 
         # save metadata
-        self.parameters = AnalysisMetadata() 
+        self.parameters = AnalysisParameters() 
         self.is_metadata_saved = True
 
 
@@ -773,7 +773,7 @@ class FruitInternalAnalyzer:
         fill_holes: bool = False,
         apply_convex_hull: bool = False,
         detect_color_checker: bool = False,
-        erosion_px: int = 3,
+        erosion_px: int = 0,
     ) -> None:
         """
         Generate a binary mask segmenting fruits from the background.
@@ -830,12 +830,12 @@ class FruitInternalAnalyzer:
         apply_convex_hull : bool, optional
             If True, apply convex hull to each fruit region in the mask.
             Default is False.
-        detect_color_checker : bool, optional
+        detect_color_checker : bool, optional 
             If True, also remove the color checker region from the mask using
             :attr:`checker_coords`. Default is False.
         erosion_px : int, optional
             Radius in pixels of the elliptical erosion kernel applied after
-            ROI removal. Set to 0 to skip erosion. Default is 3.
+            ROI removal. Set to 0 to skip erosion. Default is 0.
 
         Raises
         ------
@@ -999,8 +999,8 @@ class FruitInternalAnalyzer:
         Parameters
         ----------
         contrast_method : str, optional
-            Enhancement method: ``'gamma'``, ``'sigmoid'``, or
-            ``'exponential'``. Default is ``'gamma'``.
+            Enhancement method: ``'gamma'``, ``'sigmoid'``, 
+            ``'exponential'``, or ``'none'``. Default is ``'gamma'``.
         gamma : float, optional
             Gamma exponent, used when ``contrast_method='gamma'``. Default is
             1.5.
@@ -1071,7 +1071,7 @@ class FruitInternalAnalyzer:
         min_fruit_area: int = 5000,
         invert_locule: bool = False,
         plot: bool = True,
-        plot_size: Tuple[int, int] = (5, 5),
+        plot_size: Tuple[int, int] = (10, 5),
     ) -> None:
         """
         Generate a fused mask containing fruits with their internal locules.
@@ -1118,7 +1118,7 @@ class FruitInternalAnalyzer:
         
         if self.l_transformed is None:
             raise ValueError("Locule contrast not initialized. Run enhance_locule_contrast() first "
-                             "(use contrast_method = 'None' if no transformation is requiered)")
+                             "(use contrast_method = 'none' if no transformation is requiered)")
         
         # Validate that required attributes exist
         if self.l_transformed is None:
@@ -1300,7 +1300,7 @@ class FruitInternalAnalyzer:
         overlay: bool = False,
         overlay_legend: bool = False,
         margin: int = 5,
-        only_fruit: bool = False,
+        only_fruit: bool = False, # Needed for FruitExternalAnalysis, keep it False  for FruitInternalAnalysis
     ) -> Dict[str, np.ndarray]:
         """
         Generate and display tissue masks for a single fruit.
@@ -1385,7 +1385,7 @@ class FruitInternalAnalyzer:
         label_color: Tuple[int, int, int] = (255, 255, 255),
         contour_mode: str = 'raw',
         epsilon: float = 0.001,
-        min_locule_area: int = 100,
+        min_locule_area: int = 10,
         max_locule_area: Optional[int] = None,
         angle_shifts: int = 500,
         num_rays: int = 90,
@@ -1394,7 +1394,7 @@ class FruitInternalAnalyzer:
         locule_color: Tuple[int, int, int] = (255, 0, 255),
         locule_thickness: int = 2,
         pericarp_ext_thickness: int = 2,
-        pericarp_ext_color: Tuple[int, int, int] = (0, 240, 240),
+        pericarp_ext_color: Tuple[int, int, int] = (0, 240, 0),
         centroid_fruit_color: Tuple[int, int, int] = (255, 255, 51),
         centroid_fruit_thickness: int = 2,
         centroid_locule_color: Tuple[int, int, int] = (0, 255, 255),
@@ -1462,7 +1462,7 @@ class FruitInternalAnalyzer:
             Line thickness for locule contours. Default is 2.
         pericarp_ext_color : tuple of int, optional
             BGR color for the external pericarp contour. Default is
-            ``(0, 240, 240)``.
+            ``(0, 240, 0)``.
         pericarp_ext_thickness : int, optional
             Line thickness for the external pericarp contour. Default is 2.
         centroid_fruit_color : tuple of int, optional
@@ -1647,8 +1647,8 @@ class FruitInternalAnalyzer:
         Save the analysis parameters used in the current session to disk.
 
         Writes both a ``.txt`` and a ``.json`` file named after the loaded
-        image, via :meth:`~traitly.fruit_phenotyping.analysis_parameters.AnalysisMetadata.save_to_file`
-        and :meth:`~traitly.fruit_phenotyping.analysis_parameters.AnalysisMetadata.save_to_json`.
+        image, via :meth:`~traitly.fruit_phenotyping.analysis_parameters.AnalysisParameters.save_to_file`
+        and :meth:`~traitly.fruit_phenotyping.analysis_parameters.AnalysisParameters.save_to_json`.
 
         Parameters
         ----------
