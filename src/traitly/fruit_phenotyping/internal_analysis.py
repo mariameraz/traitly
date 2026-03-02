@@ -1506,7 +1506,11 @@ class FruitInternalAnalyzer:
         if self.label_text is None:
             self.label_text = 'No label detected'
 
+        if self.img_copy is None:
+            self.img_copy = self.img_rgb.copy()
+            
         saved_color_results = getattr(self.results, 'color_results', None)
+
         
         self.results = analyze_fruits_morphology(
             # Image 
