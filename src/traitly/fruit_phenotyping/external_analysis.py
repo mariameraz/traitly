@@ -187,12 +187,12 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         canny_min: Optional[int] = None,
         canny_max: Optional[int] = None,
         remove_roi: bool = True,
-        roi_expansion: int = 10,
-        background_color: Optional[str] = 'blue',
+        roi_expansion: int = 5,
+        background_color: Optional[str] = None,
         fill_holes: bool = False,
         apply_convex_hull: bool = False,
         detect_color_checker: bool = False,
-        erosion_px: int = 3
+        erosion_px: int = 0
     ) -> None:
         """
         Generate a binary mask segmenting fruits from the background.
@@ -202,6 +202,9 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         for full parameter documentation.
         """
 
+        if lower_hsv is None or upper_hsv is None:
+            if background_color is None:
+                background_color = 'blue'  # Default to blue if no HSV or background color provided
        
         super().generate_fruit_mask(
             plot=plot,
@@ -872,6 +875,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                 "Pass a folder to FruitExternalAnalyzer(), not a single file."
             )
 
+
         folder_path = self.img_path
 
         # Validate cores
@@ -941,14 +945,16 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             get_color_histogram=get_color_histogram,
         ))
 
-        # clean before distributing to workers
-        cfg = self._sanitize_config(cfg)
 
         # Sync to self.parameters for session report
         for key in ('setup_measurements_params', 'generate_fruit_mask_params',
                     'detect_fruits_params', 'analyze_morphology_params', 'analyze_color_params'):
-            if key in cfg and cfg[key]:
-                setattr(self.parameters, key, cfg[key])
+            value = cfg.get(key)
+            if isinstance(value, dict) and value:  
+                setattr(self.parameters, key, value)
+
+        # clean before distributing to workers
+        cfg = self._sanitize_config(cfg)
 
         session_start = datetime.now()
         if verbose:

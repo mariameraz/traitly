@@ -384,12 +384,14 @@ def _analyze_single_fruit_morphology(
         centroid could not be determined in :func:`_prepare_fruit_data`.
     """
     # 1. Prepare fruit data
+
     fruit_data = _prepare_fruit_data(
         fruit_id, contours, fruit_centroids,
         annotated_img, config
     )
     if fruit_data is None:
         return None
+
 
     # 2. Calculate fruit metrics
     fruit_metrics = _calculate_fruit_metrics(
@@ -402,9 +404,9 @@ def _analyze_single_fruit_morphology(
     )
 
     unit_suffix = 'cm2' if unit == 'cm' else 'px2'
-
     if is_locule:
         # 3. Process locules
+
         locule_metrics = _process_locules(
             locules,
             contours,
@@ -429,6 +431,7 @@ def _analyze_single_fruit_morphology(
             pericarp_int_color,
             pericarp_int_thickness
         )
+        
 
         # 5. Calculate symmetry
         symmetry_metrics = _calculate_symmetry_metrics(
@@ -436,7 +439,7 @@ def _analyze_single_fruit_morphology(
             config,
             precomputed_ideals
         )
-
+        
     else:
         # When no locules, assign NaN defaults 
         locule_metrics = {
