@@ -768,85 +768,17 @@ class FruitInternalAnalyzer:
         canny_min: Optional[int] = None,
         canny_max: Optional[int] = None,
         remove_roi: bool = True,
-        roi_expansion: int = 10,
+        roi_expansion: int = 0,
         background_color: Optional[str] = None,
         fill_holes: bool = False,
         apply_convex_hull: bool = False,
         detect_color_checker: bool = False,
-        erosion_px: int = 0,
+        erosion_px: int = 0
     ) -> None:
-        """
-        Generate a binary mask segmenting fruits from the background.
 
-        Delegates to :func:`~traitly.fruit_phenotyping.mask.create_mask`
-        for HSV-based segmentation. When ``remove_roi=True``, label, reference,
-        and color checker regions are blacked out from the mask using
-        :attr:`label_roi`, :attr:`ref_roi`, and :attr:`checker_coords`.
-        An elliptical erosion is applied afterward to reduce boundary noise.
-        Populates :attr:`mask_fruit`.
+        if self.img_rgb is None:
+            raise ValueError("No image loaded. Run load_image() first.")
 
-        Parameters
-        ----------
-        plot : bool, optional
-            If True, display the generated mask. Default is True.
-        plot_size : tuple of int, optional
-            Figure size for the mask plot. Default is (5, 5).
-        stamp : bool, optional
-            If True, invert the image colors before masking (black background
-            images). Default is False.
-        lower_hsv : list of int or None, optional
-            Lower HSV threshold ``[H, S, V]`` forwarded to
-            :func:`~traitly.fruit_phenotyping.mask.create_mask`. If None,
-            automatic thresholding is applied. Default is None.
-        upper_hsv : list of int or None, optional
-            Upper HSV threshold ``[H, S, V]`` forwarded to
-            :func:`~traitly.fruit_phenotyping.mask.create_mask`. Default is
-            None.
-        n_iteration : int, optional
-            Number of morphological iterations forwarded to
-            :func:`~traitly.fruit_phenotyping.mask.create_mask`. Default is 1.
-        kernel_blur : int or None, optional
-            Gaussian blur kernel size. Default is None.
-        kernel_open : int or None, optional
-            Morphological opening kernel size. Default is None.
-        kernel_close : int or None, optional
-            Morphological closing kernel size. Default is None.
-        canny_min : int or None, optional
-            Minimum Canny edge threshold. Default is None.
-        canny_max : int or None, optional
-            Maximum Canny edge threshold. Default is None.
-        remove_roi : bool, optional
-            If True, remove label, reference, and color checker regions from
-            the mask. Default is True.
-        roi_expansion : int, optional
-            Pixel margin added around each ROI before removal, also used as
-            the dilation kernel size. Default is 10.
-        background_color : str or None, optional
-            Expected background color hint forwarded to
-            :func:`~traitly.fruit_phenotyping.mask.create_mask`. Default is
-            None.
-        fill_holes : bool, optional
-            If True, fill enclosed holes in the binary mask. Default is False.
-        apply_convex_hull : bool, optional
-            If True, apply convex hull to each fruit region in the mask.
-            Default is False.
-        detect_color_checker : bool, optional 
-            If True, also remove the color checker region from the mask using
-            :attr:`checker_coords`. Default is False.
-        erosion_px : int, optional
-            Radius in pixels of the elliptical erosion kernel applied after
-            ROI removal. Set to 0 to skip erosion. Default is 0.
-
-        Raises
-        ------
-        ValueError
-            If no image is loaded.
-        """
-        
-        # Validation
-        if self.img is None:
-            raise ValueError("No image loaded. Run load_img() first.")
-        
         metadata = self.is_metadata_saved
         if metadata:
             self.parameters.generate_fruit_mask_params = {
@@ -864,109 +796,93 @@ class FruitInternalAnalyzer:
                 'apply_convex_hull': apply_convex_hull,
                 'roi_expansion': roi_expansion,
                 'remove_roi': remove_roi,
-                'fill_holes': fill_holes,
-                'apply_convex_hull': apply_convex_hull,
                 'detect_color_checker': detect_color_checker,
                 'erosion_px': erosion_px
             }
 
-        if stamp:
-            img = cv2.bitwise_not(self.img)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        else:
-            img = self.img_hsv
+        img = cv2.cvtColor(self.img_rgb, cv2.COLOR_RGB2HSV)
 
-        # Create base mask - only calculate once
+        # Create base mask
         self.mask_fruit = create_mask(
-            img_hsv = img,
+            img_hsv=img,
             n_iteration=n_iteration,
             plot=False,
             plot_size=plot_size,
-            kernel_blur = kernel_blur,
-            kernel_open = kernel_open,
-            kernel_close = kernel_close,
+            kernel_blur=kernel_blur,
+            kernel_open=kernel_open,
+            kernel_close=kernel_close,
             canny_max=canny_max,
             canny_min=canny_min,
             lower_hsv=lower_hsv,
             upper_hsv=upper_hsv,
-            background_color = background_color,
+            background_color=background_color,
             fill_holes=fill_holes,
-            apply_convex_hull = apply_convex_hull
+            apply_convex_hull=apply_convex_hull
         )
-        
-        # Deleting label and reference squares from mask
+
+        # Remove label and reference ROIs from mask
         if remove_roi:
-            # Create a same size black mask 
             mask_rois = np.zeros_like(self.mask_fruit)
-            
-            # Draw white rectangles over the label roi
+
+            # Label ROI
             if hasattr(self, 'label_roi') and self.label_roi:
                 for box in self.label_roi:
                     x, y = box['x'], box['y']
                     w, h = box['width'], box['height']
-                    
-                    # Expand the rectangle
                     x_expanded = max(0, x - roi_expansion)
                     y_expanded = max(0, y - roi_expansion)
                     w_expanded = w + 2 * roi_expansion
                     h_expanded = h + 2 * roi_expansion
-                    
-                    # Draw it
-                    cv2.rectangle(mask_rois, 
-                                (x_expanded, y_expanded), 
-                                (x_expanded + w_expanded, y_expanded + h_expanded), 
+                    cv2.rectangle(mask_rois,
+                                (x_expanded, y_expanded),
+                                (x_expanded + w_expanded, y_expanded + h_expanded),
                                 255, -1)
-            
-            # Draw white rectangles over the reference roi
+
+            # Reference ROI
             if hasattr(self, 'ref_roi') and self.ref_roi:
                 for roi in self.ref_roi:
-                    # Draw a polygon over it 
-                    cv2.fillPoly(mask_rois, [roi], 255)
+                    x, y, w, h = cv2.boundingRect(roi)
+                    x_expanded = max(0, x - roi_expansion)
+                    y_expanded = max(0, y - roi_expansion)
+                    w_expanded = w + 2 * roi_expansion
+                    h_expanded = h + 2 * roi_expansion
+                    cv2.rectangle(mask_rois,
+                                (x_expanded, y_expanded),
+                                (x_expanded + w_expanded, y_expanded + h_expanded),
+                                255, -1)
 
-
+            # Color checker ROI
             if detect_color_checker and hasattr(self, 'checker_coords') and self.checker_coords is not None:
                 if len(self.checker_coords) == 4:
                     x, y, w, h = self.checker_coords
-                    
-                    # Expand the rectangle 
                     x_expanded = max(0, x - roi_expansion)
                     y_expanded = max(0, y - roi_expansion)
                     w_expanded = w + 2 * roi_expansion
                     h_expanded = h + 2 * roi_expansion
-                    
-                    # Ensure coords are not exceeding image bounds
                     img_h, img_w = self.mask_fruit.shape[:2]
                     x_expanded = max(0, min(x_expanded, img_w))
                     y_expanded = max(0, min(y_expanded, img_h))
                     w_expanded = min(w_expanded, img_w - x_expanded)
                     h_expanded = min(h_expanded, img_h - y_expanded)
-                    
-                    # Draw the rectangle
                     cv2.rectangle(mask_rois,
                                 (x_expanded, y_expanded),
                                 (x_expanded + w_expanded, y_expanded + h_expanded),
                                 255, -1)
-                
-            # Dilate the roi mask if needed
-            if roi_expansion > 0:
-                kernel_expand = np.ones((roi_expansion, roi_expansion), np.uint8)
-                mask_rois = cv2.dilate(mask_rois, kernel_expand, iterations=1)
-            
-            
-            # Remove label and reference from the original mask
+
             self.mask_fruit = cv2.bitwise_and(self.mask_fruit, cv2.bitwise_not(mask_rois))
 
-            # Apply erosion 
-            if erosion_px > 0:
-                kernel       = cv2.getStructuringElement(
-                    cv2.MORPH_ELLIPSE,
-                    (erosion_px * 2 + 1, erosion_px * 2 + 1)
-                )
-                self.mask_fruit  = cv2.erode(self.mask_fruit .copy(), kernel, iterations=1)
+        # Apply erosion
+        if erosion_px > 0:
+            kernel = cv2.getStructuringElement(
+                cv2.MORPH_ELLIPSE,
+                (erosion_px * 2 + 1, erosion_px * 2 + 1)
+            )
+            self.mask_fruit = cv2.erode(self.mask_fruit.copy(), kernel, iterations=1)
+
 
         if plot:
             plt.figure(figsize=plot_size)
-            plt.imshow(self.mask_fruit, cmap = 'gray')
+            plt.imshow(self.mask_fruit, cmap='gray')
             plt.axis('off')
             plt.show()
 
