@@ -229,10 +229,14 @@ class FruitInternalAnalyzer:
         self,
         plot: bool = True,
         plot_size: Tuple[int, int] = (5, 5),
+        show_axis: bool = False,
+        x: Optional[int] = None,
+        y: Optional[int] = None,
+        w: Optional[int] = None,
+        h: Optional[int] = None
     ) -> None:
         """
         Load the image from :attr:`img_path` and prepare internal representations.
-
         Delegates to :func:`~traitly.utils.basic_functions.load_img` and
         populates :attr:`img`, :attr:`img_copy`, :attr:`img_rgb`,
         :attr:`img_hsv`, :attr:`img_shape`, and :attr:`img_name`.
@@ -243,6 +247,16 @@ class FruitInternalAnalyzer:
             If True, display the loaded image. Default is True.
         plot_size : tuple of int, optional
             Figure size ``(width, height)`` for the plot. Default is (5, 5).
+        show_axis : bool, optional
+            If True, display axis ticks and labels on the plot. Default is False.
+        x : int, optional
+            Left pixel coordinate of the crop region.
+        y : int, optional
+            Top pixel coordinate of the crop region.
+        w : int, optional
+            Width of the crop region in pixels.
+        h : int, optional
+            Height of the crop region in pixels.
 
         Raises
         ------
@@ -262,7 +276,10 @@ class FruitInternalAnalyzer:
             raise ValueError(f"No valid image format: '{path.suffix.lower()}' -> "
                              f"Supported formats are: {valid_extensions}")
         
-        self.img = load_img(self.img_path, plot = plot, plot_size = plot_size)
+        self.img = load_img(self.img_path, plot = plot, 
+                            plot_size = plot_size,
+                            show_axis = show_axis, 
+                            x = x, y = y, w = w, h = h)
 
         if self.img is None:
             raise ValueError(f"Failed to load image: {self.img_path}."
@@ -1432,7 +1449,6 @@ class FruitInternalAnalyzer:
             # Image 
             img=self.img_copy,
             path=self.img_path,
-            original_img_clean=self.img,
             contours=self.contours,
             fruit_locule_map=self.fruit_locule_map,
 

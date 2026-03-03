@@ -69,6 +69,11 @@ def load_img(
     path: str,
     plot: bool = False,
     plot_size: Tuple[int, int] = (20, 10),
+    show_axis: bool = False,
+    x: Optional[int] = None,
+    y: Optional[int] = None,
+    w: Optional[int] = None,
+    h: Optional[int] = None,
 ) -> Optional[np.ndarray]:
     """
     Load an image via :func:`_load_img_cached` and optionally display it.
@@ -84,24 +89,46 @@ def load_img(
         If True, display the image in RGB. Default is False.
     plot_size : tuple of int, optional
         Figure size for the plot. Default is (20, 10).
+    show_axis : bool, optional
+        If True, display axis ticks and labels. Default is True.
+    x : int, optional
+        Left pixel coordinate of the crop region.
+    y : int, optional
+        Top pixel coordinate of the crop region.
+    w : int, optional
+        Width of the crop region in pixels.
+    h : int, optional
+        Height of the crop region in pixels.
 
     Returns
     -------
     np.ndarray or None
-        BGR image array, or ``None`` if loading fails.
+        BGR image array (cropped if x/y/w/h are provided), or ``None`` if loading fails.
     """
     try:
         img = _load_img_cached(path)
-        
+
+        # Crop
+        if any(v is not None for v in (x, y, w, h)):
+            img_h, img_w = img.shape[:2]
+
+            x0 = x if x is not None else 0
+            y0 = y if y is not None else 0
+            x1 = x0 + w if w is not None else img_w
+            y1 = y0 + h if h is not None else img_h
+
+            img = img[y0:y1, x0:x1]
+
+        # Plot
         if plot:
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             plt.figure(figsize=plot_size)
             plt.imshow(img_rgb)
-            plt.axis('off')
+            plt.axis('on' if show_axis else 'off')
             plt.show()
-        
+
         return img.copy()
-        
+
     except Exception as e:
         print(f"Error loading: {e}")
         return None
