@@ -1,0 +1,246 @@
+###############
+# Metadata  ###
+###############
+
+site_name: Traitly
+
+# site_url: https://mariameraz.github.io/traitly
+
+site_description: Fruit phenotyping tool for morphological, structural, and color analysis
+
+site_author: Maria Meraz
+
+repo_name: mariameraz/traitly
+
+repo_url: https://github.com/mariameraz/traitly
+
+# edit_uri: edit/main/docs/
+
+######################
+# Theme configuration #
+######################
+
+theme:
+  name: material
+  icon:
+    alternate: octicons/globe-24
+    repo: fontawesome/brands/github-alt
+    # view: material/eye
+
+  font:
+    text: Roboto
+    code: Roboto Mono
+  palette:
+    - scheme: default
+      # Light theme 
+      primary: black
+      accent: blue gray # Headers, links, etc 
+      toggle:
+        icon: fontawesome/solid/sun
+        # icon: octicons/sun-24
+        name: Switch to dark mode
+
+    - scheme: slate
+      # Dark theme
+      primary: white
+      accent: light blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky # Visible tabs while scrolling.
+    - navigation.path # Shows the current page's path in the nav.
+    - navigation.sections # Shows section headers in the nav as collapsible groups.
+    - navigation.expand # Expand navegation tree
+    - navigation.indexes
+    - navigation.top # Adds a top bar at the bottom of the page 
+    - navigation.footer
+    
+    - search.highlight
+    - search.share
+    - search.suggest
+
+    - content.code.copy
+    - content.code.select
+    - content.code.annotate
+
+    - toc.follow
+    - toc.integrate
+
+
+#######################
+# Markdown extensions #
+#######################
+
+markdown_extensions:
+  - admonition
+  # Enables "admonition blocks" like !!! note, !!! warning, etc.
+
+  - pymdownx.details
+  # Makes admonitions collapsible with "??? note" etc.
+
+  - pymdownx.superfences
+  # Improves fenced code blocks and allows nesting (useful for tabs, diagrams, etc).
+
+  - pymdownx.highlight:
+      anchor_linenums: true
+      # Adds clickable anchors to line numbers in code blocks (nice for references).
+
+  - pymdownx.inlinehilite
+  # Enables inline code highlighting with syntax.
+
+  - pymdownx.tabbed:
+      alternate_style: true
+      # Creates tabbed content blocks; alternate_style changes the visual style.
+  
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+  - tables
+  # Enables GitHub-like Markdown tables.
+
+  - attr_list
+  # Allows adding HTML attributes in Markdown, e.g. { .class #id }.
+
+  - md_in_html
+  # Allows Markdown inside raw HTML blocks.
+
+  - toc:
+      permalink: true
+      # Adds a permalink icon next to headings.
+
+
+###########
+# Plugins #
+###########
+
+plugins:
+  - search
+
+  - i18n:
+      docs_structure: folder
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+
+        - locale: es
+          name: Español
+          build: true
+
+          nav_translations:
+            Home: Inicio
+            Installation: Instalación
+            Workflow: Flujo de Trabajo
+            Trait Table: Tabla de Traits
+            Tutorials: Tutoriales
+            Quickstart: Inicio Rápido
+            Internal Analysis: Análisis Interno
+            External Analysis: Análisis Externo
+            API Reference: Referencia API
+            Changelog: Historial de Cambios
+            Image Specifications: Especificaciones de Imágenes
+            Internal Analyzer Class: Clase de Analizador Interno
+            External Analyzer Class: Clase de Analizador Externo
+            Traitly Architecture: Arquitectura de Traitly
+
+  - mkdocstrings:
+      # Auto-generates API docs from docstrings (e.g., Python modules/classes).
+      handlers:
+        python:
+          options:
+            docstring_style: numpy
+            # Interpret docstrings using NumPy style sections (Parameters, Returns, etc.)
+
+            show_source: false
+            # Hide the source code panel.
+
+            show_root_heading: true
+            # Show a heading for the root object.
+
+            show_category_heading: true
+            # Adds headings for categories like "Functions", "Classes", etc.
+
+            members_order: source
+            # Order members as they appear in source file (alternatives: alphabetical, etc.)
+
+####################
+# Navigation setup #
+####################
+
+nav:
+  - Home: index.md
+
+  - Installation: installation.md
+
+  - Workflow: 
+      - Traitly Architecture: overview.md
+      - Internal analysis: 
+        - Image Specifications: int_image_requirements.md
+        - Internal Analyzer Class: internal_class.md  
+      - External analysis:
+        - Image Specifications: ext_image_requirements.md
+        - External Analyzer Class: external_class.md
+
+
+  - Trait Table: traits.md
+
+  - Tutorials:
+      # This creates a nested nav section "Tutorials".
+      - Quickstart: tutorials/quickstart.md
+      - External Analysis: tutorials/external.md
+
+  - API Reference:
+      # Another nested section.
+      - Analyzers:
+          # Deeper nesting for grouping.
+          - FruitInternalAnalyzer: en/api/internal_analysis.md
+          - FruitExternalAnalyzer: en/api/external_analysis.md
+
+      - Modules:
+          - mask: en/api/mask.md
+          - processing: en/api/processing.md
+          - color_analysis: en/api/color_analysis.md
+          - symmetry: en/api/symmetry.md
+          - color_plot: en/api/color_plot.md
+          - analysis_parameters: en/api/analysis_parameters.md
+
+  - Changelog: en/changelog.md
+
+#######################
+# Extra configuration ##
+#######################
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/mariameraz/traitly
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/alemeraz
+    - icon: fontawesome/brands/python
+      link: https://test.pypi.org/project/traitly/
+    - icon: fontawesome/solid/envelope
+      link: mailto:<ma.torresmeraz@gmail.com>
+
+  alternate:
+    - name: English
+      link: /traitly/
+      lang: en
+
+    - name: Español
+      link: /traitly/es/
+      lang: es
+
+copyright: Copyright &copy; 2026 Maria Alejandra Torres Meraz
+
+
+# Custom styling
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - stylesheets/animations.js
