@@ -1,108 +1,155 @@
-# `traitly.fruit_phenotyping.internal_analysis`
+<div class="animate" markdown>
 
-Módulo principal para el análisis interno de frutos: morfología, color y simetría.
+# Análisis interno: Clase y Métodos
 
----
-
-## Descripción general
-
-Este módulo provee la clase `FruitInternalAnalyzer`. Soporta análisis de imagen individual y procesamiento por lotes desde una carpeta.
-
-### Pipeline de análisis típico
-
-```
-1. load_image()
-2. setup_measurements()
-3. generate_fruit_mask()
-4. enhance_locule_contrast()     <- opcional
-5. generate_locule_mask()        <- opcional
-6. detect_fruits()
-7. analyze_morphology() y/o analyze_color()
-```
-
-Para procesamiento por lotes, los pasos 1–7 se orquestan automáticamente mediante `analyze_folder()`.
-
-<br>
-
+En esta sección encontrarás todo lo que necesitas para usar `FruitInternalAnalyzer`, la clase principal para analizar imágenes de cortes transversales de frutos. Aquí se explica cada método, sus parámetros y cómo utilizarlos en tu flujo de trabajo.
 
 ---
 
 ## Clase `FruitInternalAnalyzer`
 
-Analizador principal de morfología y color de frutos a partir de imágenes segmentadas.
+`FruitInternalAnalyzer` es la herramienta principal para analizar la morfología interna, color y simetría de frutos a partir de imágenes de cortes transversales. Puedes usarla para procesar una sola imagen o una carpeta completa con cientos de imágenes.
 
 ```python
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
 
-analyzer = FruitInternalAnalyzer("ruta/a/imagen.jpg")
+# Para analizar una imagen
+analizador = FruitInternalAnalyzer("ruta/de/mi/imagen.jpg")
+
+# Para analizar varias imágenes en carpeta
+analizador = FruitInternalAnalyzer("ruta/de/mi/carpeta/con/imagenes/")
 ```
-
-> 💡 Para análisis externo (sin segmentación de lóculos), usar `FruitExternalAnalyzer`.
-
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `image_path` | `str` | Ruta a un archivo de imagen o directorio |
+| `image_path` | `str` | Ruta a la imagen o carpeta que quieres analizar |
 
-Lanza `FileNotFoundError` si la ruta no existe.
+
+!!! tip "Recomendación"
+    Cuando tengas una carpeta con varias imágenes para analizar, te sugerimos:
+    
+    1. **Comienza con una imagen representativa** para ajustar los parámetros
+    2. Experimenta con los métodos paso a paso hasta obtener buenos resultados
+    3. Guarda la configuración ideal con `save_parameters()`
+    4. Usa `analyze_folder(json_path="tu_archivo.json")` para procesar todo el lote automáticamente con los mismos parámetros
+    
+    Para ver ejemplos prácticos de este flujo de trabajo, consulta los [Tutoriales](tutorials/quickstart.md).
+
+
+
+<br>
+
+</div>
+
+---
+
+## Cómo se organiza el análisis
+
+Cuando trabajas con `FruitInternalAnalyzer`, el análisis sigue este orden lógico:
+
+```python
+from traitly.fruit_phenotyping import FruitInternalAnalyzer
+
+# Analizar una sola imágen
+analyzer = FruitInternalAnalyzer('ruta/a/mi/imagen.jpg')
+
+analyzer.load_image()                     # Cargar imagen
+analyzer.setup_measurements()             # Configurar calibración y etiquetas
+analyzer.generate_fruit_mask()            # Separar frutos del fondo
+analyzer.enhance_locule_contrast()        # (Opcional) Mejorar contraste de lóculos
+analyzer.generate_locule_mask()           # (Opcional) Segmentar lóculos
+analyzer.detect_fruits()                  # Identificar frutos individuales
+analyzer.analyze_morphology()             # Obtener medidas morfológicas
+analyzer.analyze_color()                  # (Opcional) Obtener medidas de color
+
+## Guardar resultados
+analyzer.results.save_all()               # Guardar todos los resultados (CSV e imágen anotada)     
+analyzer.save_parameters()                # (Opcional) Guardar los parámetros usados en la sesión
+
+```
+
+Si trabajas con lotes de imágenes, no necesitas ejecutar estos pasos uno por uno, `analyze_folder()` lo hace todo automáticamente:
+
+```python
+# Analizar múltiples imágenes
+analyzer = FruitInternalAnalyzer('ruta/a/mi/carpeta')              # Iniciar la clase con la ruta de tu carpeta
+analyzer.analyze_folder(json_path = 'ruta/a/mi/parameters.json')   # Correr el análisis usando, opcionalmente, los parámetros guardados
+
+```
+
 
 <br>
 
 ---
 
-### Atributos principales
+## Lo que puedes obtener del analizador
 
-| Atributo | Tipo | Descripción |
-|----------|------|-------------|
-| `img_path` | `str` | Ruta a la imagen o carpeta |
-| `img` | `ndarray` | Imagen cargada en formato BGR |
-| `img_rgb` | `ndarray` | Imagen en formato RGB |
-| `img_hsv` | `ndarray` | Imagen en espacio de color HSV |
-| `mask_fruit` | `ndarray` | Máscara binaria de frutos |
-| `mask_locules` | `ndarray` | Máscara binaria resultado de fusionar la máscara de frutos y lóculos, donde los lóculos aparecen en negro (0) y el resto del fruto en blanco (1) |
-| `contours` | `list` | Contornos de frutos detectados |
-| `fruit_locule_map` | `dict` | Mapeo de fruto -> lóculos |
-| `px_per_cm` | `float` | Densidad de píxeles por centímetro |
-| `label_text` | `str` | Texto de etiqueta detectado |
-| `results` | `ResultsImage` | Resultados del análisis |
-| `parameters` | `AnalysisParameters` | Parámetros y metadata de sesión |
+Después de ejecutar los métodos, el analizador guarda los resultados en atributos que puedes consultar:
+
+| Atributo | Qué contiene |
+|----------|--------------|
+| `img_path` | Ruta de la imagen que estás analizando |
+| `img`, `img_rgb`, `img_hsv` | La imagen en diferentes formatos de color |
+| `mask_fruit` | Máscara donde los frutos aparecen en blanco y el fondo en negro |
+| `mask_locules` | Máscara donde los lóculos aparecen en negro y el resto del fruto en blanco (si corriste `generate_locule_mask()`) |
+| `contours` | Lista de contornos de todos los frutos detectados |
+| `fruit_locule_map` | Relación de qué lóculos pertenecen a cada fruto |
+| `px_per_cm` | Factor de conversión de píxeles a centímetros (si calibraste) |
+| `label_text` | Texto de la etiqueta detectada (si usaste detección) |
+| `results` | Todos los resultados del análisis (tablas + imagen anotada) |
+| `parameters` | Parámetros que usaste en esta sesión |
 
 <br>
 
 ---
 
-## Métodos
+## Métodos:
 
-<br>
+!!! example ""
+    Aquí explicamos cada método con ejemplos prácticos. Todos los parámetros tienen valores por defecto, así que puedes empezar con lo básico e ir ajustando según tus necesidades.
 
-### `load_image(plot, plot_size)`
+
+
+### `load_image`
 
 Carga la imagen y prepara las representaciones internas (BGR, RGB, HSV).
+Opcionalmente puede recortar una región de interés con `x`, `y`, `w`, `h`.
 
 ```python
 analyzer.load_image(plot=True, plot_size=(5, 5))
+analyzer.load_image(plot=True, show_axis=True, x=1500, y=0, w=2600, h=2700)
 ```
+
+<br>
 
 | Parámetro | Tipo | Default | Descripción |
 |-----------|------|---------|-------------|
 | `plot` | `bool` | `True` | Muestra la imagen cargada |
 | `plot_size` | `tuple` | `(5, 5)` | Tamaño de la figura |
-
-Lanza `ValueError` si no hay imagen, la extensión no es válida o la carga falla.
+| `show_axis` | `bool` | `False` | Muestra los ejes en el plot |
+| `x` | `int` | `None` | Coordenada izquierda del recorte |
+| `y` | `int` | `None` | Coordenada superior del recorte |
+| `w` | `int` | `None` | Ancho del recorte en píxeles |
+| `h` | `int` | `None` | Alto del recorte en píxeles |
 
 <br>
 
 ---
 
 
-### `setup_measurements(...)`
-Realiza la detección de etiqueta y el cálculo del factor de escala píxel/cm.
+### `setup_measurements`
 
-Notas:
-- Cuando `detect_label=True`, la etiqueta se detecta en orden: primero QR y si no se encuentra, recurre a OCR. Para saltar la detección de QR e ir directo a OCR, activar `skip_qr=True`.
-- Cuando `fast_calibration=False` (default), la referencia de tamaño se detecta primero con YOLO y si falla, recurre a las medidas físicas proporcionadas (`width_cm`, `length_cm`). Si no se encuentra referencia y `width_cm` y `length_cm` son `None`, los resultados se expresan en píxeles.
-- Para la detección de la referencia de tamaño, se asume que los círculos de la referencia son de color negro y que el fondo de la referencia es blanco.
-- Cuando se utiliza la referencia de tamaño para la calibración, el factor píxel/cm se calcula a partir del diámetro promedio de todos los círculos detectados. Por defecto, se descartan los círculos cuyo diámetro se desvía más de 2 desviaciones estándar respecto al promedio, con el fin de evitar sesgos en la estimación de la escala.
+Realiza la detección de etiqueta y la referencia de tamaño y calcula el factor de escala píxel/cm.
+
+??? note "Notas"
+
+    - Cuando `detect_label=True`, la etiqueta se detecta en orden: primero QR y si no se encuentra, recurre a OCR. Para saltar la detección de QR e ir directo a OCR, activar `skip_qr=True`.
+
+    - Cuando `fast_calibration=False` (default), la referencia de tamaño se detecta primero con YOLO y si falla, recurre a las medidas físicas de la imagen proporcionadas (`width_cm`, `length_cm`). Si no se encuentra referencia y `width_cm` y `length_cm` son `None`, los resultados se expresan en píxeles.
+    
+    - Para la detección de la referencia de tamaño, se asume que los círculos de la referencia son de color negro y que el fondo de la referencia es blanco.
+
+    - Cuando se utiliza la referencia de tamaño para la calibración, el factor píxel/cm se calcula a partir del diámetro promedio de todos los círculos detectados. Por defecto, se descartan los círculos cuyo diámetro se desvía más de 2 desviaciones estándar respecto al promedio, con el fin de evitar sesgos en la estimación de la escala.
 
 
 ```python
@@ -121,6 +168,7 @@ analyzer.setup_measurements(
 )
 ```
 
+<br>
 
 | Parámetro | Tipo | Default | Descripción |
 |-----------|------|---------|-------------|
@@ -141,39 +189,39 @@ analyzer.setup_measurements(
 | `plot_size` | `tuple` | `(5, 5)` | Tamaño de figura para los plots |
 | `verbose` | `bool` | `True` | Si `True`, imprime resultados en consola |
 
-> 👉 Internamente llama a `setup_label()` y `setup_calibration()`.
 
 <br>
 
 ---
 
-### `generate_color_scatterplot(sample_size, plot_size)`
+### `generate_color_scatterplot`
 
-Muestra un scatterplot de los colores de los píxeles de la **imagen completa** (frutos, fondo, referencias, etcétera) en el espacio HSV. Es útil para seleccionar umbrales adecuados antes de crear la máscara (parámetros `lower_hsv` y `upper_hsv` en `generate_fruit_mask`).
+*Opcional*
+
+Muestra un scatterplot de los colores de los píxeles de la **imagen completa** (frutos, fondo, referencias, etcétera) en el espacio HSV. Es útil para seleccionar umbrales adecuados antes de crear la máscara (parámetros `lower_hsv` y `upper_hsv` en `generate_fruit_mask()`).
 
 ```python
 analyzer.generate_color_scatterplot(sample_size=10000)
 ```
+<br>
 
 | Parámetro | Tipo | Default | Descripción |
 |-----------|------|---------|-------------|
 | `sample_size` | `int` | `10000` | Número de píxeles a muestrear para el plot |
 | `plot_size` | `tuple` | `(18, 5)` | Tamaño de la figura |
 
-Lanza `ValueError` si no hay imagen cargada o `sample_size` no es un valor entero positivo.
 
 <br>
 
 ---
 
-### `generate_fruit_mask(...)`
+### `generate_fruit_mask`
 
 Genera una máscara binaria segmentando el fondo de la imagen en el espacio HSV y detectando todo lo que no corresponde al fondo (frutos, referencia de tamaño, etiqueta, etcétera).
 
 Por defecto, se asume un fondo negro, el cual es removido automáticamente. En la máscara resultante, el fondo se representa en negro (0) y los frutos en blanco (1). En frutos con lóculos vacíos (por ejemplo, chile o cranberry), las regiones internas correspondientes a los lóculos pueden aparecer como negro, ya que no contienen tejido del fruto.
 
-Si se detectan regiones correspondientes a la referencia de tamaño o a la etiqueta en `setup_measurements`, estas áreas se enmascaran en negro en la máscara final. No obstante, pueden permanecer contornos residuales, los cuales pueden ser descartados posteriormente durante los análisis de filtrado de contornos. Si dichas regiones no se detectan previamente, aparecerán como blanco en la máscara, al ser clasificadas como no-fondo.
-
+Si se detectan regiones correspondientes a la referencia de tamaño o a la etiqueta en `setup_measurements()`, estas áreas se enmascaran en negro en la máscara final. No obstante, pueden permanecer contornos residuales, los cuales pueden ser descartados posteriormente durante los análisis de filtrado de contornos. Si dichas regiones no se detectan previamente, aparecerán como blanco en la máscara, al ser clasificadas como no-fondo.
 
 ```python
 # Usando rangos de hsv personalizados
@@ -186,6 +234,8 @@ analyzer.generate_fruit_mask(
 analyzer.generate_fruit_mask(background_color = 'white')
 
 ```
+
+<br>
 
 
 | Parámetro | Tipo | Default | Descripción |
@@ -208,20 +258,22 @@ analyzer.generate_fruit_mask(background_color = 'white')
 | `plot` | `bool` | `True` | Muestra la máscara generada |
 | `plot_size` | `tuple` | `(5, 5)` | Tamaño de la figura |
 
-Lanza `ValueError` si no hay imagen cargada.
+
 
 <br>
 
 ---
 
-### `enhance_locule_contrast(...)` *(opcional)*
+### `enhance_locule_contrast` 
 
-Aplica realce de contraste sobre el canal L (Lab) para aumentar la separación entre pericarpio (fruto) y lóculos, facilitando una segmentación por umbral en escala de grises en `generate_locule_mask`.
+*Opcional*
 
-Es especialmente útil cuando los lóculos no son huecos (por ejemplo, tomate o naranja) y por ello no aparecen de color negro (0) en la máscara binaria generada por `generate_fruit_mask`.
+Aplica realce de contraste sobre el canal L (Lab) para aumentar la separación entre pericarpio (fruto) y lóculos, facilitando una segmentación por umbral en escala de grises en `generate_locule_mask()`.
 
-Nota: 
-- Una vez elegido un método con `compare_method=True`, es necesario ejecutar de nuevo la función con `contrast_method='...'` para continuar el pipeline con ese método.
+Es especialmente útil cuando los lóculos no son huecos (por ejemplo, tomate o naranja) y por ello no aparecen de color negro (0) en la máscara binaria generada por `generate_fruit_mask()`.
+
+??? note "Nota" 
+    Una vez elegido un método con `compare_method=True`, es necesario ejecutar de nuevo la función con `contrast_method='...'` para continuar el pipeline con ese método.
 
 ```python
 # Compara todos los métodos de contraste
@@ -235,6 +287,7 @@ analyzer.enhance_locule_contrast(
 )
 ```
 
+<br>
 
 | Parámetro         | Tipo              | Default   | Descripción                                                                                                    |
 | ----------------- | ----------------- | --------- | -------------------------------------------------------------------------------------------------------------- |
@@ -254,7 +307,9 @@ analyzer.enhance_locule_contrast(
 
 ---
 
-### `generate_locule_mask(...)` *(opcional)*
+### `generate_locule_mask`
+
+*Opcional*
 
 Genera una máscara binaria de lóculos a partir de una umbralización en el canal L (Lab) previamente realzado, y la fusiona con la máscara de fruto generada por `generate_fruit_mask()`.
 
@@ -278,7 +333,12 @@ analyzer.generate_locule_mask(
     plot=True, 
     invert_locule=True
 )
+
 ```
+
+<br>
+
+
 | Parámetro        | Tipo              | Default  | Descripción                                                                   |
 | ---------------- | ----------------- | -------- | ----------------------------------------------------------------------------- |
 | `thresh_min`     | `int`             | `120`    | Umbral mínimo de binarización del canal L                                     |
@@ -287,17 +347,18 @@ analyzer.generate_locule_mask(
 | `kernel_open`    | `int`     | `None`   | Tamaño del kernel para apertura morfológica aplicado a la máscara de lóculos  |
 | `min_fruit_area` | `int`             | `5000`   | Área mínima (en píxeles) para conservar una región de fruto durante la fusión |
 | `invert_locule`  | `bool`            | `False`  | Invierte internamente la máscara de lóculos después de la umbralización       |
-| `plot`           | `bool`            | `True`   | Muestra la máscara de los lóculos y la máscara final fusionada                                            |
+| `plot`           | `bool`            | `True`   | Muestra la máscara de los lóculos y la máscara final fusionada                  |
 | `plot_size`      | `tuple[int, int]` | `(10, 5)` | Tamaño de la figura                                                           |
 
 
-> ⚠️ **Requiere** que `generate_fruit_mask()` y `enhance_locule_contrast()` hayan sido ejecutados previamente.
+!!! warning "Importante"
+    **Requiere** que `generate_fruit_mask()` y `enhance_locule_contrast()` hayan sido ejecutados previamente.
 
 <br>
 
 ---
 
-## `detect_fruits(...)`
+### `detect_fruits`
 
 Detecta frutos individuales y sus lóculos a partir de una máscara binaria (proveniente de `generate_fruit_mask()` o `generate_locule_mask()` si esta última fue creada).
 
@@ -305,12 +366,14 @@ La detección se basa en contornos y en criterios morfológicos de **tamaño** y
 
 Como resultado, genera dos estructuras principales:
 
-* `self.contours`: lista de contornos detectados (incluye contornos de frutos y, si aplica, contornos internos como lóculos).
-* `self.fruit_locule_map`: diccionario que asocia cada fruto con los índices de los contornos correspondientes a sus lóculos, **agrupados por fruto**.
+* `analyzer.contours`: lista de contornos detectados (incluye contornos de frutos y, si aplica, contornos internos como lóculos).
+* `analyzer.fruit_locule_map`: diccionario que asocia cada fruto con los índices de los contornos correspondientes a sus lóculos, **agrupados por fruto**.
 
-Nota:
-- Cuando se trabaja con imágenes muy grandes, puede utilizarse `rescale_factor` para reducir temporalmente la escala de la imagen durante la detección de contornos. Una vez finalizada la detección, los contornos se re-escalan automáticamente al tamaño original de la imagen para continuar con el procesamiento. Esto puede mejorar el rendimiento computacional, aunque en imágenes con frutos muy pequeños o de baja calidad puede afectar la precisión de la detección.
-- Antes de continuar con el análisis, puedes observar rápidamente los contornos de los frutos detectados con `plot=True`.
+
+??? note "Notas"
+    - Cuando se trabaja con imágenes muy grandes, puede utilizarse `rescale_factor` para reducir temporalmente la escala de la imagen durante la detección de contornos. Una vez finalizada la detección, los contornos se re-escalan automáticamente al tamaño original de la imagen para continuar con el procesamiento. Esto puede mejorar el rendimiento computacional, aunque en imágenes con frutos muy pequeños o de baja calidad puede afectar la precisión de la detección.
+
+    - Antes de continuar con el análisis, puedes observar rápidamente los contornos de los frutos detectados con `plot=True`.
 
 ```python
 analyzer.detect_fruits(
@@ -318,6 +381,9 @@ analyzer.detect_fruits(
     min_fruit_area=500
 )
 ```
+
+<br>
+
 
 | Parámetro               | Tipo                   |       Default | Descripción                                                         |
 | ----------------------- | ---------------------- | ------------: | ------------------------------------------------------------------- |
@@ -333,30 +399,32 @@ analyzer.detect_fruits(
 | `contour_color`         | `tuple[int, int, int]` | `(0, 255, 0)` | Color BGR para dibujar los contornos de los frutos detectados (solo si `plot=True`)              |
 | `contour_thickness`     | `int`                  |           `2` | Grosor de línea para dibujar los contornos de los frutos detectados (solo si `plot=True`)        |
 
-> ⚠️ **Requiere** que exista una máscara (`generate_fruit_mask()` como mínimo).
-Lanza `ValueError` si no hay máscara disponible.
+
+!!! warning "Importante"
+    **Requiere** que exista una máscara (`generate_fruit_mask()` como mínimo).
 
 <br>
 
 ---
 
 
-### `analyze_morphology(...)`
+### `analyze_morphology`
 
 Extrae métricas morfológicas de los frutos detectados y métricas asociadas a sus lóculos y pericarpio.
 
-Los resultados se almacenan en `self.results` como una instancia de `ResultsImage` (`traitly.fruit_phenotyping.results_image`). Esta clase contiene:
+Los resultados se almacenan en `analyzer.results` como una instancia de `ResultsImage` (`traitly.fruit_phenotyping.results_image`). Esta clase contiene:
 
-* `self.results.morphology_results`: `pd.DataFrame` con las métricas morfológicas de cada fruto.
-* `self.results.annotated_img`: imagen anotada para inspección visual.
+* `analyzer.results.morphology_results`: `pd.DataFrame` con las métricas morfológicas de cada fruto.
+* `analyzer.results.annotated_img`: imagen anotada para inspección visual.
 
-Además, `self.results` incluye métodos para guardar los resultados:
+Además, `analyzer.results` incluye métodos para guardar los resultados:
 
-* `self.results.save_all()` guarda la imagen anotada y el archivo CSV.
-* `self.results.save_csv()` guarda únicamente el CSV.
-* `self.results.save_img()` guarda únicamente la imagen.
-
-Por defecto, los archivos se guardan en la misma carpeta que la imagen de entrada, utilizando como base el nombre del archivo original. No obstante, el directorio de salida y un nombre base alternativo pueden especificarse mediante `output_dir='RUTA/'` y `base_name='nuevo_nombre'`, respectivamente. Para más detalles y parámetros adicionales, consultar la documentación de la clase `ResultsImage`.
+```python
+analyzer.results.save_all() # Guarda la imagen anotada y el archivo CSV
+analyzer.results.save_csv() # Guarda únicamente el CSV
+analyzer.results.save_img() # Guarda únicamente la imagen
+```
+Por defecto, los archivos se guardan en la misma carpeta que la imagen de entrada, utilizando como base el nombre del archivo original. No obstante, el directorio de salida y un nombre base alternativo pueden especificarse mediante `output_dir='RUTA/'` y `base_name='nuevo_nombre'`, respectivamente. Para más detalles y parámetros adicionales, consultar la documentación de la clase `ResultsImage` en **Referencia API**.
 
 En la imagen anotada se indica un **ID único para cada fruto**, su **número de lóculos**, y se resaltan los siguientes elementos:
 
@@ -368,11 +436,32 @@ En la imagen anotada se indica un **ID único para cada fruto**, su **número de
 * **rectángulo del *bounding box***,
 * **eje mayor** (azul) y **eje menor** (verde).
 
-Para una descripción detallada de los *traits* calculados y de las anotaciones visuales, consultar la sección **Tabla de traits** en la [documentación](`docs/documentation_ES.md`).
+Para una descripción detallada de los *traits* calculados y de las anotaciones visuales, consultar la [Tabla de Traits](`traits.md`).
+
+??? note "Notas sobre modos de contorno"
+
+    Para análisis de estampas o frutos con bordes muy irregulares, puede ser útil probar distintos `contour_mode` para suavizar el contorno:
+
+    - **`'raw'`** (default): Usa el contorno original sin modificaciones. Es el más preciso pero también el más sensible a irregularidades del borde.
+    - **`'hull'`**: Calcula el polígono convexo que envuelve el fruto, rellenando las entradas o hendiduras. Útil cuando las irregularidades del borde no son parte de la morfología natural del fruto (por ejemplo, daños mecánicos o sombras) y se quiere recuperar la forma convexa esperada.
+    - **`'approx'`**: Simplifica el contorno reduciendo el número de vértices, suavizando pequeñas irregularidades sin perder la forma general.
+    - **`'ellipse'`**: Ajusta una elipse al contorno del fruto. Ideal para frutos de forma ovalada o cuando solo importa evaluar largo y ancho.
+    - **`'circle'`**: Ajusta un círculo al contorno. Útil para frutos esféricos o cuando solo interesa el diámetro equivalente.
+
+    <br>
+
+    Dependiendo del modo (excepto `'raw'`), algunos *traits* pueden quedar fijados por construcción. Por ejemplo:
+
+    - Con `'circle'`, la circularidad del fruto será `1` (círculo perfecto) para todos los frutos.
+    - Con `'ellipse'`, ciertas métricas de forma se derivarán de la elipse ajustada en lugar del contorno real.
 
 
-**Nota:** 
-- Para análisis de estampas o frutos con bordes muy irregulares, puede ser útil probar distintos `contour_mode` (por ejemplo, `'hull'` o `'approx'`) para suavizar el contorno. Dependiendo del modo (excepto `'raw'`), algunos *traits* pueden quedar fijados por construcción; por ejemplo, si se usa `'circle'`, la circularidad del fruto será `1` (circulo perfecto) para todos los frutos.
+    <div style="text-align: center;">
+        <img src="../../assets/images/contours.png" alt="contours" width="800">
+        <p><em>Ejemplos de los contornos disponibles con `contour_mode` </em></p>
+    </div>
+
+
 ```python
 analyzer.analyze_morphology(
     contour_mode="hull",
@@ -380,6 +469,8 @@ analyzer.analyze_morphology(
     label_color=(255,255,0)
 )
 ```
+
+<br>
 
 | Parámetro                   | Tipo                 | Default           | Descripción                                                                                      |
 | --------------------------- | -------------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
@@ -407,48 +498,61 @@ analyzer.analyze_morphology(
 | `centroid_locule_thickness` | `int`                | `2`               | Tamaño del marcador del centroide de lóculos                                                     |
 
 
-> ⚠️ **Requiere** que exista una máscara (`generate_fruit_mask()` como mínimo) y que `detect_fruits()` haya sido ejecutada (`mask_fruit`, `contours` y `fruit_locule_map`). Lanza `ValueError` si falta cualquiera de estos o si no se detectaron frutos válidos.
+!!! warning "Importante"
+    **Requiere** que exista una máscara (`generate_fruit_mask()` como mínimo) y que `detect_fruits()` haya sido ejecutado.
 
 <br>
 
 ---
-### `analyze_color(...)`
+### `analyze_color`
 
 Extrae características de color de los tejidos de los frutos detectados a partir de la imagen original y las máscaras generadas en el pipeline.
 
 La extracción de color siempre utiliza los contornos originales en modo 'raw', independientemente del contour_mode seleccionado en analyze_morphology(). Esto garantiza que el área de extracción de color corresponda fielmente a la región segmentada en la máscara, sin verse afectada por simplificaciones geométricas del contorno.
-Los resultados se almacenan en `self.results` como una instancia de `ResultsImage` (`traitly.fruit_phenotyping.results_image`). Esta clase contiene:
+Los resultados se almacenan en `analyzer.results` como una instancia de `ResultsImage` (`traitly.fruit_phenotyping.results_image`). Esta clase contiene:
 
-* `self.results.color_results`: `pd.DataFrame` con las métricas de color de cada fruto/tejido.
-* `self.results.annotated_img`: imagen anotada utilizada para inspección visual de los IDs y contornos durante la extracción de color.
+* `analyzer.results.color_results`: `pd.DataFrame` con las métricas de color de cada fruto/tejido.
+* `analyzer.results.annotated_img`: imagen anotada utilizada para inspección visual de los IDs y contornos durante la extracción de color.
 
-Además, `self.results` incluye métodos para guardar los resultados:
+Además, `analyzer.results` incluye métodos para guardar los resultados:
 
-* `self.results.save_all()` guarda la imagen anotada y el archivo CSV.
-* `self.results.save_csv()` guarda únicamente el CSV.
-* `self.results.save_img()` guarda únicamente la imagen.
+```python
+analyzer.results.save_all() # Guarda la imagen anotada y el archivo CSV.
+analyzer.results.save_csv() # Guarda únicamente el CSV.
+analyzer.results.save_img() # Guarda únicamente la imagen.
+```
 
 Por defecto, los archivos se guardan en la misma carpeta que la imagen de entrada, utilizando como base el nombre del archivo original. No obstante, el directorio de salida y un nombre base alternativo pueden especificarse mediante `output_dir='RUTA/'` y `base_name='nuevo_nombre'`, respectivamente. Para más detalles y parámetros adicionales, consultar la documentación de la clase `ResultsImage`.
 
-Esta función extrae color para los distintos tejidos del fruto: **pericarpio total**, **pericarpio externo**, **pericarpio interno** y **lóculos**. Para inspeccionar visualmente cómo se segmentan estos tejidos, puede consultarse `generate_single_fruit_masks(...)`. Si no se desean todos los tejidos, puede seleccionarse uno específico con `tissue='...'`.
+Esta función extrae color para los distintos tejidos del fruto: **pericarpio total**, **pericarpio externo**, **pericarpio interno** y **lóculos**. Para inspeccionar visualmente cómo se segmentan estos tejidos, puede consultarse `generate_single_fruit_masks`. Si no se desean todos los tejidos, puede seleccionarse uno específico con `tissue='...'`.
+
+<div style="text-align: center;">
+    <img src="../../assets/images/internal_tissues.png" alt="Configuración con caja negra" width="900">
+    <p><em>Ejemplo de tejidos para los cuales se extrae color en rodajas de arándano rojo</em></p>
+</div>
 
 
-**Nota:**
+??? note "Notas"
+    * `analyze_color()` es **independiente** de `analyze_morphology()`. Si se ejecuta únicamente `analyze_color()`, se genera una imagen anotada básica con el **ID del fruto**, su **número de lóculos**, el **contorno del fruto** (pericarpio externo) en verde y los **contornos de los lóculos** en rosa.
+    * Si `analyze_morphology()` fue ejecutada previamente, al guardar resultados (por ejemplo con `save_all()`), se **reutiliza** la imagen anotada de morfología, ya que contiene una anotación más completa.
+    * Si se ejecuta `analyze_color()` primero (sin guardar) y posteriormente `analyze_morphology()`, al guardar resultados se utilizará la imagen anotada generada por `analyze_morphology()`.
+    * La extracción de color siempre utiliza los contornos originales en modo 'raw', independientemente del contour_mode seleccionado en analyze_morphology(). Esto garantiza que el área de extracción de color corresponda fielmente a la región segmentada en la máscara, sin verse afectada por simplificaciones geométricas del contorno.
+    * Por defecto, la función calcula un estadístico resumen (`'mean'` o `'median'`) por canal y tejido. Alternativamente, puede calcular histogramas de color por píxel activando `get_color_histogram=True`, lo cual devuelve distribuciones completas por canal en lugar de un solo valor resumen.
 
-* `analyze_color()` es **independiente** de `analyze_morphology()`. Si se ejecuta únicamente `analyze_color()`, se genera una imagen anotada básica con el **ID del fruto**, su **número de lóculos** y el **contorno del fruto** (pericarpio externo) en verde.
-* Si `analyze_morphology()` fue ejecutada previamente, al guardar resultados (por ejemplo con `save_all()`), se **reutiliza** la imagen anotada de morfología, ya que contiene una anotación más completa.
-* Si se ejecuta `analyze_color()` primero (sin guardar) y posteriormente `analyze_morphology()`, al guardar resultados se utilizará la imagen anotada generada por `analyze_morphology()`.
-* La extracción de color siempre utiliza los contornos originales en modo 'raw', independientemente del contour_mode seleccionado en analyze_morphology(). Esto garantiza que el área de extracción de color corresponda fielmente a la región segmentada en la máscara, sin verse afectada por simplificaciones geométricas del contorno.
-* Por defecto, la función calcula un estadístico resumen (`'mean'` o `'median'`) por canal y tejido. Alternativamente, puede calcular histogramas de color por píxel activando `get_color_histogram=True`, lo cual devuelve distribuciones completas por canal en lugar de un solo valor resumen.
+
+
+
 
 ```python
-df = analyzer.analyze_color(
+analyzer.analyze_color(
     stat='median',
     tissue='outer_pericarp, locules',
     color_space='hsv, lab',
     plot=False
 )
 ```
+
+<br>
 
 | Parámetro                | Tipo                 |           Default | Descripción                                                                              |
 | ------------------------ | -------------------- | ----------------: | ---------------------------------------------------------------------------------------- |
@@ -469,23 +573,17 @@ df = analyzer.analyze_color(
 | `locule_thickness`       | `int`                |               `2` | Grosor del contorno de lóculos (BGR)                                                     |
 | `get_color_histogram`    | `bool`               |           `False` | Si `True`, retorna histogramas por píxel en lugar de estadísticos resumen                |
 
-> ⚠️ **Requiere** que exista una máscara (`generate_fruit_mask()` o `generate_locule_mask()`) y que `detect_fruits()` haya sido ejecutada (`mask_fruit`, `contours` y `fruit_locule_map`). Lanza `ValueError` si falta cualquiera de estos o si no se detectaron frutos válidos.
 
-```python
-analyzer.analyze_color(
-    tissue="outer_pericarp",
-    color_space="lab",
-    plot=True,
-    label_position="bottom",
-    label_color=(255, 255, 0)
-)
-```
+!!! warning "Importante"
+    **Requiere** que exista una máscara (`generate_fruit_mask()` o `generate_locule_mask()`) y que `detect_fruits()` haya sido ejecutado.
 
 <br>
 
 ---
 
-## `generate_single_fruit_masks(...)` *(opcional)*
+### `generate_single_fruit_masks` 
+
+*Opcional*
 
 Genera y visualiza máscaras de tejidos para un fruto específico, útil para inspeccionar en detalle los resultados de la segmentación. 
 
@@ -499,6 +597,7 @@ El parámetro `fruit_id` corresponde al identificador del fruto en la imagen ano
 # Mostrar máscaras superpuestas para el fruto 10
 analyzer.generate_single_fruit_masks(fruit_id=10, overlay=True)
 ```
+<br>
 
 | Parámetro        | Tipo              |  Default | Descripción                                                                    |
 | ---------------- | ----------------- | -------: | ------------------------------------------------------------------------------ |
@@ -509,36 +608,41 @@ analyzer.generate_single_fruit_masks(fruit_id=10, overlay=True)
 | `margin`         | `int`             |      `5` | Margen (px) alrededor del recorte del fruto                                    |
 
 
+!!! warning "Importante"
+    **Requiere** que exista una máscara y que `detect_fruits()` haya sido ejecutado.
 
-> ⚠️ **Requiere** que exista una máscara y que `detect_fruits()` haya sido ejecutada (`mask_fruit`, `contours` y `fruit_locule_map`).
-Lanza `ValueError` si no hay máscara, no hay contornos, no hay mapeo fruto–lóculos, si se solicita un `fruit_id` que no existe en la imagen, o si no se detectaron frutos.
  
 <br>
 
 ---
 
-### `save_parameters(...)`
+### `save_parameters`
+
+*Opcional*
 
 Exporta los **parámetros de análisis de la sesión actual** en formato `.txt` y `.json`, listos para su inspección, reutilización y reproducibilidad.
 
-Los parámetros almacenados en `self.parameters` se exportan usando como nombre base el de la imagen cargada, generando automáticamente dos archivos:
+Los parámetros almacenados en `analyzer.parameters` se exportan usando como nombre base el de la imagen cargada, generando automáticamente dos archivos:
 
 * `<nombre_imagen>_parameters.txt`: versión legible para inspección humana.
 * `<nombre_imagen>_parameters.json`: versión estructurada para uso programático.
 
 Ambos se guardan por defecto en la misma carpeta que la imagen de entrada, o en el directorio indicado por `output_path`. Son especialmente útiles para:
 
-* reutilizar configuraciones en análisis por lote con `analyze_folder`,
-* ejecutar análisis reproducibles desde la terminal con **Traitly**,
+* reutilizar configuraciones en análisis por lote con `analyze_folder()`,
+* ejecutar análisis reproducibles desde la terminal con Traitly,
 * archivar y compartir pipelines de análisis.
 
-#### Notas
-* Solo se exportan los parámetros de las funciones ejecutadas durante la sesión (segmentación, detección, morfología, color).
-* No retorna ningún valor; imprime en consola las rutas de los archivos generados.
+
+??? notes "Notas"
+    * Solo se exportan los parámetros de las funciones ejecutadas durante la sesión (máscara, segmentación, detección, morfología, color).
+    * No retorna ningún valor; imprime en la consola las rutas de los archivos generados.
 
 ```python
 analyzer.save_parameters()
 ```
+
+<br>
 
 | Parámetro     | Tipo  | Default | Descripción                                                                                             |
 | ------------- | ----- | ------- | ------------------------------------------------------------------------------------------------------- |
@@ -548,33 +652,36 @@ analyzer.save_parameters()
 
 ---
 
-### `plot_image(...)`
+### `plot_image`
+
+*Opcional*
 
 Muestra la imagen original o la imagen **anotada con resultados**, según el valor de `annotated`, reutilizando las imágenes ya almacenadas en memoria sin recargarlas ni regenerarlas.
+
+* Cuando `annotated=False`, se muestra la **imagen original** cargada.
+* Cuando `annotated=True`, se muestra la **imagen anotada** generada durante `analyze_morphology()` o `analyze_color()`.
+
+La imagen anotada corresponde a la almacenada en `analyzer.results.annotated_img` y contiene los identificadores de frutos y las anotaciones visuales generadas durante el análisis.
 
 ```python
 analyzer.plot_image(annotated=True)
 ```
 
-* Cuando `annotated=False`, se muestra la **imagen original** cargada.
-* Cuando `annotated=True`, se muestra la **imagen anotada** generada durante `analyze_morphology()` o `analyze_color()`.
-
-La imagen anotada corresponde a la almacenada en `self.results.annotated_img` y contiene los identificadores de frutos y las anotaciones visuales generadas durante el análisis.
+<br>
 
 | Parámetro   | Tipo              | Default    | Descripción                                                                  |
 | ----------- | ----------------- | ---------- | ---------------------------------------------------------------------------- |
 | `annotated` | `bool`            | `True`     | Si `True`, muestra la imagen anotada; si `False`, muestra la imagen original |
 | `plot_size` | `tuple[int, int]` | `(10, 10)` | Tamaño de la figura                                                          |
 
-⚠️ **Lanza `ValueError`** si `annotated=True` y no se ha ejecutado previamente `analyze_morphology()` ni `analyze_color()`, o si no existe una imagen anotada disponible en `self.results`.
 
 <br>
 
 ---
 
-### `analyze_folder(...)`
+### `analyze_folder`
 
-Procesa por lotes todas las imágenes de la carpeta indicada al inicializar `FruitInternalAnalyzer`, ejecutando el pipeline completo (pasos 1–7) sobre cada imagen de forma secuencial (`num_cores=1`) o en paralelo (`num_cores` > 1). Por defecto se ejecutan tanto el análisis morfológico como el de color; cada uno puede desactivarse de forma independiente con `analyze_morphology=False` o `analyze_color=False`.
+Procesa por lotes todas las imágenes de la carpeta indicada al inicializar `FruitInternalAnalyzer`, ejecutando el pipeline completo sobre cada imagen de forma secuencial (`num_cores=1`) o en paralelo (`num_cores` > 1). Por defecto se ejecutan tanto el análisis morfológico como el de color; cada uno puede desactivarse de forma independiente con `analyze_morphology=False` o `analyze_color=False`.
 
 Por cada imagen analizada se genera una **imagen anotada** con los identificadores y anotaciones visuales del análisis. Los resultados de todas las imágenes se consolidan en un único archivo CSV por tipo de análisis:
 
@@ -583,9 +690,10 @@ Por cada imagen analizada se genera una **imagen anotada** con los identificador
 
 Adicionalmente, se genera siempre un `session_report.txt` con un resumen de la sesión (imágenes procesadas, frutos detectados, tiempos, parámetros utilizados y dependencias). Si alguna imagen falla durante el procesamiento, se genera también un `error_report.txt` detallando qué ocurrió en cada caso.
 
-Todos los archivos se guardan en el directorio indicado por `output_path`, o en una subcarpeta `Results/` dentro de la carpeta de entrada si no se especifica.
+Todos los archivos se guardan en el directorio indicado por `output_path`. Si éste ultimo no se indica, los archivos se guardarán en una subcarpeta `Results/` dentro de la carpeta de entrada.
 
-> 💡 Esta función acepta individualmente todos los parámetros de los pasos 1–7 del pipeline. Sin embargo, para mayor practicidad y reproducibilidad, se recomienda explorar y estandarizar los parámetros sobre una imagen representativa con `save_parameters()` y luego pasar el archivo `.json` generado mediante `json_path`.
+??? note "Nota"
+    Esta función acepta individualmente todos los parámetros de los pasos del pipeline. Sin embargo, para mayor practicidad y reproducibilidad, se recomienda explorar y estandarizar los parámetros sobre una imagen representativa con `save_parameters()` y luego pasar el archivo `.json` generado mediante el parámetro `json_path`.
 
 ```python
 # Usando parámetros individuales
@@ -600,6 +708,9 @@ analyzer.analyze_folder(
 analyzer.analyze_folder(json_path="imagen_parameters.json")
 ```
 
+<br>
+
+
 | Parámetro | Tipo | Default | Descripción |
 |-----------|------|---------|-------------|
 | `analyze_morphology` | `bool` | `True` | Si `True`, ejecuta análisis morfológico sobre cada imagen |
@@ -609,58 +720,60 @@ analyzer.analyze_folder(json_path="imagen_parameters.json")
 | `output_path` | `str` | `None` | Directorio de salida. Si `None`, se crea una subcarpeta `Results/` dentro de la carpeta de entrada |
 | `num_cores` | `int` | `1` | Número de procesos en paralelo. Se limita automáticamente a los núcleos disponibles |
 | `verbose` | `bool` | `True` | Si `True`, imprime progreso y resumen de la sesión |
-| `width_cm` | `float` | `None` | Ancho conocido de la referencia en cm → `setup_measurements` |
-| `length_cm` | `float` | `None` | Largo conocido de la referencia en cm → `setup_measurements` |
-| `diameter_cm` | `float` | `None` | Diámetro conocido de la referencia en cm → `setup_measurements` |
-| `fast_calibration` | `bool` | `None` | Si `True`, omite YOLO y calibra con dimensiones físicas → `setup_measurements` |
-| `skip_qr` | `bool` | `None` | Si `True`, omite detección de QR → `setup_measurements` |
-| `detect_label` | `bool` | `None` | Si `True`, activa detección de etiqueta con OCR → `setup_measurements` |
-| `confidence` | `float` | `None` | Confianza mínima para detección YOLO → `setup_measurements` |
-| `detect_color_checker` | `bool` | `None` | Si `True`, detecta y elimina carta de color → `setup_measurements` |
-| `scale_factor` | `float` | `None` | Factor de reducción para detección de carta de color → `setup_measurements` |
-| `lower_hsv` | `list[int]` | `None` | Umbral HSV inferior para segmentación → `generate_fruit_mask` |
-| `upper_hsv` | `list[int]` | `None` | Umbral HSV superior para segmentación → `generate_fruit_mask` |
-| `background_color` | `str` | `None` | Color de fondo predefinido → `generate_fruit_mask` |
-| `n_iteration` | `int` | `None` | Iteraciones de operaciones morfológicas → `generate_fruit_mask` |
-| `kernel_blur` | `int` | `None` | Tamaño de kernel Gaussian blur → `generate_fruit_mask` |
-| `kernel_open` | `int` | `None` | Tamaño de kernel apertura morfológica → `generate_fruit_mask` |
-| `kernel_close` | `int` | `None` | Tamaño de kernel cierre morfológico → `generate_fruit_mask` |
-| `canny_min` | `int` | `None` | Umbral mínimo Canny → `generate_fruit_mask` |
-| `canny_max` | `int` | `None` | Umbral máximo Canny → `generate_fruit_mask` |
-| `fill_holes` | `bool` | `None` | Si `True`, rellena huecos en la máscara → `generate_fruit_mask` |
-| `apply_convex_hull` | `bool` | `None` | Si `True`, aplica convex hull a cada fruto → `generate_fruit_mask` |
-| `remove_roi` | `bool` | `None` | Si `True`, elimina regiones de referencia y etiqueta → `generate_fruit_mask` |
-| `roi_expansion` | `int` | `None` | Margen en píxeles alrededor de las ROIs → `generate_fruit_mask` |
-| `stamp` | `bool` | `None` | Si `True`, invierte colores antes del enmascaramiento → `generate_fruit_mask` |
-| `contrast_method` | `str` | `None` | Método de realce de contraste → `enhance_locule_contrast` |
-| `gamma` | `float` | `None` | Exponente gamma → `enhance_locule_contrast` |
-| `gain` | `float` | `None` | Ganancia de sigmoid → `enhance_locule_contrast` |
-| `cutoff` | `float` | `None` | Corte de sigmoid → `enhance_locule_contrast` |
-| `c` | `float` | `None` | Factor exponencial → `enhance_locule_contrast` |
-| `kernel_blur_contrast` | `int` | `None` | Blur antes del realce de contraste → `enhance_locule_contrast` |
-| `clip_limit` | `int` | `None` | Límite CLAHE → `enhance_locule_contrast` |
-| `tile_grid_size` | `int` | `None` | Tamaño de grid CLAHE → `enhance_locule_contrast` |
-| `thresh_min` | `int` | `None` | Umbral mínimo de binarización del canal L → `generate_locule_mask` |
-| `thresh_max` | `int` | `None` | Umbral máximo de binarización del canal L → `generate_locule_mask` |
-| `min_fruit_area_locule` | `int` | `None` | Área mínima de fruto durante la fusión de máscara → `generate_locule_mask` |
-| `kernel_close_locule` | `int` | `None` | Kernel de cierre para máscara de lóculos → `generate_locule_mask` |
-| `kernel_open_locule` | `int` | `None` | Kernel de apertura para máscara de lóculos → `generate_locule_mask` |
-| `invert_locule` | `bool` | `None` | Si `True`, invierte la máscara de lóculos → `generate_locule_mask` |
-| `min_fruit_area` | `int` | `None` | Área mínima para aceptar un contorno como fruto → `detect_fruits` |
-| `max_fruit_area` | `int` | `None` | Área máxima para aceptar un contorno como fruto → `detect_fruits` |
-| `min_fruit_circularity` | `float` | `None` | Circularidad mínima para aceptar un fruto → `detect_fruits` |
-| `min_locule_area` | `int` | `None` | Área mínima de lóculo → `detect_fruits` |
-| `min_locule_per_fruit` | `int` | `None` | Número mínimo de lóculos por fruto → `detect_fruits` |
-| `rescale_factor` | `float` | `None` | Factor de reescalado de contornos → `detect_fruits` |
-| `contour_mode` | `str` | `None` | Modo de contorno para métricas morfológicas → `analyze_morphology` |
-| `epsilon` | `float` | `None` | Factor de aproximación de contorno → `analyze_morphology` |
-| `min_locule_area_morph` | `int` | `None` | Área mínima de lóculo para morfología → `analyze_morphology` |
-| `max_locule_area` | `int` | `None` | Área máxima de lóculo → `analyze_morphology` |
-| `angle_shifts` | `int` | `None` | Pasos angulares para simetría → `analyze_morphology` |
-| `num_rays` | `int` | `None` | Rayos para estimación de grosor de pericarpio → `analyze_morphology` |
-| `stat` | `str` | `None` | Estadístico de color: `'mean'` o `'median'` → `analyze_color` |
-| `tissue` | `str` | `None` | Tejido a analizar → `analyze_color` |
-| `color_space` | `str` | `None` | Espacios de color a extraer → `analyze_color` |
-| `get_color_histogram` | `bool` | `None` | Si `True`, calcula histogramas por píxel → `analyze_color` |
+| `width_cm` | `float` | `None` | Ancho conocido de la imagen en cm -> `setup_measurements` |
+| `length_cm` | `float` | `None` | Largo conocido de la image en cm -> `setup_measurements` |
+| `diameter_cm` | `float` | `None` | Diámetro conocido de la referencia en cm -> `setup_measurements` |
+| `fast_calibration` | `bool` | `None` | Si `True`, omite YOLO y calibra con dimensiones físicas -> `setup_measurements` |
+| `skip_qr` | `bool` | `None` | Si `True`, omite detección de QR -> `setup_measurements` |
+| `detect_label` | `bool` | `None` | Si `True`, activa detección de etiqueta con OCR -> `setup_measurements` |
+| `confidence` | `float` | `None` | Confianza mínima para detección YOLO -> `setup_measurements` |
+| `detect_color_checker` | `bool` | `None` | Si `True`, detecta y elimina carta de color -> `setup_measurements` |
+| `scale_factor` | `float` | `None` | Factor de reducción para detección de carta de color -> `setup_measurements` |
+| `lower_hsv` | `list[int]` | `None` | Umbral HSV inferior para segmentación -> `generate_fruit_mask` |
+| `upper_hsv` | `list[int]` | `None` | Umbral HSV superior para segmentación -> `generate_fruit_mask` |
+| `background_color` | `str` | `None` | Color de fondo predefinido -> `generate_fruit_mask` |
+| `n_iteration` | `int` | `None` | Iteraciones de operaciones morfológicas -> `generate_fruit_mask` |
+| `kernel_blur` | `int` | `None` | Tamaño de kernel Gaussian blur -> `generate_fruit_mask` |
+| `kernel_open` | `int` | `None` | Tamaño de kernel apertura morfológica -> `generate_fruit_mask` |
+| `kernel_close` | `int` | `None` | Tamaño de kernel cierre morfológico -> `generate_fruit_mask` |
+| `canny_min` | `int` | `None` | Umbral mínimo Canny -> `generate_fruit_mask` |
+| `canny_max` | `int` | `None` | Umbral máximo Canny -> `generate_fruit_mask` |
+| `fill_holes` | `bool` | `None` | Si `True`, rellena huecos en la máscara -> `generate_fruit_mask` |
+| `apply_convex_hull` | `bool` | `None` | Si `True`, aplica convex hull a cada fruto -> `generate_fruit_mask` |
+| `remove_roi` | `bool` | `None` | Si `True`, elimina regiones de referencia y etiqueta -> `generate_fruit_mask` |
+| `roi_expansion` | `int` | `None` | Margen en píxeles alrededor de las ROIs -> `generate_fruit_mask` |
+| `stamp` | `bool` | `None` | Si `True`, invierte colores antes del enmascaramiento -> `generate_fruit_mask` |
+| `contrast_method` | `str` | `None` | Método de realce de contraste -> `enhance_locule_contrast` |
+| `gamma` | `float` | `None` | Exponente gamma -> `enhance_locule_contrast` |
+| `gain` | `float` | `None` | Ganancia de sigmoid -> `enhance_locule_contrast` |
+| `cutoff` | `float` | `None` | Corte de sigmoid -> `enhance_locule_contrast` |
+| `c` | `float` | `None` | Factor exponencial -> `enhance_locule_contrast` |
+| `kernel_blur_contrast` | `int` | `None` | Blur antes del realce de contraste -> `enhance_locule_contrast` |
+| `clip_limit` | `int` | `None` | Límite CLAHE -> `enhance_locule_contrast` |
+| `tile_grid_size` | `int` | `None` | Tamaño de grid CLAHE -> `enhance_locule_contrast` |
+| `thresh_min` | `int` | `None` | Umbral mínimo de binarización del canal L -> `generate_locule_mask` |
+| `thresh_max` | `int` | `None` | Umbral máximo de binarización del canal L -> `generate_locule_mask` |
+| `min_fruit_area_locule` | `int` | `None` | Área mínima de fruto durante la fusión de máscara -> `generate_locule_mask` |
+| `kernel_close_locule` | `int` | `None` | Kernel de cierre para máscara de lóculos -> `generate_locule_mask` |
+| `kernel_open_locule` | `int` | `None` | Kernel de apertura para máscara de lóculos -> `generate_locule_mask` |
+| `invert_locule` | `bool` | `None` | Si `True`, invierte la máscara de lóculos -> `generate_locule_mask` |
+| `min_fruit_area` | `int` | `None` | Área mínima para aceptar un contorno como fruto -> `detect_fruits` |
+| `max_fruit_area` | `int` | `None` | Área máxima para aceptar un contorno como fruto -> `detect_fruits` |
+| `min_fruit_circularity` | `float` | `None` | Circularidad mínima para aceptar un fruto -> `detect_fruits` |
+| `min_locule_area` | `int` | `None` | Área mínima de lóculo -> `detect_fruits` |
+| `min_locule_per_fruit` | `int` | `None` | Número mínimo de lóculos por fruto -> `detect_fruits` |
+| `rescale_factor` | `float` | `None` | Factor de reescalado de contornos -> `detect_fruits` |
+| `contour_mode` | `str` | `None` | Modo de contorno para métricas morfológicas -> `analyze_morphology` |
+| `epsilon` | `float` | `None` | Factor de aproximación de contorno -> `analyze_morphology` |
+| `min_locule_area_morph` | `int` | `None` | Área mínima de lóculo para morfología -> `analyze_morphology` |
+| `max_locule_area` | `int` | `None` | Área máxima de lóculo -> `analyze_morphology` |
+| `angle_shifts` | `int` | `None` | Pasos angulares para simetría -> `analyze_morphology` |
+| `num_rays` | `int` | `None` | Rayos para estimación de grosor de pericarpio -> `analyze_morphology` |
+| `stat` | `str` | `None` | Estadístico de color: `'mean'` o `'median'` -> `analyze_color` |
+| `tissue` | `str` | `None` | Tejido a analizar -> `analyze_color` |
+| `color_space` | `str` | `None` | Espacios de color a extraer -> `analyze_color` |
+| `get_color_histogram` | `bool` | `None` | Si `True`, calcula histogramas por píxel -> `analyze_color` |
 
-> ⚠️ **Requiere** que `FruitInternalAnalyzer` haya sido inicializado con una ruta de carpeta, no de archivo. Lanza `ValueError` si la ruta no es un directorio o si no se encuentran imágenes válidas en la carpeta.
+
+!!! warning "Importante"
+    **Requiere** que `FruitInternalAnalyzer()` haya sido inicializado con una ruta de carpeta, no de archivo. 
