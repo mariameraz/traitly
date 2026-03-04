@@ -28,3 +28,4 @@ dist/
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+.docs_venv/
