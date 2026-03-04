@@ -1,4 +1,4 @@
-# `traitly.fruit_phenotyping.external_analysis`
+# Internal Análisis: Classe y Métodos
 
 Módulo para el análisis externo de frutos: morfología y color de fruto completo sin segmentación de tejidos internos.
 
@@ -95,7 +95,7 @@ Realiza la detección de etiqueta y el cálculo del factor de escala píxel/cm.
 
 Notas:
 - Cuando `detect_label=True`, la etiqueta se detecta en orden: primero QR y si no se encuentra, recurre a OCR. Para saltar la detección de QR e ir directo a OCR, activar `skip_qr=True`.
-- Cuando `fast_calibration=False` (default), la referencia de tamaño se detecta primero con YOLO y si falla, recurre a las medidas físicas proporcionadas (`width_cm`, `length_cm`). Si no se encuentra referencia y `width_cm` y `length_cm` son `None`, los resultados se expresan en píxeles.
+- Cuando `fast_calibration=False` (default), la referencia de tamaño se detecta primero con YOLO y si falla, recurre a las medidas físicas de la imagen proporcionadas (`width_cm`, `length_cm`). Si no se encuentra referencia y `width_cm` y `length_cm` son `None`, los resultados se expresan en píxeles.
 - Para la detección de la referencia de tamaño, se asume que los círculos de la referencia son de color negro y que el fondo de la referencia es blanco.
 - Cuando se utiliza la referencia de tamaño para la calibración, el factor píxel/cm se calcula a partir del diámetro promedio de todos los círculos detectados. Por defecto, se descartan los círculos cuyo diámetro se desvía más de 2 desviaciones estándar respecto al promedio, con el fin de evitar sesgos en la estimación de la escala.
 - Cuando detect_color_checker=True, la carta de color se detecta usando el módulo MCC de OpenCV (cv2.mcc), compatible con tarjetas estándar de 24 colores (estilo Macbeth). La detección se realiza sobre una versión reducida de la imagen según `scale_factor`, lo que acelera el proceso pero puede afectar la precisión del área detectada para cada cuadro de color. Puedes revisar la detección a detalle con `plot_color_checker=True`.
@@ -118,7 +118,7 @@ analyzer.setup_measurements(
 
 | Parámetro | Tipo | Default | Descripción |
 |-----------|------|---------|-------------|
-| `detect_label` | `bool` | `False` | Si `True`, activa detección de etiqueta (QR → OCR) |
+| `detect_label` | `bool` | `False` | Si `True`, activa detección de etiqueta (QR -> OCR) |
 | `width_cm` | `float` | `None` | Ancho conocido de la imagen en cm |
 | `length_cm` | `float` | `None` | Largo conocido de la imagen en cm |
 | `diameter_cm` | `float` | `None` | Diámetro conocido del círculo de referencia en cm; si no se proporciona, usa 2.5 cm por defecto |
@@ -468,37 +468,37 @@ analyzer.analyze_folder(json_path="imagen_parameters.json")
 | `output_path` | `str` | `None` | Directorio de salida. Si `None`, se crea una subcarpeta `Results/` dentro de la carpeta de entrada |
 | `num_cores` | `int` | `1` | Número de procesos en paralelo. Se limita automáticamente a los núcleos disponibles |
 | `verbose` | `bool` | `True` | Si `True`, imprime progreso y resumen de la sesión |
-| `width_cm` | `float` | `None` | Ancho conocido de la referencia en cm → `setup_measurements` |
-| `length_cm` | `float` | `None` | Largo conocido de la referencia en cm → `setup_measurements` |
-| `diameter_cm` | `float` | `None` | Diámetro conocido de la referencia en cm → `setup_measurements` |
-| `fast_calibration` | `bool` | `None` | Si `True`, omite YOLO y calibra con dimensiones físicas → `setup_measurements` |
-| `skip_qr` | `bool` | `None` | Si `True`, omite detección de QR → `setup_measurements` |
-| `detect_label` | `bool` | `None` | Si `True`, activa detección de etiqueta con OCR → `setup_measurements` |
-| `confidence` | `float` | `None` | Confianza mínima para detección YOLO → `setup_measurements` |
-| `detect_color_checker` | `bool` | `None` | Si `True`, detecta y elimina carta de color → `setup_measurements` |
-| `scale_factor` | `float` | `None` | Factor de reducción para detección de carta de color → `setup_measurements` |
-| `lower_hsv` | `list[int]` | `None` | Umbral HSV inferior para segmentación → `generate_fruit_mask` |
-| `upper_hsv` | `list[int]` | `None` | Umbral HSV superior para segmentación → `generate_fruit_mask` |
-| `background_color` | `str` | `None` | Color de fondo predefinido → `generate_fruit_mask` |
-| `n_iteration` | `int` | `None` | Iteraciones de operaciones morfológicas → `generate_fruit_mask` |
-| `kernel_blur` | `int` | `None` | Tamaño de kernel Gaussian blur → `generate_fruit_mask` |
-| `kernel_open` | `int` | `None` | Tamaño de kernel apertura morfológica → `generate_fruit_mask` |
-| `kernel_close` | `int` | `None` | Tamaño de kernel cierre morfológico → `generate_fruit_mask` |
-| `canny_min` | `int` | `None` | Umbral mínimo Canny → `generate_fruit_mask` |
-| `canny_max` | `int` | `None` | Umbral máximo Canny → `generate_fruit_mask` |
-| `fill_holes` | `bool` | `None` | Si `True`, rellena huecos en la máscara → `generate_fruit_mask` |
-| `apply_convex_hull` | `bool` | `None` | Si `True`, aplica convex hull a cada fruto → `generate_fruit_mask` |
-| `remove_roi` | `bool` | `None` | Si `True`, elimina regiones de referencia y etiqueta → `generate_fruit_mask` |
-| `roi_expansion` | `int` | `None` | Margen en píxeles alrededor de las ROIs → `generate_fruit_mask` |
-| `stamp` | `bool` | `None` | Si `True`, invierte colores antes del enmascaramiento → `generate_fruit_mask` |
-| `min_fruit_area` | `int` | `None` | Área mínima para aceptar un contorno como fruto → `detect_fruits` |
-| `max_fruit_area` | `int` | `None` | Área máxima para aceptar un contorno como fruto → `detect_fruits` |
-| `min_fruit_circularity` | `float` | `None` | Circularidad mínima para aceptar un fruto → `detect_fruits` |
-| `rescale_factor` | `float` | `None` | Factor de reescalado de contornos → `detect_fruits` |
-| `contour_mode` | `str` | `None` | Modo de contorno para métricas morfológicas → `analyze_morphology` |
-| `epsilon` | `float` | `None` | Factor de aproximación de contorno → `analyze_morphology` |
-| `stat` | `str` | `None` | Estadístico de color: `'mean'` o `'median'` → `analyze_color` |
-| `color_space` | `str` | `None` | Espacios de color a extraer → `analyze_color` |
-| `get_color_histogram` | `bool` | `None` | Si `True`, calcula histogramas por píxel → `analyze_color` |
+| `width_cm` | `float` | `None` | Ancho conocido de la imagen en cm -> `setup_measurements` |
+| `length_cm` | `float` | `None` | Largo conocido de la imagen en cm -> `setup_measurements` |
+| `diameter_cm` | `float` | `None` | Diámetro conocido de la referencia en cm -> `setup_measurements` |
+| `fast_calibration` | `bool` | `None` | Si `True`, omite YOLO y calibra con dimensiones físicas -> `setup_measurements` |
+| `skip_qr` | `bool` | `None` | Si `True`, omite detección de QR -> `setup_measurements` |
+| `detect_label` | `bool` | `None` | Si `True`, activa detección de etiqueta con OCR -> `setup_measurements` |
+| `confidence` | `float` | `None` | Confianza mínima para detección YOLO -> `setup_measurements` |
+| `detect_color_checker` | `bool` | `None` | Si `True`, detecta y elimina carta de color -> `setup_measurements` |
+| `scale_factor` | `float` | `None` | Factor de reducción para detección de carta de color -> `setup_measurements` |
+| `lower_hsv` | `list[int]` | `None` | Umbral HSV inferior para segmentación -> `generate_fruit_mask` |
+| `upper_hsv` | `list[int]` | `None` | Umbral HSV superior para segmentación -> `generate_fruit_mask` |
+| `background_color` | `str` | `None` | Color de fondo predefinido -> `generate_fruit_mask` |
+| `n_iteration` | `int` | `None` | Iteraciones de operaciones morfológicas -> `generate_fruit_mask` |
+| `kernel_blur` | `int` | `None` | Tamaño de kernel Gaussian blur -> `generate_fruit_mask` |
+| `kernel_open` | `int` | `None` | Tamaño de kernel apertura morfológica -> `generate_fruit_mask` |
+| `kernel_close` | `int` | `None` | Tamaño de kernel cierre morfológico -> `generate_fruit_mask` |
+| `canny_min` | `int` | `None` | Umbral mínimo Canny -> `generate_fruit_mask` |
+| `canny_max` | `int` | `None` | Umbral máximo Canny -> `generate_fruit_mask` |
+| `fill_holes` | `bool` | `None` | Si `True`, rellena huecos en la máscara -> `generate_fruit_mask` |
+| `apply_convex_hull` | `bool` | `None` | Si `True`, aplica convex hull a cada fruto -> `generate_fruit_mask` |
+| `remove_roi` | `bool` | `None` | Si `True`, elimina regiones de referencia y etiqueta -> `generate_fruit_mask` |
+| `roi_expansion` | `int` | `None` | Margen en píxeles alrededor de las ROIs -> `generate_fruit_mask` |
+| `stamp` | `bool` | `None` | Si `True`, invierte colores antes del enmascaramiento -> `generate_fruit_mask` |
+| `min_fruit_area` | `int` | `None` | Área mínima para aceptar un contorno como fruto -> `detect_fruits` |
+| `max_fruit_area` | `int` | `None` | Área máxima para aceptar un contorno como fruto -> `detect_fruits` |
+| `min_fruit_circularity` | `float` | `None` | Circularidad mínima para aceptar un fruto -> `detect_fruits` |
+| `rescale_factor` | `float` | `None` | Factor de reescalado de contornos -> `detect_fruits` |
+| `contour_mode` | `str` | `None` | Modo de contorno para métricas morfológicas -> `analyze_morphology` |
+| `epsilon` | `float` | `None` | Factor de aproximación de contorno -> `analyze_morphology` |
+| `stat` | `str` | `None` | Estadístico de color: `'mean'` o `'median'` -> `analyze_color` |
+| `color_space` | `str` | `None` | Espacios de color a extraer -> `analyze_color` |
+| `get_color_histogram` | `bool` | `None` | Si `True`, calcula histogramas por píxel -> `analyze_color` |
 
 > ⚠️ **Requiere** que `FruitExternalAnalyzer` haya sido inicializado con una ruta de carpeta, no de archivo. Lanza `ValueError` si la ruta no es un directorio o si no se encuentran imágenes válidas en la carpeta.
