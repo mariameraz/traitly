@@ -162,8 +162,7 @@ def extract_color_features(img: np.ndarray,
 
     Calculates mean or median for each channel across the valid (non-dark,
     non-background) pixels within the mask region. Supports RGB, Lab,
-    HSV, and Grayscale color spaces. For HSV, hue is summarized using
-    circular statistics and a homogeneity index is also returned.
+    HSV, and Grayscale color spaces. 
 
     Parameters
     ----------
@@ -272,11 +271,6 @@ def extract_color_features(img: np.ndarray,
         out['hue_circular_std'] = float(h_cstd)
 
 
-        if np.isnan(h_cstd):
-            out['hue_homogeneity'] = np.nan
-        else:
-            out['hue_homogeneity'] = float(np.clip(1.0 - (h_cstd / 180.0), 0.0, 1.0))
-
     return out
 
 
@@ -318,7 +312,6 @@ def _get_nan_color_dict(stat_suffix: str = "mean"
         # Circular hue stats in degrees
         'hue_circular_mean': np.nan,
         'hue_circular_std': np.nan,
-        'hue_homogeneity': np.nan,
 
         # Gray (0 to 255)
         f'Gray_{stat_suffix}': np.nan,
