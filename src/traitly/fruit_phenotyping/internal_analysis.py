@@ -789,7 +789,6 @@ class FruitInternalAnalyzer:
         background_color: Optional[str] = None,
         fill_holes: bool = False,
         apply_convex_hull: bool = False,
-        detect_color_checker: bool = False,
         erosion_px: int = 0
     ) -> None:
 
@@ -813,7 +812,6 @@ class FruitInternalAnalyzer:
                 'apply_convex_hull': apply_convex_hull,
                 'roi_expansion': roi_expansion,
                 'remove_roi': remove_roi,
-                'detect_color_checker': detect_color_checker,
                 'erosion_px': erosion_px
             }
 
@@ -869,7 +867,7 @@ class FruitInternalAnalyzer:
                                 255, -1)
 
             # Color checker ROI
-            if detect_color_checker and hasattr(self, 'checker_coords') and self.checker_coords is not None:
+            if hasattr(self, 'checker_coords') and self.checker_coords is not None:
                 if len(self.checker_coords) == 4:
                     x, y, w, h = self.checker_coords
                     x_expanded = max(0, x - roi_expansion)

@@ -191,7 +191,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         background_color: Optional[str] = None,
         fill_holes: bool = False,
         apply_convex_hull: bool = False,
-        detect_color_checker: bool = False,
         erosion_px: int = 0
     ) -> None:
         """
@@ -223,7 +222,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             background_color=background_color,
             fill_holes=fill_holes,
             apply_convex_hull = apply_convex_hull,
-            detect_color_checker = detect_color_checker,
             erosion_px = erosion_px 
         )
 
