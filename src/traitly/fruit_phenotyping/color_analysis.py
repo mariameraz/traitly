@@ -160,9 +160,10 @@ def extract_color_features(img: np.ndarray,
     """
     Extract summary color statistics from masked pixels of an image.
 
-    Calculates mean or median for each channel across the valid (non-dark,
-    non-background) pixels within the mask region. Supports RGB, Lab,
-    HSV, and Grayscale color spaces. 
+    Calculates mean or median and standard deviation for each channel
+    across the valid (non-dark, non-background) pixels within the mask
+    region. Supports RGB, Lab, HSV, and Grayscale color spaces. For HSV,
+    hue is summarized using circular statistics.
 
     Parameters
     ----------
@@ -182,7 +183,7 @@ def extract_color_features(img: np.ndarray,
     -------
     Dict[str, float]
         Dictionary of color features keyed by channel name and statistic
-        suffix (e.g., ``'R_mean'``, ``'L_mean'``, ``'H_mean'``).
+        suffix (e.g., ``'R_mean'``, ``'R_std'``, ``'L_mean'``, ``'H_mean'``).
         Returns NaN values if no valid pixels are found.
 
     Raises
@@ -231,10 +232,15 @@ def extract_color_features(img: np.ndarray,
         out[f'R_{suffix}'] = float(rgb_stat[0])
         out[f'G_{suffix}'] = float(rgb_stat[1])
         out[f'B_{suffix}'] = float(rgb_stat[2])
+        rgb_std = np.std(rgb_pixels, axis=0)
+        out['R_std'] = float(rgb_std[0])
+        out['G_std'] = float(rgb_std[1])
+        out['B_std'] = float(rgb_std[2])
 
     if 'gray' in spaces_to_compute:
         gray_pixels = gray_img[valid_mask].astype(np.float32)
         out[f'Gray_{suffix}'] = _agg_1d(gray_pixels)
+        out['Gray_std'] = float(np.std(gray_pixels))
 
     # Lab normalized
     if 'lab' in spaces_to_compute:
@@ -248,28 +254,28 @@ def extract_color_features(img: np.ndarray,
         out[f'L_{suffix}'] = _agg_1d(l_norm)
         out[f'a_{suffix}'] = _agg_1d(a_norm)
         out[f'b_{suffix}'] = _agg_1d(b_norm)
+        out['L_std'] = float(np.std(l_norm))
+        out['a_std'] = float(np.std(a_norm))
+        out['b_std'] = float(np.std(b_norm))
 
-    # Hue in degrees 
+    # Hue in degrees
     if 'hsv' in spaces_to_compute:
         hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        h_vals = hsv_img[:, :, 0][valid_mask].astype(np.float32)  # 0..179
+        h_vals = hsv_img[:, :, 0][valid_mask].astype(np.float32)  
         s_vals = hsv_img[:, :, 1][valid_mask].astype(np.float32)
         v_vals = hsv_img[:, :, 2][valid_mask].astype(np.float32)
 
-        
-        h_deg = h_vals * 2.0  # 0..358
         s_norm = (s_vals / 255.0) * 100.0
         v_norm = (v_vals / 255.0) * 100.0
 
-        # Circular mean for hue
+        # Circular mean and std for hue
         h_cmean, h_cstd = circular_mean_and_std_hue(hue_values=h_vals)
-        out[f'H_{suffix}'] = float(h_cmean) # Circular mean
-        #out[f'H_{suffix}'] = _agg_1d(h_deg) # Arithmetic mean
+        out[f'H_{suffix}'] = float(h_cmean)
         out[f'S_{suffix}'] = _agg_1d(s_norm)
         out[f'V_{suffix}'] = _agg_1d(v_norm)
-
-        out['hue_circular_std'] = float(h_cstd)
-
+        out['H_std'] = float(h_cstd)
+        out['S_std'] = float(np.std(s_norm))
+        out['V_std'] = float(np.std(v_norm))
 
     return out
 
@@ -310,8 +316,7 @@ def _get_nan_color_dict(stat_suffix: str = "mean"
         f'H_{stat_suffix}': np.nan, f'S_{stat_suffix}': np.nan, f'V_{stat_suffix}': np.nan,
 
         # Circular hue stats in degrees
-        'hue_circular_mean': np.nan,
-        'hue_circular_std': np.nan,
+        'H_std': np.nan,
 
         # Gray (0 to 255)
         f'Gray_{stat_suffix}': np.nan,
