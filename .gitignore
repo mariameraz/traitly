@@ -8,6 +8,7 @@ __pycache__/
 
 # macOS
 .DS_Store
+**/.DS_Store
 .AppleDouble
 .LSOverride
 
@@ -20,6 +21,8 @@ tutorials/example.ipynb
 src/traitly/Untitled-1.ipynb
 tests/sample_data/Results/
 Untitled-1.ipynb
+requirements-docs.txt
+mkdocs.yml 
 
 # Build
 build/
@@ -30,3 +33,4 @@ dist/
 .pixi/*
 !.pixi/config.toml
 .docs_venv/
+.DS_Store
