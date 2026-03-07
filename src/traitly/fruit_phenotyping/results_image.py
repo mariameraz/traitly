@@ -109,6 +109,7 @@ class ResultsImage:
         format: Optional[str] = None,
         output_message: bool = True,
         quality: int = 95,
+        base_name: Optional[str] = None,
         **kwargs,
     ) -> None:
         """
@@ -149,7 +150,9 @@ class ResultsImage:
                     raise ValueError("No path provided and no original image reference available")
                 
                 original_dir = os.path.dirname(self.image_path)
-                base_name = os.path.splitext(os.path.basename(self.image_path))[0]
+                if base_name is None:
+                    base_name = os.path.splitext(os.path.basename(self.image_path))[0]
+                    
                 ext = format.lower() if format else 'jpg'
                 path = os.path.join(original_dir, f"{base_name}_annotated.{ext}")
 

@@ -170,6 +170,7 @@ def analyze_fruits_morphology(
     epsilon: float = 0.002,
     pericarp_int_color: Tuple[int, int, int] = (0, 240, 240),
     pericarp_int_thickness: int = 2,
+    alpha: float = 0.0,
     **kwargs
 ) -> ResultsImage:
     """
@@ -276,7 +277,8 @@ def analyze_fruits_morphology(
                 unit = unit,
                 pericarp_int_color = pericarp_int_color,
                 pericarp_int_thickness = pericarp_int_thickness,
-                is_locule = is_locule
+                is_locule = is_locule,
+                alpha = alpha
             )
             
             if result is not None:
@@ -326,6 +328,7 @@ def _analyze_single_fruit_morphology(
     is_locule: bool = True,
     pericarp_int_color: Tuple[int, int, int] = (0, 240, 240),
     pericarp_int_thickness: int = 2,
+    alpha: float = 0.0
 ) -> Optional[Dict[str, Any]]:
     """
     Analyze a single fruit and return its morphological metrics.
@@ -429,7 +432,8 @@ def _analyze_single_fruit_morphology(
             config,
             unit,
             pericarp_int_color,
-            pericarp_int_thickness
+            pericarp_int_thickness,
+            alpha
         )
         
 
@@ -871,6 +875,7 @@ def _calculate_pericarp_metrics(
     unit: str,
     pericarp_int_color: Tuple[int, int, int] = (0, 240, 240),
     pericarp_int_thickness: int = 2,
+    alpha: float = 0.0
 ) -> Dict[str, float]:
     """
     Calculate pericarp area and thickness metrics for a single fruit.
@@ -932,20 +937,15 @@ def _calculate_pericarp_metrics(
     """
     
     # Internal pericarp area (returns both cm2 and px)
-    inner_area_cm2, inner_area_px2 = get_internal_pericarp_area(
+    inner_area_cm2, inner_area_px2, inner_contour = get_internal_pericarp_area(
         locules=filtered_locule_ids,
         contours=contours,
         px_per_cm=px_per_cm,
         img=annotated_img,
         draw_inner_pericarp=True, 
         contour_color = pericarp_int_color,
-        contour_thickness = pericarp_int_thickness
-    )
-    
-    # Get internal contour
-    inner_contour = get_internal_pericarp_contour(
-        locules=filtered_locule_ids,
-        contours=contours
+        contour_thickness = pericarp_int_thickness,
+        alpha = alpha
     )
     
     # Calculate thickness (returns dict with _cm or _px keys)

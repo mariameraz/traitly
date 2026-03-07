@@ -592,11 +592,13 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             'centroid_fruit_color', 
             'centroid_fruit_thickness', 
             'is_locule',
+            'alpha'
         ),
         'analyze_color_params': (
             'tissue',
             'locule_color',
             'locule_thickness',
+            'alpha'
         ),
     }
 
@@ -957,7 +959,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         session_start = datetime.now()
         if verbose:
             print("=" * 60)
-            print(" " * 42 + "Traitly running ⋆✧｡٩(ˊᗜˋ )و✧*｡   ")
+            print(" Traitly running ⋆✧｡٩(ˊᗜˋ )و✧*｡   ")
             print("=" * 60)
             print(f"    > Input folder: {folder_path}")
             print(f"    > Image(s) detected: {len(img_paths)}")
@@ -1039,20 +1041,35 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             return {k: v for k, v in p.items()
                     if 'plot' not in k.lower() and 'color' not in k.lower()}
 
+        if json_path is not None:
+            json_report = json_path
+        else:
+            json_report = 'No JSON file provided'
+
         session_lines = [
-            "=" * 70, "SESSION REPORT", "=" * 70,
-            f"traitly          : v{__version__}",
-            f"run date         : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"folder           : {folder_path}",
-            f"images found     : {len(img_paths)}",
-            f"images ok        : {len(img_paths) - len(errors)}",
-            f"images failed    : {len(errors)}",
-            f"total fruits     : {total_fruits}",
-            f"num_cores        : {num_cores}",
-            f"total time       : {total_time:.1f}s",
-            f"avg per image    : {avg_time:.1f}s",
-            "", "=" * 70, "ANALYSIS PARAMETERS", "=" * 70,
+            "=" * 70,
+            "SESSION REPORT",
+            "=" * 70,
+            f"traitly              : v{__version__}",
+            f"run date             : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"image folder         : {folder_path}",
+            f"results folder       : {output_path}",
+            f"images found         : {len(img_paths)}",
+            f"images ok            : {len(img_paths) - len(errors)}",
+            f"images failed        : {len(errors)}",
+            f"total fruits         : {total_fruits}",
+            f"analyze_morphology   : {analyze_morphology}",
+            f"analyze_color        : {analyze_color}",
+            f"JSON path            : {json_report}",
+            f"num_cores            : {num_cores}",
+            f"total time           : {total_time:.1f}s",
+            f"avg per image        : {avg_time:.1f}s",
+            "",
+            "=" * 70,
+            "ANALYSIS PARAMETERS",
+            "=" * 70,
         ]
+
         for title, attr in (
             ('SETUP_MEASUREMENTS',  'setup_measurements_params'),
             ('GENERATE_FRUIT_MASK', 'generate_fruit_mask_params'),
