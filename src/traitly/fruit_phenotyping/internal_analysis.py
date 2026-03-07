@@ -59,8 +59,9 @@ from .mask import (create_mask,
 
 from .fruit_config import analyze_fruits_morphology
 from ..utils.basic_functions import (load_img,
-                                      detect_img_name,
-                                      annotate_all_fruits)
+                                      detect_img_name)
+
+from .processing import annotate_all_fruits
 
 from ..utils.calibration import px_cm_density
 from ..utils.label import (detect_qr,
@@ -212,6 +213,7 @@ class FruitInternalAnalyzer:
         self.mask_locules = None
         self.contours = None
         self.fruit_locule_map = None
+        self.alpha = 0.0
         
         # analyze fruits
         self.px_per_cm = None  
@@ -1151,7 +1153,7 @@ class FruitInternalAnalyzer:
             If :attr:`mask_fruit` is not available.
         """
         
-        # Validation - if mask exists, mask_locules should also exist
+        # Validation: if mask exists, mask_locules should also exist
         if self.mask_fruit is None:
             raise ValueError("No mask available. Run generate_fruit_mask() first.")
         
@@ -1232,6 +1234,7 @@ class FruitInternalAnalyzer:
         overlay_legend: bool = False,
         margin: int = 5,
         only_fruit: bool = False, # Needed for FruitExternalAnalysis, keep it False  for FruitInternalAnalysis
+        alpha: Optional[float] = None
     ) -> Dict[str, np.ndarray]:
         """
         Generate and display tissue masks for a single fruit.
@@ -1285,6 +1288,10 @@ class FruitInternalAnalyzer:
         else:
             mask = self.mask_fruit
 
+        if alpha is not None:
+            self.alpha = alpha
+        
+
         get_single_fruit_masks(img = self.img, 
                                mask = mask,
                                contours = self.contours,
@@ -1296,7 +1303,8 @@ class FruitInternalAnalyzer:
                                renumber = True,
                                overlay_legend = overlay_legend, 
                                plot = True,
-                               only_fruit = only_fruit)  
+                               only_fruit = only_fruit,
+                               alpha = self.alpha)  
         
     ##########################################################################################
     #                                     MORPHOLOGY 
@@ -1332,6 +1340,7 @@ class FruitInternalAnalyzer:
         centroid_locule_thickness: int = 2,
         display_table: Optional[bool] = True,
         is_locule: bool = True,
+        alpha: float = None,
     ) -> Optional[pd.DataFrame]:
         """
         Extract morphological metrics from detected fruits.
@@ -1439,10 +1448,12 @@ class FruitInternalAnalyzer:
 
         if self.img_copy is None:
             self.img_copy = self.img_rgb.copy()
-            
+    
         saved_color_results = getattr(self.results, 'color_results', None)
 
-        
+        if alpha is not None:
+            self.alpha = alpha
+
         self.results = analyze_fruits_morphology(
             # Image 
             img=self.img_copy,
@@ -1468,6 +1479,9 @@ class FruitInternalAnalyzer:
             
             # Pericarp thickness
             num_rays=num_rays,
+
+            # Internal pericarp contour
+            alpha = self.alpha,
 
             # Plot annotated image
             plot=plot,
@@ -1524,7 +1538,9 @@ class FruitInternalAnalyzer:
                 'centroid_fruit_thickness': centroid_fruit_thickness,
                 'centroid_locule_color': centroid_locule_color,
                 'centroid_locule_thickness': centroid_locule_thickness,
-                'is_locule': is_locule}
+                'is_locule': is_locule,
+                'alpha': alpha
+                }
 
         self.results.morphology_results = pd.DataFrame(self.results.morphology_results)
 
@@ -1627,6 +1643,8 @@ class FruitInternalAnalyzer:
         font_thickness: int = 2,
         pericarp_ext_color: Tuple[int, int, int] = (0, 255, 0),
         pericarp_ext_thickness: int = 2,
+        pericarp_int_color: Tuple[int, int, int] = (0, 255, 255), 
+        pericarp_int_thickness: int = 2,    
         locule_thickness: int = 2,
         locule_color: Tuple[int, int, int] = (255, 0, 255),
         label_position: str = 'top',
@@ -1634,6 +1652,7 @@ class FruitInternalAnalyzer:
         label_color: Tuple[int, int, int] = (255, 255, 255),
         label_opacity: float = 0.7,
         get_color_histogram: bool = False,
+        alpha: Optional[float] = None
     ) -> Optional[pd.DataFrame]:
         """
         Extract color features from detected fruit tissues.
@@ -1720,6 +1739,9 @@ class FruitInternalAnalyzer:
         if self.label_text is None:
             self.label_text = 'No label detected'
         
+        if alpha is not None:
+            self.alpha = alpha
+
         metadata = self.is_metadata_saved
         if metadata:
             self.parameters.analyze_color_params = {
@@ -1736,7 +1758,8 @@ class FruitInternalAnalyzer:
                 'font_color': font_color,
                 'label_color': label_color,
                 'label_opacity': label_opacity,
-                'get_color_histogram': get_color_histogram
+                'get_color_histogram': get_color_histogram,
+                'alpha': alpha
             }
 
         # Always reannotate from clean image
@@ -1804,7 +1827,8 @@ class FruitInternalAnalyzer:
                                     stat = stat,
                                     tissue = tissue,
                                     renumber = True,
-                                    color_space = color_space)
+                                    color_space = color_space,
+                                    alpha = self.alpha)
             
 
             df = (
@@ -2507,7 +2531,7 @@ class FruitInternalAnalyzer:
         session_start = datetime.now()
         if verbose:
             print("=" * 60)
-            print(" " * 42 + "Traitly running ⋆✧｡٩(ˊᗜˋ )و✧*｡   ")
+            print(" Traitly running ⋆✧｡٩(ˊᗜˋ )و✧*｡   ")
             print("=" * 60 )
             print(f"    > Input folder: {folder_path}")
             print(f"    > Image(s) detected: {len(img_paths)}")
@@ -2620,21 +2644,30 @@ class FruitInternalAnalyzer:
         def _filter_params(p: Dict) -> Dict:
             return {k: v for k, v in p.items()
                     if 'plot' not in k.lower() and 'color' not in k.lower()}
+        
+        if json_path is not None:
+            json_report = json_path
+        else:
+            json_report = 'No JSON file provided'
 
         session_lines = [
             "=" * 70,
             "SESSION REPORT",
             "=" * 70,
-            f"traitly          : v{__version__}",
-            f"run date         : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"folder           : {folder_path}",
-            f"images found     : {len(img_paths)}",
-            f"images ok        : {len(img_paths) - len(errors)}",
-            f"images failed    : {len(errors)}",
-            f"total fruits     : {total_fruits}",
-            f"num_cores        : {num_cores}",
-            f"total time       : {total_time:.1f}s",
-            f"avg per image    : {avg_time:.1f}s",
+            f"traitly              : v{__version__}",
+            f"run date             : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"image folder         : {folder_path}",
+            f"results folder       : {output_path}",
+            f"images found         : {len(img_paths)}",
+            f"images ok            : {len(img_paths) - len(errors)}",
+            f"images failed        : {len(errors)}",
+            f"total fruits         : {total_fruits}",
+            f"analyze_morphology   : {analyze_morphology}",
+            f"analyze_color        : {analyze_color}",
+            f"JSON path            : {json_report}",
+            f"num_cores            : {num_cores}",
+            f"total time           : {total_time:.1f}s",
+            f"avg per image        : {avg_time:.1f}s",
             "",
             "=" * 70,
             "ANALYSIS PARAMETERS",

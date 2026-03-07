@@ -18,12 +18,17 @@ are ``NaN``.
 # ============================================================================
 from typing import List, Dict, Tuple, Optional
 import math
+import warnings
 
 # ============================================================================
 # THIRD-PARTY LIBRARIES
 # ============================================================================
 import cv2
 import numpy as np
+from scipy.spatial import Delaunay, KDTree
+
+# Internal imports
+from traitly.utils.constants import label_positions
 
 #################################################################################################
 # Calculate fruit centroids
@@ -241,41 +246,9 @@ def get_fruit_contour(
     return fruit_contour
 
 
-#################################################################################################
-# Get internal pericarp contour and area
-#################################################################################################
-
-def get_internal_pericarp_contour(
-    locules: List[int],
-    contours: List[np.ndarray],
-) -> np.ndarray:
-    """
-    Compute the convex hull enclosing all locule contours.
-
-    Stacks all points from the specified locule contours and computes
-    their joint convex hull via ``cv2.convexHull``. Used by
-    :func:`get_internal_pericarp_area` and
-    :func:`~traitly.fruit_phenotyping.analysis._calculate_pericarp_metrics`
-    to define the inner pericarp boundary.
-
-    Parameters
-    ----------
-    locules : list of int
-        Indices into ``contours`` for the locule contours to enclose.
-    contours : list of np.ndarray
-        Full list of all detected contours in OpenCV format.
-
-    Returns
-    -------
-    np.ndarray
-        Convex hull contour in OpenCV format ``(N, 1, 2)``, or an empty
-        array if ``locules`` is empty.
-    """
-    if not locules:
-        return np.array([])
-    
-    all_points = np.vstack([contours[i] for i in locules])
-    return cv2.convexHull(all_points)
+# #################################################################################################
+# # Get internal pericarp contour and area
+# #################################################################################################
 
 
 def get_internal_pericarp_area(
@@ -286,6 +259,7 @@ def get_internal_pericarp_area(
     draw_inner_pericarp: bool = False,
     contour_thickness: int = 2,
     contour_color: Tuple[int, int, int] = (0, 240, 240),
+    alpha: float = 0.0,
 ) -> Tuple[float, float]:
     """
     Calculate the area of the convex hull enclosing all locules.
@@ -334,7 +308,7 @@ def get_internal_pericarp_area(
         return np.nan, np.nan
     
     # Reuse the previous ip contour function
-    hull = get_internal_pericarp_contour(locules, contours)
+    hull = get_internal_pericarp_contour(locules, contours, alpha=alpha)
     
     if len(hull) == 0:
         return np.nan, np.nan
@@ -350,7 +324,7 @@ def get_internal_pericarp_area(
     else:
         area_cm2 = np.nan
     
-    return area_cm2, area_px2
+    return area_cm2, area_px2, hull
 
 ######################################################
 # Calculate pericarp thickness using radial sampling #
@@ -527,3 +501,365 @@ def calculate_pericarp_thickness_radial(
     }
 
 
+### Testing internal pericarp contour with alpha shape (concave hull) ###
+
+#################################################################################################
+# Alpha shape helper 
+#################################################################################################
+
+def _alpha_shape_contour(
+    points: np.ndarray,
+    alpha: float,
+    fallback: np.ndarray,
+) -> np.ndarray:
+    """
+    Compute an alpha shape (concave hull) boundary from a set of 2-D points.
+
+    Uses Delaunay triangulation (``scipy.spatial.Delaunay``) to find all
+    triangles covering the point set, then discards triangles whose
+    circumradius exceeds ``1 / alpha``. The boundary of the remaining
+    triangulation forms the concave hull. If the result is empty or
+    fragmented (disconnected boundary edges), the function falls back to
+    the convex hull of ``fallback`` and issues a ``UserWarning``.
+
+    This is an internal helper called exclusively by
+    :func:`get_internal_pericarp_contour` when ``alpha > 0``. It requires
+    only ``scipy`` and ``numpy``, which are already dependencies of traitly.
+
+    Parameters
+    ----------
+    points : np.ndarray
+        2-D point array of shape ``(N, 2)`` in ``float64``. Should contain
+        all points stacked from the locule contours.
+    alpha : float
+        Concavity parameter. Triangles with circumradius > ``1 / alpha``
+        are discarded. Higher values produce tighter, more concave boundaries.
+        Must be > 0.
+    fallback : np.ndarray
+        Raw stacked contour points (OpenCV format) used to compute the
+        convex hull fallback when the alpha shape fails.
+
+    Returns
+    -------
+    np.ndarray
+        Boundary contour in OpenCV format ``(N, 1, 2)``, or the convex
+        hull of ``fallback`` if the alpha shape produces no valid boundary.
+    """
+
+
+    if len(points) < 4:
+        return cv2.convexHull(fallback)
+
+    tri = Delaunay(points)
+
+    # 1, filter triangles by circumradius 
+    # For each triangle, compute circumradius and keep only those < 1/alpha
+    boundary_edge_count: dict = {}
+    threshold = 1.0 / alpha
+
+    for simplex in tri.simplices:
+        p0, p1, p2 = points[simplex[0]], points[simplex[1]], points[simplex[2]]
+
+        a = np.linalg.norm(p0 - p1)
+        b = np.linalg.norm(p1 - p2)
+        c = np.linalg.norm(p2 - p0)
+        s = (a + b + c) / 2.0
+        area = np.sqrt(max(s * (s - a) * (s - b) * (s - c), 0.0))
+
+        if area < 1e-10:
+            continue  # degenerate triangle
+
+        circumradius = (a * b * c) / (4.0 * area)
+
+        if circumradius >= threshold:
+            continue  # discard large triangles
+
+        # Count each edge: edges shared by two kept triangles are interior
+        for i in range(3):
+            edge = tuple(sorted([simplex[i], simplex[(i + 1) % 3]]))
+            boundary_edge_count[edge] = boundary_edge_count.get(edge, 0) + 1
+
+    # Boundary edges appear exactly once (interior edges appear twice)
+    boundary_edges = [e for e, count in boundary_edge_count.items() if count == 1]
+
+    if not boundary_edges:
+        warnings.warn(
+            f"alpha={alpha:.4f} produced no boundary edges. "
+            "Falling back to convex hull. Try a lower alpha value.",
+            UserWarning, stacklevel=3
+        )
+        return cv2.convexHull(fallback)
+
+    # 2, reconstruct ordered contour from boundary edges 
+    # Build adjacency map: each node → list of connected nodes
+    edge_map: dict = {}
+    for a_idx, b_idx in boundary_edges:
+        edge_map.setdefault(a_idx, []).append(b_idx)
+        edge_map.setdefault(b_idx, []).append(a_idx)
+
+    # Check for fragmentation: every node should have exactly 2 neighbors
+    if any(len(v) != 2 for v in edge_map.values()):
+        warnings.warn(
+            f"alpha={alpha:.4f} produced a fragmented boundary. "
+            "Falling back to convex hull. Try a lower alpha value.",
+            UserWarning, stacklevel=3
+        )
+        return cv2.convexHull(fallback)
+
+    # Walk the boundary chain
+    start = next(iter(edge_map))
+    path = [start]
+    prev, current = -1, start
+
+    while True:
+        neighbors = [n for n in edge_map[current] if n != prev]
+        if not neighbors or neighbors[0] == start:
+            break
+        prev, current = current, neighbors[0]
+        path.append(current)
+
+    if len(path) < 3:
+        warnings.warn(
+            f"alpha={alpha:.4f} produced a degenerate contour (<3 points). "
+            "Falling back to convex hull.",
+            UserWarning, stacklevel=3
+        )
+        return cv2.convexHull(fallback)
+
+    return points[path].astype(np.int32).reshape(-1, 1, 2)
+
+
+#################################################################################################
+# Get internal pericarp contour using concave alpha hull
+#################################################################################################
+
+def get_internal_pericarp_contour(
+    locules: List[int],
+    contours: List[np.ndarray],
+    alpha: float = 0.0,
+) -> np.ndarray:
+    """
+    Compute the hull enclosing all locule contours.
+
+    Parameters
+    ----------
+    locules : list of int
+        Indices into ``contours`` for the locule contours to enclose.
+    contours : list of np.ndarray
+        Full list of all detected contours in OpenCV format.
+    alpha : float or None, optional
+        Hull concavity parameter. ``0`` returns the convex hull. Values
+        ``> 0`` produce increasingly concave boundaries via Delaunay
+        triangulation. Default is ``0.0``.
+
+    Returns
+    -------
+    np.ndarray
+        Hull contour in OpenCV format ``(N, 1, 2)``, or an empty array
+        if ``locules`` is empty.
+    """
+    if not locules:
+        return np.array([])
+
+    all_points = np.vstack([contours[i] for i in locules])
+    points_2d = all_points.reshape(-1, 2).astype(np.float64)
+
+    if not alpha:
+        return cv2.convexHull(all_points)
+
+    return _alpha_shape_contour(points_2d, alpha=alpha, fallback=all_points)
+
+
+###########################################################################################
+# Simplified image annotation - use when calling FruitInternalAnalyzer.analyze_color() only
+###########################################################################################
+
+def annotate_all_fruits(
+    fruit_locule_map: Dict[int, List[int]],
+    contours: List[np.ndarray],
+    annotated_img: np.ndarray,
+    img_shape: Tuple[int, int],
+    font_scale: float = 2,
+    font_thickness: int = 2,
+    pericarp_ext_color: Tuple[int, int, int] = (0, 255, 0),
+    pericarp_ext_thickness: int = 2,
+    locule_thickness: int = 2,
+    locule_color: Tuple[int, int, int] = (255, 0, 255),
+    label_position: str = 'left',
+    margin: int = 10,
+    text_color: Tuple[int, int, int] = (0, 0, 0),
+    label_background_color: Tuple[int, int, int] = (255, 255, 255),
+    label_opacity: float = 0.7,
+    verbose: bool = True,
+) -> None:
+    """
+    Draw contours and text annotations for all fruits in a single pass.
+
+    For each fruit in ``fruit_locule_map``, draws the outer fruit
+    contour, all locule contours, and a semi-transparent text label
+    showing the sequential ID and locule count. Label placement is
+    controlled by ``label_position`` and clamped within image boundaries.
+
+    Parameters
+    ----------
+    fruit_locule_map : dict of {int : list of int}
+        Mapping from fruit contour index to list of locule contour
+        indices.
+    contours : list of np.ndarray
+        Full list of all detected contours.
+    annotated_img : np.ndarray
+        BGR image modified in-place with contours and text labels.
+    img_shape : tuple of int
+        ``(height, width)`` of the image for boundary clamping.
+    font_scale : float, optional
+        Font scale for annotation text. Default is 2.
+    font_thickness : int, optional
+        Thickness of annotation text. Default is 2.
+    pericarp_ext_color : tuple of int, optional
+        BGR color for fruit contours. Default is ``(0, 255, 0)``.
+    pericarp_ext_thickness : int, optional
+        Line thickness for fruit contours. Default is 2.
+    locule_thickness : int, optional
+        Line thickness for locule contours. Default is 2.
+    locule_color : tuple of int, optional
+        BGR color for locule contours. Default is ``(255, 0, 255)``.
+    label_position : str, optional
+        Position of the text label relative to the fruit bounding box.
+        One of ``'top'``, ``'bottom'``, ``'left'``, ``'right'``.
+        Default is ``'left'``.
+    margin : int, optional
+        Pixel padding around label backgrounds and boundary clamping.
+        Default is 10.
+    text_color : tuple of int, optional
+        BGR color for annotation text. Default is ``(0, 0, 0)``.
+    label_background_color : tuple of int, optional
+        BGR color for label background rectangles. Default is
+        ``(255, 255, 255)``.
+    label_opacity : float, optional
+        Opacity of label backgrounds in [0, 1]. Default is 0.7.
+    verbose : bool, optional
+        If True, print warnings for missing or empty contours. Default
+        is True.
+
+    Raises
+    ------
+    ValueError
+        If ``label_position`` is not one of the valid options defined in
+        ``label_positions``.
+    """
+    if label_position not in label_positions:
+        raise ValueError(
+            f"Invalid label position: {label_position}. "
+            f"Valid options are: {label_positions}"
+        )
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    (size_w, size_h), _ = cv2.getTextSize("Test", font, font_scale, font_thickness)
+    single_line_height = size_h
+
+    img_height, img_width = img_shape
+    sequential_id = 1
+
+    for fruit_id, locule_ids in fruit_locule_map.items():
+
+        if fruit_id >= len(contours):
+            if verbose:
+                print(f"Fruit ID {fruit_id} not in contours list")
+            continue
+
+        fruit_contour = contours[fruit_id]
+        if fruit_contour is None or len(fruit_contour) == 0:
+            if verbose:
+                print(f" Empty contour for fruit {fruit_id}")
+            continue
+
+        n_locules = len(locule_ids)
+
+        # Draw fruit outer contour
+        cv2.drawContours(
+            annotated_img, [fruit_contour], -1,
+            pericarp_ext_color, pericarp_ext_thickness
+        )
+
+        # Draw locule contours
+        for locule_id in locule_ids:
+            if locule_id >= len(contours):
+                if verbose:
+                    print(f"Locule ID {locule_id} not in contours list")
+                continue
+
+            locule_contour = contours[locule_id]
+            if locule_contour is None or len(locule_contour) == 0:
+                continue
+
+            cv2.drawContours(
+                annotated_img, [locule_contour], -1,
+                locule_color, locule_thickness
+            )
+
+        # Build label text
+        x, y, w, h = cv2.boundingRect(fruit_contour)
+        text = f"id {sequential_id}" if n_locules == 0 else f"id {sequential_id}: \n{n_locules} loc"
+
+        (size_w, size_h), _ = cv2.getTextSize("Test", font, font_scale, font_thickness)
+        single_line_height = size_h
+
+        num_lines = text.count('\n') + 1
+        total_height = (single_line_height * num_lines) + (15 * (num_lines - 1))
+
+        text_width = max([
+            cv2.getTextSize(line, font, font_scale, font_thickness)[0][0]
+            for line in text.split('\n')
+        ])
+
+        # Position label relative to fruit bounding box
+        img_height, img_width = img_shape
+
+        if label_position == 'top':
+            text_x = max(10, x)
+            text_y = max(total_height + 15, y - 15)
+        elif label_position == 'bottom':
+            text_x = max(10, x)
+            text_y = min(img_height - 15, y + h + total_height + 15)
+        elif label_position == 'left':
+            text_x = max(10, x - text_width - margin * 2 - 15)
+            text_y = max(total_height + 15, y + h // 2)
+        elif label_position == 'right':
+            text_x = min(img_width - text_width - margin * 2 - 10, x + w + 15)
+            text_y = max(total_height + 15, y + h // 2)
+        else:
+            text_x = max(10, x)
+            text_y = max(total_height + 15, y - 15)
+
+        # Clamp to image boundaries
+        text_x = max(margin, min(text_x, img_width - text_width - margin * 2))
+        text_y = max(total_height + margin, min(text_y, img_height - margin))
+
+        # Draw semi-transparent background rectangle
+        text_bg_layer = annotated_img.copy()
+        cv2.rectangle(
+            text_bg_layer,
+            (text_x - margin, text_y - total_height - margin),
+            (text_x + text_width + margin, text_y + margin),
+            label_background_color, -1
+        )
+        cv2.addWeighted(
+            text_bg_layer, label_opacity,
+            annotated_img, 1 - label_opacity,
+            0, annotated_img
+        )
+
+        # Draw each line of text
+        for i, line in enumerate(text.split('\n')):
+            y_offset = (
+                text_y
+                - (total_height - single_line_height)
+                + (i * (single_line_height + 15))
+            )
+            cv2.putText(
+                annotated_img, line, (text_x, y_offset),
+                font, font_scale, text_color,
+                font_thickness, cv2.LINE_AA
+            )
+
+        sequential_id += 1
