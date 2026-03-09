@@ -162,9 +162,7 @@ def create_mask(
                 raise ValueError("canny_min must be < canny_max")
         
         # Set default HSV values for black/dark backgrounds if not provided
-        background_color_list = {
-            'blue', 'white', 'black'
-        }
+        
         if background_color is not None:
             if background_color == 'blue':
                 lower_hsv = np.array([90, 100, 80], dtype=np.uint8)
@@ -176,7 +174,7 @@ def create_mask(
                 lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
                 upper_hsv = np.array([180, 250, 50], dtype=np.uint8)
             else:
-                raise ValueError(f"Invalid background_color: {background_color}. Use: {background_color_list}")
+                raise ValueError(f"Invalid background_color: {background_color}. Use: {{'blue', 'white', 'black'}}")
 
         if lower_hsv is None:
             lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
@@ -1259,7 +1257,7 @@ def generate_scatter_plot(
     axes[0].set_xlabel('Hue (0-180)', fontsize = label_fontsize)
     axes[0].set_ylabel('Saturation (0-255)', fontsize = label_fontsize)
     axes[0].set_title('H vs S', fontweight='bold', fontsize = title_fontsize)
-    axes[1].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[0].tick_params(axis='both', labelsize=tick_fontsize)
     axes[0].grid(alpha=0.3)
 
     # H vs V (RGB colored pixels)
@@ -1275,7 +1273,7 @@ def generate_scatter_plot(
     axes[2].set_xlabel('Saturation (0-255)', fontsize = label_fontsize)
     axes[2].set_ylabel('Value (0-255)', fontsize = label_fontsize)
     axes[2].set_title('S vs V', fontweight='bold', fontsize = title_fontsize)
-    axes[1].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[2].tick_params(axis='both', labelsize=tick_fontsize)
     axes[2].grid(alpha=0.3)
 
     plt.tight_layout()

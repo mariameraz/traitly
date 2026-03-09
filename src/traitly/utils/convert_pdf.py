@@ -110,12 +110,9 @@ def pdf_to_img(
         )
 
     # Normalize aliases
-    if output_format == 'jpeg':
-        output_format = 'jpg'
-    elif output_format == 'tif':
-        output_format = 'tiff'
+    output_format = {'jpeg': 'jpg', 'tif': 'tiff'}.get(output_format, output_format)
 
-    # ── Batch mode: folder of PDFs ─────────────────────────────────────────
+    # Forlder with multiple pdfs
     if os.path.isdir(pdf_path):
         pdf_files = [
             os.path.join(pdf_path, f)

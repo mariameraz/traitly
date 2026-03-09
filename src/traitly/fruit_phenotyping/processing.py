@@ -469,9 +469,9 @@ def calculate_pericarp_thickness_radial(
     
     if not thicknesses_px:
         return {
-            'pericarp_mean_thickness_cm': np.nan,
-            'pericarp_std_thickness_cm': np.nan,
-            'pericarp_cv_thickness': np.nan,
+            'outer_pericarp_mean_thickness_cm': np.nan,
+            'outer_pericarp_std_thickness_cm': np.nan,
+            'outer_pericarp_cv_thickness': np.nan,
             'fruit_lobedness_cm': np.nan
         }
     
@@ -683,6 +683,8 @@ def annotate_all_fruits(
     font_thickness: int = 2,
     pericarp_ext_color: Tuple[int, int, int] = (0, 255, 0),
     pericarp_ext_thickness: int = 2,
+    pericarp_int_color: Tuple[int, int, int] = (255, 255, 0),
+    pericarp_int_thickness: int = 2,
     locule_thickness: int = 2,
     locule_color: Tuple[int, int, int] = (255, 0, 255),
     label_position: str = 'left',
@@ -691,6 +693,7 @@ def annotate_all_fruits(
     label_background_color: Tuple[int, int, int] = (255, 255, 255),
     label_opacity: float = 0.7,
     verbose: bool = True,
+    alpha: Optional[float] =  None
 ) -> None:
     """
     Draw contours and text annotations for all fruits in a single pass.
@@ -754,10 +757,7 @@ def annotate_all_fruits(
         )
 
     font = cv2.FONT_HERSHEY_SIMPLEX
-    (size_w, size_h), _ = cv2.getTextSize("Test", font, font_scale, font_thickness)
-    single_line_height = size_h
 
-    img_height, img_width = img_shape
     sequential_id = 1
 
     for fruit_id, locule_ids in fruit_locule_map.items():
@@ -797,6 +797,14 @@ def annotate_all_fruits(
                 locule_color, locule_thickness
             )
 
+        # Draw internal pericarp contour
+        internal_per_contour = get_internal_pericarp_contour(
+                locules = locule_ids,
+                contours = contours, 
+                alpha = alpha)
+
+        cv2.drawContours(annotated_img, [internal_per_contour], -1, pericarp_int_color, pericarp_int_thickness)
+
         # Build label text
         x, y, w, h = cv2.boundingRect(fruit_contour)
         text = f"id {sequential_id}" if n_locules == 0 else f"id {sequential_id}: \n{n_locules} loc"
@@ -812,7 +820,7 @@ def annotate_all_fruits(
             for line in text.split('\n')
         ])
 
-        # Position label relative to fruit bounding box
+        # Position of the label
         img_height, img_width = img_shape
 
         if label_position == 'top':
@@ -824,12 +832,9 @@ def annotate_all_fruits(
         elif label_position == 'left':
             text_x = max(10, x - text_width - margin * 2 - 15)
             text_y = max(total_height + 15, y + h // 2)
-        elif label_position == 'right':
-            text_x = min(img_width - text_width - margin * 2 - 10, x + w + 15)
-            text_y = max(total_height + 15, y + h // 2)
         else:
-            text_x = max(10, x)
-            text_y = max(total_height + 15, y - 15)
+            text_x = min(img_width - text_width - margin * 2 - 10, x + w + 15) # rigth
+            text_y = max(total_height + 15, y + h // 2)
 
         # Clamp to image boundaries
         text_x = max(margin, min(text_x, img_width - text_width - margin * 2))

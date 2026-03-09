@@ -97,47 +97,20 @@ class AnalysisParameters:
             f"run date: {date}"
         ]
         
-        # Setup Measurements
-        if self.setup_measurements_params:
-            lines.append("\nSETUP_MEASUREMENTS:")
-            for key, value in self.setup_measurements_params.items():
-                lines.append(f"   - {key}: {value}")
-        
-        # Generate Fruit Mask
-        if self.generate_fruit_mask_params:
-            lines.append("\nGENERATE_FRUIT_MASK:")
-            for key, value in self.generate_fruit_mask_params.items():
-                lines.append(f"   - {key}: {value}")
-        
-        # Enhance Locule Contrast
-        if self.enhance_locule_contrast_params:
-            lines.append("\nENHANCE_LOCULE_CONTRAST:")
-            for key, value in self.enhance_locule_contrast_params.items():
-                lines.append(f"   - {key}: {value}")
-        
-        # Generate Locule Mask
-        if self.generate_locule_mask_params:
-            lines.append("\nGENERATE_LOCULE_MASK:")
-            for key, value in self.generate_locule_mask_params.items():
-                lines.append(f"   - {key}: {value}")
-        
-        # Detect Fruits
-        if self.detect_fruits_params:
-            lines.append("\nDETECT_FRUITS:")
-            for key, value in self.detect_fruits_params.items():
-                lines.append(f"   - {key}: {value}")
-        
-        # Analyze Morphology
-        if self.analyze_morphology_params:
-            lines.append("\nANALYZE_MORPHOLOGY:")
-            for key, value in self.analyze_morphology_params.items():
-                lines.append(f"   - {key}: {value}")
-        
-        # Analyze Color
-        if self.analyze_color_params:
-            lines.append("\nANALYZE_COLOR:")
-            for key, value in self.analyze_color_params.items():
-                lines.append(f"   - {key}: {value}")
+        sections = {
+            "SETUP_MEASUREMENTS": self.setup_measurements_params,
+            "GENERATE_FRUIT_MASK": self.generate_fruit_mask_params,
+            "ENHANCE_LOCULE_CONTRAST": self.enhance_locule_contrast_params,
+            "GENERATE_LOCULE_MASK": self.generate_locule_mask_params,
+            "DETECT_FRUITS": self.detect_fruits_params,
+            "ANALYZE_MORPHOLOGY": self.analyze_morphology_params,
+            "ANALYZE_COLOR": self.analyze_color_params,
+        }
+        for title, params in sections.items():
+            if params:
+                lines.append(f"\n{title}:")
+                for key, value in params.items():
+                    lines.append(f"   - {key}: {value}")
         
         lines.append("\n" + "=" * 70)
 

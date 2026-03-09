@@ -429,11 +429,13 @@ def detect_label_box_yolo(
     results = model(img, conf=conf, verbose=False)
 
     for r in results:
-        boxes = r.boxes
-
-        if boxes is None or len(boxes) == 0:
+        if not results:
             return None
-
+        r = results[0]
+        boxes = r.boxes
+        if not boxes:
+            return None
+        
         label_boxes = []
 
         for box in boxes:

@@ -253,7 +253,6 @@ def analyze_fruits_morphology(
 
     # Create empty list to save results
     results = []
-    # color_results = []
 
     # For each fruit and its locules:
     sequential_id = 1
@@ -282,13 +281,7 @@ def analyze_fruits_morphology(
             )
             
             if result is not None:
-                if isinstance(result, tuple):
-                    morphology_result, color_result = result
-                    results.append(morphology_result)
-                    
-                else:
-                    results.append(result)
-
+                results.append(result)
                 sequential_id += 1
                 
         except Exception as e:
@@ -420,7 +413,8 @@ def _analyze_single_fruit_morphology(
             unit
         )
 
-        # 4. Calculate pericarp metrics
+        # 4. Calculate pericarp metrics   
+
         pericarp_metrics = _calculate_pericarp_metrics(
             locule_metrics['filtered_ids'],
             contours,
@@ -937,6 +931,7 @@ def _calculate_pericarp_metrics(
     """
     
     # Internal pericarp area (returns both cm2 and px)
+
     inner_area_cm2, inner_area_px2, inner_contour = get_internal_pericarp_area(
         locules=filtered_locule_ids,
         contours=contours,
@@ -1013,7 +1008,7 @@ def _calculate_symmetry_metrics(
           :func:`radial_symmetry`, or ``NaN`` if fewer than 2 locules.
     """
     
-    if not locules_data or len(locules_data) < 2:
+    if len(locules_data) < 2:
         return {
             'locules_angular_symmetry': np.nan,
             'locules_radial_symmetry': np.nan

@@ -151,7 +151,7 @@ def angular_symmetry(
         Mean angular error in radians at the best-matching rotation,
         or ``NaN`` if fewer than 2 locules are present.
     """
-    if not locules_data or len(locules_data) < 2:
+    if len(locules_data) < 2:
         return np.nan
     
     angles = np.array([d['polar_coord'][0] for d in locules_data]) % (2 * np.pi)
