@@ -353,13 +353,9 @@ class FruitInternalAnalyzer:
 
         if not detect_label:
             # Try to detect label roi
-            self.label_roi = detect_label_box_yolo(img=self.img, plot=False, conf=0.4)
-            if self.label_roi is None or len(self.label_roi) == 0:
-                self.label_roi = detect_label_box(img=self.img, verbose=False, plot=False)
-            
-            # No text detection
+            self.label_roi = None
             self.label_text = "No label detected"
-            
+
             if verbose:
                 if self.label_roi and len(self.label_roi) > 0:
                     print("> Label detection: SKIPPED (detect_label=False)")
@@ -1771,6 +1767,8 @@ class FruitInternalAnalyzer:
                 morphology_results=[],  
                 image_path=self.img_path
             )
+        
+    
 
         # Annotate independent image for color results
         annotate_all_fruits(annotated_img = self.results.color_image,
@@ -1791,7 +1789,7 @@ class FruitInternalAnalyzer:
                                 label_background_color = label_color,
                                 label_opacity = label_opacity,
                                 alpha=self.alpha)
-        
+            
 
         if saved_color_results is not None:
             self.results.color_results = saved_color_results
@@ -2151,9 +2149,10 @@ class FruitInternalAnalyzer:
 
             # 8. Get annotated image
             if self.results is not None:
-                annotated_img = cv2.cvtColor(self.results.annotated_image, cv2.COLOR_RGB2BGR)
-            else:
-                raise RuntimeError("[pipeline] No results generated — annotated image unavailable")
+                if analyze_morphology:
+                    annotated_img = cv2.cvtColor(self.results.annotated_image, cv2.COLOR_RGB2BGR)
+                else:
+                    annotated_img = cv2.cvtColor(self.results.color_image, cv2.COLOR_RGB2BGR)
 
             # 9. Save image if requested
             if save_image and annotated_img is not None:
