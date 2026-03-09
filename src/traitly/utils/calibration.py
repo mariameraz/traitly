@@ -771,14 +771,7 @@ def detect_size_ref_yolo(
                 filtered_boxes.append(box)
             else:
                 low_conf_boxes.append((box, conf))
-
-        if low_conf_boxes:
-            print(
-                f"Filtered out {len(low_conf_boxes)} box(es) below the "
-                f"confidence threshold: {confidence_threshold}"
-            )
-            for box_idx, (box, conf_value) in enumerate(low_conf_boxes, 1):
-                print(f"    ▸ Box {box_idx}: confidence = {conf_value:.3f}")
+        
 
         boxes = filtered_boxes
         box_detected = True
@@ -792,6 +785,14 @@ def detect_size_ref_yolo(
                 f"  - Processing reference box(es) with a confidence "
                 f"threshold >={confidence_threshold}:"
             )
+
+            if low_conf_boxes:
+                print(
+                    f"Filtered out {len(low_conf_boxes)} box(es) below the "
+                    f"confidence threshold: {confidence_threshold}"
+                )
+                for box_idx, (box, conf_value) in enumerate(low_conf_boxes, 1):
+                    print(f"    ▸ Box {box_idx}: confidence = {conf_value:.3f}")
 
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)

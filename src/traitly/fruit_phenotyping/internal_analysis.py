@@ -213,15 +213,16 @@ class FruitInternalAnalyzer:
         self.mask_locules = None
         self.contours = None
         self.fruit_locule_map = None
-        self.alpha = 0.0
         
         # analyze fruits
         self.px_per_cm = None  
         self.results = None
-
+        self.alpha = None
+        
         # save metadata
         self.parameters = AnalysisParameters() 
         self.is_metadata_saved = True
+        self.is_morphology_results = None
 
 
     ##########################################################################################
@@ -1046,23 +1047,14 @@ class FruitInternalAnalyzer:
             If :attr:`mask_fruit` or :attr:`l_transformed` is not available.
         """
 
+        # Validation
+
         if self.mask_fruit is None:
             raise ValueError("No mask available. Run generate_fruit_mask() first.")
         
         if self.l_transformed is None:
             raise ValueError("Locule contrast not initialized. Run enhance_locule_contrast() first "
                              "(use contrast_method = 'none' if no transformation is requiered)")
-        
-        # Validate that required attributes exist
-        if self.l_transformed is None:
-            raise ValueError(
-                "l_transformed is not available. Please call enhance_locule_contrast() first."
-            )
-        
-        if self.mask_fruit is None:
-            raise ValueError(
-                "Fruit mask is not available. Please call generate_fruit_mask() first."
-            )
         
         metadata = self.is_metadata_saved
         if metadata:
@@ -1453,6 +1445,9 @@ class FruitInternalAnalyzer:
 
         if alpha is not None:
             self.alpha = alpha
+        
+        # For color results
+        self.is_morphology_results = True
 
         self.results = analyze_fruits_morphology(
             # Image 
@@ -1539,10 +1534,8 @@ class FruitInternalAnalyzer:
                 'centroid_locule_color': centroid_locule_color,
                 'centroid_locule_thickness': centroid_locule_thickness,
                 'is_locule': is_locule,
-                'alpha': alpha
+                'alpha': self.alpha
                 }
-
-        self.results.morphology_results = pd.DataFrame(self.results.morphology_results)
 
         self.results.morphology_results = pd.DataFrame(self.results.morphology_results)
 
@@ -1643,7 +1636,7 @@ class FruitInternalAnalyzer:
         font_thickness: int = 2,
         pericarp_ext_color: Tuple[int, int, int] = (0, 255, 0),
         pericarp_ext_thickness: int = 2,
-        pericarp_int_color: Tuple[int, int, int] = (0, 255, 255), 
+        pericarp_int_color: Tuple[int, int, int] = (255, 255, 0), 
         pericarp_int_thickness: int = 2,    
         locule_thickness: int = 2,
         locule_color: Tuple[int, int, int] = (255, 0, 255),
@@ -1742,6 +1735,8 @@ class FruitInternalAnalyzer:
         if alpha is not None:
             self.alpha = alpha
 
+
+
         metadata = self.is_metadata_saved
         if metadata:
             self.parameters.analyze_color_params = {
@@ -1752,6 +1747,8 @@ class FruitInternalAnalyzer:
                 'font_thickness': font_thickness,
                 'pericarp_ext_color': pericarp_ext_color,
                 'pericarp_ext_thickness': pericarp_ext_thickness,
+                'pericarp_int_color': pericarp_int_color,
+                'pericarp_int_thickness': pericarp_int_thickness,
                 'locule_thickness': locule_thickness,
                 'locule_color': locule_color,
                 'label_position': label_position,
@@ -1759,21 +1756,21 @@ class FruitInternalAnalyzer:
                 'label_color': label_color,
                 'label_opacity': label_opacity,
                 'get_color_histogram': get_color_histogram,
-                'alpha': alpha
+                'alpha': self.alpha
             }
-
+        
         # Always reannotate from clean image
         saved_color_results = getattr(self.results, 'color_results', None)
         
-        if self.results is None:
+        if self.is_morphology_results is None:
             self.results = ResultsImage(
-                bgr_img = self.img,
+                bgr_img = self.img_copy,
                 morphology_results=[],  
                 image_path=self.img_path
             )
 
-            # Annotate from clean image
-            annotate_all_fruits(annotated_img = self.results.annotated_image,
+        # Annotate independent image for color results
+        annotate_all_fruits(annotated_img = self.results.color_image,
                                 contours =  self.contours, 
                                 fruit_locule_map = self.fruit_locule_map, 
                                 img_shape = self.img_shape,
@@ -1781,20 +1778,24 @@ class FruitInternalAnalyzer:
                                 font_thickness = font_thickness,
                                 pericarp_ext_color = pericarp_ext_color,
                                 pericarp_ext_thickness = pericarp_ext_thickness,
+                                pericarp_int_color = pericarp_int_color,
+                                pericarp_int_thickness = pericarp_int_thickness,
                                 locule_thickness = locule_thickness, 
                                 locule_color = locule_color,
                                 label_position = label_position, 
                                 margin = 10, 
                                 text_color = font_color, 
                                 label_background_color = label_color,
-                                label_opacity = label_opacity)
+                                label_opacity = label_opacity,
+                                alpha=self.alpha)
+        
 
         if saved_color_results is not None:
             self.results.color_results = saved_color_results
         
         if plot:
             plt.figure(figsize = plot_size)
-            plt.imshow(self.results.annotated_image)
+            plt.imshow(self.results.color_image)
             plt.axis('off')
             plt.show()
     

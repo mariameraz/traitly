@@ -339,16 +339,14 @@ def save_img(
             f"Valid formats: {', '.join(valid_cv2_extensions)}"
         )
 
-    params = []
+    params_map = {
+        ".jpg": [cv2.IMWRITE_JPEG_QUALITY, quality],
+        ".jpeg": [cv2.IMWRITE_JPEG_QUALITY, quality],
+        ".png": [cv2.IMWRITE_PNG_COMPRESSION, compression],
+        ".wepb": [cv2.IMWRITE_WEBP_QUALITY, quality]
+    }
 
-    if ext in [".jpg", ".jpeg"]:
-        params = [cv2.IMWRITE_JPEG_QUALITY, quality]
-    elif ext == ".png":
-        params = [cv2.IMWRITE_PNG_COMPRESSION, compression]
-    elif ext == ".webp":
-        params = [cv2.IMWRITE_WEBP_QUALITY, quality]
-
-    success = cv2.imwrite(output_path, image, params)
+    success = cv2.imwrite(output_path, image, params_map.get(ext, []))
 
     if not success:
         raise IOError(f"Failed to save image to '{output_path}'")
