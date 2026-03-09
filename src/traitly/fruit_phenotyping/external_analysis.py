@@ -289,20 +289,19 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             n_fruits_detected = '0'
         
         if verbose:
-            if verbose:
-                optional_config = {
-                    "max_fruit_area": max_fruit_area,
-                    "rescale_factor": rescale_factor
-                }
-                print("\n" + "=" * 37)
-                print(f'        . ݁₊ ⊹ . ݁ ⟡ ݁ Detected fruits: {n_fruits_detected} ⟡ ݁ . ⊹ ₊ ݁.')
-                print("\n > Parameters used:")
-                print(f"        - min_fruit_circularity: {min_fruit_circularity}")
-                print(f"        - min_fruit_area: {min_fruit_area}")
+            optional_config = {
+                "max_fruit_area": max_fruit_area,
+                "rescale_factor": rescale_factor
+            }
+            print("\n" + "=" * 37)
+            print(f'        . ݁₊ ⊹ . ݁ ⟡ ݁ Detected fruits: {n_fruits_detected} ⟡ ݁ . ⊹ ₊ ݁.')
+            print("\n > Parameters used:")
+            print(f"        - min_fruit_circularity: {min_fruit_circularity}")
+            print(f"        - min_fruit_area: {min_fruit_area}")
 
-            for parameter, value in optional_config.items():
-                if value is not None:
-                    print(f"        - {parameter}: {value}")
+        for parameter, value in optional_config.items():
+            if value is not None:
+                print(f"        - {parameter}: {value}")
             
             print("=" * 37)
 
@@ -449,9 +448,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         self.results.morphology_results = self.results.morphology_results.drop(
             columns=cols_to_drop, errors='ignore'
         )
-        self.results.morphology_results = self.results.morphology_results.drop(
-            columns=list(cols_to_drop), errors='ignore'
-        )
 
         # Plot from the correctly annotated results image for external analysis (no locules, and pericarp regions)
         # (super internal plot is suppressed because it shows img_copy without fruit annotations)
@@ -542,7 +538,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             stat = stat, 
             tissue = 'total_pericarp',
             color_space = color_space,
-            display_table = 'False',
+            display_table = display_table,
             plot = plot, 
             plot_size = plot_size,
             font_size = font_size,
@@ -598,6 +594,8 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             'tissue',
             'locule_color',
             'locule_thickness',
+            'pericarp_int_color',
+            'pericarp_int_thickness',
             'alpha'
         ),
     }

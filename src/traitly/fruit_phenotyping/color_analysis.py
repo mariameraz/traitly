@@ -306,20 +306,17 @@ def _get_nan_color_dict(stat_suffix: str = "mean"
 
     """
     return {
-        # RGB (0 to 255)
+        # Pixel stats
         f'R_{stat_suffix}': np.nan, f'G_{stat_suffix}': np.nan, f'B_{stat_suffix}': np.nan,
-
-        # L in (0 to 100), a,b in (-128 to 127)
         f'L_{stat_suffix}': np.nan, f'a_{stat_suffix}': np.nan, f'b_{stat_suffix}': np.nan,
-
-        # Hue in degrees (0 to 360), S,V in (0 to 100)
         f'H_{stat_suffix}': np.nan, f'S_{stat_suffix}': np.nan, f'V_{stat_suffix}': np.nan,
-
-        # Circular hue stats in degrees
-        'H_std': np.nan,
-
-        # Gray (0 to 255)
         f'Gray_{stat_suffix}': np.nan,
+
+        # Standard deviation:
+        'R_std': np.nan, 'G_std': np.nan, 'B_std': np.nan,
+        'L_std': np.nan, 'a_std': np.nan, 'b_std': np.nan,
+        'H_std': np.nan, 'S_std': np.nan, 'V_std': np.nan,
+        'Gray_std': np.nan
     }
 
 

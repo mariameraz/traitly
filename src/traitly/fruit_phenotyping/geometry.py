@@ -95,10 +95,9 @@ def calculate_axes(
     points_px = fruit_contour.reshape(-1, 2).astype(np.float32)
     n = points_px.shape[0] # Number of points in contour
     
-    # Early exit for invalid contours if not enough points
+    # Early exit if not enough points
     if n < 2: 
-        nan_cm = np.nan if px_per_cm is not None else np.nan
-        return nan_cm, nan_cm, np.nan, np.nan
+        return np.nan, np.nan, np.nan, np.nan
     
     # Major axis calculation
     if hull_verts is None:
@@ -112,8 +111,7 @@ def calculate_axes(
     hull_points = points_px[verts]
     
     if len(hull_points) < 2:
-        nan_cm = np.nan if px_per_cm is not None else np.nan
-        return nan_cm, nan_cm, np.nan, np.nan
+        return np.nan, np.nan, np.nan, np.nan
     
     if len(hull_points) == 2:
         max_dist_px = np.linalg.norm(hull_points[1] - hull_points[0])
@@ -126,8 +124,7 @@ def calculate_axes(
         max_dist_px = dist_matrix[max_idx]
     
     if max_dist_px == 0:
-        nan_cm = np.nan if px_per_cm is not None else np.nan
-        return nan_cm, nan_cm, 0.0, 0.0
+        return np.nan, np.nan, np.nan, np.nan
     
     # Major axis length in cm calculation
     if px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
