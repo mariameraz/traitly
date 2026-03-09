@@ -2257,7 +2257,8 @@ class FruitInternalAnalyzer:
         locule_thickness: Optional[int] = None,
         centroid_locule_color: Optional[Tuple[int,int,int]] = None,
         centroid_locule_thickness: Optional[int] = None,
-
+        alpha: Optional[int] = None,
+        
         # analyze_color
         stat: Optional[str] = None,
         tissue: Optional[str] = None,
@@ -2511,11 +2512,15 @@ class FruitInternalAnalyzer:
             locule_color=locule_color, locule_thickness=locule_thickness,
             centroid_locule_color=centroid_locule_color,
             centroid_locule_thickness=centroid_locule_thickness,
+            alpha=alpha
         ))
         _apply('analyze_color_params', dict(
             stat=stat, tissue=tissue, color_space=color_space,
             label_opacity=label_opacity,
             get_color_histogram=get_color_histogram,
+            alpha=alpha,
+            pericarp_int_color=pericarp_int_color,
+            pericarp_int_thickness=pericarp_int_thickness
         ))
 
         # Sync to self.parameters for session report
