@@ -1442,6 +1442,7 @@ class FruitInternalAnalyzer:
             self.img_copy = self.img_rgb.copy()
     
         saved_color_results = getattr(self.results, 'color_results', None)
+        saved_color_image   = getattr(self.results, 'color_image', None)
 
         if alpha is not None:
             self.alpha = alpha
@@ -1508,6 +1509,8 @@ class FruitInternalAnalyzer:
 
         if saved_color_results is not None:
             self.results.color_results = saved_color_results
+        if saved_color_image is not None:
+            self.results.color_image = saved_color_image
 
         metadata = self.is_metadata_saved
         if metadata:
