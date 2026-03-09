@@ -641,7 +641,8 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         analyze_morphology=True,
         analyze_color=True,
         save_image=False,
-        output_path=None
+        output_path=None,
+        skip_sanitize = False
     ):
         """
         Run the full analysis pipeline on the loaded image.
@@ -684,8 +685,11 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         else:
             resolved = {}
 
+        if not skip_sanitize:
+            resolved = self._sanitize_config(resolved)
+
         return super().process_single_file(
-            config=self._sanitize_config(resolved),
+            config=resolved,
             json_path=None,
             analyze_morphology=analyze_morphology,
             analyze_color=analyze_color,
@@ -982,6 +986,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                     analyze_morphology=analyze_morphology,
                     analyze_color=analyze_color,
                     save_image=True, output_path=output_path,
+                    skip_sanitize=True
                 )
                 return df_m, df_c, err, n, ann_img, os.path.basename(img_path), t.time() - t0
             except Exception as e:
