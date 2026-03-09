@@ -299,10 +299,10 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             print(f"        - min_fruit_circularity: {min_fruit_circularity}")
             print(f"        - min_fruit_area: {min_fruit_area}")
 
-        for parameter, value in optional_config.items():
-            if value is not None:
-                print(f"        - {parameter}: {value}")
-            
+            for parameter, value in optional_config.items():
+                if value is not None:
+                    print(f"        - {parameter}: {value}")
+                
             print("=" * 37)
 
         return None
