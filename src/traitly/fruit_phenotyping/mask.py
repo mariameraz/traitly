@@ -1650,4 +1650,5 @@ def interactive_mask_editor(mask: np.ndarray, original_img: Optional[np.ndarray]
             break
 
     cv2.destroyAllWindows()
+    cv2.waitKey(1) 
     return result
