@@ -220,7 +220,7 @@ extra:
       link: mailto:<ma.torresmeraz@gmail.com>
 
 extra_css:
-  - stylesheets/extra.css
+  - /stylesheets/extra.css
 
 extra_javascript: # for page transitions
-  - stylesheets/animations.js
+  - /stylesheets/animations.js
