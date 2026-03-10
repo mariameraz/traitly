@@ -163,26 +163,26 @@ plugins:
 nav:
   - Home: index.md
 
-  - Installation: installation.md
+  - Installation: en/installation.md
 
   - User Guide: 
-      -  Traitly Architecture: workflow/overview.md
+      - Traitly Architecture: en/workflow/overview.md
       - Internal analysis: 
-        - Image Specifications: workflow/int_image_requirements.md
-        - Internal Analyzer Class: workflow/internal_class.md  
+        - Image Specifications: en/workflow/int_image_requirements.md
+        - Internal Analyzer Class: en/workflow/internal_class.md  
       - External analysis:
-        - Image Specifications: workflow/ext_image_requirements.md
-        - External Analyzer Class: workflow/external_class.md
+        - Image Specifications: en/workflow/ext_image_requirements.md
+        - External Analyzer Class: en/workflow/external_class.md
       - CLI:
-        - Command Line Interface: workflow/cli.md
+        - Command Line Interface: en/workflow/cli.md
       - Results: 
-        - Overview: workflow/results/overview.md
-        - Measurements: workflow/results/measurements.md
+        - Overview: en/workflow/results/overview.md
+        - Measurements: en/workflow/results/measurements.md
 
   - Tutorials:
-      - Overview: tutorials/overview.md
-      - Quickstart: tutorials/quickstart.md
-      - External Analysis: tutorials/external.md
+      - Overview: en/tutorials/overview.md
+      - Quickstart: en/tutorials/quickstart.md
+      - External Analysis: en/tutorials/external.md
       - Background Segmentation: en/tutorials/background_segmentation.md
 
 
@@ -199,7 +199,7 @@ nav:
           - color_plot: en/api/color_plot.md
           - analysis_parameters: en/api/analysis_parameters.md
   
-  - About: about.md
+  - About: en/about.md
   - Changelog: en/changelog.md
 
 #######################
