@@ -55,7 +55,9 @@ from .mask import (create_mask,
                    find_fruits, 
                    apply_contrast, 
                    create_mask_locules, 
-                   generate_scatter_plot)
+                   generate_scatter_plot,
+                   generate_l_channel_histogram,
+                   interactive_mask_editor)
 
 from .fruit_config import analyze_fruits_morphology
 from ..utils.basic_functions import (load_img,
@@ -721,8 +723,81 @@ class FruitInternalAnalyzer:
         return None
     
     ##########################################################################################
-    #                                     MASKS
+    #   
+    #                                   MASKS
+
+    ##########################################################################################
+    # OPTIONAL : Create a histogram to visualize pixel intensity for L channel
+    ##########################################################################################
+
+    def generate_l_channel_histogram(self,
+        otsu_offset: int = 0,
+        plot_size: Tuple[int,int] = (9,3)
+    ) -> None:
+        """
+        """
+
+        if self.mask_fruit is None:
+            raise ValueError("No mask available. Run generate_fruit_mask() first.")
         
+        if self.l_transformed is None:
+            raise ValueError("Locule contrast not initialized. Run enhance_locule_contrast() first "
+                             "(use contrast_method = 'none' if no transformation is requiered)")
+        
+
+        generate_l_channel_histogram(l_transformed = self.l_transformed,
+                                     fruit_mask = self.mask_fruit,
+                                     otsu_offset= otsu_offset,
+                                     plot_size = plot_size)
+        
+
+    ##########################################################################################
+    # OPTIONAL : Open an interactive mask editor
+    ##########################################################################################
+
+    def edit_mask(self, verbose: bool = True) -> None:
+        """Manually edit the locule mask if available, otherwise the fruit mask."""
+
+        if self.mask_locules is not None:
+            mask = 'mask_locules'
+        elif self.mask_fruit is not None:
+            mask = 'mask_fruit'
+        else:
+            raise ValueError("No mask found. Run generate_fruit_mask() and optionally, generate_locule_mask() first.")
+
+        if verbose:  
+            controls = [
+                ("Left click",       "add polygon point (both panels)"),
+                ("Right click drag", "pan"),
+                ("W",                "fill polygon WHITE (add region)"),
+                ("B",                "fill polygon BLACK (remove region)"),
+                ("Enter",            "apply current polygon"),
+                ("Z",                "undo last edit"),
+                ("C",                "clear current polygon points"),
+                ("+ / =",            "zoom in"),
+                ("- / _",            "zoom out"),
+                ("T",                "toggle overlay opacity (10% steps)"),
+                ("Q",                "quit and SAVE changes"),
+                ("ESC",              "quit and DISCARD all changes"),
+            ]
+
+            from IPython.display import display, HTML
+
+            col_w = max(len(k) for k, _ in controls) + 2
+
+            lines = ["=" * 60, " .✦ ݁˖ Interactive mask editor .✦ ݁˖", "=" * 60, 
+                "> Draw polygons to add or remove regions.", f"> Editing: {mask}\n"]
+            for key, desc in controls:
+                lines.append(f"  {key:<{col_w}}: {desc}")
+
+            display(HTML(f"<pre style='font-family:monospace'>{'<br>'.join(lines)}</pre>"))
+
+
+        if mask == 'mask_locules':
+            self.mask_locules = interactive_mask_editor(self.mask_locules, original_img=self.img_rgb)
+        else:
+            self.mask_fruit = interactive_mask_editor(self.mask_fruit, original_img=self.img_rgb)
+
 
     ##########################################################################################
     # OPTIONAL : Create a scatterplot to visualize pixel colors (HSV space) 
@@ -995,10 +1070,14 @@ class FruitInternalAnalyzer:
     def generate_locule_mask(
         self,
         thresh_min: int = 120,
-        thresh_max: int = 255,
         kernel_close: Optional[int] = None,
         kernel_open: Optional[int] = None,
+        kernel_blur: Optional[int] = None,
+        erosion_px: int = 10,
+        use_otsu: bool = True,
+        otsu_offset: int = 0,
         min_fruit_area: int = 5000,
+        min_locule_area: int = 0,
         invert_locule: bool = False,
         plot: bool = True,
         plot_size: Tuple[int, int] = (10, 5),
@@ -1056,10 +1135,14 @@ class FruitInternalAnalyzer:
         if metadata:
             self.parameters.generate_locule_mask_params = {
                 'thresh_min': thresh_min,
-                'thresh_max': thresh_max,
                 'min_fruit_area': min_fruit_area,
+                'min_locule_area': min_locule_area,
                 'kernel_close': kernel_close,
                 'kernel_open': kernel_open,
+                'kernel_blur': kernel_blur,
+                'erosion_px': erosion_px,
+                'use_otsu': use_otsu,
+                'otsu_offset': otsu_offset,
                 'invert_locule': invert_locule
                 }
         
@@ -1067,10 +1150,14 @@ class FruitInternalAnalyzer:
             l_transformed=self.l_transformed,
             fruit_mask=self.mask_fruit,
             thresh_min=thresh_min,
-            thresh_max=thresh_max,
             kernel_close=kernel_close,
             kernel_open=kernel_open,
-            min_fruit_size=min_fruit_area,
+            kernel_blur=kernel_blur,
+            erosion_px=erosion_px,
+            use_otsu=use_otsu,
+            otsu_offset=otsu_offset,
+            min_fruit_area=min_fruit_area,
+            min_locule_area=min_locule_area,
             invert_locules=invert_locule,
             plot=plot, 
             plot_size=plot_size
@@ -1088,7 +1175,7 @@ class FruitInternalAnalyzer:
         verbose: bool = True,
         min_locule_area: int = 50,
         min_locule_per_fruit: int = 1,
-        min_fruit_area: Optional[int] = None,
+        min_fruit_area: int = 5000,
         max_fruit_area: Optional[int] = None,
         rescale_factor: Optional[float] = None,
         plot: bool = False,
@@ -1196,9 +1283,12 @@ class FruitInternalAnalyzer:
 
         if plot:
             img_copy = self.img_rgb.copy()
-            for fruit_id in self.fruit_locule_map:
-                contour = self.contours[fruit_id]
-                cv2.drawContours(img_copy, [contour], -1, contour_color, contour_thickness)  
+            for fruit_id, locule_ids in self.fruit_locule_map.items():
+                # Fruits
+                cv2.drawContours(img_copy, [self.contours[fruit_id]], -1, contour_color, contour_thickness)
+                # Locules
+                for loc_id in locule_ids:
+                    cv2.drawContours(img_copy, [self.contours[loc_id]], -1, (255, 0, 255), contour_thickness)
                     
             base_fontsize = 6
             fontsize = base_fontsize + (plot_size[0] )
@@ -2228,6 +2318,7 @@ class FruitInternalAnalyzer:
         kernel_close_locule: Optional[int] = None,
         kernel_open_locule: Optional[int] = None,
         invert_locule: Optional[bool] = None,
+        
 
         # detect_fruits
         min_fruit_area: Optional[int] = None,

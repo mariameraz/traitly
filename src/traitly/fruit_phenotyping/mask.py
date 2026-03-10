@@ -18,6 +18,8 @@ from typing import Optional, Tuple, List, Dict
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import gaussian_kde
+from matplotlib.colors import LinearSegmentedColormap
 
 # ============================================================================
 # INTERNAL IMPORTS
@@ -168,8 +170,8 @@ def create_mask(
                 lower_hsv = np.array([90, 100, 80], dtype=np.uint8)
                 upper_hsv = np.array([130, 255, 255], dtype=np.uint8)
             elif background_color == 'white':
-                lower_hsv = np.array([0, 0, 85], dtype=np.uint8)   
-                upper_hsv = np.array([180, 66, 255], dtype=np.uint8)
+                lower_hsv = np.array([0, 0, 100], dtype=np.uint8)   
+                upper_hsv = np.array([180, 50, 255], dtype=np.uint8)
             elif background_color == 'black':
                 lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
                 upper_hsv = np.array([180, 250, 50], dtype=np.uint8)
@@ -292,6 +294,7 @@ def fill_holes_to_mask(mask: np.ndarray) -> np.ndarray:
 #################################################################################################
 # Close contours slit with convex hull 
 #################################################################################################
+
 def apply_convex_hull_to_mask(
     mask: np.ndarray,
     min_area: int = 50,
@@ -1050,14 +1053,99 @@ def apply_contrast(
     
     return l_transformed
 
+##########################################
+# Generate histagram plots for L channel #
+##########################################
+
+def generate_l_channel_histogram(
+    l_transformed: np.ndarray,
+    fruit_mask: np.ndarray,
+    otsu_offset: int = 0,
+    plot_size: Tuple[int, int] = (14, 4),
+) -> None:
+
+    pixels = l_transformed[fruit_mask > 0]
+
+    otsu_val, _ = cv2.threshold(l_transformed, 0, 255,
+                                cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    otsu_adjusted = int(otsu_val + otsu_offset)
+
+    kde = gaussian_kde(pixels, bw_method=0.1)
+    x = np.linspace(0, 255, 500)
+    kde_scaled = kde(x) * len(pixels) * (255 / 100)
+
+    width = plot_size[0]
+    title_fontsize  = int(np.clip(8 + width * 0.4, 10, 24))
+    label_fontsize  = int(np.clip(6 + width * 0.2,  8, 18))
+    tick_fontsize   = int(np.clip(5 + width * 0.2,  7, 14))
+    legend_fontsize = int(np.clip(4 + width * 0.2,  7, 13))
+
+    intensity_cmap = LinearSegmentedColormap.from_list('gray_bar', ['black', 'white'])
+    gradient = np.linspace(0, 1, 256).reshape(1, -1)
+
+    locules  = pixels[pixels <= otsu_adjusted]
+    pericarp = pixels[pixels >  otsu_adjusted]
+
+    fig, axes = plt.subplots(1, 2, figsize=plot_size)
+    fig.subplots_adjust(bottom=0.28)
+
+    # L adjusted plot
+    axes[0].hist(pixels, bins=100, color='steelblue', edgecolor='none', alpha=0.6)
+    axes[0].plot(x, kde_scaled, color="#175229", linewidth=1.8)
+    axes[0].set_xlabel('L value (0–255)', fontsize=label_fontsize, labelpad=8)
+    axes[0].set_ylabel('Pixel count', fontsize=label_fontsize)
+    axes[0].set_title('L channel distribution', fontsize=title_fontsize, fontweight='bold')
+    axes[0].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[0].grid(alpha=0.3)
+
+    # Otsu plot
+    axes[1].hist(locules,  bins=100, color='tomato',    edgecolor='none',
+                 alpha=0.7, label=f'Locules (≤{otsu_adjusted})')
+    axes[1].hist(pericarp, bins=100, color='steelblue', edgecolor='none',
+                 alpha=0.7, label=f'Pericarp (>{otsu_adjusted})')
+    axes[1].plot(x, kde_scaled, color="#175229", linewidth=1.8)
+    axes[1].axvline(otsu_adjusted, color='black', linestyle='--',
+                    linewidth=1.5, label=f'Otsu: {otsu_adjusted}')
+    axes[1].set_xlabel('L value (0–255)', fontsize=label_fontsize, labelpad=8)
+    axes[1].set_ylabel('Pixel count', fontsize=label_fontsize)
+    axes[1].set_title('L channel distribution (Otsu split)', fontsize=title_fontsize, fontweight='bold')
+    axes[1].tick_params(axis='both', labelsize=tick_fontsize)
+    axes[1].grid(alpha=0.3)
+    axes[1].legend(fontsize=legend_fontsize)
+
+    # Pixel intensity bars
+    x1, y1 = plot_size
+    bar_h = 0.03 
+    bar_y = 0.025 * plot_size[1]
+
+    for ax in axes:
+        pos = ax.get_position()
+        bar_ax = fig.add_axes([pos.x0, bar_y, pos.width, bar_h])
+        bar_ax.imshow(gradient, aspect='auto', cmap=intensity_cmap,
+                      extent=[0, 255, 0, 1])
+        bar_ax.set_xticks([])
+        bar_ax.set_yticks([])
+        for spine in bar_ax.spines.values():
+            spine.set_visible(False)
+
+    plt.show()
+
+#######################
+# Create locule masks #
+#######################
+
 def create_mask_locules(
     l_transformed: np.ndarray,
     fruit_mask: np.ndarray,
     kernel_close: Optional[int] = None,
     thresh_min: int = 100,
-    thresh_max: int = 255,
     kernel_open: Optional[int] = None,
-    min_fruit_size: int = 5000,
+    kernel_blur: Optional[int] = None,
+    erosion_px: int = 0,
+    use_otsu: bool = False,
+    otsu_offset: int = 0,
+    min_fruit_area: int = 5000,
+    min_locule_area: int = 50,
     invert_locules: bool = False,
     plot: bool = False,
     plot_size: Tuple[int, int] = (15, 5),
@@ -1084,15 +1172,30 @@ def create_mask_locules(
     thresh_min : int, optional
         Lower threshold for ``cv2.THRESH_BINARY_INV`` binarization of
         ``l_transformed``. Default is 100.
-    thresh_max : int, optional
-        Upper threshold for binarization. Default is 255.
     kernel_open : int or None, optional
         Odd kernel size for morphological opening applied after closing.
         If ``None``, opening is skipped. Default is ``None``.
-    min_fruit_size : int, optional
+    kernel_blur : int or None, optional
+        Odd kernel size for Gaussian blur applied after morphological
+        operations. If ``None``, blur is skipped. Default is ``None``.
+    erosion_px : int, optional
+        Erosion radius in pixels applied to ``fruit_mask`` before masking
+        locules. Useful to exclude false locules detected at the fruit
+        border. Set to 0 to skip. Default is 0.
+    use_otsu : bool, optional
+        If True, ignore ``thresh_min`` and compute the threshold automatically
+        using Otsu's method. Default is False.
+    otsu_offset : int, optional
+        Offset added to the Otsu threshold. Positive values capture more
+        pixels, negative values less. Only used when ``use_otsu=True``.
+        Default is 0.
+    min_fruit_area : int, optional
         Minimum contour area in pixels to classify a region as a fruit
-        during mask fusion. Smaller contours are ignored. Default is
-        5000.
+        during mask fusion. Smaller contours are ignored. Default is 5000.
+    min_locule_area : int, optional
+        Minimum area in pixels to retain a locule region. Smaller blobs
+        are removed after morphological operations. Set to 0 to skip.
+        Default is 50.
     invert_locules : bool, optional
         If True, invert the locule mask within fruit regions before
         fusion. Useful when locules are brighter than the surrounding
@@ -1120,76 +1223,103 @@ def create_mask_locules(
         raise TypeError("l_transformed must be a numpy array")
     if not isinstance(fruit_mask, np.ndarray):
         raise TypeError("fruit_mask must be a numpy array")
-    
+
     # Apply threshold to get locules
-    _, locule_mask = cv2.threshold(l_transformed, thresh_min, thresh_max, 
-                                   cv2.THRESH_BINARY_INV)
-    
+    if use_otsu:
+        otsu_val, locule_mask = cv2.threshold(l_transformed, 0, 255,
+                                              cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        if otsu_offset != 0:
+            _, locule_mask = cv2.threshold(l_transformed, otsu_val + otsu_offset, 255,
+                                           cv2.THRESH_BINARY_INV)
+    else:
+        locule_mask = cv2.inRange(l_transformed, 0, thresh_min)
+
     # Apply morphological closing if specified
     if kernel_close is not None:
-        kernel_cl = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, 
+        kernel_cl = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
                                               (kernel_close, kernel_close))
         locule_mask = cv2.morphologyEx(locule_mask, cv2.MORPH_CLOSE, kernel_cl)
-    
+
     # Apply morphological opening if specified
     if kernel_open is not None:
-        kernel_op = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, 
+        kernel_op = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
                                               (kernel_open, kernel_open))
         locule_mask = cv2.morphologyEx(locule_mask, cv2.MORPH_OPEN, kernel_op)
-    
+
+    # Apply Gaussian blur if specified
+    if kernel_blur is not None:
+        locule_mask = cv2.GaussianBlur(locule_mask, (kernel_blur, kernel_blur), 0)
+
     # Find all contours
     inv_locule_mask = cv2.bitwise_not(locule_mask)
-    contours, hierarchy = cv2.findContours(inv_locule_mask, cv2.RETR_CCOMP, 
-                                          cv2.CHAIN_APPROX_SIMPLE)
-    
+    contours, hierarchy = cv2.findContours(inv_locule_mask, cv2.RETR_CCOMP,
+                                           cv2.CHAIN_APPROX_SIMPLE)
+
     # Create black mask and fill ONLY fruits (large contours without parent)
     fruits_only_mask = np.zeros_like(locule_mask)
-    
+
     if contours and hierarchy is not None:
         h0 = hierarchy[0]
         for i, cnt in enumerate(contours):
-            # If no parent (external contour) and large (fruit, not noise)
-            if h0[i][3] == -1 and cv2.contourArea(cnt) > min_fruit_size:
-                # Fill this fruit completely (includes all internal structures)
+            if h0[i][3] == -1 and cv2.contourArea(cnt) > min_fruit_area:
                 cv2.drawContours(fruits_only_mask, [cnt], -1, 255, -1)
-    
+
+    # Erode fruit mask to exclude border locules
+    if erosion_px > 0:
+        kernel = cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE,
+            (erosion_px * 2 + 1, erosion_px * 2 + 1)
+        )
+        fruit_mask_eroded = cv2.erode(fruit_mask.copy(), kernel, iterations=1)
+    else:
+        fruit_mask_eroded = fruit_mask
+
     # Invert locules mask if requested
     if invert_locules:
-        # Invert only within fruits (keep background black)
         locule_mask_clean = cv2.bitwise_and(
             cv2.bitwise_not(locule_mask),
-            fruits_only_mask
+            fruit_mask_eroded
         )
     else:
-        locule_mask_clean = cv2.bitwise_and(locule_mask, fruits_only_mask)
-    
+        locule_mask_clean = cv2.bitwise_and(locule_mask, fruit_mask_eroded)
+
+    # Filter small locules
+    if min_locule_area > 0:
+        contours_loc, _ = cv2.findContours(locule_mask_clean, cv2.RETR_EXTERNAL,
+                                           cv2.CHAIN_APPROX_SIMPLE)
+        filtered = np.zeros_like(locule_mask_clean)
+        for cnt in contours_loc:
+            if cv2.contourArea(cnt) >= min_locule_area:
+                cv2.drawContours(filtered, [cnt], -1, 255, -1)
+        locule_mask_clean = filtered
+
     # Fuse fruit mask with locules mask
     mask_fruits_inv = cv2.bitwise_not(fruit_mask)
     mask_fruits_inv[locule_mask_clean == 255] = 255
     final_mask = cv2.bitwise_not(mask_fruits_inv)
-    
+
     if plot:
         plt.figure(figsize=plot_size)
-        
+
         plt.subplot(1, 3, 1)
         plt.imshow(l_transformed, cmap='gray')
         plt.title('L* contrast applied')
         plt.axis('off')
-        
+
         plt.subplot(1, 3, 2)
         plt.imshow(locule_mask_clean, cmap='gray')
         title = "Locules mask" + (" (inverted)" if invert_locules else "")
         plt.title(title)
         plt.axis('off')
-        
+
         plt.subplot(1, 3, 3)
         plt.imshow(final_mask, cmap='gray')
         plt.title("Final mask (Fruits + Locules)")
         plt.axis('off')
-        
+
         plt.tight_layout()
         plt.show()
-    
+
     return final_mask
 
 ######################################################################
@@ -1278,3 +1408,246 @@ def generate_scatter_plot(
 
     plt.tight_layout()
     plt.show()
+
+
+## Interactive editor
+
+def interactive_mask_editor(mask: np.ndarray, original_img: Optional[np.ndarray] = None) -> np.ndarray:
+    """
+    Interactive mask editor. Draw polygons to add (white) or remove (black) regions.
+
+    Controls:
+        Left click          : add polygon point (both panels)
+        Right click drag    : pan
+        W                   : fill polygon WHITE (add region)
+        B                   : fill polygon BLACK (remove region)
+        Enter               : apply current polygon
+        Z                   : undo last edit
+        C                   : clear current polygon points
+        + / =               : zoom in
+        - / _               : zoom out
+        T                   : toggle original image overlay opacity (10% steps)
+        Q                   : quit and SAVE changes
+        ESC                 : quit and DISCARD all changes
+    """
+    edited = mask.copy()
+    history = [mask.copy()]
+    points = []
+    mode = 'white'
+    show_original = original_img is not None
+    overlay_alpha = 0.4
+
+    zoom = 1.0
+    pan_x, pan_y = 0.0, 0.0
+    is_panning = False
+    pan_start = (0, 0)
+    pan_origin = (0.0, 0.0)
+
+    img_h, img_w = mask.shape
+
+    # Same size for both panels
+    PANEL_W = 700
+    PANEL_H = 700
+
+    if original_img is not None:
+        if original_img.ndim == 2:
+            orig_bgr = cv2.cvtColor(original_img, cv2.COLOR_GRAY2BGR)
+        else:
+            orig_bgr = original_img.copy()
+            if orig_bgr.dtype != np.uint8:
+                orig_bgr = (orig_bgr * 255).astype(np.uint8)
+        orig_bgr = cv2.resize(orig_bgr, (img_w, img_h))
+    else:
+        orig_bgr = None
+
+    window = 'Mask Editor  |  W/B=mode  Enter=apply  Z=undo  C=clear  +/-=zoom  RightDrag=pan  T=overlay  Q=save  ESC=discard'
+
+    def clamp_pan():
+        nonlocal pan_x, pan_y
+        max_pan_x = max(0.0, img_w - img_w / zoom)
+        max_pan_y = max(0.0, img_h - img_h / zoom)
+        pan_x = max(0.0, min(pan_x, max_pan_x))
+        pan_y = max(0.0, min(pan_y, max_pan_y))
+
+    def screen_to_img(sx, sy):
+        """convert screen coords to image coords"""
+        ix = int(sx / PANEL_W * (img_w / zoom) + pan_x)
+        iy = int(sy / PANEL_H * (img_h / zoom) + pan_y)
+        return (max(0, min(ix, img_w - 1)), max(0, min(iy, img_h - 1)))
+
+    def img_to_screen(ix, iy):
+        """Convert image coords to screen coords"""
+        sx = int((ix - pan_x) * zoom / img_w * PANEL_W)
+        sy = int((iy - pan_y) * zoom / img_h * PANEL_H)
+        return (sx, sy)
+
+    def render_panel_mask(img):
+        """Render left panel"""
+        x1 = int(pan_x)
+        y1 = int(pan_y)
+        x2 = int(pan_x + img_w / zoom)
+        y2 = int(pan_y + img_h / zoom)
+        x1, x2 = max(0, x1), min(img_w, x2)
+        y1, y2 = max(0, y1), min(img_h, y2)
+
+        preview = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+        if len(points) >= 3:
+            poly = np.array(points, dtype=np.int32)
+            overlay = preview.copy()
+            cv2.fillPoly(overlay, [poly],
+                         (0, 180, 0) if mode == 'white' else (0, 0, 200))
+            preview = cv2.addWeighted(preview, 0.5, overlay, 0.5, 0)
+
+        panel = cv2.resize(preview[y1:y2, x1:x2], (PANEL_W, PANEL_H),
+                           interpolation=cv2.INTER_NEAREST)
+
+        color = (100, 200, 100) if mode == 'white' else (100, 100, 255)
+        screen_pts = [img_to_screen(*p) for p in points]
+
+        for spt in screen_pts:
+            cv2.circle(panel, spt, 5, color, -1)
+        if len(screen_pts) > 1:
+            for i in range(len(screen_pts) - 1):
+                cv2.line(panel, screen_pts[i], screen_pts[i + 1], color, 2)
+            cv2.line(panel, screen_pts[-1], screen_pts[0], color, 1)
+
+        cv2.putText(panel,
+                    f'Mode: {"ADD (white)" if mode == "white" else "REMOVE (black)"}',
+                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        cv2.putText(panel, f'Points: {len(points)}   Zoom: {zoom:.1f}x',
+                    (10, 58), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (200, 200, 200), 1)
+        cv2.putText(panel, 'MASK  |  Q=save  ESC=discard',
+                    (10, PANEL_H - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
+        return panel
+
+    def render_panel_original(img):
+        """Render right panel"""
+        x1 = int(pan_x)
+        y1 = int(pan_y)
+        x2 = int(pan_x + img_w / zoom)
+        y2 = int(pan_y + img_h / zoom)
+        x1, x2 = max(0, x1), min(img_w, x2)
+        y1, y2 = max(0, y1), min(img_h, y2)
+
+        panel = cv2.resize(orig_bgr[y1:y2, x1:x2], (PANEL_W, PANEL_H),
+                           interpolation=cv2.INTER_LINEAR)
+
+        # Mask with independent polygon
+        mask_current = img.copy()
+        if len(points) >= 3:
+            poly = np.array(points, dtype=np.int32)
+            cv2.fillPoly(mask_current, [poly], 255 if mode == 'white' else 0)
+
+        mask_overlay = cv2.cvtColor(mask_current[y1:y2, x1:x2], cv2.COLOR_GRAY2BGR)
+        mask_overlay = cv2.resize(mask_overlay, (PANEL_W, PANEL_H),
+                                  interpolation=cv2.INTER_NEAREST)
+        panel = cv2.addWeighted(panel, 1 - overlay_alpha, mask_overlay, overlay_alpha, 0)
+
+        color = (100, 200, 100) if mode == 'white' else (100, 100, 255)
+        screen_pts = [img_to_screen(*p) for p in points]
+
+        for spt in screen_pts:
+            cv2.circle(panel, spt, 5, color, -1)
+        if len(screen_pts) > 1:
+            for i in range(len(screen_pts) - 1):
+                cv2.line(panel, screen_pts[i], screen_pts[i + 1], color, 2)
+            cv2.line(panel, screen_pts[-1], screen_pts[0], color, 1)
+
+        cv2.putText(panel, f'Mask overlay: {int(overlay_alpha * 100)}%',
+                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (200, 200, 200), 1)
+        cv2.putText(panel, 'ORIGINAL',
+                    (10, PANEL_H - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
+        return panel
+
+    def draw_state(img):
+        left = render_panel_mask(img)
+        if not show_original:
+            return left
+        right = render_panel_original(img)
+        separator = np.full((PANEL_H, 4, 3), 80, dtype=np.uint8)
+        return np.hstack([left, separator, right])
+
+    def mouse_callback(event, x, y, flags, param):
+        nonlocal is_panning, pan_start, pan_origin, pan_x, pan_y
+        nx = x
+        if show_original and x > PANEL_W + 4:
+            nx = x - PANEL_W - 4
+
+        if event == cv2.EVENT_LBUTTONDOWN:
+            img_pt = screen_to_img(nx, y)
+            points.append(img_pt)
+            cv2.imshow(window, draw_state(edited))
+
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            is_panning = True
+            pan_start = (x, y)
+            pan_origin = (pan_x, pan_y)
+
+        elif event == cv2.EVENT_MOUSEMOVE and is_panning:
+            
+            dx = (x - pan_start[0]) / PANEL_W * (img_w / zoom)
+            dy = (y - pan_start[1]) / PANEL_H * (img_h / zoom)
+            pan_x = pan_origin[0] - dx
+            pan_y = pan_origin[1] - dy
+            clamp_pan()
+            cv2.imshow(window, draw_state(edited))
+
+        elif event == cv2.EVENT_RBUTTONUP:
+            is_panning = False
+
+    win_w = PANEL_W * 2 + 4 if show_original else PANEL_W
+    cv2.namedWindow(window, cv2.WINDOW_AUTOSIZE)
+    cv2.setMouseCallback(window, mouse_callback)
+
+    result = mask.copy()
+
+    while True:
+        cv2.imshow(window, draw_state(edited))
+        key = cv2.waitKey(20) & 0xFF
+
+        if key == ord('w'):
+            mode = 'white'
+
+        elif key == ord('b'):
+            mode = 'black'
+
+        elif key == ord('c'):
+            points.clear()
+
+        elif key == ord('z'):
+            if len(history) > 1:
+                history.pop()
+                edited = history[-1].copy()
+            points.clear()
+
+        elif key == ord('t') and orig_bgr is not None:
+            overlay_alpha = round((overlay_alpha + 0.1) % 1.1, 1)
+            if overlay_alpha > 1.0:
+                overlay_alpha = 0.1
+
+        elif key in (ord('+'), ord('=')):
+            zoom = min(zoom * 1.3, 10.0)
+            clamp_pan()
+
+        elif key in (ord('-'), ord('_')):
+            zoom = max(zoom / 1.3, 1.0)
+            if zoom == 1.0:
+                pan_x, pan_y = 0.0, 0.0
+
+        elif key == 13 and len(points) >= 3:  # Enter
+            history.append(edited.copy())
+            poly = np.array(points, dtype=np.int32)
+            cv2.fillPoly(edited, [poly], 255 if mode == 'white' else 0)
+            points.clear()
+
+        elif key == ord('q'): 
+            result = edited.copy()
+            break
+
+        elif key == 27: # ESC
+            result = mask.copy()
+            break
+
+    cv2.destroyAllWindows()
+    return result
