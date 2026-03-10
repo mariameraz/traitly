@@ -10,11 +10,13 @@ La calidad de los análisis depende directamente de la calidad de las imágenes.
 
 ### Equipo recomendado
 
-Para el análisis externo de frutos, las imágenes se capturan con una **cámara fotográfica**, ya sea un teléfono inteligente o una cámara profesional. El tipo de dispositivo no es determinante por sí solo: lo más importante es la consistencia. Usa el **mismo dispositivo** para todas las imágenes de un experimento, ya que los ajustes de color, balance de blancos y procesamiento interno varían entre fabricantes y modelos, y estas diferencias pueden introducir sesgos en las mediciones de color.
+Para el análisis externo de los frutos, las imágenes se pueden capturar con una **cámara fotográfica**, ya sea de un teléfono inteligente o una cámara profesional. Sin importar el tipo de dispositivo que se elija, la consistencia es clave. Usa la **misma cámara** para tomar todas las imágenes de un experimento, ya que los ajustes de color, balance de blancos y procesamiento interno varían entre fabricantes y modelos, y estas diferencias pueden introducir sesgos en las mediciones de color. 
+
+
 
 ### Preparación de las muestras
 
-- **Posición de la cámara**: Coloca la cámara de forma que quede **paralela y perpendicular** a los frutos, sin ángulo de inclinación. Tomar imágenes desde un ángulo introduce distorsión geométrica que puede afectar las mediciones morfológicas.
+- **Posición de la cámara**: Fija la cámara de forma que quede **paralela y perpendicular** a los frutos, sin ángulo de inclinación. Tomar imágenes desde un ángulo introduce distorsión geométrica que puede afectar las mediciones morfológicas. También recomendamos mantener la cámara en la **misma posición y lugar** durante todo el experimento para asegurar la misma distancia entre la lente y fondo en cada imágen.
 - **Objetos ajenos al fruto**: Procura que las imágenes contengan únicamente los objetos de interés. La presencia de tallos, hojas, semillas sueltas o suciedad, aunque puede filtrarse en pasos posteriores del análisis, incrementa el tiempo de procesamiento, ya que este escala con el número de contornos detectados por imagen.
 
 ### Iluminación

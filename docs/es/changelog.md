@@ -1,4 +1,4 @@
-# Historial de Cambios
+# Historial de Cambios ⊹ ࣪ ˖
 
 Todos los cambios notables de Traitly están documentados aquí.
 

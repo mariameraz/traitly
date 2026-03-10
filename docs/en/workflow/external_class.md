@@ -54,6 +54,7 @@ analyzer = FruitExternalAnalyzer('path/to/my/image.jpg')
 analyzer.load_image()                     # Load the image
 analyzer.setup_measurements()             # Set up calibration and labels
 analyzer.generate_fruit_mask()            # Separate fruits from the background
+analyzer.edit_mask()                      # (Optional) Manually correct the fruit mask
 analyzer.detect_fruits()                  # Identify individual fruits
 analyzer.analyze_morphology()             # Get morphological measurements
 analyzer.analyze_color()                  # (Optional) Get color measurements
@@ -451,6 +452,52 @@ analyzer.generate_single_fruit_masks(fruit_id=3)
 
 ---
 
+### `edit_mask`
+
+*Optional*
+
+Opens an interactive editor to manually correct `mask_fruit`. Allows drawing polygons to add (white) or remove (black) regions from the mask.
+
+Both panels are shown side by side: the mask on the left and the original image with a semi-transparent mask overlay on the right, so you can visually compare them while editing. Changes are applied only when confirmed with `Enter`, and can be undone with `Z`. When you close the editor with `Q`, changes are saved; with `ESC`, all edits are discarded.
+
+```python
+# Open the mask editor
+analyzer.edit_mask()
+
+# Without printing the controls guide
+analyzer.edit_mask(verbose=False)
+```
+
+<br>
+
+| Parameter | Type   | Default | Description                                                            |
+| --------- | ------ | ------- | ---------------------------------------------------------------------- |
+| `verbose` | `bool` | `True`  | If `True`, prints a controls guide in the notebook before opening the editor |
+
+??? note "Controls"
+
+    | Key | Action |
+    |-----|--------|
+    | Left click | Add polygon point |
+    | Right click drag | Pan the view |
+    | `W` | Switch to ADD mode (fill white) |
+    | `B` | Switch to REMOVE mode (fill black) |
+    | `Enter` | Apply current polygon |
+    | `Z` | Undo last applied polygon |
+    | `C` | Clear current polygon points |
+    | `+` / `=` | Zoom in |
+    | `-` / `_` | Zoom out |
+    | `T` | Toggle mask overlay opacity on the original image (10% steps) |
+    | `Q` | Quit and **save** changes |
+    | `ESC` | Quit and **discard** all changes |
+
+!!! warning "Important"
+    **Requires** that `generate_fruit_mask()` has been run. Requires running outside of a pure browser environment — needs a desktop display (e.g., running locally or via a remote desktop).
+
+<br>
+
+---
+
 ### `save_parameters`
 
 *Optional*
@@ -581,6 +628,7 @@ analyzer.analyze_folder(json_path="image_parameters.json")
 | `epsilon` | `float` | `None` | Contour approximation factor -> `analyze_morphology` |
 | `stat` | `str` | `None` | Color statistic: `'mean'` or `'median'` -> `analyze_color` |
 | `color_space` | `str` | `None` | Color spaces to extract -> `analyze_color` |
+| `label_opacity` | `float` | `None` | Label background opacity `[0, 1]` -> `analyze_color` |
 | `get_color_histogram` | `bool` | `None` | If `True`, computes per-pixel histograms -> `analyze_color` |
 
 !!! warning "Important"

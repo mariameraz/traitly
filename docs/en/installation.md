@@ -1,6 +1,6 @@
 <div class="animate" markdown>
 
-# Traitly Installation
+# Installation ⊹ ࣪ ˖
 
 *Last updated: March 2026 - Traitly v0.1.0*
 

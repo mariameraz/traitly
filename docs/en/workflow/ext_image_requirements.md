@@ -10,12 +10,13 @@ Analysis quality depends directly on image quality. Traitly is designed to be ro
 
 ### Recommended Equipment
 
-For external fruit analysis, images are captured with a **camera** — either a smartphone or a professional camera. The type of device is not the determining factor: consistency is. Use the **same device** for all images in an experiment, as color adjustments, white balance, and internal processing vary between manufacturers and models, and these differences can introduce bias in color measurements. We also recommend keeping the camera **fixed on a stand** throughout the experiment to ensure the same distance between the lens and the fruits in every image.
+For external fruit analysis, images can be captured with either a smartphone or a professional camera. Regardless of the device used, consistency is key. Use the **same device** for all images in an experiment, as color adjustments, white balance, and internal processing vary between manufacturers and models, and these differences can introduce bias in color measurements. 
+
 
 ### Sample Preparation
 
-- **Camera position**: Position the camera so it is **parallel and perpendicular** to the fruits, with no tilt or angle. Shooting at an angle introduces geometric distortion that can affect morphological measurements.
-- **Non-fruit objects**: Keep images as clean as possible — stems, leaves, loose seeds, or debris should be minimized. Although these can be filtered out in later analysis steps, they increase processing time since runtime scales with the number of contours detected per image.
+- **Camera position**: Mount or secure the camera so it is **parallel** and **perpendicular** to the fruits, with no tilt or angle. Shooting at an angle introduces geometric distortion that can affect morphological measurements. We also recommend keeping the camera **fixed on a stand** throughout the experiment to ensure the same distance between the lens and the background in every image.
+- **Non-fruit objects**: Keep images as clean as possible (e.g., stems, leaves, loose seeds, or debris should be minimized). Although these can be filtered out in later analysis steps, they increase processing time since runtime scales with the number of contours detected per image.
 
 ### Lighting
 
