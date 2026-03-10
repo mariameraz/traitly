@@ -54,6 +54,7 @@ analyzer = FruitExternalAnalyzer('ruta/a/mi/imagen.jpg')
 analyzer.load_image()                     # Cargar imagen
 analyzer.setup_measurements()             # Configurar calibración y etiquetas
 analyzer.generate_fruit_mask()            # Separar frutos del fondo
+analyzer.edit_mask()                      # (Opcional) Corregir manualmente la máscara de fruto
 analyzer.detect_fruits()                  # Identificar frutos individuales
 analyzer.analyze_morphology()             # Obtener medidas morfológicas
 analyzer.analyze_color()                  # (Opcional) Obtener medidas de color
@@ -451,6 +452,52 @@ analyzer.generate_single_fruit_masks(fruit_id=3)
 
 ---
 
+### `edit_mask`
+
+*Opcional*
+
+Abre un editor interactivo para corregir manualmente `mask_fruit`. Permite dibujar polígonos para añadir (blanco) o eliminar (negro) regiones de la máscara.
+
+Se muestran dos paneles lado a lado: la máscara a la izquierda y la imagen original con una superposición semitransparente de la máscara a la derecha, para poder compararlas durante la edición. Los cambios se aplican solo al confirmar con `Enter`, y pueden deshacerse con `Z`. Al cerrar con `Q` los cambios se guardan; con `ESC` se descartan todas las ediciones.
+
+```python
+# Abrir el editor de máscaras
+analyzer.edit_mask()
+
+# Sin imprimir la guía de controles
+analyzer.edit_mask(verbose=False)
+```
+
+<br>
+
+| Parámetro | Tipo   | Default | Descripción                                                                      |
+| --------- | ------ | ------- | -------------------------------------------------------------------------------- |
+| `verbose` | `bool` | `True`  | Si `True`, imprime una guía de controles en el notebook antes de abrir el editor |
+
+??? note "Controles"
+
+    | Tecla | Acción |
+    |-------|--------|
+    | Clic izquierdo | Agregar punto al polígono |
+    | Arrastrar con clic derecho | Desplazar la vista |
+    | `W` | Modo AGREGAR (rellenar blanco) |
+    | `B` | Modo ELIMINAR (rellenar negro) |
+    | `Enter` | Aplicar polígono actual |
+    | `Z` | Deshacer último polígono aplicado |
+    | `C` | Limpiar puntos del polígono actual |
+    | `+` / `=` | Acercar (zoom in) |
+    | `-` / `_` | Alejar (zoom out) |
+    | `T` | Cambiar opacidad del overlay en la imagen original (pasos de 10%) |
+    | `Q` | Salir y **guardar** cambios |
+    | `ESC` | Salir y **descartar** todos los cambios |
+
+!!! warning "Importante"
+    **Requiere** que `generate_fruit_mask()` haya sido ejecutado. Necesita un entorno de escritorio — no funciona en navegador puro (requiere ejecución local o escritorio remoto).
+
+<br>
+
+---
+
 ### `save_parameters`
 
 *Opcional*
@@ -581,6 +628,7 @@ analyzer.analyze_folder(json_path="imagen_parameters.json")
 | `epsilon` | `float` | `None` | Factor de aproximación de contorno -> `analyze_morphology` |
 | `stat` | `str` | `None` | Estadístico de color: `'mean'` o `'median'` -> `analyze_color` |
 | `color_space` | `str` | `None` | Espacios de color a extraer -> `analyze_color` |
+| `label_opacity` | `float` | `None` | Opacidad del fondo de la etiqueta `[0, 1]` -> `analyze_color` |
 | `get_color_histogram` | `bool` | `None` | Si `True`, calcula histogramas por píxel -> `analyze_color` |
 
 !!! warning "Importante"

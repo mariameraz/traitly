@@ -38,7 +38,7 @@ Traitly apuesta por la **ciencia abierta y reproducible**: cada análisis genera
 
     [:octicons-arrow-right-24: Ver tutorial](tutorials/quickstart.md)
 
--   :octicons-book-24: __**Tutoriales**__
+-   :fontawesome-brands-readme: __**Tutoriales**__
 
     ---
 

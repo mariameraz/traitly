@@ -53,14 +53,16 @@ from traitly.fruit_phenotyping import FruitInternalAnalyzer
 # Analizar una sola imágen
 analyzer = FruitInternalAnalyzer('ruta/a/mi/imagen.jpg')
 
-analyzer.load_image()                     # Cargar imagen
-analyzer.setup_measurements()             # Configurar calibración y etiquetas
-analyzer.generate_fruit_mask()            # Separar frutos del fondo
-analyzer.enhance_locule_contrast()        # (Opcional) Mejorar contraste de lóculos
-analyzer.generate_locule_mask()           # (Opcional) Segmentar lóculos
-analyzer.detect_fruits()                  # Identificar frutos individuales
-analyzer.analyze_morphology()             # Obtener medidas morfológicas
-analyzer.analyze_color()                  # (Opcional) Obtener medidas de color
+analyzer.load_image()                          # Cargar imagen
+analyzer.setup_measurements()                  # Configurar calibración y etiquetas
+analyzer.generate_fruit_mask()                 # Separar frutos del fondo
+analyzer.enhance_locule_contrast()             # (Opcional) Mejorar contraste de lóculos
+analyzer.generate_l_channel_histogram()        # (Opcional) Visualizar distribución del canal L para elegir umbral
+analyzer.generate_locule_mask()                # (Opcional) Segmentar lóculos
+analyzer.edit_mask()                           # (Opcional) Corregir manualmente la máscara activa
+analyzer.detect_fruits()                       # Identificar frutos individuales
+analyzer.analyze_morphology()                  # Obtener medidas morfológicas
+analyzer.analyze_color()                       # (Opcional) Obtener medidas de color
 
 ## Guardar resultados
 analyzer.results.save_all()               # Guardar todos los resultados (CSV e imágen anotada)     
@@ -313,46 +315,126 @@ analyzer.enhance_locule_contrast(
 
 Genera una máscara binaria de lóculos a partir de una umbralización en el canal L (Lab) previamente realzado, y la fusiona con la máscara de fruto generada por `generate_fruit_mask()`.
 
-El método segmenta el tejido de los lóculos del resto del fruto mediante una umbralización del canal L usando `thresh_min` y `thresh_max`. Dentro de este rango, las regiones de menor intensidad (más oscuras) se interpretan como lóculos o tejidos internos, mientras que las regiones de mayor intensidad (más claras) corresponden al pericarpio. Por defecto, se asume que los lóculos presentan una mejor intensidad (son más oscuros).
+El método segmenta el tejido de los lóculos del resto del fruto mediante umbralización del canal L. Por defecto, utiliza el **método de Otsu** (`use_otsu=True`) para encontrar automáticamente el umbral óptimo — útil al procesar lotes con variaciones de iluminación. También es posible definir el umbral manualmente con `thresh_min`. Dentro del rango definido, las regiones más oscuras se interpretan como lóculos o tejidos internos, y las más claras como pericarpio.
 
-En frutos donde ocurre lo contrario (por ejemplo, pitahaya), donde el pericarpio es más oscuro que el espacio locular, debe activarse `invert_locule=True`, lo cual, tras la aplicación de los umbrales, invvierte internamente la máscara de lóculos.
+En frutos donde ocurre lo contrario (por ejemplo, pitahaya), donde el pericarpio es más oscuro que el espacio locular, debe activarse `invert_locule=True`, lo cual invierte internamente la máscara de lóculos tras aplicar el umbral.
 
-La fusión produce una máscara final en la que los frutos se representan en blanco (1) y los lóculos o tejidos internos a segmentar en negro (0), manteniendo la coherencia con el esquema de segmentación utilizado en el resto del pipeline.
+La fusión produce una máscara final en la que los frutos se representan en blanco (1) y los lóculos o tejidos internos en negro (0), manteniendo la coherencia con el esquema de segmentación del resto del pipeline.
+
+??? note "Elegir el umbral"
+    Antes de ejecutar este método, puedes visualizar la distribución de intensidades del canal L con `generate_l_channel_histogram()`. Este gráfico muestra cómo se distribuyen los píxeles dentro del fruto y dónde cae el umbral de Otsu, facilitando la decisión de usar `use_otsu=True` o un `thresh_min` manual, y si se necesita un `otsu_offset` para ajustar la separación.
 
 ```python
-# Crear una máscara con los loculos mas oscuros que el pericarpio 
-analyzer.generate_locule_mask(
-    thresh_min=120,
-    thresh_max=255,
-    plot=True
-)
-# Crear una mascara con los lóculos más claros que el pericarpio 
-analyzer.generate_locule_mask(
-    thresh_min=120,
-    thresh_max=255,
-    plot=True, 
-    invert_locule=True
-)
+# Usando el umbral automático de Otsu (por defecto)
+analyzer.generate_locule_mask(plot=True)
 
+# Ajustando Otsu con un offset
+analyzer.generate_locule_mask(use_otsu=True, otsu_offset=10, plot=True)
+
+# Usando un umbral manual
+analyzer.generate_locule_mask(use_otsu=False, thresh_min=107, plot=True)
+
+# Lóculos más claros que el pericarpio
+analyzer.generate_locule_mask(invert_locule=True, plot=True)
 ```
 
 <br>
 
 
-| Parámetro        | Tipo              | Default  | Descripción                                                                   |
-| ---------------- | ----------------- | -------- | ----------------------------------------------------------------------------- |
-| `thresh_min`     | `int`             | `120`    | Umbral mínimo de binarización del canal L                                     |
-| `thresh_max`     | `int`             | `255`    | Umbral máximo de binarización del canal L                                     |
-| `kernel_close`   | `int`     | `None`   | Tamaño del kernel para cierre morfológico aplicado a la máscara de lóculos    |
-| `kernel_open`    | `int`     | `None`   | Tamaño del kernel para apertura morfológica aplicado a la máscara de lóculos  |
-| `min_fruit_area` | `int`             | `5000`   | Área mínima (en píxeles) para conservar una región de fruto durante la fusión |
-| `invert_locule`  | `bool`            | `False`  | Invierte internamente la máscara de lóculos después de la umbralización       |
-| `plot`           | `bool`            | `True`   | Muestra la máscara de los lóculos y la máscara final fusionada                  |
-| `plot_size`      | `tuple[int, int]` | `(10, 5)` | Tamaño de la figura                                                           |
+| Parámetro         | Tipo              | Default   | Descripción                                                                                          |
+| ----------------- | ----------------- | --------- | ---------------------------------------------------------------------------------------------------- |
+| `thresh_min`      | `int`             | `120`     | Umbral manual de binarización del canal L; solo se usa cuando `use_otsu=False`                       |
+| `use_otsu`        | `bool`            | `True`    | Si `True`, calcula el umbral automáticamente con el método de Otsu, ignorando `thresh_min`           |
+| `otsu_offset`     | `int`             | `0`       | Valor sumado al umbral de Otsu; valores positivos capturan más píxeles, negativos menos              |
+| `kernel_close`    | `int`             | `None`    | Tamaño del kernel para cierre morfológico aplicado a la máscara de lóculos                           |
+| `kernel_open`     | `int`             | `None`    | Tamaño del kernel para apertura morfológica aplicado a la máscara de lóculos                         |
+| `kernel_blur`     | `int`             | `None`    | Tamaño del kernel para suavizado gaussiano aplicado tras las operaciones morfológicas                 |
+| `erosion_px`      | `int`             | `10`      | Radio de erosión (px) aplicado a la máscara de fruto antes de enmascarar lóculos; elimina falsos lóculos en el borde |
+| `min_fruit_area`  | `int`             | `5000`    | Área mínima (en píxeles) para conservar una región de fruto durante la fusión                        |
+| `min_locule_area` | `int`             | `0`       | Área mínima (en píxeles) para conservar un blob de lóculo; elimina ruido pequeño tras las operaciones morfológicas |
+| `invert_locule`   | `bool`            | `False`   | Invierte internamente la máscara de lóculos después de la umbralización                              |
+| `plot`            | `bool`            | `True`    | Muestra la máscara de lóculos y la máscara final fusionada                                           |
+| `plot_size`       | `tuple[int, int]` | `(10, 5)` | Tamaño de la figura                                                                                  |
 
 
 !!! warning "Importante"
     **Requiere** que `generate_fruit_mask()` y `enhance_locule_contrast()` hayan sido ejecutados previamente.
+
+<br>
+
+---
+
+### `generate_l_channel_histogram`
+
+*Opcional*
+
+Muestra la distribución de intensidades del canal L (Lab) dentro de la máscara de fruto. Útil para elegir el umbral adecuado antes de llamar a `generate_locule_mask()`.
+
+El gráfico muestra dos paneles: la distribución completa del canal L a la izquierda, y la misma distribución dividida por el umbral de Otsu a la derecha (píxeles oscuros vs. claros). Se incluye una barra de referencia de escala de grises en el eje x. Si se indica `otsu_offset`, también se muestra la línea del umbral ajustado.
+
+```python
+# Visualizar la distribución antes de elegir el umbral
+analyzer.generate_l_channel_histogram()
+
+# Con offset de Otsu
+analyzer.generate_l_channel_histogram(otsu_offset=10)
+```
+
+<br>
+
+| Parámetro     | Tipo              | Default  | Descripción                                                                       |
+| ------------- | ----------------- | -------- | --------------------------------------------------------------------------------- |
+| `otsu_offset` | `int`             | `0`      | Offset sumado al umbral de Otsu; se muestra como segunda línea en el panel derecho |
+| `plot_size`   | `tuple[int, int]` | `(9, 3)` | Tamaño de la figura                                                               |
+
+!!! warning "Importante"
+    **Requiere** que `generate_fruit_mask()` y `enhance_locule_contrast()` hayan sido ejecutados previamente.
+
+<br>
+
+---
+
+### `edit_mask`
+
+*Opcional*
+
+Abre un editor interactivo para corregir manualmente la máscara activa — `mask_locules` si está disponible, o `mask_fruit` en caso contrario. Permite dibujar polígonos para añadir (blanco) o eliminar (negro) regiones de la máscara.
+
+Se muestran dos paneles lado a lado: la máscara a la izquierda y la imagen original con una superposición semitransparente de la máscara a la derecha, para poder compararlas durante la edición. Los cambios se aplican solo al confirmar con `Enter`, y pueden deshacerse con `Z`. Al cerrar con `Q` los cambios se guardan; con `ESC` se descartan todas las ediciones.
+
+```python
+# Abrir el editor de máscaras
+analyzer.edit_mask()
+
+# Sin imprimir la guía de controles
+analyzer.edit_mask(verbose=False)
+```
+
+<br>
+
+| Parámetro | Tipo   | Default | Descripción                                                                     |
+| --------- | ------ | ------- | ------------------------------------------------------------------------------- |
+| `verbose` | `bool` | `True`  | Si `True`, imprime una guía de controles en el notebook antes de abrir el editor |
+
+??? note "Controles"
+
+    | Tecla | Acción |
+    |-------|--------|
+    | Clic izquierdo | Agregar punto al polígono |
+    | Arrastrar con clic derecho | Desplazar la vista |
+    | `W` | Modo AGREGAR (rellenar blanco) |
+    | `B` | Modo ELIMINAR (rellenar negro) |
+    | `Enter` | Aplicar polígono actual |
+    | `Z` | Deshacer último polígono aplicado |
+    | `C` | Limpiar puntos del polígono actual |
+    | `+` / `=` | Acercar (zoom in) |
+    | `-` / `_` | Alejar (zoom out) |
+    | `T` | Cambiar opacidad del overlay en la imagen original (pasos de 10%) |
+    | `Q` | Salir y **guardar** cambios |
+    | `ESC` | Salir y **descartar** todos los cambios |
+
+!!! warning "Importante"
+    **Requiere** que al menos `generate_fruit_mask()` haya sido ejecutado. Necesita un entorno de escritorio — no funciona en navegador puro (requiere ejecución local o escritorio remoto).
 
 <br>
 
@@ -436,7 +518,8 @@ En la imagen anotada se indica un **ID único para cada fruto**, su **número de
 * **rectángulo del *bounding box***,
 * **eje mayor** (azul) y **eje menor** (verde).
 
-Para una descripción detallada de los *traits* calculados y de las anotaciones visuales, consultar la [Tabla de Traits](`traits.md`).
+!!! tip ""
+    Para una descripción detallada de los *traits* calculados y de las anotaciones sobre los frutos en la imágen, consultar la sección de [Resultados](results/overview.md).
 
 ??? note "Notas sobre modos de contorno"
 
@@ -460,6 +543,25 @@ Para una descripción detallada de los *traits* calculados y de las anotaciones 
         <img src="../../assets/images/contours.png" alt="contours" width="800">
         <p><em>Ejemplos de los contornos disponibles con `contour_mode` </em></p>
     </div>
+
+??? note "Notas sobre los rayos radiales"
+    El parámetro `num_rays` controla el número de rayos radiales emitidos desde el centroide del fruto hacia afuera. Estos rayos se utilizan para calcular `outer_pericarp_mean_thickness` y `fruit_lobedness`. La distancia angular entre rayos es `360 / num_rays`.
+    Los valores más altos dan mejor resolución en frutos con formas complejas o irregulares, pero también aumentan el tiempo de cómputo. Para la mayoría de los frutos, valores entre 45 y 90 son suficientes. Aumenta este valor si el fruto tiene un contorno muy irregular o lóbulos pronunciados. 
+    
+    !!! tip ""
+        Para más detalles sobre cómo se calculan estos traits, consulta la sección de [Mediciones](results/measurements.md#grosor-del-pericarpio-y-lobedness).
+    
+    <div style="text-align: center;">
+        <img src="../../assets/images/num_rays.png" alt="num_rays" width="400">
+        <p><em>Efecto de <code>num_rays</code> en la densidad de rayos. Valores más altos capturan más detalle a lo largo del contorno del fruto.</em></p>
+    </div>
+
+??? note "Notas sobre los pasos angulares"
+    `angle_shifts` controla cuántos desplazamientos rotacionales se evalúan al calcular `locules_angular_symmetry`. El algoritmo compara los ángulos observados de los lóculos contra una distribución ideal equiespaciada, probando `angle_shifts` rotaciones distintas de esa distribución para encontrar la que mejor coincide. Un valor más alto evalúa más rotaciones y produce una alineación más precisa, a costa de mayor tiempo de cómputo.
+    El valor por defecto de 500 es suficiente para la mayoría de los frutos. Valores muy bajos (p. ej., menores a 50) pueden producir resultados ligeramente imprecisos en frutos donde los lóculos están cerca pero no exactamente en posiciones ideales.
+    
+    !!! tip ""
+        Para más detalles sobre cómo se calcula la simetría angular, consulta la sección de [Mediciones](results/measurements.md#interpretacion-de-la-simetria).
 
 
 ```python
@@ -496,6 +598,7 @@ analyzer.analyze_morphology(
 | `centroid_fruit_thickness`  | `int`                | `2`               | Tamaño del marcador del centroide del fruto                                                      |
 | `centroid_locule_color`     | `tuple[int,int,int]` | `(0, 255, 255)`   | Color del marcador del centroide de lóculos (BGR)                                                |
 | `centroid_locule_thickness` | `int`                | `2`               | Tamaño del marcador del centroide de lóculos                                                     |
+| `alpha`                     | `float`              | `None`            | Parámetro alpha para el cálculo del contorno cóncavo del pericarpio interno. Valores más pequeños producen un contorno más ajustado a la forma real del fruto; si `None`, se usa el convex hull |
 
 
 !!! warning "Importante"
@@ -531,6 +634,8 @@ Esta función extrae color para los distintos tejidos del fruto: **pericarpio to
     <p><em>Ejemplo de tejidos para los cuales se extrae color en rodajas de arándano rojo</em></p>
 </div>
 
+!!! tip ""
+    Para mas detalles acerca de la extracción del color y los tejidos del fruto, consulta la sección de [Measurements](results/measurements.md#regiones-de-tejido-y-extraccion-de-color) y [Results](results/overview.md)
 
 ??? note "Notas"
     * `analyze_color()` es **independiente** de `analyze_morphology()`. Si se ejecuta únicamente `analyze_color()`, se genera una imagen anotada básica con el **ID del fruto**, su **número de lóculos**, el **contorno del fruto** (pericarpio externo) en verde y los **contornos de los lóculos** en rosa.
@@ -571,7 +676,11 @@ analyzer.analyze_color(
 | `pericarp_ext_thickness` | `int`                |               `2` | Grosor del contorno del pericarpio externo                                               |
 | `locule_color`           | `tuple[int,int,int]` |   `(255, 0, 255)` | Color del contorno de lóculos (BGR)                                                      |
 | `locule_thickness`       | `int`                |               `2` | Grosor del contorno de lóculos (BGR)                                                     |
+| `pericarp_int_color`     | `tuple[int,int,int]` |   `(255, 255, 0)` | Color del contorno del pericarpio interno (BGR)                                          |
+| `pericarp_int_thickness` | `int`                |               `2` | Grosor del contorno del pericarpio interno                                               |
+| `label_opacity`          | `float`              |             `0.7` | Opacidad del fondo de la etiqueta `[0, 1]`                                               |
 | `get_color_histogram`    | `bool`               |           `False` | Si `True`, retorna histogramas por píxel en lugar de estadísticos resumen                |
+| `alpha`                  | `float`              |            `None` | Parámetro alpha para el cálculo del contorno cóncavo del pericarpio interno. Valores más pequeños producen un contorno más ajustado a la forma real del fruto; si `None`, se usa el convex hull |
 
 
 !!! warning "Importante"
@@ -769,11 +878,15 @@ analyzer.analyze_folder(json_path="imagen_parameters.json")
 | `max_locule_area` | `int` | `None` | Área máxima de lóculo -> `analyze_morphology` |
 | `angle_shifts` | `int` | `None` | Pasos angulares para simetría -> `analyze_morphology` |
 | `num_rays` | `int` | `None` | Rayos para estimación de grosor de pericarpio -> `analyze_morphology` |
+| `alpha` | `float` | `None` | Parámetro alpha para el contorno cóncavo del pericarpio interno -> `analyze_morphology`, `analyze_color` |
 | `stat` | `str` | `None` | Estadístico de color: `'mean'` o `'median'` -> `analyze_color` |
 | `tissue` | `str` | `None` | Tejido a analizar -> `analyze_color` |
 | `color_space` | `str` | `None` | Espacios de color a extraer -> `analyze_color` |
+| `label_opacity` | `float` | `None` | Opacidad del fondo de la etiqueta `[0, 1]` -> `analyze_color` |
+| `pericarp_int_color` | `tuple[int,int,int]` | `None` | Color del contorno del pericarpio interno (BGR) -> `analyze_color` |
+| `pericarp_int_thickness` | `int` | `None` | Grosor del contorno del pericarpio interno -> `analyze_color` |
 | `get_color_histogram` | `bool` | `None` | Si `True`, calcula histogramas por píxel -> `analyze_color` |
 
 
 !!! warning "Importante"
-    **Requiere** que `FruitInternalAnalyzer()` haya sido inicializado con una ruta de carpeta, no de archivo. 
+    **Requiere** que `FruitInternalAnalyzer()` haya sido inicializado con una ruta de carpeta, no de archivo.
