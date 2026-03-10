@@ -148,7 +148,7 @@ Evitar:   TOM-00I      CHlLE-02       MANZ-I23   <- I/l/1 ambiguos
 
 - Usar escáner con fondo negro (caja cubierta)
 - Cambiar navaja periódicamente para cortes limpios
-- Retirar el exceso de jugo con un paño en frutos muy jugosos
+- Retirar el exceso de líquido con un paño en frutos muy jugosos
 - Limpiar el escáner con alcohol entre tomas
 - Incluir referencia circular para calibración precisa
 - Incluir QR para mayor velocidad

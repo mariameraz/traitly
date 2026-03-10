@@ -53,14 +53,16 @@ from traitly.fruit_phenotyping import FruitInternalAnalyzer
 # Analyze a single image
 analyzer = FruitInternalAnalyzer('path/to/my/image.jpg')
 
-analyzer.load_image()                     # Load the image
-analyzer.setup_measurements()             # Set up calibration and labels
-analyzer.generate_fruit_mask()            # Separate fruits from the background
-analyzer.enhance_locule_contrast()        # (Optional) Enhance locule contrast
-analyzer.generate_locule_mask()           # (Optional) Segment locules
-analyzer.detect_fruits()                  # Identify individual fruits
-analyzer.analyze_morphology()             # Get morphological measurements
-analyzer.analyze_color()                  # (Optional) Get color measurements
+analyzer.load_image()                          # Load the image
+analyzer.setup_measurements()                  # Set up calibration and labels
+analyzer.generate_fruit_mask()                 # Separate fruits from the background
+analyzer.enhance_locule_contrast()             # (Optional) Enhance locule contrast
+analyzer.generate_l_channel_histogram()        # (Optional) Visualize L channel distribution to choose threshold
+analyzer.generate_locule_mask()                # (Optional) Segment locules
+analyzer.edit_mask()                           # (Optional) Manually correct the active mask
+analyzer.detect_fruits()                       # Identify individual fruits
+analyzer.analyze_morphology()                  # Get morphological measurements
+analyzer.analyze_color()                       # (Optional) Get color measurements
 
 ## Save results
 analyzer.results.save_all()               # Save all results (CSV and annotated image)
@@ -313,46 +315,126 @@ analyzer.enhance_locule_contrast(
 
 Generates a binary locule mask by thresholding the previously enhanced L channel (Lab), then merges it with the fruit mask from `generate_fruit_mask()`.
 
-The method segments locule tissue from the rest of the fruit by thresholding the L channel using `thresh_min` and `thresh_max`. Within this range, darker regions are interpreted as locules or internal tissues, while brighter regions correspond to the pericarp. By default, locules are assumed to be darker.
+The method segments locule tissue from the rest of the fruit by thresholding the L channel. By default, it uses **Otsu's method** (`use_otsu=True`) to automatically find the optimal threshold — useful when processing batches with variable illumination. You can also set the threshold manually with `thresh_min`. Within this range, darker regions are interpreted as locules or internal tissues, while brighter regions correspond to the pericarp.
 
-In fruits where the opposite is true (e.g., dragon fruit), where the pericarp is darker than the locular space, set `invert_locule=True`. This will internally invert the locule mask after the thresholds are applied.
+In fruits where the opposite is true (e.g., dragon fruit), where the pericarp is darker than the locular space, set `invert_locule=True`. This will internally invert the locule mask after the threshold is applied.
 
 The merged output produces a final mask where fruits are represented in white (1) and locules or internal tissues in black (0), maintaining consistency with the rest of the pipeline's segmentation scheme.
 
-```python
-# Create a mask where locules are darker than the pericarp
-analyzer.generate_locule_mask(
-    thresh_min=120,
-    thresh_max=255,
-    plot=True
-)
-# Create a mask where locules are brighter than the pericarp
-analyzer.generate_locule_mask(
-    thresh_min=120,
-    thresh_max=255,
-    plot=True, 
-    invert_locule=True
-)
+??? note "Choosing a threshold"
+    Before running this method, you can visualize the L channel pixel distribution with `generate_l_channel_histogram()`. This plot shows how pixel intensities are distributed within the fruit and where Otsu's threshold falls, making it easier to decide whether to use `use_otsu=True` or a manual `thresh_min`, and whether an `otsu_offset` is needed to fine-tune the split.
 
+```python
+# Using Otsu's automatic threshold (default)
+analyzer.generate_locule_mask(plot=True)
+
+# Fine-tuning Otsu with an offset
+analyzer.generate_locule_mask(use_otsu=True, otsu_offset=10, plot=True)
+
+# Using a manual threshold
+analyzer.generate_locule_mask(use_otsu=False, thresh_min=107, plot=True)
+
+# Inverted locules (pericarp darker than locular space)
+analyzer.generate_locule_mask(invert_locule=True, plot=True)
 ```
 
 <br>
 
 
-| Parameter        | Type              | Default  | Description                                                                   |
-| ---------------- | ----------------- | -------- | ----------------------------------------------------------------------------- |
-| `thresh_min`     | `int`             | `120`    | Minimum binarization threshold for the L channel                              |
-| `thresh_max`     | `int`             | `255`    | Maximum binarization threshold for the L channel                              |
-| `kernel_close`   | `int`             | `None`   | Kernel size for morphological closing applied to the locule mask              |
-| `kernel_open`    | `int`             | `None`   | Kernel size for morphological opening applied to the locule mask              |
-| `min_fruit_area` | `int`             | `5000`   | Minimum area (in pixels) to keep a fruit region during merging               |
-| `invert_locule`  | `bool`            | `False`  | Internally inverts the locule mask after thresholding                         |
-| `plot`           | `bool`            | `True`   | Displays the locule mask and the final merged mask                            |
-| `plot_size`      | `tuple[int, int]` | `(10, 5)` | Figure size                                                                  |
+| Parameter          | Type              | Default   | Description                                                                                      |
+| ------------------ | ----------------- | --------- | ------------------------------------------------------------------------------------------------ |
+| `thresh_min`       | `int`             | `120`     | Manual binarization threshold for the L channel; only used when `use_otsu=False`                 |
+| `use_otsu`         | `bool`            | `True`    | If `True`, automatically computes the threshold using Otsu's method, ignoring `thresh_min`       |
+| `otsu_offset`      | `int`             | `0`       | Value added to the Otsu threshold; positive values capture more pixels, negative values less     |
+| `kernel_close`     | `int`             | `None`    | Kernel size for morphological closing applied to the locule mask                                 |
+| `kernel_open`      | `int`             | `None`    | Kernel size for morphological opening applied to the locule mask                                 |
+| `kernel_blur`      | `int`             | `None`    | Gaussian blur kernel size applied after morphological operations                                 |
+| `erosion_px`       | `int`             | `10`      | Erosion radius (px) applied to the fruit mask before masking locules; removes false border locules |
+| `min_fruit_area`   | `int`             | `5000`    | Minimum area (in pixels) to keep a fruit region during merging                                   |
+| `min_locule_area`  | `int`             | `0`       | Minimum area (in pixels) to retain a locule blob; removes small noise after morphological operations |
+| `invert_locule`    | `bool`            | `False`   | Internally inverts the locule mask after thresholding                                            |
+| `plot`             | `bool`            | `True`    | Displays the locule mask and the final merged mask                                               |
+| `plot_size`        | `tuple[int, int]` | `(10, 5)` | Figure size                                                                                      |
 
 
 !!! warning "Important"
     **Requires** that both `generate_fruit_mask()` and `enhance_locule_contrast()` have been run beforehand.
+
+<br>
+
+---
+
+### `generate_l_channel_histogram`
+
+*Optional*
+
+Displays the pixel intensity distribution of the L channel (Lab) within the fruit mask. Useful for choosing the right threshold before calling `generate_locule_mask()`.
+
+The plot shows two panels: the full L channel distribution on the left, and the same distribution split by Otsu's threshold on the right (darker vs. lighter pixels). A grayscale intensity bar is included along the x-axis as a visual reference. If `otsu_offset` is set, the adjusted threshold line is also shown.
+
+```python
+# Visualize distribution before choosing a threshold
+analyzer.generate_l_channel_histogram()
+
+# With Otsu offset
+analyzer.generate_l_channel_histogram(otsu_offset=10)
+```
+
+<br>
+
+| Parameter      | Type              | Default    | Description                                                                 |
+| -------------- | ----------------- | ---------- | --------------------------------------------------------------------------- |
+| `otsu_offset`  | `int`             | `0`        | Offset added to Otsu's threshold; shown as a second line in the right panel |
+| `plot_size`    | `tuple[int, int]` | `(9, 3)`   | Figure size                                                                 |
+
+!!! warning "Important"
+    **Requires** that both `generate_fruit_mask()` and `enhance_locule_contrast()` have been run beforehand.
+
+<br>
+
+---
+
+### `edit_mask`
+
+*Optional*
+
+Opens an interactive editor to manually correct the active mask — `mask_locules` if available, otherwise `mask_fruit`. Allows drawing polygons to add (white) or remove (black) regions from the mask.
+
+Both panels are shown side by side: the mask on the left and the original image with a semi-transparent mask overlay on the right, so you can visually compare them while editing. Changes are applied only when confirmed with `Enter`, and can be undone with `Z`. When you close the editor with `Q`, changes are saved; with `ESC`, all edits are discarded.
+
+```python
+# Open the mask editor
+analyzer.edit_mask()
+
+# Without printing the controls guide
+analyzer.edit_mask(verbose=False)
+```
+
+<br>
+
+| Parameter | Type   | Default | Description                                                            |
+| --------- | ------ | ------- | ---------------------------------------------------------------------- |
+| `verbose` | `bool` | `True`  | If `True`, prints a controls guide in the notebook before opening the editor |
+
+??? note "Controls"
+
+    | Key | Action |
+    |-----|--------|
+    | Left click | Add polygon point |
+    | Right click drag | Pan the view |
+    | `W` | Switch to ADD mode (fill white) |
+    | `B` | Switch to REMOVE mode (fill black) |
+    | `Enter` | Apply current polygon |
+    | `Z` | Undo last applied polygon |
+    | `C` | Clear current polygon points |
+    | `+` / `=` | Zoom in |
+    | `-` / `_` | Zoom out |
+    | `T` | Toggle mask overlay opacity on the original image (10% steps) |
+    | `Q` | Quit and **save** changes |
+    | `ESC` | Quit and **discard** all changes |
+
+!!! warning "Important"
+    **Requires** that at least `generate_fruit_mask()` has been run. Requires running outside of a pure browser environment — needs a desktop display (e.g., running locally or via a remote desktop).
 
 <br>
 
@@ -436,7 +518,8 @@ The annotated image includes a **unique ID for each fruit**, its **locule count*
 * ***bounding box* rectangle**,
 * **major axis** (blue) and **minor axis** (green).
 
-For a detailed description of the calculated traits and visual annotations, see the [Traits Table](`traits.md`).
+!!! tip ""
+    For a detailed description of the calculated traits and visual annotations, see the [Results](results/overview.md) section.
 
 ??? note "Notes on contour modes"
 
@@ -461,6 +544,26 @@ For a detailed description of the calculated traits and visual annotations, see 
         <p><em>Examples of available contours with `contour_mode`</em></p>
     </div>
 
+??? note "Notes on radial rays"
+    The `num_rays` parameter controls the number of radial rays cast from the fruit centroid outward. These rays are used to calculate `outer_pericarp_mean_thickness` and `fruit_lobedness`. The angular spacing between rays is `360 / num_rays`.
+
+    Higher values give better resolution for complex or irregular shapes, but also increase computation time. For most fruits, values between 45 and 90 are sufficient. Increase if the fruit has a highly irregular contour or deep lobes. 
+    
+    !!! tip ""
+        For more details on how these traits are calculated, see the [Measurements](results/measurements.md#pericarp-thickness-and-lobedness) section.
+
+    <div style="text-align: center;">
+        <img src="../../assets/images/num_rays.png" alt="num_rays" width="400">
+        <p><em>Effect of <code>num_rays</code> on ray density. Higher values capture more detail along the fruit contour.</em></p>
+    </div>
+
+??? note "Notes on angle_shifts"
+    `angle_shifts` controls how many rotational offsets are tested when computing `locules_angular_symmetry`. The algorithm works by comparing the observed locule angles against an ideal equally-spaced arrangement, trying `angle_shifts` different rotations of that ideal to find the best match. A higher value tests more rotations and gives a more accurate alignment, at the cost of computation time.
+
+    The default value of 500 is sufficient for most fruits. Very low values (e.g., below 50) may produce slightly inaccurate results for fruits where the locules are close to but not exactly at ideal positions. 
+
+    !!! tip ""
+        For more details on how angular symmetry is calculated, see the [Measurements](results/measurements.md#symmetry-interpretation) section.
 
 ```python
 analyzer.analyze_morphology(
@@ -496,6 +599,7 @@ analyzer.analyze_morphology(
 | `centroid_fruit_thickness`  | `int`                | `2`               | Fruit centroid marker size                                                                       |
 | `centroid_locule_color`     | `tuple[int,int,int]` | `(0, 255, 255)`   | Locule centroid marker color (BGR)                                                               |
 | `centroid_locule_thickness` | `int`                | `2`               | Locule centroid marker size                                                                      |
+| `alpha`                     | `float`              | `None`            | Alpha parameter for the concave hull of the inner pericarp contour. Smaller values produce a tighter fit to the actual fruit shape; if `None`, the convex hull is used |
 
 
 !!! warning "Important"
@@ -532,6 +636,8 @@ This function extracts color from different fruit tissues: **total pericarp**, *
     <p><em>Example of tissues from which color is extracted in cranberry slices</em></p>
 </div>
 
+!!! tip ""
+    For more details about the color extraction, see the [Measurements](results/measurements.md#tissue-regions-and-color-extraction) and [Results](results/overview.md) sections.
 
 ??? note "Notes"
     * `analyze_color()` is **independent** of `analyze_morphology()`. Running only `analyze_color()` generates a basic annotated image with the **fruit ID**, its **locule count**, the **fruit contour** (outer pericarp) in green, and the **locule contours** in pink.
@@ -569,7 +675,11 @@ analyzer.analyze_color(
 | `pericarp_ext_thickness` | `int`                |               `2` | Outer pericarp contour thickness                                                         |
 | `locule_color`           | `tuple[int,int,int]` |   `(255, 0, 255)` | Locule contour color (BGR)                                                               |
 | `locule_thickness`       | `int`                |               `2` | Locule contour thickness (BGR)                                                           |
+| `pericarp_int_color`     | `tuple[int,int,int]` |   `(255, 255, 0)` | Inner pericarp contour color (BGR)                                                       |
+| `pericarp_int_thickness` | `int`                |               `2` | Inner pericarp contour thickness                                                         |
+| `label_opacity`          | `float`              |             `0.7` | Label background opacity `[0, 1]`                                                        |
 | `get_color_histogram`    | `bool`               |           `False` | If `True`, returns per-pixel histograms instead of summary statistics                    |
+| `alpha`                  | `float`              |            `None` | Alpha parameter for the concave hull of the inner pericarp contour. Smaller values produce a tighter fit to the actual fruit shape; if `None`, the convex hull is used |
 
 
 !!! warning "Important"
@@ -767,9 +877,13 @@ analyzer.analyze_folder(json_path="image_parameters.json")
 | `max_locule_area` | `int` | `None` | Maximum locule area -> `analyze_morphology` |
 | `angle_shifts` | `int` | `None` | Angular steps for symmetry -> `analyze_morphology` |
 | `num_rays` | `int` | `None` | Rays for pericarp thickness estimation -> `analyze_morphology` |
+| `alpha` | `float` | `None` | Alpha parameter for the inner pericarp concave hull -> `analyze_morphology`, `analyze_color` |
 | `stat` | `str` | `None` | Color statistic: `'mean'` or `'median'` -> `analyze_color` |
 | `tissue` | `str` | `None` | Tissue to analyze -> `analyze_color` |
 | `color_space` | `str` | `None` | Color spaces to extract -> `analyze_color` |
+| `label_opacity` | `float` | `None` | Label background opacity `[0, 1]` -> `analyze_color` |
+| `pericarp_int_color` | `tuple[int,int,int]` | `None` | Inner pericarp contour color (BGR) -> `analyze_color` |
+| `pericarp_int_thickness` | `int` | `None` | Inner pericarp contour thickness -> `analyze_color` |
 | `get_color_histogram` | `bool` | `None` | If `True`, computes per-pixel histograms -> `analyze_color` |
 
 

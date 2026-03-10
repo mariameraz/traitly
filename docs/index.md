@@ -40,7 +40,7 @@ Traitly is committed to **open and reproducible science**: every analysis automa
 
     [:octicons-arrow-right-24: Launch tutorial](tutorials/quickstart.md)
 
--   :octicons-book-24: __**Tutorials**__
+-   :fontawesome-brands-readme: __**Tutorials**__
 
     ---
 
