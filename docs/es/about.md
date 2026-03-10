@@ -11,7 +11,7 @@ Traitly surgió como un esfuerzo por desarrollar un método de fenotipificación
 
 La nomenclatura de tejidos utilizada en Traitly (`total_pericarp`, `outer_pericarp`, `internal_pericarp`, `locules`) fue introducida por Diaz-Garcia et al. (2019) en el contexto del arándano americano, y es adoptada aquí con adaptaciones para un contexto general de frutos.
 
-> Diaz-Garcia, L., et al. (2019). Comprehensive analysis of the internal structure and firmness in American cranberry (*Vaccinium macrocarpon* Ait.) fruit. *PLOS ONE*, 14(9), e0222451. [https://doi.org/10.1371/journal.pone.0222451](____https://doi.org/10.1371/journal.pone.0222451____)
+> Diaz-Garcia, L., et al. (2019). Comprehensive analysis of the internal structure and firmness in American cranberry (*Vaccinium macrocarpon* Ait.) fruit. *PLOS ONE*, 14(9), e0222451. [https://doi.org/10.1371/journal.pone.0222451](https://doi.org/10.1371/journal.pone.0222451)
 
 ---
 ## Alcance
@@ -31,7 +31,7 @@ Aunque Traitly fue diseñado originalmente para arándano rojo (*Vaccinium macro
 ## Cómo citar
 El manuscrito que describe Traitly está actualmente en preparación. Mientras tanto, si utilizas Traitly en tu trabajo, por favor cita el repositorio directamente:
 
-Torres Meraz, M. A., & López Moreno, H. (2025). *Traitly* [Software]. GitHub. [https://github.com/mariameraz/traitly](____https://github.com/mariameraz/traitly____)
+Torres Meraz, M. A., & López Moreno, H. (2025). *Traitly* [Software]. GitHub. [https://github.com/mariameraz/traitly](https://github.com/mariameraz/traitly)
 
 ---
 ## Contacto
