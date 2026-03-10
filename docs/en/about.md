@@ -12,7 +12,7 @@ Traitly started as an effort to develop an efficient and accessible phenotyping 
 
 The tissue nomenclature used in Traitly (`total_pericarp`, `outer_pericarp`, `internal_pericarp`, `locules`) was introduced by Diaz-Garcia et al. (2019) in the context of American cranberry, and is adopted here with adaptations for a general fruit context.
 
-> Diaz-Garcia, L., et al. (2019). Comprehensive analysis of the internal structure and firmness in American cranberry (*Vaccinium macrocarpon* Ait.) fruit. *PLOS ONE*, 14(9), e0222451. [https://doi.org/10.1371/journal.pone.0222451](__https://doi.org/10.1371/journal.pone.0222451__)
+> Diaz-Garcia, L., et al. (2019). Comprehensive analysis of the internal structure and firmness in American cranberry (*Vaccinium macrocarpon* Ait.) fruit. *PLOS ONE*, 14(9), e0222451. [https://doi.org/10.1371/journal.pone.0222451](https://doi.org/10.1371/journal.pone.0222451)
 
 ---
 ## Scope
@@ -34,7 +34,7 @@ Although Traitly was originally designed for cranberry, it was built to be modul
 ## How to cite
 A manuscript describing Traitly is currently in preparation. In the meantime, if you use Traitly in your work, please cite the repository directly:
 
-Torres Meraz, M. A., & López Moreno, H. (2025). *Traitly* [Software]. GitHub. [https://github.com/mariameraz/traitly](__https://github.com/mariameraz/traitly__)
+Torres Meraz, M. A., & López Moreno, H. (2025). *Traitly* [Software]. GitHub. [https://github.com/mariameraz/traitly](https://github.com/mariameraz/traitly)
 
 ---
 
