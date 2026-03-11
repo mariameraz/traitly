@@ -174,7 +174,6 @@ plugins:
                 - External Analysis: es/tutorials/external.md
                 - Background Segmentation: es/tutorials/background_segmentation.md
 
-
             - API Reference:
                 - Classes:
                     - FruitInternalAnalyzer: es/api/internal_analysis.md
@@ -252,6 +251,14 @@ plugins:
 copyright: Copyright &copy; 2026 Maria Alejandra Torres Meraz
 
 extra:
+
+  alternate:
+    - name: English
+      link: en
+      lang: en
+    - name: Spanish
+      link: es
+      lang: es
 
   social:
     - icon: fontawesome/brands/github
