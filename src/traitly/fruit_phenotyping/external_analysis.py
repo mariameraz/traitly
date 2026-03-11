@@ -1118,19 +1118,30 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                 f.write("\n".join(error_lines))
 
         if verbose:
-            n_ok = len(img_paths) - len(errors)
-            print("\n( ദ്ദി ˙ᗜ˙ ) Finished " + "="*47)
-            print(f"        - Successfully: {n_ok}/{len(img_paths)} img(s)")
-            if errors:
+            total_img_processed = len(img_paths) - len(errors)
+            if len(errors) == len(img_paths):
+                print("\n( ദ്ദി ༎ຶ‿༎ຶ ) Task failed successfully " + "="*37)
+                print(f"    > Image(s) processed:")
                 print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
-            print(f"        - Total fruits: {total_fruits}")
-            print(f"        - Total time: {total_time:.1f}s  (avg {avg_time:.1f}s/img)")
-            print("    > Files saved:")
-            print(f"        - {n_ok} annotated image(s)")
-            if morph_csv:  print(f"        - {os.path.basename(morph_csv)}")
-            if color_csv:  print(f"        - {os.path.basename(color_csv)}")
-            print(f"        - {os.path.basename(session_txt)}")
-            if error_txt:  print(f"        - {os.path.basename(error_txt)}")
-            print(f"        - Results folder: {output_path}")
+                print(f"    > For more details, check error_report.txt saved in: {output_path}")
+
+            else:
+                print("\n( ദ്ദി ˙ᗜ˙ ) Finished " + "="*47)    
+                print("    > Image(s) processed:")
+                print(f"        - Successfully: {total_img_processed}/{len(img_paths)} img(s)")
+                if errors:
+                    print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
+                print(f"        - Total fruits: {total_fruits}")
+                print(f"        - Total time: {total_time:.1f}s  (avg {avg_time:.1f}s/img)")
+                print("    > Files saved:")
+                print(f"        - {total_img_processed} annotated image(s)")
+                if morph_csv:
+                    print(f"        - {os.path.basename(morph_csv)}")
+                if color_csv:
+                    print(f"        - {os.path.basename(color_csv)}")
+                print(f"        - {os.path.basename(session_txt)}")
+                if error_txt:
+                    print(f"        - {os.path.basename(error_txt)}")
+                print(f"        - Results folder: {output_path}")
 
         return None

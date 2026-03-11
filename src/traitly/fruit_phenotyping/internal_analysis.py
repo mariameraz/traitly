@@ -794,9 +794,9 @@ class FruitInternalAnalyzer:
 
 
         if mask == 'mask_locules':
-            self.mask_locules = interactive_mask_editor(self.mask_locules, original_img=self.img_rgb)
+            self.mask_locules = interactive_mask_editor(self.mask_locules, original_img=self.img)
         else:
-            self.mask_fruit = interactive_mask_editor(self.mask_fruit, original_img=self.img_rgb)
+            self.mask_fruit = interactive_mask_editor(self.mask_fruit, original_img=self.img)
 
 
     ##########################################################################################
@@ -982,7 +982,7 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     def enhance_locule_contrast(
         self,
-        contrast_method: str = 'gamma',
+        contrast_method: str = 'none',
         gamma: float = 1.5,
         gain: float = 5,
         cutoff: float = 0.5,
@@ -1074,7 +1074,7 @@ class FruitInternalAnalyzer:
         kernel_open: Optional[int] = None,
         kernel_blur: Optional[int] = None,
         erosion_px: int = 10,
-        use_otsu: bool = True,
+        use_otsu: bool = False,
         otsu_offset: int = 0,
         min_fruit_area: int = 5000,
         min_locule_area: int = 0,
@@ -2832,23 +2832,30 @@ class FruitInternalAnalyzer:
         # Final message
         if verbose:
             total_img_processed = len(img_paths) - len(errors)
-            print("\n( ദ്ദി ˙ᗜ˙ ) Finished " + "="*47)
-            print("    > Image(s) processed:")
-            print(f"        - Successfully: {total_img_processed}/{len(img_paths)} img(s)")
-            if errors:
+            if len(errors) == len(img_paths):
+                print("\n( ദ്ദി ༎ຶ‿༎ຶ ) Task failed successfully " + "="*37)
+                print(f"    > Image(s) processed:")
                 print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
-            print(f"        - Total fruits: {total_fruits}")
-            print(f"        - Total time: {total_time:.1f}s  (avg {avg_time:.1f}s/img)")
-            print("    > Files saved:")
-            print(f"        - {total_img_processed} annotated image(s)")
-            if morph_csv:
-                print(f"        - {os.path.basename(morph_csv)}")
-            if color_csv:
-                print(f"        - {os.path.basename(color_csv)}")
-            print(f"        - {os.path.basename(session_txt)}")
-            if error_txt:
-                print(f"        - {os.path.basename(error_txt)}")
-            print(f"        - Results folder: {output_path}")
+                print(f"    > For more details, check error_report.txt saved in: {output_path}")
+
+            else:
+                print("\n( ദ്ദി ˙ᗜ˙ ) Finished " + "="*47)    
+                print("    > Image(s) processed:")
+                print(f"        - Successfully: {total_img_processed}/{len(img_paths)} img(s)")
+                if errors:
+                    print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
+                print(f"        - Total fruits: {total_fruits}")
+                print(f"        - Total time: {total_time:.1f}s  (avg {avg_time:.1f}s/img)")
+                print("    > Files saved:")
+                print(f"        - {total_img_processed} annotated image(s)")
+                if morph_csv:
+                    print(f"        - {os.path.basename(morph_csv)}")
+                if color_csv:
+                    print(f"        - {os.path.basename(color_csv)}")
+                print(f"        - {os.path.basename(session_txt)}")
+                if error_txt:
+                    print(f"        - {os.path.basename(error_txt)}")
+                print(f"        - Results folder: {output_path}")
 
 
         return None
