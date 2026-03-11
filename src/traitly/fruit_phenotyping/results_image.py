@@ -59,8 +59,8 @@ class ResultsImage:
                  processing_metadata: Optional[Dict[str, Any]] = None,
                  ):
         # Save both BGR (for cv2) and RGB (for display) to avoid reconversion
-        self.annotated_image = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB) 
-        self.color_image = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)   # Original BGR format
+        self.annotated_image = bgr_img
+        self.color_image = bgr_img  
         self.morphology_results = morphology_results if morphology_results else []   
         self.table = self.morphology_results                  
         self.image_path = image_path

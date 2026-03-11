@@ -1090,8 +1090,8 @@ def generate_l_channel_histogram(
     fig.subplots_adjust(bottom=0.28)
 
     # L adjusted plot
-    axes[0].hist(pixels, bins=100, color='steelblue', edgecolor='none', alpha=0.6)
-    axes[0].plot(x, kde_scaled, color="#175229", linewidth=1.8)
+    axes[0].hist(pixels, bins=100, color='thistle', edgecolor='none', alpha=0.6)
+    axes[0].plot(x, kde_scaled, color="#094A95", linewidth=1.8)
     axes[0].set_xlabel('L value (0–255)', fontsize=label_fontsize, labelpad=8)
     axes[0].set_ylabel('Pixel count', fontsize=label_fontsize)
     axes[0].set_title('L channel distribution', fontsize=title_fontsize, fontweight='bold')
@@ -1101,9 +1101,9 @@ def generate_l_channel_histogram(
     # Otsu plot
     axes[1].hist(locules,  bins=100, color='tomato',    edgecolor='none',
                  alpha=0.7, label=f'Locules (≤{otsu_adjusted})')
-    axes[1].hist(pericarp, bins=100, color='steelblue', edgecolor='none',
+    axes[1].hist(pericarp, bins=100, color='thistle', edgecolor='none',
                  alpha=0.7, label=f'Pericarp (>{otsu_adjusted})')
-    axes[1].plot(x, kde_scaled, color="#175229", linewidth=1.8)
+    axes[1].plot(x, kde_scaled, color="#094A95", linewidth=1.8)
     axes[1].axvline(otsu_adjusted, color='black', linestyle='--',
                     linewidth=1.5, label=f'Otsu: {otsu_adjusted}')
     axes[1].set_xlabel('L value (0–255)', fontsize=label_fontsize, labelpad=8)
