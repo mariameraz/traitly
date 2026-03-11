@@ -153,7 +153,7 @@ plugins:
       enable_creation_date: true
       locale: es
       exclude:
-        - index.md
+        - en/index.md
         - es/index.md
 
 ####################
@@ -161,7 +161,7 @@ plugins:
 ####################
 
 nav:
-  - Home: index.md
+  - Home: en/index.md
 
   - Installation: en/installation.md
 
