@@ -1181,6 +1181,7 @@ class FruitInternalAnalyzer:
         plot: bool = False,
         plot_size: Tuple[int, int] = (5, 5),
         contour_color: Tuple[int, int, int] = (0, 255, 0),
+        pericarp_int_color: Tuple[int, int, int] = (255, 0, 255),
         contour_thickness: int = 2,
     ) -> None:
         """
@@ -1288,7 +1289,7 @@ class FruitInternalAnalyzer:
                 cv2.drawContours(img_copy, [self.contours[fruit_id]], -1, contour_color, contour_thickness)
                 # Locules
                 for loc_id in locule_ids:
-                    cv2.drawContours(img_copy, [self.contours[loc_id]], -1, (255, 0, 255), contour_thickness)
+                    cv2.drawContours(img_copy, [self.contours[loc_id]], -1, pericarp_int_color, contour_thickness)
                     
             base_fontsize = 6
             fontsize = base_fontsize + (plot_size[0] )
@@ -1734,7 +1735,8 @@ class FruitInternalAnalyzer:
         label_color: Tuple[int, int, int] = (255, 255, 255),
         label_opacity: float = 0.7,
         get_color_histogram: bool = False,
-        alpha: Optional[float] = None
+        alpha: Optional[float] = None,
+        dark_thresh: int = 15
     ) -> Optional[pd.DataFrame]:
         """
         Extract color features from detected fruit tissues.
@@ -1824,7 +1826,8 @@ class FruitInternalAnalyzer:
         if alpha is not None:
             self.alpha = alpha
 
-
+        if self.img_copy is None:
+            self.img_copy = self.img_rgb.copy()
 
         metadata = self.is_metadata_saved
         if metadata:
@@ -1845,7 +1848,8 @@ class FruitInternalAnalyzer:
                 'label_color': label_color,
                 'label_opacity': label_opacity,
                 'get_color_histogram': get_color_histogram,
-                'alpha': self.alpha
+                'alpha': self.alpha,
+                'dark_thresh': dark_thresh
             }
         
         # Always reannotate from clean image
@@ -1878,7 +1882,8 @@ class FruitInternalAnalyzer:
                                 text_color = font_color, 
                                 label_background_color = label_color,
                                 label_opacity = label_opacity,
-                                alpha=self.alpha)
+                                alpha=self.alpha
+                                )
             
 
         if saved_color_results is not None:
@@ -1907,7 +1912,8 @@ class FruitInternalAnalyzer:
                                                           image_name = self.img_name,
                                                           color_space = color_space,
                                                           renumber = True,
-                                                          normalize = False)
+                                                          normalize = False,
+                                                          dark_thresh = dark_thresh)
             
             self.results.color_results = pd.DataFrame(color_results)
     
