@@ -209,6 +209,14 @@ nav:
 copyright: Copyright &copy; 2026 Maria Alejandra Torres Meraz
 
 extra:
+  alternative:
+    - name: English
+      link: ""
+      lang: en
+    - name: Spanish
+      link: es
+      lang: es
+
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/mariameraz/traitly
@@ -222,5 +230,5 @@ extra:
 extra_css:
   - stylesheets/extra.css
 
-extra_javascript: # for page transitions
+extra_javascript:
   - stylesheets/animations.js
