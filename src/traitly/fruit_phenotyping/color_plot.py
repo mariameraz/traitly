@@ -21,6 +21,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.cluster.hierarchy import linkage, leaves_list
 from scipy.spatial.distance import squareform
+from matplotlib.colors import LinearSegmentedColormap
+
 # ============================================================================
 # INTERNAL IMPORTS
 # ============================================================================
@@ -960,3 +962,175 @@ def plot_color_correlation(
         plt.show()
 
     return corr_matrix
+
+#####################################################################
+# Create a histogram plot to select dark threshold in analyze_color #
+#####################################################################
+
+def plot_dark_threshold(
+    img: np.ndarray,
+    mask: np.ndarray,
+    dark_threshold: int = 15,
+    plot_size: Tuple[int, int] = (8, 4),
+) -> None:
+    """
+    Plot the grayscale intensity distribution of masked pixels to help
+    choose an appropriate ``dark_threshold`` for color analysis.
+
+    Displays a histogram of grayscale values for all pixels within
+    ``mask``, with a vertical line at ``dark_threshold`` showing which
+    pixels would be excluded. Pixels to the left of the line are
+    excluded; pixels to the right are included in color analysis.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Input image in BGR format.
+    mask : np.ndarray
+        Binary mask where fruit pixels are 255 (e.g., ``mask_fruit``
+        or ``mask_locules``).
+    dark_threshold : int, optional
+        Current threshold value to display. Default is 15.
+    plot_size : tuple of int, optional
+        Figure size. Default is (8, 4).
+    """
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    pixels = gray[mask == 255]
+
+    fig, ax = plt.subplots(figsize=plot_size)
+    fig.subplots_adjust(bottom=0.28)
+
+    ax.hist(pixels, bins=256, range=(0, 255), color='thistle', alpha=0.8)
+    ax.axvline(dark_threshold, color='crimson', linewidth=1.5,
+               label=f'dark_threshold = {dark_threshold}')
+
+    excluded = np.sum(pixels <= dark_threshold)
+    total = len(pixels)
+    pct = excluded / total * 100 if total > 0 else 0
+
+    ax.set_xlabel('Grayscale intensity (0-255)', fontsize=11, labelpad=32)
+    ax.set_ylabel('Pixel count', fontsize=11)
+    ax.set_title(
+        f'Pixel intensity distribution: {excluded:,} px excluded ({pct:.1f}%)',
+        fontsize=11, fontweight='bold'
+    )
+    ax.legend(fontsize=10)
+    ax.spines[['top', 'right']].set_visible(False)
+
+    # Grayscale colorbar below x-axis
+    intensity_cmap = LinearSegmentedColormap.from_list('gray_bar', ['black', 'white'])
+    gradient = np.linspace(0, 1, 256).reshape(1, -1)
+
+    pos = ax.get_position()
+    bar_h = 0.03
+    bar_y = 0.035 * plot_size[1]
+    bar_ax = fig.add_axes([pos.x0, bar_y, pos.width, bar_h])
+    bar_ax.imshow(gradient, aspect='auto', cmap=intensity_cmap,
+                  extent=[0, 255, 0, 1])
+    bar_ax.set_xticks([])
+    bar_ax.set_yticks([])
+    for spine in bar_ax.spines.values():
+        spine.set_visible(False)
+
+    plt.show()
+
+
+#####################################################################
+# Plot RGB average values for different tissues
+#####################################################################
+
+def plot_tissue_colors(
+    df: pd.DataFrame,
+    fruit_id: Optional[int] = None,
+    plot_size: Tuple[int, int] = (8, 3),
+    title_font_size: float = 11.0,
+    label_font_size: float = 10.0,
+) -> None:
+    """
+    Display the mean RGB color per tissue as color swatches.
+
+    For each tissue present in ``df``, renders a filled rectangle with
+    the average RGB color and annotates it with the mean R, G, B values.
+    Useful for a quick visual check of tissue color before running a
+    full color analysis.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame as returned by
+        :meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.analyze_color`
+        (``get_color_histogram=False``). Must contain columns
+        ``'fruit_id'``, ``'tissue'``, ``'R_mean'``, ``'G_mean'``,
+        ``'B_mean'``.
+    fruit_id : int, optional
+        Fruit ID to display. If ``None``, the mean color is averaged
+        across all fruits per tissue. Default is ``None``.
+    plot_size : tuple of int, optional
+        Figure size. Default is (8, 3).
+    title_font_size : float, optional
+        Font size for the plot title. Default is 11.0.
+    label_font_size : float, optional
+        Font size for tissue labels and RGB annotations. Default is 10.0.
+
+    Raises
+    ------
+    ValueError
+        If required columns are missing from ``df``, ``fruit_id`` is
+        not found, or no RGB data is available for the selected subset.
+    """
+    required = {'fruit_id', 'tissue', 'R_mean', 'G_mean', 'B_mean'}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing columns in DataFrame: {missing}")
+
+    # Filter by fruit_id or average across all fruits
+    if fruit_id is not None:
+        if fruit_id not in df['fruit_id'].values:
+            raise ValueError(f"fruit_id {fruit_id} not found in DataFrame.")
+        subset = df[df['fruit_id'] == fruit_id].copy()
+        image_name = subset['image_name'].iloc[0] if 'image_name' in subset.columns else ''
+        title = f"Tissue colors — Fruit {fruit_id}"
+        if image_name:
+            title += f" in {image_name}"
+    else:
+        subset = df.groupby('tissue', as_index=False)[['R_mean', 'G_mean', 'B_mean']].mean()
+        image_name = df['image_name'].iloc[0] if 'image_name' in df.columns else ''
+        n = df['fruit_id'].nunique()
+        title = f"Avg RGB color across {n} fruit(s)"
+        if image_name:
+            title += f" in {image_name}"
+
+    tissues = subset['tissue'].tolist()
+    n_tissues = len(tissues)
+
+    if n_tissues == 0:
+        raise ValueError("No tissue data available for the selected subset.")
+
+    fig, axes = plt.subplots(1, n_tissues, figsize=plot_size)
+    if n_tissues == 1:
+        axes = [axes]
+
+    tissue_display = {
+        'total_pericarp':    'Total pericarp',
+        'outer_pericarp':    'Outer pericarp',
+        'internal_pericarp': 'Internal pericarp',
+        'locules':           'Locules',
+    }
+
+    for ax, (_, row) in zip(axes, subset.iterrows()):
+        r = int(round(row['R_mean']))
+        g = int(round(row['G_mean']))
+        b = int(round(row['B_mean']))
+        color_norm = (r / 255, g / 255, b / 255)
+
+        ax.set_facecolor(color_norm)
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        tissue_label = tissue_display.get(row['tissue'], row['tissue'])
+        ax.set_title(f"{tissue_label}\nRGB({r},{g},{b})", 
+             fontsize=label_font_size, pad=6)
+
+    fig.suptitle(title, fontsize=title_font_size, fontweight='bold', y=1.02)
+    plt.tight_layout()
+    plt.show()
