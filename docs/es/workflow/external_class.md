@@ -423,6 +423,7 @@ df = analyzer.analyze_color(
 
 <br>
 
+
 ---
 
 ### `generate_single_fruit_masks`

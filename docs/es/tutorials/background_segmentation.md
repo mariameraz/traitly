@@ -5,7 +5,7 @@
 En este tutorial veremos cómo ajustar los umbrales de color para segmentar el fondo de las imágenes con `FruitExternalAnalyzer`.
 
 !!! tip ""
-    :fontawesome-solid-file-code: :fontawesome-solid-download: Descarga el **Jupyter notebook** con el código de este tutorial [aquí](../../en/tutorials/background_segmentation.ipynb).
+    :fontawesome-solid-file-code: :fontawesome-solid-download: Descarga el **Jupyter notebook** y todas las imágenes de este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials_data/background_segmentation).
 
 Por defecto, `FruitExternalAnalyzer.generate_fruit_mask()` asume un fondo azul. Además, tiene umbrales preconfigurados para fondos blancos (`'white'`) y negros (`'black'`). Sin embargo, también es posible definir umbrales personalizados de forma manual. Para más detalles, ver la sección [External Analyzer Class](../workflow/external_class.md#generate_fruit_mask).
 
@@ -21,7 +21,7 @@ Primero, cargamos la clase `FruitExternalAnalyzer` de la librería `traitly` y l
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 
-path = 'tests/sample_data/external/Test_10.png'
+path = './Test_10.png'
 blue_example = FruitExternalAnalyzer(path)
 blue_example.load_image()
 blue_example.setup_measurements(verbose = False)
@@ -57,7 +57,7 @@ blue_example.detect_fruits(plot = True, contour_thickness = 8)
 
 En este segundo ejemplo tenemos una imagen con fondo gris. Como el gris no es un color preconfigurado, definiremos **umbrales HSV personalizados** de forma manual. Para esto, podemos usar `generate_color_scatterplot()`, que muestra los colores de los píxeles de la imagen (10,000 por defecto) en el espacio HSV (ver sección [External Analyzer Class](../workflow/external_class.md#generate_color_scatterplot) para más detalles sobre cómo funciona esta función). Cada punto en los gráficos representa un píxel, coloreado con su valor **RGB** real. El objetivo es encontrar el rango [H,S,V] en el que caen los píxeles del fondo gris.
 ```python
-path = 'tests/sample_data/external/Test_27.png'
+path = './Test_27.png'
 gray_example = FruitExternalAnalyzer(path)
 gray_example.load_image()
 gray_example.setup_measurements(verbose = False)
@@ -111,7 +111,7 @@ gray_example.detect_fruits(plot = True,
 
 Por último, tenemos un ejemplo con fondo blanco. Como `white` es un color preconfigurado, simplemente usamos `background_color='white'` en `generate_fruit_mask()`.
 ```python
-path = 'tests/sample_data/external/Test_56.png'
+path = './Test_56.png'
 white_example = FruitExternalAnalyzer(path)
 white_example.load_image()
 white_example.setup_measurements(verbose = False)
