@@ -4,8 +4,8 @@
 
 In this tutorial we'll go over how to adjust the color thresholds for fruit background segmentation in `FruitExternalAnalyzer`. 
 
-!!! tip ""
-    :fontawesome-solid-file-code: :fontawesome-solid-download: Download a **Jupyter notebook** with the code for this tutorial [here](background_segmentation.ipynb).
+!!! tip "Follow along"
+    :fontawesome-solid-file-code: Download the Jupyter notebook and sample images for this tutorial [here](https://github.com/mariameraz/traitly/tree/main/tutorials_data/background_segmentation).
 
 By default `FruitExternalAnalyzer.generate_fruit_mask()` assumes a blue background. Also, it has pre-configured thresholds for `'white'` and `'black'` backgrounds. However, custom thresholds can also by provided manually. For more details, see section [External Analyzer Class](../workflow/external_class.md#generate_fruit_mask).
 
@@ -24,7 +24,7 @@ from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 
 ```python
-path = 'tests/sample_data/external/Test_10.png'
+path = './Test_10.png'
 blue_example = FruitExternalAnalyzer(path)
 blue_example.load_image()
 blue_example.setup_measurements(verbose = False)
@@ -64,7 +64,7 @@ In this second example we have an image with a gray background. Since gray is no
 
 
 ```python
-path = 'tests/sample_data/external/Test_27.png'
+path = './Test_27.png'
 gray_example = FruitExternalAnalyzer(path)
 gray_example.load_image()
 gray_example.setup_measurements(verbose = False)
@@ -124,7 +124,7 @@ gray_example.detect_fruits(plot = True,
 Finally, we have an example with a white background. Since `white` is a pre-configured color, we can simply use `background_color='white'` in `generate_fruit_mask()`.
 
 ```python
-path = 'tests/sample_data/external/Test_56.png'
+path = './Test_56.png'
 white_example = FruitExternalAnalyzer(path)
 white_example.load_image()
 white_example.setup_measurements(verbose = False)
