@@ -46,12 +46,12 @@ Background choice is especially important in external analysis, as it determines
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">
   <figure style="text-align: center; margin: 0;">
-    <img src="../../assets/images/cranberry_background_example.jpg" alt="Background examples for cranberry"
+    <img src="../assets/images/cranberry_background_example.jpg" alt="Background examples for cranberry"
          style="height: 400px; width: auto;">
     <figcaption><em>Cranberry on different backgrounds. With light-colored fruits, a white background reduces contrast and makes segmentation harder.</em></figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
-    <img src="../../assets/images/blackberry_background_example.jpg" alt="Background examples for blackberry"
+    <img src="../assets/images/blackberry_background_example.jpg" alt="Background examples for blackberry"
          style="height: 400px; width: auto;">
     <figcaption><em>Blackberry on different backgrounds. With dark fruits, a black background does not provide enough contrast for reliable segmentation.</em></figcaption>
   </figure>
@@ -95,7 +95,7 @@ Traitly offers two ways to convert pixels to real metric units in external analy
 
     When using the template, verify the actual diameter of the printed circles with a ruler. Printers can scale documents during printing, so the final size may differ from the file. Always use the measured value, not the one in the file.
 
-    [:octicons-download-24: Download circular reference template](../../assets/templates/size_reference_template.pdf)
+    [:octicons-download-24: Download circular reference template](../assets/templates/size_reference_template.pdf)
 
 ### Why use a circular reference?
 

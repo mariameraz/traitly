@@ -46,7 +46,7 @@ Traitly is committed to **open and reproducible science**: every analysis automa
 
     Step-by-step guides for different workflows.
 
-    [:octicons-arrow-right-24: Explore guides](traits.md)
+    [:octicons-arrow-right-24: Explore guides](tutorials/overview.md)
 
 -   :material-table-heart: __**Traits Table**__
 
@@ -54,7 +54,7 @@ Traitly is committed to **open and reproducible science**: every analysis automa
 
     Detailed description of all extracted traits.
 
-    [:octicons-arrow-right-24: View reference](traits.md)
+    [:octicons-arrow-right-24: View reference](workflow/results/measurements.md)
 
 
 </div>
