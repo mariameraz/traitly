@@ -145,7 +145,7 @@ plugins:
       branch: main
       token: !ENV MKDOCS_GIT_COMMITTERS_APIKEY
       exclude:
-        - index.md
+        - en/index.md
         - es/index.md
 
   - git-revision-date-localized:
