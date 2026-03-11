@@ -293,11 +293,11 @@ analyzer.enhance_locule_contrast(
 
 | Parameter         | Type              | Default   | Description                                                                                                    |
 | ----------------- | ----------------- | --------- | -------------------------------------------------------------------------------------------------------------- |
-| `contrast_method` | `str`             | `'gamma'` | Enhancement method: `'gamma'`, `'sigmoid'`, `'exponential'`, or `'none'` (no transformation)                   |
+| `contrast_method` | `str`             | `'none'` | Enhancement method: `'gamma'`, `'sigmoid'`, `'exponential'`, or `'none'` (no transformation)                   |
 | `gamma`           | `float`           | `1.5`     | Gamma exponent (only if `contrast_method='gamma'`)                                                              |
 | `gain`            | `float`           | `5`       | Sigmoid gain (only if `contrast_method='sigmoid'`)                                                              |
 | `cutoff`          | `float`           | `0.5`     | Sigmoid cutoff (only if `contrast_method='sigmoid'`)                                                            |
-| `c`               | `float`           | `0.5`     | Exponential factor (only if `contrast_method='exponential'`)                                                    |
+| `c`               | `float`           | `0.5`     | Exponential factor (only if `contrast_method='exp'`)                                                    |
 | `kernel_blur`     | `int`             | `1`       | Gaussian blur kernel size applied before enhancement                                                            |
 | `clip_limit`      | `int`             | `None`    | Applies CLAHE after the selected method                                                                         |
 | `tile_grid_size`  | `int`             | `12`      | CLAHE grid size (only if `clip_limit` is set)                                                                   |
@@ -344,7 +344,7 @@ analyzer.generate_locule_mask(invert_locule=True, plot=True)
 | Parameter          | Type              | Default   | Description                                                                                      |
 | ------------------ | ----------------- | --------- | ------------------------------------------------------------------------------------------------ |
 | `thresh_min`       | `int`             | `120`     | Manual binarization threshold for the L channel; only used when `use_otsu=False`                 |
-| `use_otsu`         | `bool`            | `True`    | If `True`, automatically computes the threshold using Otsu's method, ignoring `thresh_min`       |
+| `use_otsu`         | `bool`            | `False`    | If `True`, automatically computes the threshold using Otsu's method, ignoring `thresh_min`       |
 | `otsu_offset`      | `int`             | `0`       | Value added to the Otsu threshold; positive values capture more pixels, negative values less     |
 | `kernel_close`     | `int`             | `None`    | Kernel size for morphological closing applied to the locule mask                                 |
 | `kernel_open`      | `int`             | `None`    | Kernel size for morphological opening applied to the locule mask                                 |

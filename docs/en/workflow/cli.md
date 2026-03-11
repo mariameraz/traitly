@@ -113,4 +113,3 @@ The CLI generates the same files as `analyze_folder()` from Python:
 All files are saved to the directory specified with `-o`, or to a `Results/` subfolder inside the input folder if not specified.
 
 </div>
-```](https://github.com/mariameraz/traitly)

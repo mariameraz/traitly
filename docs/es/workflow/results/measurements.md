@@ -167,7 +167,7 @@ La desviación estándar (DE) se calcula respecto a la media de cada fruto. Esto
 Tanto `outer_pericarp_mean_thickness` como `fruit_lobedness` se estiman mediante rayos radiales emitidos desde el centroide del fruto hacia el contorno del fruto. La siguiente imagen muestra este método sobre una sección transversal real.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/radial_rays.png" alt="Rayos radiales para grosor de pericarpio y lobedness"
+  <img src="../../../../assets/images/radial_rays.png" alt="Rayos radiales para grosor de pericarpio y lobedness"
        style="height: 250px; width: auto;">
   <figcaption><em>Rayos radiales emitidos desde el centroide del fruto (punto cyan) hasta el contorno externo del fruto (verde) y el límite de su región interna (magenta).</em></figcaption>
 </figure>
@@ -182,7 +182,7 @@ Para `locules_angular_symmetry` y `locules_radial_symmetry`, **valores más bajo
 Cada lóculo se describe con dos coordenadas polares relativas al centroide del fruto: su **posición angular (θ)** y su **distancia radial (r)**.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/symmetry_diagram.png" alt="Coordenadas polares de los lóculos"
+  <img src="../../../../assets/images/symmetry_diagram.png" alt="Coordenadas polares de los lóculos"
        style="height: 350px; width: auto;">
   <figcaption><em>Centroide de los lóculos (círculos verdes), descritos por sus ángulos θ y sus distancias radiales r desde el centroide del fruto (círculo azul).</em></figcaption>
 </figure>
@@ -192,7 +192,7 @@ Cada lóculo se describe con dos coordenadas polares relativas al centroide del 
 - **`locules_radial_symmetry`**: mide qué tan similares son las distancias radiales entre lóculos. Es el coeficiente de variación (%) de todos los valores *r*. Un valor cercano a 0 indica que todos los lóculos están aproximadamente a la misma distancia del centro; valores más altos indican que algunos lóculos están más cerca del centro que otros.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/symmetry_examples.png" alt="Ejemplos de simetría"
+  <img src="../../../../assets/images/symmetry_examples.png" alt="Ejemplos de simetría"
        style="width: 100%; max-width: 1200px;">
   <figcaption><em>Ejemplos de resultados de simetría angular y radial.</em></figcaption>
 </figure>
@@ -206,7 +206,7 @@ Las máscaras binarias muestran exactamente qué píxeles se incluyen por tejido
 En `analyze_morphology()`, `total_internal_fruit` se refiere al área combinada de `internal_pericarp` + `locules`, y `total_fruit_area` se refiere a `total_pericarp` + `locules`.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/tissue_masks.png" alt="Máscaras binarias por región de tejido"
+  <img src="../../../../assets/images/tissue_masks.png" alt="Máscaras binarias por región de tejido"
        style="width: 100%; max-width: 700px;">
   <figcaption><em>Máscaras binarias para cada región de los tejidos de frutos de distintas especies.</em></figcaption>
 </figure>
@@ -214,7 +214,7 @@ En `analyze_morphology()`, `total_internal_fruit` se refiere al área combinada 
 `analyze_color()` puede extraer estadísticas de color de forma independiente para cada una de estas regiones, como se muestra a continuación. Nótese que los lóculos del arándano aparecen casi negros ya que son cavidades vacías, por lo que el color extraído refleja el fondo oscuro y no el tejido del fruto.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/tissue_colors.png" alt="Color extraído por tejido"
+  <img src="../../../../assets/images/tissue_colors.png" alt="Color extraído por tejido"
        style="width: 100%; max-width: 650px;">
   <figcaption><em>Color RGB promedio extraído de cada región de los tejidos de tomate y arándano.</em></figcaption>
 </figure>
@@ -222,7 +222,7 @@ En `analyze_morphology()`, `total_internal_fruit` se refiere al área combinada 
 Distintas especies de frutos tienen estructuras internas muy diferentes, por lo que a veces no todas las regiones extraídas por Traitly son relevantes. En esos casos, `analyze_color()` te permite seleccionar solo las regiones que tienen sentido para tus frutos, como se muestra en la siguiente imagen.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/tissue_color_examples.png" alt="Ejemplos de extracción de color por especie"
+  <img src="../../../../assets/images/tissue_color_examples.png" alt="Ejemplos de extracción de color por especie"
        style="width: 100%; max-width: 400px;">
   <figcaption><em>Extracción de color para las áreas de pericarpio total y lóculos en distintas especies.</em></figcaption>
 </figure>
