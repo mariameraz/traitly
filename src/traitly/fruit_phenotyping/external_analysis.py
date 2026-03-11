@@ -480,7 +480,8 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         label_color: Tuple[int, int, int] = (255, 255, 255),
         label_opacity: float = 0.7,
         pericarp_ext_color: Tuple[int, int, int] = (0, 255, 0),
-        pericarp_ext_thickness: int = 2
+        pericarp_ext_thickness: int = 2,
+        dark_thresh: int = 15
     ):
         """
         Extract color features from the total pericarp of each fruit.
@@ -548,7 +549,8 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             font_color = font_color,
             label_color = label_color,
             label_opacity = label_opacity,
-            get_color_histogram = get_color_histogram
+            get_color_histogram = get_color_histogram,
+            dark_thresh=dark_thresh
         )
 
         self.results.color_results = self.results.color_results.drop(columns = 'tissue', errors='ignore')
