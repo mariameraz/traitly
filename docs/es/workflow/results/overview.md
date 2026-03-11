@@ -45,12 +45,12 @@ Results/
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">
   <figure style="text-align: center; margin: 0;">
-    <img src="../../../assets/images/ext_annotation.png" alt="Ejemplo de imagen anotada — análisis externo"
+    <img src="../../../../assets/images/ext_annotation.png" alt="Ejemplo de imagen anotada — análisis externo"
          style="height: 300px; width: auto;">
     <figcaption><em>Análisis externo: contorno del fruto, ejes, caja delimitadora y etiqueta con ID.</em></figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
-    <img src="../../../assets/images/int_annotation.png" alt="Ejemplo de imagen anotada — análisis interno"
+    <img src="../../../../assets/images/int_annotation.png" alt="Ejemplo de imagen anotada — análisis interno"
          style="height: 300px; width: auto;">
     <figcaption><em>Análisis interno: contornos del fruto y lóculos, límite de la cavidad interna, ejes, caja delimitadora, centroides y etiqueta con ID y número de lóculos.</em></figcaption>
   </figure>
@@ -84,7 +84,7 @@ Las anotaciones varían según el analizador (clase) utilizado y los pasos ejecu
 Si la imagen incluye una referencia de tamaño, la anotación muestra también el resultado de la detección: una caja delimitadora en **azul claro** alrededor de la tira de referencia con su coeficiente de confianza YOLO, cada círculo contorneado en **rojo**, y el diámetro medido en píxeles marcado con una línea **azul**. Esto permite verificar que la referencia fue detectada correctamente antes de confiar en las mediciones calibradas.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/size_reference.png" alt="Caja y círculos de la referencia de tamaño detectados"
+  <img src="../../../../assets/images/size_reference.png" alt="Caja y círculos de la referencia de tamaño detectados"
        style="height: 400px; width: auto;">
   <figcaption><em>Caja y círculos de la referencia de tamaño detectados</em></figcaption>
 </figure>
@@ -94,7 +94,7 @@ Si la imagen incluye una referencia de tamaño, la anotación muestra también e
 Si se detecta una carta de color Macbeth, la anotación dibuja un rectángulo **verde** sobre cada parche de color, marcando el área exacta de la que se extraerán los valores de color.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/color_card.png" alt="Carta de color y parches detectados"
+  <img src="../../../../assets/images/color_card.png" alt="Carta de color y parches detectados"
        style="height: 300px; width: auto;">
   <figcaption><em>Carta de color y parches detectados</em></figcaption>
 </figure>

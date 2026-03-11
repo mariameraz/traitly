@@ -26,7 +26,7 @@ Ambas clases comparten la misma lógica de pipeline – procesamiento de imagen,
 - **`FruitInternalAnalyzer`** busca relaciones jerárquicas: un contorno de fruto que contiene múltiples contornos de lóculos en su interior.
 - **`FruitExternalAnalyzer`** se enfoca en la silueta completa del fruto, ignorando estructuras internas.
 
-![Analyzer pipelines](../assets/images/workflow.png)
+![Analyzer pipelines](../../assets/images/workflow.png)
 *Flujo general para cada análisis. **A)** `FruitExternalAnalyzer`: pipeline para el análisis de la apariencia externa de frutos enteros. **B)** `FruitInternalAnalyzer`: pipeline extendido para la detección y segmentación de frutos **y** lóculos para cortes transversales de los frutos.*
 
 ---
