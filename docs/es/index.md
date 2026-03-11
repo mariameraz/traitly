@@ -44,7 +44,7 @@ Traitly apuesta por la **ciencia abierta y reproducible**: cada análisis genera
 
     Guías paso a paso para diferentes flujos de trabajo.
 
-    [:octicons-arrow-right-24: Explorar guías](traits.md)
+    [:octicons-arrow-right-24: Explorar guías](tutorials/overview.md)
 
 -   :material-table-heart: __**Tabla de Rasgos**__
 
@@ -52,7 +52,7 @@ Traitly apuesta por la **ciencia abierta y reproducible**: cada análisis genera
 
     Descripción detallada de todos los rasgos extraídos.
 
-    [:octicons-arrow-right-24: Consultar referencia](traits.md)
+    [:octicons-arrow-right-24: Consultar referencia](workflow/results/measurements.md)
 
 </div>
 
