@@ -165,7 +165,7 @@ Standard deviation (SD) is calculated relative to the mean of each fruit. This m
 Both `outer_pericarp_mean_thickness` and `fruit_lobedness` are estimated using radial rays cast from the fruit centroid toward the fruit contour. The image below shows this approach on a real fruit cross-section.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/radial_rays.png" alt="Radial rays for pericarp thickness and lobedness"
+  <img src="../../assets/images/radial_rays.png" alt="Radial rays for pericarp thickness and lobedness"
        style="height: 250px; width: auto;">
   <figcaption><em>Radial rays cast from the fruit centroid (cyan dot) to the outer fruit contour (green) and the internal region boundary (magenta).</em></figcaption>
 </figure>
@@ -180,7 +180,7 @@ For `locules_angular_symmetry` and `locules_radial_symmetry`, **lower values ind
 Each locule is described by two polar coordinates relative to the fruit centroid: its **angular position (θ)** and its **radial distance (r)**.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/symmetry_diagram.png" alt="Polar coordinates of locules"
+  <img src="../../assets/images/symmetry_diagram.png" alt="Polar coordinates of locules"
        style="height: 350px; width: auto;">
   <figcaption><em>Locule centroids (green circles) described by their angles θ and radial distances r from the fruit centroid (blue circle).</em></figcaption>
 </figure>
@@ -190,7 +190,7 @@ Each locule is described by two polar coordinates relative to the fruit centroid
 - **`locules_radial_symmetry`**: measures how similar the radial distances are across locules. It is the coefficient of variation (%) of all *r* values. A value near 0 means all locules are at roughly the same distance from the center; higher values indicate that some locules are closer to the center than others.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/symmetry_examples.png" alt="Symmetry examples"
+  <img src="../../assets/images/symmetry_examples.png" alt="Symmetry examples"
        style="width: 100%; max-width: 1200px;">
   <figcaption><em>Examples of angular and radial symmetry results.</em></figcaption>
 </figure>
@@ -204,7 +204,7 @@ The binary masks show exactly which pixels are included per tissue. Gray panels 
 In `analyze_morphology()`, `total_internal_fruit` refers to the combined area of `internal_pericarp` + `locules`, and `total_fruit_area` refers to `total_pericarp` + `locules`.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/tissue_masks.png" alt="Binary masks per tissue region"
+  <img src="../../assets/images/tissue_masks.png" alt="Binary masks per tissue region"
        style="width: 100%; max-width: 700px;">
   <figcaption><em>Binary masks for each tissue region across different fruit species.</em></figcaption>
 </figure>
@@ -212,7 +212,7 @@ In `analyze_morphology()`, `total_internal_fruit` refers to the combined area of
 `analyze_color()` can extract color statistics independently for each of these regions, as shown below. Note that cranberry locules appear nearly black since they are empty cavities, so the extracted color reflects the dark background rather than fruit tissue.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/tissue_colors.png" alt="Color extracted per tissue"
+  <img src="../../assets/images/tissue_colors.png" alt="Color extracted per tissue"
        style="width: 100%; max-width: 650px;">
   <figcaption><em>Mean RGB color extracted from each tissue region for tomato and cranberry.</em></figcaption>
 </figure>
@@ -220,7 +220,7 @@ In `analyze_morphology()`, `total_internal_fruit` refers to the combined area of
 Different fruit species have very different internal structures, so not all regions extracted by Traitly are always relevant. In those cases, `analyze_color()` lets you select only the regions that make sense for your fruits, as shown below.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../../assets/images/tissue_color_examples.png" alt="Color extraction examples across species"
+  <img src="../../assets/images/tissue_color_examples.png" alt="Color extraction examples across species"
        style="width: 100%; max-width: 400px;">
   <figcaption><em>Color extraction for total pericarp and locule areas across species.</em></figcaption>
 </figure>

@@ -37,12 +37,12 @@ Traitly assumes a **black background** by default. To achieve this:
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">
   <figure style="text-align: center; margin: 0;">
-    <img src="../../assets/images/scanner_box.jpg" alt="Black box and scanner setup"
+    <img src="../assets/images/scanner_box.jpg" alt="Black box and scanner setup"
          style="height: 600px; width: auto;">
     <figcaption><em>Example of a black box and scanner setup</em></figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
-    <img src="../../assets/images/slices_image.jpg" alt="Example of a scanned image"
+    <img src="../assets/images/slices_image.jpg" alt="Example of a scanned image"
          style="height: 600px; width: auto;">
     <figcaption><em>Example of a scanned image</em></figcaption>
   </figure>
@@ -89,7 +89,7 @@ Traitly offers multiple ways to convert pixels to real metric units.
 
     When using the template, verify the actual diameter of the printed circles with a ruler. Printers can scale documents during printing, so the final size may differ from the file.
 
-    [:octicons-download-24: Download circular reference template](../../assets/templates/size_reference_template.pdf)
+    [:octicons-download-24: Download circular reference template](../assets/templates/size_reference_template.pdf)
 
 ### Why use a circular reference?
 

@@ -104,10 +104,93 @@ plugins:
           default: true
           name: English
           build: true
+          nav:
+            - Home: en/index.md
+
+            - Installation: en/installation.md
+
+            - User Guide: 
+                - Traitly Architecture: en/workflow/overview.md
+                - Internal analysis: 
+                  - Image Specifications: en/workflow/int_image_requirements.md
+                  - Internal Analyzer Class: en/workflow/internal_class.md  
+                - External analysis:
+                  - Image Specifications: en/workflow/ext_image_requirements.md
+                  - External Analyzer Class: en/workflow/external_class.md
+                - CLI:
+                  - Command Line Interface: en/workflow/cli.md
+                - Results: 
+                  - Overview: en/workflow/results/overview.md
+                  - Measurements: en/workflow/results/measurements.md
+
+            - Tutorials:
+                - Overview: en/tutorials/overview.md
+                - Quickstart: en/tutorials/quickstart.md
+                - External Analysis: en/tutorials/external.md
+                - Background Segmentation: en/tutorials/background_segmentation.md
+
+
+            - API Reference:
+                - Classes:
+                    - FruitInternalAnalyzer: en/api/internal_analysis.md
+                    - FruitExternalAnalyzer: en/api/external_analysis.md
+
+                - Modules:
+                    - mask: en/api/mask.md
+                    - processing: en/api/processing.md
+                    - color_analysis: en/api/color_analysis.md
+                    - symmetry: en/api/symmetry.md
+                    - color_plot: en/api/color_plot.md
+                    - analysis_parameters: en/api/analysis_parameters.md
+            
+            - About: en/about.md
+            - Changelog: en/changelog.md
 
         - locale: es
           name: Español
           build: true
+          nav:
+            - Home: es/index.md
+
+            - Installation: es/installation.md
+
+            - User Guide: 
+                - Traitly Architecture: es/workflow/overview.md
+                - Internal analysis: 
+                  - Image Specifications: es/workflow/int_image_requirements.md
+                  - Internal Analyzer Class: es/workflow/internal_class.md  
+                - External analysis:
+                  - Image Specifications: es/workflow/ext_image_requirements.md
+                  - External Analyzer Class: es/workflow/external_class.md
+                - CLI:
+                  - Command Line Interface: es/workflow/cli.md
+                - Results: 
+                  - Overview: es/workflow/results/overview.md
+                  - Measurements: es/workflow/results/measurements.md
+
+            - Tutorials:
+                - Overview: es/tutorials/overview.md
+                - Quickstart: es/tutorials/quickstart.md
+                - External Analysis: es/tutorials/external.md
+                - Background Segmentation: es/tutorials/background_segmentation.md
+
+
+            - API Reference:
+                - Classes:
+                    - FruitInternalAnalyzer: es/api/internal_analysis.md
+                    - FruitExternalAnalyzer: es/api/external_analysis.md
+
+                - Modules:
+                    - mask: es/api/mask.md
+                    - processing: es/api/processing.md
+                    - color_analysis: es/api/color_analysis.md
+                    - symmetry: es/api/symmetry.md
+                    - color_plot: es/api/color_plot.md
+                    - analysis_parameters: es/api/analysis_parameters.md
+            
+            - About: es/about.md
+            - Changelog: es/changelog.md
+            
           nav_translations:
             Home: Inicio
             Installation: Instalación
@@ -160,47 +243,7 @@ plugins:
 # Navigation setup #
 ####################
 
-nav:
-  - Home: en/index.md
 
-  - Installation: en/installation.md
-
-  - User Guide: 
-      - Traitly Architecture: en/workflow/overview.md
-      - Internal analysis: 
-        - Image Specifications: en/workflow/int_image_requirements.md
-        - Internal Analyzer Class: en/workflow/internal_class.md  
-      - External analysis:
-        - Image Specifications: en/workflow/ext_image_requirements.md
-        - External Analyzer Class: en/workflow/external_class.md
-      - CLI:
-        - Command Line Interface: en/workflow/cli.md
-      - Results: 
-        - Overview: en/workflow/results/overview.md
-        - Measurements: en/workflow/results/measurements.md
-
-  - Tutorials:
-      - Overview: en/tutorials/overview.md
-      - Quickstart: en/tutorials/quickstart.md
-      - External Analysis: en/tutorials/external.md
-      - Background Segmentation: en/tutorials/background_segmentation.md
-
-
-  - API Reference:
-      - Classes:
-          - FruitInternalAnalyzer: en/api/internal_analysis.md
-          - FruitExternalAnalyzer: en/api/external_analysis.md
-
-      - Modules:
-          - mask: en/api/mask.md
-          - processing: en/api/processing.md
-          - color_analysis: en/api/color_analysis.md
-          - symmetry: en/api/symmetry.md
-          - color_plot: en/api/color_plot.md
-          - analysis_parameters: en/api/analysis_parameters.md
-  
-  - About: en/about.md
-  - Changelog: en/changelog.md
 
 #######################
 # Extra configuration ##
@@ -209,13 +252,6 @@ nav:
 copyright: Copyright &copy; 2026 Maria Alejandra Torres Meraz
 
 extra:
-  alternative:
-    - name: English
-      link: ""
-      lang: en
-    - name: Spanish
-      link: es
-      lang: es
 
   social:
     - icon: fontawesome/brands/github
