@@ -540,7 +540,7 @@ The annotated image includes a **unique ID for each fruit**, its **locule count*
 
 
     <div style="text-align: center;">
-        <img src="../../assets/images/contours.png" alt="contours" width="800">
+        <img src="../assets/images/contours.png" alt="contours" width="800">
         <p><em>Examples of available contours with `contour_mode`</em></p>
     </div>
 
@@ -553,7 +553,7 @@ The annotated image includes a **unique ID for each fruit**, its **locule count*
         For more details on how these traits are calculated, see the [Measurements](results/measurements.md#pericarp-thickness-and-lobedness) section.
 
     <div style="text-align: center;">
-        <img src="../../assets/images/num_rays.png" alt="num_rays" width="400">
+        <img src="../assets/images/num_rays.png" alt="num_rays" width="400">
         <p><em>Effect of <code>num_rays</code> on ray density. Higher values capture more detail along the fruit contour.</em></p>
     </div>
 
@@ -632,7 +632,7 @@ By default, files are saved to the same folder as the input image, using the ori
 This function extracts color from different fruit tissues: **total pericarp**, **outer pericarp**, **inner pericarp**, and **locules**. To visually inspect how these tissues are segmented, use `generate_single_fruit_masks`. If you don't need all tissues, a specific one can be selected with `tissue='...'`.
 
 <div style="text-align: center;">
-    <img src="../../assets/images/internal_tissues.png" alt="Setup with black box" width="900">
+    <img src="../assets/images/internal_tissues.png" alt="Setup with black box" width="900">
     <p><em>Example of tissues from which color is extracted in cranberry slices</em></p>
 </div>
 
