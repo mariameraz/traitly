@@ -1074,8 +1074,7 @@ class FruitInternalAnalyzer:
         kernel_open: Optional[int] = None,
         kernel_blur: Optional[int] = None,
         erosion_px: int = 10,
-        use_otsu: bool = False,
-        otsu_offset: int = 0,
+        otsu_offset: Optional[int] = None,
         min_fruit_area: int = 5000,
         min_locule_area: int = 0,
         invert_locule: bool = False,
@@ -1121,7 +1120,6 @@ class FruitInternalAnalyzer:
         ValueError
             If :attr:`mask_fruit` or :attr:`l_transformed` is not available.
         """
-
         # Validation
 
         if self.mask_fruit is None:
@@ -1141,11 +1139,15 @@ class FruitInternalAnalyzer:
                 'kernel_open': kernel_open,
                 'kernel_blur': kernel_blur,
                 'erosion_px': erosion_px,
-                'use_otsu': use_otsu,
                 'otsu_offset': otsu_offset,
                 'invert_locule': invert_locule
                 }
         
+        if otsu_offset is not None:
+            use_otsu = True
+        else:
+            use_otsu = False
+
         self.mask_locules = create_mask_locules(
             l_transformed=self.l_transformed,
             fruit_mask=self.mask_fruit,
@@ -1736,7 +1738,7 @@ class FruitInternalAnalyzer:
         label_opacity: float = 0.7,
         get_color_histogram: bool = False,
         alpha: Optional[float] = None,
-        dark_thresh: int = 15
+        dark_thresh: int = 20
     ) -> Optional[pd.DataFrame]:
         """
         Extract color features from detected fruit tissues.
@@ -1926,7 +1928,8 @@ class FruitInternalAnalyzer:
                                     tissue = tissue,
                                     renumber = True,
                                     color_space = color_space,
-                                    alpha = self.alpha)
+                                    alpha = self.alpha,
+                                    dark_thresh = dark_thresh)
             
 
             df = (
@@ -2246,9 +2249,9 @@ class FruitInternalAnalyzer:
             # 8. Get annotated image
             if self.results is not None:
                 if analyze_morphology:
-                    annotated_img = cv2.cvtColor(self.results.annotated_image, cv2.COLOR_RGB2BGR)
+                    annotated_img = self.results.annotated_image
                 else:
-                    annotated_img = cv2.cvtColor(self.results.color_image, cv2.COLOR_RGB2BGR)
+                    annotated_img = self.results.color_image
 
             # 9. Save image if requested
             if save_image and annotated_img is not None:
