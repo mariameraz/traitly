@@ -1100,12 +1100,12 @@ def generate_l_channel_histogram(
 
     # Otsu plot
     axes[1].hist(locules,  bins=100, color='tomato',    edgecolor='none',
-                 alpha=0.7, label=f'Locules (≤{otsu_adjusted})')
+                 alpha=0.7, label=f'Locules')
     axes[1].hist(pericarp, bins=100, color='thistle', edgecolor='none',
-                 alpha=0.7, label=f'Pericarp (>{otsu_adjusted})')
+                 alpha=0.7, label=f'Pericarp')
     axes[1].plot(x, kde_scaled, color="#094A95", linewidth=1.8)
     axes[1].axvline(otsu_adjusted, color='black', linestyle='--',
-                    linewidth=1.5, label=f'Otsu: {otsu_adjusted}')
+                    linewidth=1.5, label=f'thresh_min: {otsu_adjusted}')
     axes[1].set_xlabel('L value (0–255)', fontsize=label_fontsize, labelpad=8)
     axes[1].set_ylabel('Pixel count', fontsize=label_fontsize)
     axes[1].set_title('L channel distribution (Otsu split)', fontsize=title_fontsize, fontweight='bold')

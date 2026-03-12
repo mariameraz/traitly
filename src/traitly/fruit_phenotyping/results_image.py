@@ -60,7 +60,7 @@ class ResultsImage:
                  ):
         # Save both BGR (for cv2) and RGB (for display) to avoid reconversion
         self.annotated_image = bgr_img
-        self.color_image = bgr_img  
+        self.color_image = bgr_img.copy()  
         self.morphology_results = morphology_results if morphology_results else []   
         self.table = self.morphology_results                  
         self.image_path = image_path
