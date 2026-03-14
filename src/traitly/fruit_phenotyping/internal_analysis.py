@@ -499,7 +499,7 @@ class FruitInternalAnalyzer:
             using_default_diameter = True
 
         # create an image copy to work with
-        self.img_copy = self.img.copy()
+        self.img_copy = cv2.cvtColor(self.img.copy(), cv2.COLOR_BGR2RGB)
 
         if fast_calibration:
             if  width_cm and length_cm:
