@@ -449,11 +449,9 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             columns=cols_to_drop, errors='ignore'
         )
 
-        # Plot from the correctly annotated results image for external analysis (no locules, and pericarp regions)
-        # (super internal plot is suppressed because it shows img_copy without fruit annotations)
         if plot:
             plt.figure(figsize=plot_size)
-            plt.imshow(self.results.annotated_image)
+            plt.imshow(cv2.cvtColor(self.results.annotated_image, cv2.COLOR_BGR2RGB))
             plt.axis('off')
             plt.show()
 

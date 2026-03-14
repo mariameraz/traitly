@@ -291,7 +291,7 @@ def analyze_fruits_morphology(
     if config.plot:
         import matplotlib.pyplot as plt
         plt.figure(figsize=config.plot_size)
-        plt.imshow(original_img)
+        plt.imshow(cv2.cvtColor(original_img, cv2.COLOR_BGR2RGB))
         plt.axis('off')
         plt.show()
    

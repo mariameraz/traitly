@@ -499,7 +499,7 @@ class FruitInternalAnalyzer:
             using_default_diameter = True
 
         # create an image copy to work with
-        self.img_copy = cv2.cvtColor(self.img.copy(), cv2.COLOR_BGR2RGB)
+        self.img_copy = self.img.copy()
 
         if fast_calibration:
             if  width_cm and length_cm:
@@ -675,6 +675,8 @@ class FruitInternalAnalyzer:
             diameter_cm=diameter_cm,
             fast_calibration=fast_calibration,
         )
+        
+        # self.img_copy = cv2.cvtColor(self.img_copy, cv2.COLOR_BGR2RGB)
 
         if detect_color_checker:
             self.detect_color_checker(verbose = verbose,
@@ -1529,7 +1531,7 @@ class FruitInternalAnalyzer:
             self.label_text = 'No label detected'
 
         if self.img_copy is None:
-            self.img_copy = self.img_rgb.copy()
+            self.img_copy = self.img.copy()
     
         saved_color_results = getattr(self.results, 'color_results', None)
         saved_color_image   = getattr(self.results, 'color_image', None)
@@ -1599,6 +1601,7 @@ class FruitInternalAnalyzer:
 
         if saved_color_results is not None:
             self.results.color_results = saved_color_results
+
         if saved_color_image is not None:
             self.results.color_image = saved_color_image
 
@@ -1894,7 +1897,7 @@ class FruitInternalAnalyzer:
         
         if plot:
             plt.figure(figsize = plot_size)
-            plt.imshow(self.results.color_image)
+            plt.imshow(cv2.cvtColor(self.results.color_image, cv2.COLOR_BGR2RGB))
             plt.axis('off')
             plt.show()
     
