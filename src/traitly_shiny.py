@@ -6,36 +6,31 @@ import matplotlib.pyplot as plt
 import matplotlib; matplotlib.use("Agg")
 import numpy as np
 import pandas as pd
+from PIL import Image
 from shiny import App, Inputs, Outputs, Session, reactive, render, ui
-from traitly.fruit_phenotyping import FruitInternalAnalyzer, FruitExternalAnalyzer
-from traitly import __version__
+from shiny.types import FileInfo
+try:
+    from traitly.fruit_phenotyping import FruitInternalAnalyzer, FruitExternalAnalyzer
+    from traitly import __version__
+except ImportError:
+    __version__ = "dev"
+
+    class _Stub:
+        def __init__(self, p):
+            self.image_path = p
+    class FruitInternalAnalyzer(_Stub): pass
+    class FruitExternalAnalyzer(_Stub): pass
 
 
 def arr_to_b64(arr):
-    """Convert a BGR numpy array to base64 PNG string."""
     if arr is None: return ""
-    _, buf = cv2.imencode(".png", arr)
-    return base64.b64encode(buf).decode()
-
-def fig_to_b64():
-    """Capture current matplotlib figure as base64 PNG and close it."""
     buf = io.BytesIO()
-    plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
-    buf.seek(0)
-    b64 = base64.b64encode(buf.read()).decode()
-    plt.close("all")
-    return b64
+    Image.fromarray(arr.astype(np.uint8)).save(buf, "PNG")
+    return base64.b64encode(buf.getvalue()).decode()
 
 def img_tag(arr, style="width:100%;border-radius:8px;margin-top:.5rem"):
     b = arr_to_b64(arr)
     return f'<img src="data:image/png;base64,{b}" style="{style}">' if b else ""
-
-def zoomable_img(b64):
-    return ui.HTML(
-        f'<img src="data:image/png;base64,{b64}" '
-        f'class="img-zoomable" '
-        f'style="width:100%;border-radius:8px;margin-top:.5rem">'
-    )
 
 def df_csv(df): return df.to_csv(index=False).encode()
 
@@ -156,7 +151,7 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
   font-size:4.0rem; font-weight:700; letter-spacing:2px;
   white-space:nowrap; text-decoration:none;
   margin-left: 2.5rem;
-  margin-right: 3rem;
+  margin-right: 3rem; /* space between traitly version and tab buttons */
 }
 
 /* version badge next to traitly */
@@ -217,12 +212,12 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
   padding-top:.7rem; top:155px !important;
 }
 
-.sb-label {
+.sb-label { /* title side bar */
   font-size:1.9rem; font-weight:700; text-transform:uppercase;
   letter-spacing:.09em; color:#94a3b8; margin: 5.9rem 6.9 5.3rem 0.8rem;
   gap: 5rem;
 }
-.sb-mode-badge {
+.sb-mode-badge { /* ext/int side bar badges */
   display:inline-flex; align-items:center; gap:.35rem;
   padding:.3rem .7rem; border-radius:20px; font-size:1.8rem; font-weight:600;
   margin-bottom:5rem;
@@ -230,7 +225,7 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
 .sb-mode-badge.internal { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
 .sb-mode-badge.external { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
 
-/* step nav links */
+/* step nav links (e.g. setup_measurements, detect_fruits..) */
 .step-link {
   display:flex; align-items:center; gap:1.5rem;
   padding:.4rem .6rem; margin:.08rem 0;
@@ -240,7 +235,10 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
   width:100%; text-align:left;
 }
 .step-link { color: var(--step-color); }
-.step-link:first-of-type { margin-top: 1.5rem; }
+/* space between sidebar title and first step link */
+.step-link:first-of-type {
+  margin-top: 1.5rem;
+}
 .step-link:hover { background: var(--step-hover-bg); color: var(--step-hover-color); }
 .step-link.active { background: var(--step-active-bg); color: var(--step-active-color); font-weight:600; }
 .step-link.done .step-num { background:#059669; color:#fff; }
@@ -277,26 +275,53 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
   font-size:4rem; font-weight:700; margin-bottom:4rem;
   color: var(--home-text);
 }
-.home-title-sub { font-weight:300; color: var(--home-muted); }
-.home-h2 { font-size:3rem; font-weight:600; margin-bottom:1rem; color: var(--home-h2-color); }
-.home-h3 { font-size:2.5rem; font-weight:600; margin:.8rem 0 .3rem; color: var(--home-h3-color); }
-.home-content h4 { color: var(--home-h4-color) !important; font-weight: normal; }
-.home-body { font-size:2rem; line-height:1.5; }
+.home-title-sub {
+  font-weight:300; color: var(--home-muted);
+}
+.home-h2 {
+  font-size:3rem; font-weight:600; margin-bottom:1rem;
+  color: var(--home-h2-color);
+}
+.home-h3 {
+  font-size:2.5rem; font-weight:600; margin:.8rem 0 .3rem;
+  color: var(--home-h3-color);
+}
+
+.home-content h4 {
+  color: var(--home-h4-color) !important;
+  font-weight: normal;
+}
+
+.home-body {
+  font-size:2rem; line-height:1.5;
+}
 .home-info-box {
   background: var(--home-info-bg);
   border-left:4px solid var(--home-info-border);
   padding:.75rem 1rem; border-radius:10px;
 }
-.home-link { color: var(--home-link-color); }
+.home-link {
+  color: var(--home-link-color);
+}
 
 /* hide sidebar in home */
-body.on-home .bslib-sidebar-layout > .sidebar { display: none !important; }
-body.on-home .bslib-sidebar-layout { grid-template-columns: 0 1fr !important; padding-left: 0 !important; }
+body.on-home .bslib-sidebar-layout > .sidebar {
+  display: none !important;
+}
+
+body.on-home .bslib-sidebar-layout {
+  grid-template-columns: 0 1fr !important;
+  padding-left: 0 !important;
+}
+
 body.on-home .bslib-sidebar-layout > .main,
 body.on-home .bslib-page-main,
 body.on-home main {
-  margin-left: 0 !important; padding-left: 1.5rem !important;
-  grid-column: 1 / -1 !important; width: 100% !important; max-width: 100% !important;
+  margin-left: 0 !important;
+  padding-left: 1.5rem !important;
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 /* cards */
@@ -309,8 +334,14 @@ body.on-home main {
   padding:.95rem 1.1rem; background:#f8fafc;
   border-left:4px solid #3b82f6; border-radius:0 8px 8px 0; margin:.65rem 0;
 }
+.pipeline-item {
+  display:flex; align-items:center; gap:.42rem;
+  padding:.32rem .6rem; margin:.15rem 0;
+  background:#f1f5f9; border-left:3px solid #3b82f6;
+  border-radius:0 5px 5px 0; font-size:.83rem;
+}
 
-/* hide the default shiny nav-tabs */
+/* hide the default shiny nav-tabs (we drive navigation ourselves) */
 .nav-tabs { display:none !important; }
 
 /* action buttons full-width */
@@ -341,36 +372,99 @@ button.action-button, a.action-button {
   margin:.22rem 0 .42rem; word-break:break-all;
 }
 .panel-title {
-  font-size: 4rem; font-weight: 600;
-  color: var(--panel-title-color); margin-bottom: 3rem;
+  font-size: 4rem;
+  font-weight: 600;
+  color: var(--panel-title-color);
+  margin-bottom: 3rem;
 }
-.shiny-input-container { width: 100% !important; }
-.shiny-input-container .input-group { width: 100% !important; }
-
+.shiny-input-container {
+  width: 100% !important;
+}
+.shiny-input-container .input-group {
+  width: 100% !important;
+}
 /* tabs content label sizes */
 .tab-content label,
 .tab-content .form-label,
-.tab-content .form-check-label { font-size: 1.8rem !important; }
+.tab-content .form-check-label {
+  font-size: 1.8rem !important;
+}
 .tab-content .form-control,
-.tab-content .form-select { font-size: 1.6rem !important; }
+.tab-content .form-select {
+  font-size: 1.6rem !important;
+}
 
-/* step 1 */
-#step1_preview { display: flex !important; justify-content: center; align-items: flex-start; padding-left: 2rem; }
-#step1_preview img { max-height: 1500px; max-width: 1500px; object-fit: contain; }
+/* controlling img output step 1 */
+#step1_preview {
+  display: flex !important;
+  justify-content: center;
+  align-items: flex-start;
+  padding-left: 2rem;
+}
+
+#step1_preview img {
+  max-height: 1500px;
+  max-width: 1500px;
+  object-fit: contain;
+}
 
 /* step 1 result boxes */
 .bslib-value-box {
-  border-radius: 10px !important; border: 1px solid #e2e8f0 !important;
-  min-height: 70px !important; background: rgba(98,123,140,0.8) !important;
+  border-radius: 10px !important;
+  border: 1px solid #e2e8f0 !important;
+  min-height: 70px !important; 
+  background: rgba(98,123,140,0.8) ! important;  
 }
-.bslib-value-box .value-box-value { font-size: 3.0rem !important; }
-.bslib-value-box .value-box-title { font-size: 2.1rem !important; color: #fff !important; }
 
-/* steps 2-6 result images */
-#step2_results img, #step3_results img, #step4_results img,
-#detect_results img, #morph_results img {
-  max-height: 1500px; max-width: 100%;
-  object-fit: contain; display: block; margin: 0 auto;
+.bslib-value-box .value-box-value {
+  font-size: 3.0rem !important;  
+}
+
+.bslib-value-box .value-box-title {
+  font-size: 2.1rem !important;
+  color: #fff !important;
+}
+
+#step2_results img {
+  max-height: 1500px;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+#step3_results img {
+  max-height: 1500px;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+#step4_results img {
+  max-height: 1500px;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+/* step 5 */
+#detect_results img {
+  max-height: 1500px;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+/* step6 */
+#morph_results img {
+  max-height: 1500px;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
 }
 
 /* image zoom */
@@ -386,15 +480,22 @@ button.action-button, a.action-button {
 #lightbox-overlay img {
   max-width: 92vw; max-height: 92vh;
   border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,.6);
-  object-fit: contain; transition: transform .1s ease;
-  cursor: grab; user-select: none;
+  object-fit: contain;
 }
-#lightbox-overlay img.dragging { cursor: grabbing; }
 #lightbox-close {
   position: absolute; top: 1rem; right: 1.5rem;
   color: #fff; font-size: 2.5rem; cursor: pointer;
   background: none; border: none; line-height: 1;
 }
+#lightbox-overlay img {
+  max-width: 92vw; max-height: 92vh;
+  border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,.6);
+  object-fit: contain;
+  transition: transform .1s ease;
+  cursor: grab;
+  user-select: none;
+}
+#lightbox-overlay img.dragging { cursor: grabbing; }
 #lightbox-zoom-btns {
   position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
   display: flex; gap: .5rem; align-items: center;
@@ -409,8 +510,12 @@ button.action-button, a.action-button {
   color: rgba(255,255,255,.7); font-size: 1.2rem; min-width: 3.5rem; text-align: center;
 }
 
-/* tooltip */
-.tooltip-wrap { position: relative; display: inline-flex; align-items: center; }
+
+
+/* info messages */
+.tooltip-wrap {
+  position: relative; display: inline-flex; align-items: center;
+}
 .tooltip-wrap .tooltip-box {
   visibility: hidden; opacity: 0;
   background: #1e293b; color: #fff;
@@ -418,13 +523,19 @@ button.action-button, a.action-button {
   border-radius: 7px; padding: .5rem .8rem;
   position: absolute; left: 2rem; top: 50%; transform: translateY(-50%);
   white-space: normal; width: 220px; z-index: 999;
-  box-shadow: 0 4px 12px rgba(0,0,0,.25); transition: opacity .15s; pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,.25);
+  transition: opacity .15s;
+  pointer-events: none;
 }
 .tooltip-wrap:hover .tooltip-box { visibility: visible; opacity: 1; }
 
-/* dark theme overrides */
+
+/* steps text */
 body.dark-theme .tab-content,
-body.dark-theme .tab-content * { color: var(--body-text) !important; }
+body.dark-theme .tab-content * {
+  color: var(--body-text) !important;
+}
+
 body.dark-theme .tab-content .text-success { color: #4ade80 !important; }
 body.dark-theme .tab-content .text-danger  { color: #f87171 !important; }
 body.dark-theme .tab-content .text-info    { color: #38bdf8 !important; }
@@ -433,19 +544,47 @@ body.dark-theme .tab-content .panel-title  { color: var(--panel-title-color) !im
 body.dark-theme .tab-content .tooltip-box  { color: #fff !important; }
 body.dark-theme .tab-content .bslib-value-box .value-box-value,
 body.dark-theme .tab-content .bslib-value-box .value-box-title { color: #fff !important; }
+
+/* inputs background */
 body.dark-theme .tab-content .form-control,
-body.dark-theme .tab-content .form-select { background-color: #2d3748 !important; border-color: #4a5568 !important; }
+body.dark-theme .tab-content .form-select {
+  background-color: #2d3748 !important;
+  border-color: #4a5568 !important;
+}
 body.dark-theme .tab-content .form-control[type="file"],
-body.dark-theme .tab-content input[type="file"] { background-color: #2d3748 !important; border-color: #4a5568 !important; }
-body.dark-theme .tab-content .input-group-text { background-color: #3d3d5c !important; border-color: #4a5568 !important; }
+body.dark-theme .tab-content input[type="file"] {
+  background-color: #2d3748 !important;
+  border-color: #4a5568 !important;
+}
+body.dark-theme .tab-content .input-group-text {
+  background-color: #3d3d5c !important;
+  border-color: #4a5568 !important;
+}
 body.dark-theme .tab-content input[type="file"]::file-selector-button {
-  background-color: #4a5568 !important; color: var(--body-text) !important; border-color: #64748b !important;
+  background-color: #4a5568 !important;
+  color: var(--body-text) !important;
+  border-color: #64748b !important;
 }
 body.dark-theme .tab-content hr { border-color: #3d3d5c !important; }
 body.dark-theme .tab-content details summary { color: #94a3b8 !important; }
-body.dark-theme hr { border-color: rgba(105,141,151, 0.8) !important; opacity: 1 !important; }
-body.dark-theme .tab-content hr { border-color: rgba(105,141,151, 0.8) !important; opacity: 1 !important; }
-body.dark-theme .tooltip-wrap > span { background: #3d3d5c !important; color: #cbd5e1 !important; }
+
+/* hr lines in dark */
+body.dark-theme hr {
+  border-color: rgba(105,141,151, 0.8) !important;
+  opacity: 1 !important;
+}
+body.dark-theme .tab-content hr {
+  border-color: rgba(105,141,151, 0.8) !important;
+  opacity: 1 !important;
+}
+
+/* ? bubble in dark */
+body.dark-theme .tooltip-wrap > span {
+  background: #3d3d5c !important;
+  color: #cbd5e1 !important;
+}
+
+
 
 .bslib-value-box { border-radius:10px !important; border:1px solid #e2e8f0 !important; }
 ::-webkit-scrollbar { width:5px; }
@@ -531,15 +670,18 @@ function _lbApply() {{
   img.style.transform = 'translate(' + _lbDragX + 'px,' + _lbDragY + 'px) scale(' + _lbScale + ')';
   document.getElementById('lightbox-zoom-level').textContent = Math.round(_lbScale * 100) + '%';
 }}
+
 function lbZoom(delta) {{
   _lbScale = Math.min(8, Math.max(0.2, _lbScale + delta));
   _lbApply();
 }}
+
 function closeLightbox() {{
   document.getElementById('lightbox-overlay').classList.remove('active');
   _lbScale = 1; _lbDragX = 0; _lbDragY = 0;
   _lbApply();
 }}
+
 document.addEventListener('click', function(e) {{
   if (e.target.closest('#lightbox-zoom-btns')) return;
   var img = e.target.closest('.img-zoomable');
@@ -552,11 +694,14 @@ document.addEventListener('click', function(e) {{
     closeLightbox();
   }}
 }});
+
 document.getElementById('lightbox-overlay') && document.addEventListener('wheel', function(e) {{
   if (!document.getElementById('lightbox-overlay').classList.contains('active')) return;
   e.preventDefault();
   lbZoom(e.deltaY < 0 ? 0.15 : -0.15);
 }}, {{ passive: false }});
+
+var _lbImg = null;
 document.addEventListener('mousedown', function(e) {{
   if (e.target.id !== 'lightbox-img') return;
   _lbDragging = true; _lbStartX = e.clientX - _lbDragX; _lbStartY = e.clientY - _lbDragY;
@@ -572,6 +717,7 @@ document.addEventListener('mouseup', function(e) {{
   var img = document.getElementById('lightbox-img');
   if (img) img.classList.remove('dragging');
 }});
+
 document.addEventListener('keydown', function(e) {{
   if (!document.getElementById('lightbox-overlay').classList.contains('active')) return;
   if (e.key === 'Escape') closeLightbox();
@@ -579,11 +725,13 @@ document.addEventListener('keydown', function(e) {{
   if (e.key === '-') lbZoom(-0.2);
 }});
 
+
 document.body.classList.add('on-home');
 </script>
 """
 
 
+# panels for each step
 def _panel(val, title, *children):
     return ui.nav_panel(title,
         ui.div(
@@ -596,17 +744,21 @@ def _panel(val, title, *children):
 step_setup = _panel("step_setup", "Setup Image Measurements",
     ui.layout_columns(
         ui.div(
+            # image upload
             ui.output_ui("upload_input_ui"),
             ui.hr(),
+            # label/qr detection
             ui.input_checkbox("detect_label", "Detect label text", False),
             ui.input_checkbox("skip_qr", "Skip QR detection", False),
             ui.input_checkbox("detect_color_checker", "Detect color checker", False),
             ui.input_slider("confidence", "Detection confidence", 0.0, 1.0, 0.6, step=0.01),
             ui.hr(),
+            # physical dimensions
             ui.input_checkbox("use_dimensions", "Use physical dimensions", False),
             ui.output_ui("dimensions_ui"),
             ui.input_numeric("diameter_cm", "Reference diameter (cm)", 2.5, min=0.0, step=0.01),
             ui.hr(),
+            # crop
             ui.input_checkbox("use_crop", "Crop image", False),
             ui.output_ui("crop_ui"),
             ui.hr(),
@@ -833,6 +985,7 @@ step_color = _panel("step_color", "Color Analysis",
 )
 
 
+# home 
 tab_home = ui.nav_panel("Home",
     ui.div(
         ui.HTML('''
@@ -851,6 +1004,7 @@ tab_home = ui.nav_panel("Home",
                 generates a session report with all parameters and versions used, ensuring complete traceability of results.
                 </p>
             </h2>
+
             <h4 class="home-h4">
                 <div class="home-body">
                     <br>
@@ -862,9 +1016,12 @@ tab_home = ui.nav_panel("Home",
                     </p>
                 </div>
             </h4>
+
             <br><br>
+
             <h2 class="home-h2">What does Traitly analyze?</h2>
             <br>
+
             <p style="margin-bottom:1.2rem;font-size:2rem">Traitly works with two main types of fruit images:</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin:.8rem 0">
                 <div>
@@ -891,7 +1048,9 @@ tab_home = ui.nav_panel("Home",
                 <strong>convert pixels to real metric units</strong> through automatic detection of a size 
                 reference marker present in the image.
             </p>
+
             <br><br>
+
             <h2 class="home-h2">Methodological approach</h2>
             <div class="home-body">
                 <p style="margin-bottom:1.2rem">
@@ -906,7 +1065,9 @@ tab_home = ui.nav_panel("Home",
                 without redefining the pipeline architecture.
                 </p>
             </div>
+
             <br><br>
+
             <h2 class="home-h2">Key features</h2>
             <div class="home-body">
                 <ul style="margin:.2rem 0 .8rem;padding-left:5rem;font-size:2rem;margin-bottom:1.2rem">
@@ -920,7 +1081,9 @@ tab_home = ui.nav_panel("Home",
                     <li style="margin-bottom:.4rem"><strong>Session reports</strong>: automatically saves parameters, dependency versions, and metadata for every run.</li>
                 </ul>
             </div>
+
             <br><br>
+
             <h2 class="home-h2">Built on solid foundations</h2>
             <div class="home-body">
                 <p style="margin-bottom:1.2rem">
@@ -940,6 +1103,8 @@ tab_home = ui.nav_panel("Home",
     value="tab_home",
 )
 
+# Single analysis tab — both Internal and External modes share it.
+# The sidebar drives which steps appear; the server controls navigation.
 tab_analysis = ui.nav_panel("Analysis",
     ui.navset_hidden(
         step_setup, step_mask, step_contrast, step_locule,
@@ -1000,12 +1165,19 @@ tab_batch = ui.nav_panel("Batch",
     value="tab_batch",
 )
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SIDEBAR  (dynamic step list, rendered in server)
+# ══════════════════════════════════════════════════════════════════════════════
 sidebar_ui = ui.sidebar(
     ui.output_ui("sidebar_content"),
     width="400px",
     open="always",
 )
 
+# ══════════════════════════════════════════════════════════════════════════════
+# APP LAYOUT
+# ══════════════════════════════════════════════════════════════════════════════
 app_ui = ui.page_sidebar(
     sidebar_ui,
     ui.tags.head(
@@ -1029,20 +1201,21 @@ app_ui = ui.page_sidebar(
 # ══════════════════════════════════════════════════════════════════════════════
 def server(input: Inputs, output: Outputs, session: Session):
 
-    r_analyzer   = reactive.value(None)
-    r_completed  = reactive.value([])
-    r_mode       = reactive.value("home")
-    r_cur_step   = reactive.value("step_setup")
+    # ── reactive state ────────────────────────────────────────────────────────
+    r_analyzer = reactive.value(None)
+    r_completed = reactive.value([])          # list of step indices done
+    r_mode = reactive.value("home")      # "home"|"internal"|"external"|"bg"|"batch"
+    r_cur_step = reactive.value("step_setup")
     r_bg_analyzer = reactive.value(None)
-    r_batch_zip  = reactive.value(None)
-    r_morph_zip  = reactive.value(None)   # bytes for the morph zip download
-    r_morph_base = reactive.value("morphology")  # filename stem
-    r_img_shape  = reactive.value((100, 100))
+    r_output_folder = reactive.value("")
+    r_batch_zip = reactive.value(None)
+    r_img_shape = reactive.value((100,100))
     r_step1_result = reactive.value(ui.div())
     r_setup_done = reactive.value(0)
-    r_img_ready  = reactive.value(False)
+    r_img_ready = reactive.value(False)
     r_upload_key = reactive.value(0)
 
+    # ── step definitions per mode ─────────────────────────────────────────────
     def _steps(mode):
         if mode == "internal":
             return [
@@ -1067,6 +1240,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         if idx not in d: d.append(idx)
         r_completed.set(d)
 
+    # ── JS → switch main tab ──────────────────────────────────────────────────
     @reactive.effect
     @reactive.event(input.js_main_tab)
     def _on_main_tab():
@@ -1089,6 +1263,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             r_upload_key.set(r_upload_key.get() + 1)
             ui.update_navs("pipeline_step", selected="step_setup", session=session)
 
+    # ── JS → switch step ─────────────────────────────────────────────────────
     @reactive.effect
     @reactive.event(input.js_step_click)
     def _on_step():
@@ -1096,6 +1271,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         ui.update_navs("pipeline_step", selected=sid, session=session)
         r_cur_step.set(sid)
 
+    # ── sidebar render ────────────────────────────────────────────────────────
     @render.ui
     def sidebar_content():
         mode = r_mode.get()
@@ -1119,7 +1295,8 @@ def server(input: Inputs, output: Outputs, session: Session):
             if is_done:   cls += " done"
             chk = '<span class="step-check">✓</span>' if is_done else ""
             items.append(ui.HTML(
-                f'<button class="{cls}" onclick="goStep(\'{sid}\')">'
+                f'<button class="{cls}" '
+                f'onclick="goStep(\'{sid}\')">'
                 f'<span class="step-num">{i+1}</span>'
                 f'<span class="step-label">{icon} {label}</span>'
                 f'{chk}</button>'
@@ -1132,19 +1309,21 @@ def server(input: Inputs, output: Outputs, session: Session):
             ui.input_action_button("reset_btn", "↻ Reset", class_="btn btn-reset"),
         )
 
+    # reset bottom
     @reactive.effect
     @reactive.event(input.reset_btn)
     def _reset():
         r_analyzer.set(None); r_completed.set([]); r_cur_step.set("step_setup")
         ui.update_navs("pipeline_step", selected="step_setup", session=session)
 
+    #image format
     @render.ui
     def upload_input_ui():
         r_upload_key.get()
         return ui.input_file("upload_img", "Upload a fruit image",
                             accept=[".jpg",".jpeg",".png",".bmp",".tiff",".tif"])
 
-    # ── Step 1 ────────────────────────────────────────────────────────────────
+    # step 1 - load image and setup ref and label measurements
     @render.ui
     def dimensions_ui():
         if input.use_dimensions():
@@ -1188,12 +1367,18 @@ def server(input: Inputs, output: Outputs, session: Session):
         mode = r_mode.get()
         az = (FruitInternalAnalyzer(path) if mode == "internal"
               else FruitExternalAnalyzer(path))
+
         az.load_image(plot=False)
         r_img_shape.set(az.img_shape)
+
         if input.use_crop():
-            az.load_image(plot=False,
-                          x=input.crop_x(), y=input.crop_y(),
-                          w=input.crop_w(), h=input.crop_h())
+            az.load_image(
+                plot=False,
+                x=input.crop_x(),
+                y=input.crop_y(),
+                w=input.crop_w(),
+                h=input.crop_h(),
+            )
         r_analyzer.set(az)
         r_completed.set([])
         r_step1_result.set(ui.div())
@@ -1201,11 +1386,13 @@ def server(input: Inputs, output: Outputs, session: Session):
 
     @reactive.effect
     @reactive.event(input.upload_img)
-    def _load_image(): _do_load_image()
+    def _load_image():
+        _do_load_image()
 
     @reactive.effect
     @reactive.event(input.apply_crop)
-    def _on_apply_crop(): _do_load_image()
+    def _on_apply_crop():
+        _do_load_image()
 
     @reactive.effect
     @reactive.event(input.reset_crop)
@@ -1227,27 +1414,34 @@ def server(input: Inputs, output: Outputs, session: Session):
 
     @render.image
     def step1_preview():
-        r_setup_done.get()
-        if not r_img_ready.get():
-            return None
+        r_setup_done.get()  
+        if not r_img_ready.get(): # reset image between analysis modes
+            return None 
+        
         az = r_analyzer.get()
         if az is None or az.img_rgb is None:
             f = input.upload_img()
             if not f: return None
             return {"src": f[0]["datapath"], "alt": "Uploaded", "width": "100%"}
 
-        display_img = (cv2.cvtColor(az.img_copy, cv2.COLOR_BGR2RGB)
-                       if hasattr(az, "img_copy") and az.img_copy is not None
-                       else az.img_rgb)
-
-        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        display_img = az.img_copy if \
+            (hasattr(az, "img_copy") and az.img_copy is not None) \
+            else az.img_rgb
+        
         if input.use_crop():
-            fig, ax = plt.subplots(figsize=(9, 9))
-            ax.imshow(display_img); ax.axis("on"); fig.tight_layout()
+            fig, ax = plt.subplots(figsize=(9,9))
+            ax.imshow(display_img
+                    if display_img.shape[2] == 3 and display_img.dtype == np.uint8 
+                    else display_img)
+            ax.axis("on")
+            fig.tight_layout()
+            tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
             fig.savefig(tmp.name, dpi=100)
             plt.close(fig)
-        else:
-            cv2.imwrite(tmp.name, cv2.cvtColor(display_img, cv2.COLOR_RGB2BGR))
+            return {"src": tmp.name, "alt": "Preview", "class": "img-zoomable"}
+
+        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        Image.fromarray(display_img).save(tmp.name)
         return {"src": tmp.name, "alt": "Preview", "class": "img-zoomable"}
 
     @reactive.effect
@@ -1270,10 +1464,11 @@ def server(input: Inputs, output: Outputs, session: Session):
             mark_done(0)
             h, w = az.img.shape[:2] if az.img is not None else (0, 0)
             n_refs = len(az.ref_roi) if az.ref_roi else 0
+
             r_step1_result.set(ui.div(
-                ui.p("Setup complete!",
-                     style="font-size:3.4rem; text-align:center; max-width:700px; "
-                            "margin:0 auto; color: #97c8ec; font-weight:700; background-color:rgba(49,63,65,0.8);"),
+                ui.p("Setup complete!", 
+                        style="font-size:3.4rem; text-align:center; max-width:700px; \
+                        margin:0 auto; color: #97c8ec; font-weight:700; background-color:rgba(49,63,65,0.8); "),
                 ui.div(
                     ui.layout_columns(
                         ui.value_box("Label:", az.label_text or "N/A", theme="primary"),
@@ -1285,10 +1480,10 @@ def server(input: Inputs, output: Outputs, session: Session):
                         ui.value_box("References:", str(n_refs), theme="success" if n_refs > 0 else "danger"),
                         col_widths=[6, 6],
                     ),
-                    style="max-width: 700px; margin: 0 auto;",
-                ),
+                    style="max-width: 700px; margin: 0 auto;", 
+                ), 
             ))
-            r_setup_done.set(r_setup_done.get() + 1)
+            r_setup_done.set(r_setup_done.get() + 1)  
         except Exception as e:
             r_step1_result.set(
                 ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
@@ -1297,8 +1492,63 @@ def server(input: Inputs, output: Outputs, session: Session):
     @render.ui
     def step1_results():
         return r_step1_result.get()
+    
+    @render.ui
+    def bg_preview():
+        az = r_bg_analyzer.get()
+        if az is None or az.img_hsv is None: return ui.div()
+        lo = np.array([input.l_h(), input.l_s(), input.l_v()], dtype=np.uint8)
+        hi = np.array([input.u_h(), input.u_s(), input.u_v()], dtype=np.uint8)
+        mask = cv2.inRange(az.img_hsv, lo, hi)
+        prev = az.img_bgr.copy()
+        grn  = np.zeros_like(prev); grn[mask > 0] = [0, 220, 80]
+        prev = cv2.addWeighted(prev, .65, grn, .35, 0)
+        pct  = 100 * mask.sum() / 255 / mask.size
+        return ui.div(
+            ui.layout_columns(
+                ui.HTML(img_tag(prev) +
+                        '<p class="text-muted small">🟢 Background selected</p>'),
+                ui.HTML(img_tag(cv2.bitwise_not(mask)) +
+                        '<p class="text-muted small">Fruit mask (white = fruit)</p>'),
+                col_widths=[6,6],
+            ),
+            ui.p(f"Coverage: {pct:.1f}% of pixels", class_="text-muted small"),
+        )
 
-    # ── Step 2 — Fruit Mask ───────────────────────────────────────────────────
+    @render.ui
+    @reactive.event(input.bg_detect_btn)
+    def bg_detect_out():
+        az = r_bg_analyzer.get()
+        if az is None: return ui.p("Upload an image first.", class_="text-info")
+        lo = [input.l_h(), input.l_s(), input.l_v()]
+        hi = [input.u_h(), input.u_s(), input.u_v()]
+        try:
+            az.generate_fruit_mask(lower_hsv=lo, upper_hsv=hi, plot=False)
+            az.detect_fruits(min_fruit_circularity=input.bg_circ(),
+                            min_fruit_area=input.bg_area(), verbose=False, plot=False)
+            n   = len(az.fruit_locule_map) if az.fruit_locule_map else 0
+            msg = "✅ Mask looks good!" if n > 0 else "⚠️ No fruits — adjust thresholds."
+            return ui.div(
+                ui.value_box("Fruits detected", n, theme="success" if n > 0 else "warning"),
+                ui.p(msg, class_="text-success" if n > 0 else "text-warning"),
+            )
+        except Exception as e:
+            return ui.div(ui.p(f"❌ {e}", class_="text-danger"), ui.pre(traceback.format_exc()))
+
+    @render.ui
+    def bg_final_code():
+        lo   = [input.l_h(), input.l_s(), input.l_v()]
+        hi   = [input.u_h(), input.u_s(), input.u_v()]
+        code = (f"lower_hsv = {lo}\nupper_hsv  = {hi}\n\n"
+                f"min_fruit_circularity = {input.bg_circ()}\n"
+                f"min_fruit_area        = {input.bg_area()}")
+        return ui.div(
+            ui.p("Use in Individual Analysis → Generate Mask or Batch:", class_="text-success"),
+            ui.pre(code, style="background:#f1f5f9;padding:1rem;border-radius:6px;font-size:.81rem"),
+        )
+
+
+    # step 2 - generate_fuirt_mask 
     @render.ui
     def mask_bg_ui():
         if r_mode.get() == "external":
@@ -1306,6 +1556,52 @@ def server(input: Inputs, output: Outputs, session: Session):
                                    choices=["blue","black","white"])
         return ui.div()
 
+    @render.ui
+    @reactive.event(input.run_step2)
+    def step2_results():
+        az = r_analyzer.get()
+        if az is None:
+            return ui.p("Complete Step 1 first.", class_="text-info")
+        is_int = r_mode.get() == "internal"
+        try:
+            lower_hsv = [input.h_range()[0], input.s_range()[0], input.v_range()[0]] if input.use_manual_hsv() else None
+            upper_hsv = [input.h_range()[1], input.s_range()[1], input.v_range()[1]] if input.use_manual_hsv() else None
+
+            kw = dict(
+                stamp=input.stamp(),
+                remove_roi=input.remove_roi(),
+                lower_hsv=lower_hsv,
+                upper_hsv=upper_hsv,
+                n_iteration=input.n_iteration(),
+                roi_expansion=input.roi_expansion(),
+                kernel_blur=input.kernel_blur() or None,
+                kernel_open=input.kernel_open() or None,
+                kernel_close=input.kernel_close() or None,
+                apply_convex_hull=input.apply_convex_hull(),
+                fill_holes=input.fill_holes(),
+                erosion_px=input.erosion_px(),
+                plot=True,
+                plot_size = (20,20)
+            )
+            if not is_int:
+                kw["background_color"] = input.bg_color()
+
+            az.generate_fruit_mask(**kw)
+            mark_done(1)
+
+            buf = io.BytesIO()
+            plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
+            buf.seek(0)
+            b64 = base64.b64encode(buf.read()).decode()
+            plt.close("all")
+
+            return ui.HTML(
+                f'<img src="data:image/png;base64,{b64}" '
+                f'class="img-zoomable" '
+                f'style="width:100%;border-radius:8px;margin-top:.5rem">'
+            )
+        except Exception as e:
+            return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
     @render.ui
     def hsv_ui():
         if not input.use_manual_hsv():
@@ -1318,35 +1614,45 @@ def server(input: Inputs, output: Outputs, session: Session):
         )
 
     @render.ui
-    @reactive.event(input.run_step2)
-    def step2_results():
+    @reactive.event(input.run_step3)
+    def step3_results():
         az = r_analyzer.get()
         if az is None:
-            return ui.p("Complete Step 1 first.", class_="text-info")
-        is_int = r_mode.get() == "internal"
+            return ui.p("Complete earlier steps first.", class_="text-info")
         try:
-            lower_hsv = [input.h_range()[0], input.s_range()[0], input.v_range()[0]] if input.use_manual_hsv() else None
-            upper_hsv = [input.h_range()[1], input.s_range()[1], input.v_range()[1]] if input.use_manual_hsv() else None
-            kw = dict(
-                stamp=input.stamp(), remove_roi=input.remove_roi(),
-                lower_hsv=lower_hsv, upper_hsv=upper_hsv,
-                n_iteration=input.n_iteration(), roi_expansion=input.roi_expansion(),
-                kernel_blur=input.kernel_blur() or None,
-                kernel_open=input.kernel_open() or None,
-                kernel_close=input.kernel_close() or None,
-                apply_convex_hull=input.apply_convex_hull(),
-                fill_holes=input.fill_holes(), erosion_px=input.erosion_px(),
-                plot=True, plot_size=(20, 20)
+
+            method   = input.contrast_method()
+            gamma    = input.gamma()   if method == "gamma"   else 1.5
+            gain     = input.gain()    if method == "sigmoid" else 5.0
+            cutoff   = input.cutoff()  if method == "sigmoid" else 0.5
+            c        = input.c_val()   if method == "exp"     else 0.5
+
+            az.enhance_locule_contrast(
+                contrast_method=method,
+                gamma=gamma, gain=gain, cutoff=cutoff, c=c,
+                plot=True,
+                compare_method=input.compare_method(),
+                kernel_blur=input.kernel_blur3(),
+                clip_limit=input.clip_limit() or None,
+                tile_grid_size=input.tile_grid_size(),
             )
-            if not is_int:
-                kw["background_color"] = input.bg_color()
-            az.generate_fruit_mask(**kw)
-            mark_done(1)
-            return zoomable_img(fig_to_b64())
+            mark_done(2)
+
+            buf = io.BytesIO()
+            plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
+            buf.seek(0)
+            b64 = base64.b64encode(buf.read()).decode()
+            plt.close("all")
+
+            return ui.HTML(
+                f'<img src="data:image/png;base64,{b64}" '
+                f'class="img-zoomable" '
+                f'style="width:100%;border-radius:8px;margin-top:.5rem">'
+            )
+
         except Exception as e:
             return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
 
-    # ── Step 3 — Enhance Contrast ─────────────────────────────────────────────
     @render.ui
     def contrast_params_ui():
         method = input.contrast_method()
@@ -1362,35 +1668,69 @@ def server(input: Inputs, output: Outputs, session: Session):
         return ui.div()
 
     @render.ui
-    @reactive.event(input.run_step3)
-    def step3_results():
-        az = r_analyzer.get()
-        if az is None:
-            return ui.p("Complete earlier steps first.", class_="text-info")
-        try:
-            method = input.contrast_method()
-            gamma  = input.gamma()  if method == "gamma"   else 1.5
-            gain   = input.gain()   if method == "sigmoid" else 5.0
-            cutoff = input.cutoff() if method == "sigmoid" else 0.5
-            c      = input.c_val()  if method == "exp"     else 0.5
-            az.enhance_locule_contrast(
-                contrast_method=method, gamma=gamma, gain=gain, cutoff=cutoff, c=c,
-                plot=True, compare_method=input.compare_method(),
-                kernel_blur=input.kernel_blur3(),
-                clip_limit=input.clip_limit() or None,
-                tile_grid_size=input.tile_grid_size(),
-            )
-            mark_done(2)
-            return zoomable_img(fig_to_b64())
-        except Exception as e:
-            return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
-
-    # ── Step 4 — Locule Mask ──────────────────────────────────────────────────
-    @render.ui
     def histogram_params_ui():
         if input.gen_histogram():
             return ui.input_slider("otsu_offset", "Otsu offset", -50, 50, 0, step=1)
         return ui.div()
+
+    @render.ui
+    @reactive.event(input.run_step4)
+    def step4_results():
+        az = r_analyzer.get()
+        if az is None:
+            return ui.p("Complete earlier steps first.", class_="text-info")
+        try:
+            import matplotlib.pyplot as plt
+
+            thresh   = input.thresh_min()     if input.use_thresh() else 120
+            otsu_off = input.otsu_offset_lm() if input.use_otsu()   else None
+
+            if input.gen_histogram():
+                az.generate_l_channel_histogram(otsu_offset=input.otsu_offset())
+                buf = io.BytesIO()
+                plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
+                buf.seek(0)
+                b64 = base64.b64encode(buf.read()).decode()
+                plt.close("all")
+                return ui.div(
+                    ui.HTML(
+                        f'<img src="data:image/png;base64,{b64}" '
+                        f'class="img-zoomable" '
+                        f'style="width:100%;border-radius:8px;margin-top:.5rem">'
+                    ),
+                )
+
+            # # Generate locule mask
+            az.generate_locule_mask(
+                thresh_min = thresh,
+                otsu_offset = otsu_off,
+                min_fruit_area = input.min_fruit_area_lm(),
+                min_locule_area = input.min_locule_area_lm(),
+                invert_locule = input.invert_locule(),
+                kernel_blur = input.kernel_blur4()  or None,
+                kernel_open = input.kernel_open4()  or None,
+                kernel_close = input.kernel_close4() or None,
+                erosion_px = input.erosion_px4(),
+                plot = True,
+                plot_size = (20,20)
+            )
+            mark_done(3)
+
+            buf = io.BytesIO()
+            plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
+            buf.seek(0)
+            b64 = base64.b64encode(buf.read()).decode()
+            plt.close("all")
+
+            return ui.div(
+                ui.HTML(
+                    f'<img src="data:image/png;base64,{b64}" '
+                    f'class="img-zoomable" '
+                    f'style="width:100%;border-radius:8px;margin-top:.5rem">'
+                ),
+            )
+        except Exception as e:
+            return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
 
     @render.ui
     def thresh_ui():
@@ -1403,44 +1743,14 @@ def server(input: Inputs, output: Outputs, session: Session):
         if input.use_otsu():
             return ui.input_slider("otsu_offset_lm", "Otsu offset", -50, 50, 0, step=1)
         return ui.div()
-
-    @render.ui
-    @reactive.event(input.run_step4)
-    def step4_results():
-        az = r_analyzer.get()
-        if az is None:
-            return ui.p("Complete earlier steps first.", class_="text-info")
-        try:
-            thresh   = input.thresh_min()     if input.use_thresh() else 120
-            otsu_off = input.otsu_offset_lm() if input.use_otsu()   else None
-
-            if input.gen_histogram():
-                az.generate_l_channel_histogram(otsu_offset=input.otsu_offset())
-                return zoomable_img(fig_to_b64())
-
-            az.generate_locule_mask(
-                thresh_min=thresh, otsu_offset=otsu_off,
-                min_fruit_area=input.min_fruit_area_lm(),
-                min_locule_area=input.min_locule_area_lm(),
-                invert_locule=input.invert_locule(),
-                kernel_blur=input.kernel_blur4()  or None,
-                kernel_open=input.kernel_open4()  or None,
-                kernel_close=input.kernel_close4() or None,
-                erosion_px=input.erosion_px4(),
-                plot=True, plot_size=(20, 20)
-            )
-            mark_done(3)
-            return zoomable_img(fig_to_b64())
-        except Exception as e:
-            return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
-
-    # ── Step 5 — Detect Fruits ────────────────────────────────────────────────
+    
+    # step 5 - detect fruits
     @render.ui
     def detect_locule_params_ui():
         if r_mode.get() == "internal":
             return ui.div(
-                ui.input_numeric("min_locule_area",      "Min locule area (px)", 50, min=1, step=10),
-                ui.input_numeric("min_locule_per_fruit", "Min locules/fruit",     1, min=0, step=1),
+                ui.input_numeric("min_locule_area",      "Min locule area (px)", 50,  min=1, step=10),
+                ui.input_numeric("min_locule_per_fruit", "Min locules/fruit",     1,  min=0, step=1),
             )
         return ui.div()
 
@@ -1452,32 +1762,48 @@ def server(input: Inputs, output: Outputs, session: Session):
             return ui.p("Complete earlier steps first.", class_="text-info")
         is_int = r_mode.get() == "internal"
         try:
-            def _pc(s): return tuple(int(x.strip()) for x in s.split(","))
+            def _parse_color(s):
+                vals = [int(x.strip()) for x in s.split(",")]
+                return tuple(vals)
 
             kw = dict(
                 min_fruit_circularity = input.min_fruit_circularity(),
-                min_fruit_area        = input.min_fruit_area_det(),
-                max_fruit_area        = input.max_fruit_area_det() or None,
-                rescale_factor        = input.rescale_factor_det() or None,
-                contour_thickness     = input.contour_thickness_det(),
-                contour_color         = _pc(input.contour_color_det()),
-                verbose               = False,
-                plot                  = True,
-                plot_size             = (20, 20)
+                min_fruit_area = input.min_fruit_area_det(),
+                max_fruit_area = input.max_fruit_area_det() or None,
+                rescale_factor = input.rescale_factor_det() or None,
+                contour_thickness = input.contour_thickness_det(),
+                locule_thickness = input.locule_thickness_det(),
+                contour_color = _parse_color(input.contour_color_det()),
+                locule_color = _parse_color(input.locule_color_det()),
+                verbose = False,
+                plot = True,
+                plot_size = (20,20)
             )
             if is_int:
                 kw["min_locule_area"]      = input.min_locule_area()
                 kw["min_locule_per_fruit"] = input.min_locule_per_fruit()
                 kw["locule_thickness"]     = input.locule_thickness_det()
-                kw["locule_color"]         = _pc(input.locule_color_det())
+                kw["locule_color"]         = _parse_color(input.locule_color_det())
 
             az.detect_fruits(**kw)
-            mark_done(4 if is_int else 2)
-            return zoomable_img(fig_to_b64())
+            idx = 4 if is_int else 2
+            mark_done(idx)
+
+            buf = io.BytesIO()
+            plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
+            buf.seek(0)
+            b64 = base64.b64encode(buf.read()).decode()
+            plt.close("all")
+
+            return ui.HTML(
+                f'<img src="data:image/png;base64,{b64}" '
+                f'class="img-zoomable" '
+                f'style="width:100%;border-radius:8px;margin-top:.5rem">'
+            )
         except Exception as e:
             return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
-
-    # ── Step 6 — Morphology ───────────────────────────────────────────────────
+    
+    # step 6 - morphology
     @render.ui
     def epsilon_ui():
         if input.contour_mode() == "approx":
@@ -1502,25 +1828,27 @@ def server(input: Inputs, output: Outputs, session: Session):
             return ui.p("Complete earlier steps first.", class_="text-info")
         is_int = r_mode.get() == "internal"
         try:
-            def _pc(s): return tuple(int(x.strip()) for x in s.split(","))
+            def _pc(s):
+                return tuple(int(x.strip()) for x in s.split(","))
 
             epsilon   = input.epsilon_morph() if input.contour_mode() == "approx" else 0.001
             alpha_val = input.alpha_morph()   if input.alpha_morph() > 0 else None
             max_loc   = input.max_locule_area_morph() or None if is_int else None
 
             kw = dict(
-                contour_mode           = input.contour_mode(),
-                epsilon                = epsilon,
-                font_size              = input.font_size_morph(),
-                font_thickness         = input.font_thickness_morph(),
-                font_color             = _pc(input.font_color_morph()),
-                label_position         = input.label_position_morph(),
-                label_color            = _pc(input.label_color_morph()),
+                contour_mode      = input.contour_mode(),
+                epsilon           = epsilon,
+                font_size         = input.font_size_morph(),
+                font_thickness    = input.font_thickness_morph(),
+                font_color        = _pc(input.font_color_morph()),
+                label_position    = input.label_position_morph(),
+                label_color       = _pc(input.label_color_morph()),
                 pericarp_ext_color     = _pc(input.pericarp_ext_color_morph()),
                 pericarp_ext_thickness = input.pericarp_ext_thick_morph(),
-                display_table          = True,
-                plot                   = True,
+                display_table     = True,
+                plot              = True,
             )
+
             if is_int:
                 kw.update(dict(
                     alpha                    = alpha_val,
@@ -1539,25 +1867,26 @@ def server(input: Inputs, output: Outputs, session: Session):
                 ))
 
             df = az.analyze_morphology(**kw)
-            mark_done(5 if is_int else 3)
+            idx = 5 if is_int else 3
+            mark_done(idx)
 
-            # annotated image — library stores it as RGB in az.results.annotated_image.
-            # cv2.imencode expects BGR, so convert RGB→BGR before encoding.
+            # ── annotated image ──
             plt.close("all")
-            ann = az.results.annotated_image if (az.results is not None) else None
-            if ann is not None:
-                b64 = arr_to_b64(cv2.cvtColor(ann, cv2.COLOR_RGB2BGR))
-            else:
-                b64 = fig_to_b64()
-            parts = [zoomable_img(b64)]
+            b64 = arr_to_b64(az.results.annotated_image)
 
-            # table + CSV download
+            parts = [ui.HTML(
+                f'<img src="data:image/png;base64,{b64}" '
+                f'class="img-zoomable" '
+                f'style="width:100%;border-radius:8px;margin-top:.5rem">'
+            )]
+
+            # ── table + download ──
             if df is not None and not df.empty:
                 csv_b = df_csv(df)
                 parts += [
                     ui.output_data_frame("morph_table"),
                     ui.download_button("dl_morph", "⬇ Download CSV",
-                                       class_="btn btn-outline-primary btn-sm mt-2"),
+                                    class_="btn btn-outline-primary btn-sm mt-2"),
                 ]
                 @render.data_frame
                 def morph_table(): return render.DataGrid(df, height="320px")
@@ -1565,29 +1894,34 @@ def server(input: Inputs, output: Outputs, session: Session):
                 @render.download(filename="morphology_results.csv")
                 async def dl_morph(): yield csv_b
 
-            # zip with image + csv + parameters — stored in reactive for top-level handler
+            # ── zip with image + csv + parameters ──
             if input.save_params_morph():
                 import zipfile, io as _io
 
                 tmp_dir = tempfile.mkdtemp()
                 az.save_parameters(output_path=tmp_dir)
 
+                # save annotated image
                 base = os.path.splitext(os.path.basename(az.img_path))[0]
                 ann_path = os.path.join(tmp_dir, f"{base}_annotated.png")
-                if ann is not None:
-                    # RGB→BGR for cv2.imwrite
-                    cv2.imwrite(ann_path, cv2.cvtColor(ann, cv2.COLOR_RGB2BGR))
+                if az.results is not None and az.results.annotated_image is not None:
+                    img_bgr = az.results.annotated_image
+                    cv2.imwrite(ann_path, img_bgr)
 
+                # save csv
                 if df is not None and not df.empty:
                     df.to_csv(os.path.join(tmp_dir, f"{base}_morphology_results.csv"), index=False)
 
+                # build zip
                 zip_buf = _io.BytesIO()
                 with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
                     for fname in os.listdir(tmp_dir):
                         zf.write(os.path.join(tmp_dir, fname), arcname=fname)
+                zip_bytes = zip_buf.getvalue()
 
-                r_morph_zip.set(zip_buf.getvalue())
-                r_morph_base.set(base)
+                @render.download(filename=f"{base}_morphology.zip")
+                async def dl_morph_zip(): yield zip_bytes
+                session.output("dl_morph_zip")(_morph_zip_dl := dl_morph_zip)
 
                 parts.append(ui.download_button(
                     "dl_morph_zip", "⬇ Download results + parameters (.zip)",
@@ -1599,7 +1933,9 @@ def server(input: Inputs, output: Outputs, session: Session):
         except Exception as e:
             return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
 
-    # ── Step 7 — Color ────────────────────────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════════════════
+    # STEP 7 – Color
+    # ══════════════════════════════════════════════════════════════════════════
     @render.ui
     def color_tissue_ui():
         if r_mode.get() == "internal":
@@ -1622,7 +1958,8 @@ def server(input: Inputs, output: Outputs, session: Session):
             else:
                 df = az.analyze_color(stat=input.stat(),
                                       color_space=input.color_space(), display_table=True)
-            mark_done(6 if is_int else 4)
+            idx = 6 if is_int else 4
+            mark_done(idx)
             parts = [ui.p("✅ Color analysis complete! 🎉", class_="text-success fw-bold")]
             if df is not None and not df.empty:
                 csv_b = df_csv(df)
@@ -1640,7 +1977,9 @@ def server(input: Inputs, output: Outputs, session: Session):
         except Exception as e:
             return ui.div(ui.p(f"❌ {e}", class_="text-danger"), ui.pre(traceback.format_exc()))
 
-    # ── Background Helper ─────────────────────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════════════════
+    # BACKGROUND HELPER
+    # ══════════════════════════════════════════════════════════════════════════
     @reactive.effect
     @reactive.event(input.bg_upload)
     def _load_bg():
@@ -1649,58 +1988,6 @@ def server(input: Inputs, output: Outputs, session: Session):
         az = FruitExternalAnalyzer(f[0]["datapath"])
         az.load_image(plot=False)
         r_bg_analyzer.set(az)
-
-    @render.ui
-    def bg_preview():
-        az = r_bg_analyzer.get()
-        if az is None or az.img_hsv is None: return ui.div()
-        lo = np.array([input.l_h(), input.l_s(), input.l_v()], dtype=np.uint8)
-        hi = np.array([input.u_h(), input.u_s(), input.u_v()], dtype=np.uint8)
-        mask = cv2.inRange(az.img_hsv, lo, hi)
-        prev = az.img_bgr.copy()
-        grn  = np.zeros_like(prev); grn[mask > 0] = [0, 220, 80]
-        prev = cv2.addWeighted(prev, .65, grn, .35, 0)
-        pct  = 100 * mask.sum() / 255 / mask.size
-        return ui.div(
-            ui.layout_columns(
-                ui.HTML(img_tag(prev) + '<p class="text-muted small">🟢 Background selected</p>'),
-                ui.HTML(img_tag(cv2.bitwise_not(mask)) + '<p class="text-muted small">Fruit mask (white = fruit)</p>'),
-                col_widths=[6,6],
-            ),
-            ui.p(f"Coverage: {pct:.1f}% of pixels", class_="text-muted small"),
-        )
-
-    @render.ui
-    @reactive.event(input.bg_detect_btn)
-    def bg_detect_out():
-        az = r_bg_analyzer.get()
-        if az is None: return ui.p("Upload an image first.", class_="text-info")
-        lo = [input.l_h(), input.l_s(), input.l_v()]
-        hi = [input.u_h(), input.u_s(), input.u_v()]
-        try:
-            az.generate_fruit_mask(lower_hsv=lo, upper_hsv=hi, plot=False)
-            az.detect_fruits(min_fruit_circularity=input.bg_circ(),
-                             min_fruit_area=input.bg_area(), verbose=False, plot=False)
-            n   = len(az.fruit_locule_map) if az.fruit_locule_map else 0
-            msg = "✅ Mask looks good!" if n > 0 else "⚠️ No fruits — adjust thresholds."
-            return ui.div(
-                ui.value_box("Fruits detected", n, theme="success" if n > 0 else "warning"),
-                ui.p(msg, class_="text-success" if n > 0 else "text-warning"),
-            )
-        except Exception as e:
-            return ui.div(ui.p(f"❌ {e}", class_="text-danger"), ui.pre(traceback.format_exc()))
-
-    @render.ui
-    def bg_final_code():
-        lo = [input.l_h(), input.l_s(), input.l_v()]
-        hi = [input.u_h(), input.u_s(), input.u_v()]
-        code = (f"lower_hsv = {lo}\nupper_hsv  = {hi}\n\n"
-                f"min_fruit_circularity = {input.bg_circ()}\n"
-                f"min_fruit_area        = {input.bg_area()}")
-        return ui.div(
-            ui.p("Use in Individual Analysis → Generate Mask or Batch:", class_="text-success"),
-            ui.pre(code, style="background:#f1f5f9;padding:1rem;border-radius:6px;font-size:.81rem"),
-        )
 
     @render.ui
     def bg_main_ui():
@@ -1726,7 +2013,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             ui.h6("3️⃣ Define HSV thresholds — live preview"),
             ui.input_select("bg_preset","Preset",
                             choices=["blue","white","black","gray (example)","custom"]),
-            ui.layout_columns(
+             ui.layout_columns(
                 ui.div(
                     ui.HTML('<div style="font-size:1.6rem;font-weight:600;margin-bottom:.4rem">Lower HSV</div>'),
                     ui.input_slider("lower_h", "H min", 0, 180, 0),
@@ -1759,7 +2046,11 @@ def server(input: Inputs, output: Outputs, session: Session):
             ui.output_ui("bg_final_code"),
         )
 
-    # ── Batch Analysis ────────────────────────────────────────────────────────
+   
+    # ══════════════════════════════════════════════════════════════════════════
+    # BATCH ANALYSIS
+    # ══════════════════════════════════════════════════════════════════════════
+
     @render.ui
     def batch_file_info():
         files = input.batch_files()
@@ -1790,8 +2081,8 @@ def server(input: Inputs, output: Outputs, session: Session):
         os.makedirs(output_path, exist_ok=True)
 
         all_morphology, all_color, errors = [], [], []
-        total_fruits  = 0
-        saved_images  = []
+        total_fruits = 0
+        saved_images = []
 
         cfg = dict(
             background_color      = input.bg_color_batch(),
@@ -1807,9 +2098,11 @@ def server(input: Inputs, output: Outputs, session: Session):
                     src  = f["datapath"]
                     dest = os.path.join(tmp_dir, fname)
                     shutil.copy2(src, dest)
+
                     az = (FruitInternalAnalyzer(dest) if is_int
                           else FruitExternalAnalyzer(dest))
                     az.load_image(plot=False)
+
                     df_m, df_c, err, n_fruits, ann_img = az.process_single_file(
                         config             = cfg,
                         analyze_morphology = input.run_morphology(),
@@ -1817,22 +2110,28 @@ def server(input: Inputs, output: Outputs, session: Session):
                         save_image         = True,
                         output_path        = output_path,
                     )
+
                     if err:
                         errors.append({"filename": fname, **err})
                     else:
                         if df_m is not None: all_morphology.append(df_m)
                         if df_c is not None: all_color.append(df_c)
                         total_fruits += (n_fruits or 0)
+
                         stem     = os.path.splitext(fname)[0]
                         ann_path = os.path.join(output_path, f"{stem}_annotated.jpg")
                         if ann_img is not None and not os.path.exists(ann_path):
-                            cv2.imwrite(ann_path, ann_img)
+                            import cv2 as _cv2
+                            _cv2.imwrite(ann_path, ann_img)
                         if os.path.exists(ann_path):
                             saved_images.append(ann_path)
+
                 except Exception as e:
                     errors.append({"filename": fname, "status": str(e)})
+
             p.set(value=n_total, message="Done!", detail="")
 
+        # merge & save CSVs
         df_morph_all = pd.concat(all_morphology, ignore_index=True) if all_morphology else None
         df_color_all = pd.concat(all_color,      ignore_index=True) if all_color      else None
 
@@ -1841,6 +2140,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         if df_color_all is not None:
             df_color_all.to_csv(os.path.join(output_path, "color_results.csv"), index=False)
 
+        # create zip and save in reactive
         zip_buf = _io.BytesIO()
         with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
             for fpath in os.listdir(output_path):
@@ -1902,12 +2202,7 @@ def server(input: Inputs, output: Outputs, session: Session):
 
         return ui.div(*parts)
 
-    @render.download(filename=lambda: f"{r_morph_base.get()}_morphology.zip")
-    async def dl_morph_zip():
-        data = r_morph_zip.get()
-        if data:
-            yield data
-
+    # download handler for the zip
     @render.download(filename="traitly_results.zip")
     async def dl_batch_zip():
         data = r_batch_zip.get()
