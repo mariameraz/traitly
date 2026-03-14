@@ -496,7 +496,7 @@ def detect_label_box(
 
             if plot:
                 cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
+    
     if plot:
         plt.figure(figsize=(8, 8))
         plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))

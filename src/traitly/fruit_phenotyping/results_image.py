@@ -160,7 +160,7 @@ class ResultsImage:
             full_path = self._ensure_dir_exists(path)
             format = format or os.path.splitext(full_path)[1][1:].lower()
 
-            bgr_image = cv2.cvtColor(self.annotated_image, cv2.COLOR_RGB2BGR)
+            bgr_image = self.annotated_image
             # Use cv2.imwrite
             if format.lower() in ['jpg', 'jpeg']:
                 # JPEG with quality setting
@@ -248,7 +248,7 @@ class ResultsImage:
             color_csv_path = os.path.join(abs_output_dir, f"{base_name}_color_results.csv")
             
             # Save annotated image
-            bgr_image = cv2.cvtColor(self.annotated_image, cv2.COLOR_RGB2BGR)
+            bgr_image = self.annotated_image
             
             if format.lower() in ['jpg', 'jpeg']:
                 cv2.imwrite(img_path, bgr_image, 
