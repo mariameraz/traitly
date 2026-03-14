@@ -1183,7 +1183,8 @@ class FruitInternalAnalyzer:
         plot: bool = False,
         plot_size: Tuple[int, int] = (5, 5),
         contour_color: Tuple[int, int, int] = (0, 255, 0),
-        pericarp_int_color: Tuple[int, int, int] = (255, 0, 255),
+        locule_color: Tuple[int, int, int] = (255, 0, 255),
+        locule_thickness: int = 2,
         contour_thickness: int = 2,
     ) -> None:
         """
@@ -1291,7 +1292,7 @@ class FruitInternalAnalyzer:
                 cv2.drawContours(img_copy, [self.contours[fruit_id]], -1, contour_color, contour_thickness)
                 # Locules
                 for loc_id in locule_ids:
-                    cv2.drawContours(img_copy, [self.contours[loc_id]], -1, pericarp_int_color, contour_thickness)
+                    cv2.drawContours(img_copy, [self.contours[loc_id]], -1, locule_color, locule_thickness)
                     
             base_fontsize = 6
             fontsize = base_fontsize + (plot_size[0] )
