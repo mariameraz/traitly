@@ -19,6 +19,7 @@ __pycache__/
 src/traitly_app.py
 tutorials/example.ipynb
 src/traitly/Untitled-1.ipynb
+src/traitly_shiny.py
 tests/sample_data/Results/
 Untitled-1.ipynb
 requirements-docs.txt
