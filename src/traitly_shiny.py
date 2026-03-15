@@ -38,6 +38,231 @@ def img_tag(arr, style="width:100%;border-radius:8px;margin-top:.5rem"):
 def df_csv(df): return df.to_csv(index=False).encode()
 
 
+# ── Column-paginated DataTables ───────────────────────────────────────────────
+def _df_to_datatable(df: "pd.DataFrame", table_id: str,
+                     page_length: int = 10, cols_per_page: int = 7) -> str:
+    """
+    DataTables widget where:
+      - DT native paging is OFF; row slicing is done manually via a
+        'Show N rows' <select> that mirrors DT's lengthMenu style.
+      - Previous / Next buttons (styled like DT's) navigate COLUMNS only.
+      - Info text shows "Cols X–Y of N | Showing rows A–B of total".
+      - Search filters only the 'fruit_id' column.
+    """
+    cols = df.columns.tolist()
+    n_cols = len(cols)
+    n_col_pages = -(-n_cols // cols_per_page)
+
+    fruit_id_idx = next(
+        (i for i, c in enumerate(cols) if "fruit_id" in c.lower()), None)
+    search_placeholder = "Search by fruit_id..." if fruit_id_idx is not None else "Search..."
+
+    # Serialize rows as JS array for manual row-slicing
+    import json as _json
+    rows_data = []
+    for _, row in df.iterrows():
+        rows_data.append([
+            "" if pd.isna(v) else str(v) for v in row
+        ])
+
+    thead = "<thead><tr>" + "".join(f"<th>{c}</th>" for c in cols) + "</tr></thead>"
+    tbody = "<tbody></tbody>"   # filled by JS
+
+    btn_style = (
+        "display:inline-block;padding:.35rem .9rem;border-radius:6px;border:none;"
+        "background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;"
+        "font-size:1.5rem;font-weight:500;cursor:pointer;"
+        "box-shadow:0 2px 6px rgba(59,130,246,.3);margin:0 .25rem;"
+        "text-decoration:none;transition:opacity .15s;"
+    )
+
+    footer = (
+        f'<div style="display:flex;align-items:center;justify-content:space-between;'
+        f'margin-top:.5rem;font-size:1.4rem;flex-wrap:wrap;gap:.4rem;">'
+        # left: entries selector + info
+        f'<div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;">'
+        f'<label style="color:#475569;">Show '
+        f'<select id="{table_id}_len" style="border:1px solid #e2e8f0;border-radius:5px;'
+        f'padding:.15rem .3rem;font-size:1.3rem;">'
+        f'<option value="5">5</option>'
+        f'<option value="10" selected>10</option>'
+        f'<option value="25">25</option>'
+        f'<option value="50">50</option>'
+        f'<option value="100">100</option>'
+        f'<option value="-1">All</option>'
+        f'</select> rows</label>'
+        f'<span id="{table_id}_info" style="color:#64748b;"></span>'
+        f'</div>'
+        # right: Previous / Next col buttons
+        f'<div>'
+        f'<button id="{table_id}_prev" style="{btn_style}opacity:.45">Previous</button>'
+        f'<button id="{table_id}_next" style="{btn_style}">Next</button>'
+        f'</div>'
+        f'</div>'
+    )
+
+    init = f"""
+    <script>
+    (function() {{
+        var _allRows    = {_json.dumps(rows_data)};
+        var _filtered   = _allRows.slice();   // after search
+        var _colPage    = 0;
+        var _rowPage    = 0;
+        var _pageLen    = {page_length};
+        var _colsPerPage = {cols_per_page};
+        var _totalCols  = {n_cols};
+        var _totalColPages = {n_col_pages};
+        var _fruitIdIdx = {fruit_id_idx if fruit_id_idx is not None else 'null'};
+        var _sortCol    = -1;
+        var _sortAsc    = true;
+
+        var _tbody = document.querySelector('#{table_id} tbody');
+        var _lenSel = document.getElementById('{table_id}_len');
+        var _info   = document.getElementById('{table_id}_info');
+        var _prev   = document.getElementById('{table_id}_prev');
+        var _next   = document.getElementById('{table_id}_next');
+
+        function _renderRows() {{
+            var start = _rowPage * (_pageLen === -1 ? _filtered.length : _pageLen);
+            var end   = _pageLen === -1 ? _filtered.length : Math.min(start + _pageLen, _filtered.length);
+            var html  = '';
+            for (var i = start; i < end; i++) {{
+                html += '<tr>';
+                for (var j = 0; j < _totalCols; j++) {{
+                    html += '<td>' + (_allRows.indexOf(_filtered[i]), _filtered[i][j]) + '</td>';
+                }}
+                html += '</tr>';
+            }}
+            _tbody.innerHTML = html;
+
+            // col visibility
+            var cs = _colPage * _colsPerPage;
+            var ce = Math.min(cs + _colsPerPage, _totalCols);
+            var tbl = document.getElementById('{table_id}');
+            var headers = tbl.querySelectorAll('th');
+            var cells   = tbl.querySelectorAll('td');
+            // hide all cols then show current page
+            for (var h = 0; h < headers.length; h++) {{
+                headers[h].style.display = (h >= cs && h < ce) ? '' : 'none';
+            }}
+            var rows = _tbody.querySelectorAll('tr');
+            for (var r = 0; r < rows.length; r++) {{
+                var tds = rows[r].querySelectorAll('td');
+                for (var c = 0; c < tds.length; c++) {{
+                    tds[c].style.display = (c >= cs && c < ce) ? '' : 'none';
+                }}
+            }}
+
+            // info
+            var rowTotal = _filtered.length;
+            var rowStart = rowTotal === 0 ? 0 : start + 1;
+            var rowEnd2  = Math.min(end, rowTotal);
+            _info.innerHTML =
+                'Cols <b>' + (cs+1) + '–' + ce + '</b> of ' + _totalCols +
+                ' &nbsp;|&nbsp; Rows ' + rowStart + '–' + rowEnd2 + ' of ' + rowTotal;
+
+            // button opacity
+            _prev.style.opacity = _colPage === 0 ? '0.45' : '1';
+            _next.style.opacity = _colPage >= _totalColPages - 1 ? '0.45' : '1';
+        }}
+
+        function _applySearch(val) {{
+            val = val.toLowerCase();
+            if (val === '' || _fruitIdIdx === null) {{
+                _filtered = _allRows.slice();
+            }} else {{
+                _filtered = _allRows.filter(function(r) {{
+                    return r[_fruitIdIdx].toLowerCase().indexOf(val) !== -1;
+                }});
+            }}
+            _rowPage = 0;
+            _renderRows();
+        }}
+
+        // Search box
+        var _searchInput = document.querySelector('#{table_id}_wrapper .dataTables_filter input');
+        if (_searchInput) {{
+            _searchInput.placeholder = '{search_placeholder}';
+            _searchInput.oninput = function() {{ _applySearch(this.value); }};
+        }}
+
+        // Entries selector
+        _lenSel.onchange = function() {{
+            _pageLen = parseInt(this.value);
+            _rowPage = 0;
+            _renderRows();
+        }};
+
+        // Col navigation
+        _prev.onclick = function() {{
+            if (_colPage > 0) {{ _colPage--; _renderRows(); }}
+        }};
+        _next.onclick = function() {{
+            if (_colPage < _totalColPages - 1) {{ _colPage++; _renderRows(); }}
+        }};
+
+        // Sortable headers
+        var _ths = document.querySelectorAll('#{table_id} thead th');
+        for (var hi = 0; hi < _ths.length; hi++) {{
+            (function(idx) {{
+                _ths[idx].style.cursor = 'pointer';
+                _ths[idx].onclick = function() {{
+                    if (_sortCol === idx) {{ _sortAsc = !_sortAsc; }}
+                    else {{ _sortCol = idx; _sortAsc = true; }}
+                    _filtered.sort(function(a, b) {{
+                        var av = a[idx], bv = b[idx];
+                        var an = parseFloat(av), bn = parseFloat(bv);
+                        if (!isNaN(an) && !isNaN(bn)) {{ return _sortAsc ? an-bn : bn-an; }}
+                        return _sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+                    }});
+                    _rowPage = 0;
+                    _renderRows();
+                }};
+            }})(hi);
+        }}
+
+        // Initial render — DT is only used for the search box UI; we rebuild tbody ourselves
+        function _initDT() {{
+            if (typeof $ === 'undefined' || !$.fn || !$.fn.DataTable) {{
+                setTimeout(_initDT, 80); return;
+            }}
+            if ($.fn.DataTable.isDataTable('#{table_id}')) {{
+                $('#{table_id}').DataTable().destroy();
+            }}
+            // Init DT with paging OFF — we just want its search input + styling
+            $('#{table_id}').DataTable({{
+                paging: false,
+                info: false,
+                ordering: false,
+                lengthChange: false,
+                searching: true,
+                language: {{
+                    search: "Search:",
+                    searchPlaceholder: "{search_placeholder}"
+                }}
+            }});
+            // Detach DT's search so we can handle it ourselves
+            $('#{table_id}_wrapper .dataTables_filter input')
+                .off()
+                .on('input', function() {{ _applySearch(this.value); }});
+
+            _renderRows();
+        }}
+        _initDT();
+    }})();
+    </script>
+    """
+
+    return (
+        f'<div style="overflow-x:auto;font-size:1.5rem;margin-top:.6rem">'
+        f'<table id="{table_id}" class="display" style="width:100%">'
+        f'{thead}{tbody}</table></div>'
+        + footer
+        + init
+    )
+# ─────────────────────────────────────────────────────────────────────────────
+
+
 _CSS = """
 /* light theme (default) colors */
 :root {
@@ -789,7 +1014,7 @@ step_mask = _panel("step_mask", "Generate Fruit Mask",
                     <div id="advanced-mask-params" style="padding:.6rem 0 0 .4rem">
             '''),
             ui.hr(),
-            ui.input_checkbox("stamp", "Invert image colors (stamp)", False),
+            ui.output_ui("mask_stamp_ui"),
             ui.input_checkbox("apply_convex_hull", "Apply convex hull", False),
             ui.input_checkbox("fill_holes", "Fill holes", False),
             ui.hr(),
@@ -899,9 +1124,8 @@ step_detect = _panel("step_detect", "Detect Fruits",
             ui.p("Set to 0 for no upper limit.", style="font-size:1.4rem;color:#94a3b8;margin-top:-.5rem;"),
             ui.hr(),
             ui.input_slider("contour_thickness_det", "Fruit contour thickness", 1, 10, 2),
-            ui.input_slider("locule_thickness_det",  "Locule contour thickness", 1, 10, 2),
             ui.input_text("contour_color_det", "Fruit contour color (R,G,B)", "0,255,0"),
-            ui.input_text("locule_color_det",  "Locule contour color (R,G,B)", "255,0,255"),
+            ui.output_ui("detect_int_styling_ui"),
             ui.HTML('</div></details>'),
             ui.hr(),
             ui.input_action_button("run_detect", "▶  Detect Fruits", class_="btn btn-primary",
@@ -918,23 +1142,10 @@ step_morph = _panel("step_morph", "Morphological Analysis",
             ui.input_select("contour_mode", "Contour mode",
                             choices=["raw", "hull", "approx", "ellipse", "circle"]),
             ui.output_ui("epsilon_ui"),
-            ui.hr(),
             ui.output_ui("morph_locule_params_ui"),
             ui.hr(),
             ui.input_checkbox("save_params_morph", "Save analysis parameters", False),
-            ui.hr(),
-            ui.HTML('''
-            <details style="margin-bottom:.8rem">
-            <summary style="font-size:1.7rem;font-weight:600;cursor:pointer;
-                            padding:.4rem .2rem;color:#475569;user-select:none">
-                Advanced parameters
-            </summary>
-            <div style="padding:.6rem 0 0 .4rem">
-            '''),
-            ui.input_numeric("alpha_morph", "Alpha (Int. pericarp concave hull)", 0, min=0, step=0.05),
-            ui.input_numeric("angle_shifts_morph", "Angle shifts (symmetry)", 500, min=0, step=50),
-            ui.input_numeric("num_rays_morph", "Num rays (pericarp thickness)", 90, min=0, step=10),
-            ui.HTML('</div></details>'),
+            ui.output_ui("morph_advanced_section_ui"),
             ui.hr(),
             ui.HTML('''
             <details style="margin-bottom:.8rem">
@@ -952,14 +1163,7 @@ step_morph = _panel("step_morph", "Morphological Analysis",
             ui.input_text("label_color_morph",          "Label background (R,G,B)",      "255,255,255"),
             ui.input_text("pericarp_ext_color_morph",   "Ext. pericarp color (R,G,B)",   "0,240,0"),
             ui.input_numeric("pericarp_ext_thick_morph","Ext. pericarp thickness", 2, min=1, step=1),
-            ui.input_text("pericarp_int_color_morph",   "Int. pericarp color (R,G,B)",   "0,240,240"),
-            ui.input_numeric("pericarp_int_thick_morph","Int. pericarp thickness", 2, min=1, step=1),
-            ui.input_text("locule_color_morph",         "Locule color (R,G,B)",          "255,0,255"),
-            ui.input_numeric("locule_thick_morph",      "Locule thickness", 2, min=1, step=1),
-            ui.input_text("centroid_fruit_color_morph", "Fruit centroid color (R,G,B)",  "255,255,51"),
-            ui.input_numeric("centroid_fruit_thick_morph", "Fruit centroid size", 2, min=1, step=1),
-            ui.input_text("centroid_locule_color_morph","Locule centroid color (R,G,B)", "0,255,255"),
-            ui.input_numeric("centroid_locule_thick_morph","Locule centroid size", 2, min=1, step=1),
+            ui.output_ui("morph_int_styling_ui"),
             ui.HTML('</div></details>'),
             ui.hr(),
             ui.input_action_button("run_morph", "▶  Analyze Morphology", class_="btn btn-primary",
@@ -1211,6 +1415,9 @@ app_ui = ui.page_sidebar(
     ui.tags.head(
         ui.tags.link(rel="stylesheet",
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"),
+        ui.tags.link(rel="stylesheet",
+            href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css"),
+        ui.tags.script(src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"),
     ),
     ui.tags.style(_CSS),
     ui.HTML(_HEADER),
@@ -1239,13 +1446,22 @@ def server(input: Inputs, output: Outputs, session: Session):
     r_batch_zip  = reactive.value(None)
     r_morph_zip  = reactive.value(None)
     r_morph_base = reactive.value("morphology")
-    r_color_zip  = reactive.value(None)          # ← new
-    r_color_base = reactive.value("color")       # ← new
+    r_color_zip  = reactive.value(None)
+    r_color_base = reactive.value("color")
     r_img_shape  = reactive.value((100, 100))
     r_step1_result = reactive.value(ui.div())
     r_setup_done = reactive.value(0)
     r_img_ready  = reactive.value(False)
     r_upload_key = reactive.value(0)
+    # ── CHANGE 2: store original filename ─────────────────────────────────────
+    r_original_img_name = reactive.value("")
+    r_mode_version = reactive.value(0)   # increments on mode switch → invalidates step outputs
+    r_step2_result = reactive.value(ui.div())
+    r_step3_result = reactive.value(ui.div())
+    r_step4_result = reactive.value(ui.div())
+    r_detect_result = reactive.value(ui.div())
+    r_morph_result  = reactive.value(ui.div())
+    r_color_result  = reactive.value(ui.div())
 
     # ── step definitions per mode ─────────────────────────────────────────────
     def _steps(mode):
@@ -1293,6 +1509,11 @@ def server(input: Inputs, output: Outputs, session: Session):
             r_img_ready.set(False)
             r_step1_result.set(ui.div())
             r_upload_key.set(r_upload_key.get() + 1)
+            r_original_img_name.set("")
+            r_mode_version.set(r_mode_version.get() + 1)
+            r_step2_result.set(ui.div()); r_step3_result.set(ui.div())
+            r_step4_result.set(ui.div()); r_detect_result.set(ui.div())
+            r_morph_result.set(ui.div());  r_color_result.set(ui.div())
             ui.update_navs("pipeline_step", selected="step_setup", session=session)
 
     # ── JS → switch step ─────────────────────────────────────────────────────
@@ -1346,6 +1567,11 @@ def server(input: Inputs, output: Outputs, session: Session):
     @reactive.event(input.reset_btn)
     def _reset():
         r_analyzer.set(None); r_completed.set([]); r_cur_step.set("step_setup")
+        r_original_img_name.set("")
+        r_mode_version.set(r_mode_version.get() + 1)
+        r_step2_result.set(ui.div()); r_step3_result.set(ui.div())
+        r_step4_result.set(ui.div()); r_detect_result.set(ui.div())
+        r_morph_result.set(ui.div());  r_color_result.set(ui.div())
         ui.update_navs("pipeline_step", selected="step_setup", session=session)
 
     @render.ui
@@ -1391,10 +1617,29 @@ def server(input: Inputs, output: Outputs, session: Session):
             )
         return ui.div()
 
+    # ── CHANGE 2 & 3: helper to copy uploaded file with its original name ─────
+    def _copy_with_original_name(file_info: dict) -> str:
+        """
+        Copy the Shiny temp file (e.g. /tmp/.../0.jpg) to a new temp dir
+        using the user's original filename, and return that path.
+        This ensures detect_img_name() inside the analyzer sees the real name.
+        """
+        original_name = file_info["name"]          # e.g. "tomato_01.jpg"
+        src_path      = file_info["datapath"]      # e.g. "/tmp/.../0.jpg"
+        tmp_dir       = tempfile.mkdtemp()
+        dest_path     = os.path.join(tmp_dir, original_name)
+        shutil.copy2(src_path, dest_path)
+        return dest_path
+    # ─────────────────────────────────────────────────────────────────────────
+
     def _do_load_image():
         f = input.upload_img()
         if not f: return
-        path = f[0]["datapath"]
+        # ── CHANGE 2: use original filename ───────────────────────────────────
+        original_name = f[0]["name"]
+        r_original_img_name.set(os.path.splitext(original_name)[0])
+        path = _copy_with_original_name(f[0])
+        # ─────────────────────────────────────────────────────────────────────
         mode = r_mode.get()
         az = (FruitInternalAnalyzer(path) if mode == "internal"
               else FruitExternalAnalyzer(path))
@@ -1429,7 +1674,9 @@ def server(input: Inputs, output: Outputs, session: Session):
         ui.update_numeric("crop_h", value=img_h, session=session)
         f = input.upload_img()
         if not f: return
-        path = f[0]["datapath"]
+        # ── CHANGE 2: use original filename on reset too ──────────────────────
+        path = _copy_with_original_name(f[0])
+        # ─────────────────────────────────────────────────────────────────────
         mode = r_mode.get()
         az = (FruitInternalAnalyzer(path) if mode == "internal"
               else FruitExternalAnalyzer(path))
@@ -1573,17 +1820,23 @@ def server(input: Inputs, output: Outputs, session: Session):
         return ui.div()
 
     @render.ui
+    def mask_stamp_ui():
+        if r_mode.get() == "internal":
+            return ui.input_checkbox("stamp", "Invert image colors (stamp)", False)
+        return ui.div()
+
+    @reactive.effect
     @reactive.event(input.run_step2)
-    def step2_results():
+    def _run_step2():
         az = r_analyzer.get()
         if az is None:
-            return ui.p("Complete Step 1 first.", class_="text-info")
+            r_step2_result.set(ui.p("Complete Step 1 first.", class_="text-info")); return
         is_int = r_mode.get() == "internal"
         try:
             lower_hsv = [input.h_range()[0], input.s_range()[0], input.v_range()[0]] if input.use_manual_hsv() else None
             upper_hsv = [input.h_range()[1], input.s_range()[1], input.v_range()[1]] if input.use_manual_hsv() else None
             kw = dict(
-                stamp=input.stamp(), remove_roi=input.remove_roi(),
+                stamp=input.stamp() if r_mode.get() == "internal" else False, remove_roi=input.remove_roi(),
                 lower_hsv=lower_hsv, upper_hsv=upper_hsv,
                 n_iteration=input.n_iteration(), roi_expansion=input.roi_expansion(),
                 kernel_blur=input.kernel_blur() or None,
@@ -1602,12 +1855,16 @@ def server(input: Inputs, output: Outputs, session: Session):
             buf.seek(0)
             b64 = base64.b64encode(buf.read()).decode()
             plt.close("all")
-            return ui.HTML(
+            r_step2_result.set(ui.HTML(
                 f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
                 f'style="width:100%;border-radius:8px;margin-top:.5rem">'
-            )
+            ))
         except Exception as e:
-            return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
+            r_step2_result.set(ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc())))
+
+    @render.ui
+    def step2_results():
+        return r_step2_result.get()
 
     @render.ui
     def hsv_ui():
@@ -1621,12 +1878,12 @@ def server(input: Inputs, output: Outputs, session: Session):
         )
 
     # step 3
-    @render.ui
+    @reactive.effect
     @reactive.event(input.run_step3)
-    def step3_results():
+    def _run_step3():
         az = r_analyzer.get()
         if az is None:
-            return ui.p("Complete earlier steps first.", class_="text-info")
+            r_step3_result.set(ui.p("Complete earlier steps first.", class_="text-info")); return
         try:
             method = input.contrast_method()
             gamma  = input.gamma()  if method == "gamma"   else 1.5
@@ -1646,12 +1903,16 @@ def server(input: Inputs, output: Outputs, session: Session):
             buf.seek(0)
             b64 = base64.b64encode(buf.read()).decode()
             plt.close("all")
-            return ui.HTML(
+            r_step3_result.set(ui.HTML(
                 f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
                 f'style="width:100%;border-radius:8px;margin-top:.5rem">'
-            )
+            ))
         except Exception as e:
-            return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
+            r_step3_result.set(ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc())))
+
+    @render.ui
+    def step3_results():
+        return r_step3_result.get()
 
     @render.ui
     def contrast_params_ui():
@@ -1674,12 +1935,12 @@ def server(input: Inputs, output: Outputs, session: Session):
             return ui.input_slider("otsu_offset", "Otsu offset", -50, 50, 0, step=1)
         return ui.div()
 
-    @render.ui
+    @reactive.effect
     @reactive.event(input.run_step4)
-    def step4_results():
+    def _run_step4():
         az = r_analyzer.get()
         if az is None:
-            return ui.p("Complete earlier steps first.", class_="text-info")
+            r_step4_result.set(ui.p("Complete earlier steps first.", class_="text-info")); return
         try:
             thresh   = input.thresh_min()     if input.use_thresh() else 120
             otsu_off = input.otsu_offset_lm() if input.use_otsu()   else None
@@ -1690,10 +1951,10 @@ def server(input: Inputs, output: Outputs, session: Session):
                 buf.seek(0)
                 b64 = base64.b64encode(buf.read()).decode()
                 plt.close("all")
-                return ui.div(ui.HTML(
+                r_step4_result.set(ui.div(ui.HTML(
                     f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
                     f'style="width:100%;border-radius:8px;margin-top:.5rem">'
-                ))
+                ))); return
             az.generate_locule_mask(
                 thresh_min=thresh, otsu_offset=otsu_off,
                 min_fruit_area=input.min_fruit_area_lm(),
@@ -1711,12 +1972,16 @@ def server(input: Inputs, output: Outputs, session: Session):
             buf.seek(0)
             b64 = base64.b64encode(buf.read()).decode()
             plt.close("all")
-            return ui.div(ui.HTML(
+            r_step4_result.set(ui.div(ui.HTML(
                 f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
                 f'style="width:100%;border-radius:8px;margin-top:.5rem">'
-            ))
+            )))
         except Exception as e:
-            return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
+            r_step4_result.set(ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc())))
+
+    @render.ui
+    def step4_results():
+        return r_step4_result.get()
 
     @render.ui
     def thresh_ui():
@@ -1741,11 +2006,54 @@ def server(input: Inputs, output: Outputs, session: Session):
         return ui.div()
 
     @render.ui
+    def detect_int_styling_ui():
+        if r_mode.get() == "internal":
+            return ui.div(
+                ui.input_slider("locule_thickness_det", "Locule contour thickness", 1, 10, 2),
+                ui.input_text("locule_color_det", "Locule contour color (R,G,B)", "255,0,255"),
+            )
+        return ui.div()
+
+    @render.ui
+    def morph_advanced_section_ui():
+        if r_mode.get() != "internal":
+            return ui.div()
+        return ui.div(
+            ui.HTML('''
+            <details style="margin-bottom:.8rem">
+            <summary style="font-size:1.7rem;font-weight:600;cursor:pointer;
+                            padding:.4rem .2rem;color:#475569;user-select:none">
+                Advanced parameters
+            </summary>
+            <div style="padding:.6rem 0 0 .4rem">
+            '''),
+            ui.input_numeric("alpha_morph", "Alpha (Int. pericarp concave hull)", 0, min=0, step=0.05),
+            ui.input_numeric("angle_shifts_morph", "Angle shifts (symmetry)", 500, min=0, step=50),
+            ui.input_numeric("num_rays_morph", "Num rays (pericarp thickness)", 90, min=0, step=10),
+            ui.HTML('</div></details>'),
+        )
+
+    @render.ui
+    def morph_int_styling_ui():
+        if r_mode.get() == "internal":
+            return ui.div(
+                ui.input_text("pericarp_int_color_morph",    "Int. pericarp color (R,G,B)",    "0,240,240"),
+                ui.input_numeric("pericarp_int_thick_morph", "Int. pericarp thickness", 2, min=1, step=1),
+                ui.input_text("locule_color_morph",          "Locule color (R,G,B)",           "255,0,255"),
+                ui.input_numeric("locule_thick_morph",       "Locule thickness", 2, min=1, step=1),
+                ui.input_text("centroid_fruit_color_morph",  "Fruit centroid color (R,G,B)",   "255,255,51"),
+                ui.input_numeric("centroid_fruit_thick_morph",  "Fruit centroid size", 2, min=1, step=1),
+                ui.input_text("centroid_locule_color_morph", "Locule centroid color (R,G,B)",  "0,255,255"),
+                ui.input_numeric("centroid_locule_thick_morph", "Locule centroid size", 2, min=1, step=1),
+            )
+        return ui.div()
+
+    @reactive.effect
     @reactive.event(input.run_detect)
-    def detect_results():
+    def _run_detect():
         az = r_analyzer.get()
         if az is None:
-            return ui.p("Complete earlier steps first.", class_="text-info")
+            r_detect_result.set(ui.p("Complete earlier steps first.", class_="text-info")); return
         is_int = r_mode.get() == "internal"
         try:
             def _parse_color(s):
@@ -1772,12 +2080,16 @@ def server(input: Inputs, output: Outputs, session: Session):
             buf.seek(0)
             b64 = base64.b64encode(buf.read()).decode()
             plt.close("all")
-            return ui.HTML(
+            r_detect_result.set(ui.HTML(
                 f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
                 f'style="width:100%;border-radius:8px;margin-top:.5rem">'
-            )
+            ))
         except Exception as e:
-            return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
+            r_detect_result.set(ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc())))
+
+    @render.ui
+    def detect_results():
+        return r_detect_result.get()
 
     # step 6 – morphology
     @render.ui
@@ -1796,19 +2108,19 @@ def server(input: Inputs, output: Outputs, session: Session):
             )
         return ui.div()
 
-    @render.ui
+    @reactive.effect
     @reactive.event(input.run_morph)
-    def morph_results():
+    def _run_morph():
         az = r_analyzer.get()
         if az is None:
-            return ui.p("Complete earlier steps first.", class_="text-info")
+            r_morph_result.set(ui.p("Complete earlier steps first.", class_="text-info")); return
         is_int = r_mode.get() == "internal"
         try:
             def _pc(s):
                 return tuple(int(x.strip()) for x in s.split(","))
             epsilon   = input.epsilon_morph() if input.contour_mode() == "approx" else 0.001
-            alpha_val = input.alpha_morph()   if input.alpha_morph() > 0 else None
-            max_loc   = input.max_locule_area_morph() or None if is_int else None
+            alpha_val = (input.alpha_morph() if input.alpha_morph() > 0 else None) if is_int else None
+            max_loc   = (input.max_locule_area_morph() or None) if is_int else None
             kw = dict(
                 contour_mode=input.contour_mode(), epsilon=epsilon,
                 font_size=input.font_size_morph(), font_thickness=input.font_thickness_morph(),
@@ -1836,7 +2148,6 @@ def server(input: Inputs, output: Outputs, session: Session):
                     centroid_locule_thickness=input.centroid_locule_thick_morph(),
                 ))
             df = az.analyze_morphology(**kw)
-            idx = 5 if is_int else 3
             mark_done(idx)
             plt.close("all")
             b64 = arr_to_b64(cv2.cvtColor(az.results.annotated_image, cv2.COLOR_BGR2RGB))
@@ -1847,18 +2158,18 @@ def server(input: Inputs, output: Outputs, session: Session):
             if df is not None and not df.empty:
                 csv_b = df_csv(df)
                 parts += [
-                    ui.output_data_frame("morph_table"),
+                    ui.output_ui("morph_table_dt"),
                     ui.download_button("dl_morph", "⬇ Download CSV",
                                     class_="btn btn-primary mt-2",
                                     style="margin-right: 1.5rem !important"),
                 ]
-                @render.data_frame
-                def morph_table(): return render.DataGrid(df, height="320px")
+                @render.ui
+                def morph_table_dt():
+                    return ui.HTML(_df_to_datatable(df, "morph_dt_tbl", page_length=10, cols_per_page=7))
                 @render.download(filename="morphology_results.csv")
                 async def dl_morph(): yield csv_b
-            # Zip results
             tmp_dir = tempfile.mkdtemp()
-            base = os.path.splitext(os.path.basename(az.img_path))[0]
+            base = r_original_img_name.get() or os.path.splitext(os.path.basename(az.img_path))[0]
             ann_path = os.path.join(tmp_dir, f"{base}_annotated.png")
             if az.results is not None and az.results.annotated_image is not None:
                 cv2.imwrite(ann_path, az.results.annotated_image)
@@ -1885,9 +2196,13 @@ def server(input: Inputs, output: Outputs, session: Session):
                           "color:#97c8ec; font-weight:700; "
                           "background-color:rgba(49,63,65,0.9); border-radius:6px; padding:.4rem;"
                 ))
-            return ui.div(*parts)
+            r_morph_result.set(ui.div(*parts))
         except Exception as e:
-            return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
+            r_morph_result.set(ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc())))
+
+    @render.ui
+    def morph_results():
+        return r_morph_result.get()
 
     # ══════════════════════════════════════════════════════════════════════════
     # STEP 7 – Color
@@ -1913,24 +2228,51 @@ def server(input: Inputs, output: Outputs, session: Session):
             )
         return ui.div()
 
-    @render.ui
+    @reactive.effect
     @reactive.event(input.run_color)
-    def color_results():
+    def _run_color():
         az = r_analyzer.get()
         if az is None:
-            return ui.p("Complete earlier steps first.", class_="text-info")
+            r_color_result.set(ui.p("Complete earlier steps first.", class_="text-info")); return
         is_int = r_mode.get() == "internal"
         try:
             def _pc(s):
                 return tuple(int(x.strip()) for x in s.split(","))
 
-            # ── Build kwargs ───────────────────────────────────────────────
+            want_histogram = input.get_color_histogram()
+
+            # ── If histogram requested: call plot_dark_threshold directly
+            #    (standalone function, not part of analyze_color) ──────────
+            if want_histogram:
+                try:
+                    from traitly.fruit_phenotyping import plot_dark_threshold
+                except ImportError:
+                    from traitly.fruit_phenotyping.color_plot import plot_dark_threshold
+                plt.close("all")
+                plot_dark_threshold(
+                    az.img,
+                    az.mask_fruit,
+                    dark_threshold=input.dark_thresh_color(),
+                )
+                buf = io.BytesIO()
+                plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
+                buf.seek(0)
+                b64 = base64.b64encode(buf.read()).decode()
+                plt.close("all")
+                r_color_result.set(ui.HTML(
+                    f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
+                    f'style="width:100%;border-radius:8px;margin-top:.5rem">'
+                ))
+                return
+
+            # ── Normal path: run analyze_color, show image + table + downloads
             kw = dict(
                 stat=input.stat(),
                 color_space=input.color_space(),
-                get_color_histogram=input.get_color_histogram(),
+                get_color_histogram=False,
                 display_table=True,
-                plot=False,                       # we render color_image manually
+                plot=True,
+                plot_size=(20, 20),
                 font_size=input.font_size_color(),
                 font_thickness=input.font_thickness_color(),
                 font_color=_pc(input.font_color_color()),
@@ -1952,54 +2294,45 @@ def server(input: Inputs, output: Outputs, session: Session):
             idx = 6 if is_int else 4
             mark_done(idx)
 
-            # ── Display color_image (not annotated_image) ─────────────────
-            color_img = getattr(az.results, "color_image", None)
-            if color_img is None:
-                color_img = getattr(az.results, "annotated_image", None)
+            buf = io.BytesIO()
+            plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
+            buf.seek(0)
+            b64 = base64.b64encode(buf.read()).decode()
+            plt.close("all")
 
-            parts = []
-            if color_img is not None:
-                b64 = arr_to_b64(cv2.cvtColor(color_img, cv2.COLOR_BGR2RGB))
-                parts.append(ui.HTML(
-                    f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
-                    f'style="width:100%;border-radius:8px;margin-top:.5rem">'
-                ))
+            parts = [ui.HTML(
+                f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
+                f'style="width:100%;border-radius:8px;margin-top:.5rem">'
+            )]
 
-            # ── Table + CSV download ───────────────────────────────────────
             if df is not None and not df.empty:
                 csv_b = df_csv(df)
                 parts += [
-                    ui.output_data_frame("color_table"),
+                    ui.output_ui("color_table_dt"),
                     ui.download_button("dl_color_csv", "⬇ Download CSV",
                                        class_="btn btn-primary mt-2",
                                        style="margin-right: 1.5rem !important"),
                 ]
-                @render.data_frame
-                def color_table(): return render.DataGrid(df, height="320px")
-
+                @render.ui
+                def color_table_dt():
+                    return ui.HTML(_df_to_datatable(df, "color_dt_tbl", page_length=10, cols_per_page=7))
                 @render.download(filename="color_results.csv")
                 async def dl_color_csv(): yield csv_b
 
-            # ── Zip: prefer annotated_image, fall back to color_image ─────
             tmp_dir = tempfile.mkdtemp()
-            base    = os.path.splitext(os.path.basename(az.img_path))[0]
+            base = r_original_img_name.get() or os.path.splitext(os.path.basename(az.img_path))[0]
 
-            ann_img  = getattr(az.results, "annotated_image", None)
-            col_img  = getattr(az.results, "color_image", None)
-
+            ann_img = getattr(az.results, "annotated_image", None)
+            col_img = getattr(az.results, "color_image", None)
             if ann_img is not None:
-                img_to_save  = ann_img
-                img_filename = f"{base}_annotated.png"
+                img_to_save, img_filename = ann_img, f"{base}_annotated.png"
             elif col_img is not None:
-                img_to_save  = col_img
-                img_filename = f"{base}_color.png"
+                img_to_save, img_filename = col_img, f"{base}_color.png"
             else:
-                img_to_save  = None
-                img_filename = None
+                img_to_save = img_filename = None
 
             if img_to_save is not None:
                 cv2.imwrite(os.path.join(tmp_dir, img_filename), img_to_save)
-
             if df is not None and not df.empty:
                 df.to_csv(os.path.join(tmp_dir, f"{base}_color_results.csv"), index=False)
 
@@ -2026,10 +2359,14 @@ def server(input: Inputs, output: Outputs, session: Session):
                           "color:#97c8ec; font-weight:700; "
                           "background-color:rgba(49,63,65,0.9); border-radius:6px; padding:.4rem;"
                 ))
-            return ui.div(*parts)
+            r_color_result.set(ui.div(*parts))
 
         except Exception as e:
-            return ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc()))
+            r_color_result.set(ui.div(ui.p(f"{e}", class_="text-danger"), ui.pre(traceback.format_exc())))
+
+    @render.ui
+    def color_results():
+        return r_color_result.get()
 
     # ── Color zip download handler ─────────────────────────────────────────
     @render.download(filename=lambda: f"{r_color_base.get()}_color.zip")
@@ -2046,7 +2383,10 @@ def server(input: Inputs, output: Outputs, session: Session):
     def _load_bg():
         f = input.bg_upload()
         if not f: return
-        az = FruitExternalAnalyzer(f[0]["datapath"])
+        # ── CHANGE 3: use original filename for bg analyzer too ───────────────
+        path = _copy_with_original_name(f[0])
+        # ─────────────────────────────────────────────────────────────────────
+        az = FruitExternalAnalyzer(path)
         az.load_image(plot=False)
         r_bg_analyzer.set(az)
 
@@ -2152,9 +2492,9 @@ def server(input: Inputs, output: Outputs, session: Session):
                 fname = f["name"]
                 p.set(value=i, message=f"Processing {i+1}/{n_total}", detail=fname)
                 try:
-                    src  = f["datapath"]
-                    dest = os.path.join(tmp_dir, fname)
-                    shutil.copy2(src, dest)
+                    # ── CHANGE 2: batch also copies with original names ────────
+                    dest = _copy_with_original_name(f)
+                    # ─────────────────────────────────────────────────────────
                     az = (FruitInternalAnalyzer(dest) if is_int
                           else FruitExternalAnalyzer(dest))
                     az.load_image(plot=False)
