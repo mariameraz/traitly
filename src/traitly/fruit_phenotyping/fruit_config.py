@@ -165,7 +165,6 @@ def analyze_fruits_morphology(
     label_text: str,
     label_id: Optional[int] = None,
     path: Optional[str] = None,
-    original_img_clean: Optional[np.ndarray] = None,
     is_locule: bool = True,
     epsilon: float = 0.002,
     pericarp_int_color: Tuple[int, int, int] = (0, 240, 240),
@@ -236,7 +235,7 @@ def analyze_fruits_morphology(
     has_calibration = px_per_cm is not None and px_per_cm > 0
     unit = 'cm' if has_calibration else 'px'
     
-    original_img = original_img_clean.copy() if original_img_clean is not None else img.copy()
+    original_img = img.copy()
     
     # Precalculate angular symmetry data
     unique_counts = get_unique_locule_counts(fruit_locule_map)
