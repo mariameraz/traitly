@@ -549,6 +549,25 @@ body.on-home main {
   max-width: 100% !important;
 }
 
+body.on-nosidebar .bslib-sidebar-layout > .sidebar {
+  display: none !important;
+}
+
+body.on-nosidebar .bslib-sidebar-layout {
+  grid-template-columns: 0 1fr !important;
+  padding-left: 0 !important;
+}
+
+body.on-nosidebar .bslib-sidebar-layout > .main,
+body.on-nosidebar .bslib-page-main,
+body.on-nosidebar main {
+  margin-left: 0 !important;
+  padding-left: 1.5rem !important;
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
 /* cards */
 .home-section {
   background:#fff; border-radius:12px; border:1px solid #e2e8f0;
@@ -887,6 +906,7 @@ function goMainTab(tabValue, idx, mode) {{
     if (el) el.classList.toggle('active', i === idx);
   }}
   document.body.classList.toggle('on-home', tabValue === 'tab_home');
+  document.body.classList.toggle('on-nosidebar', tabValue === 'tab_bg' || tabValue === 'tab_batch');
   Shiny.setInputValue('js_main_tab', tabValue, {{priority: 'event'}});
   if (mode) Shiny.setInputValue('js_mode', mode, {{priority: 'event'}});
 }}
@@ -1347,13 +1367,74 @@ tab_analysis = ui.nav_panel("Analysis",
 )
 
 tab_bg = ui.nav_panel("BG Helper",
-    ui.h5("🎨 Background Color Helper", style="font-weight:600;margin-bottom:.4rem"),
-    ui.p("Upload an image, inspect HSV pixel colors, then tune your background thresholds.",
-         class_="text-muted small"),
-    ui.hr(),
-    ui.input_file("bg_upload", "Upload image",
-                  accept=[".jpg",".jpeg",".png",".bmp",".tiff",".tif"]),
-    ui.output_ui("bg_main_ui"),
+    ui.div(
+        # ── Panel 1: upload + scatter ─────────────────────────────────────────
+        ui.div(
+            ui.HTML('<p class="panel-title">Background Color Helper</p>'),
+            ui.p("Upload an image to inspect its HSV pixel distribution, then tune "
+                 "thresholds to isolate the background.",
+                 style="font-size:1.8rem;color:#64748b;margin-bottom:1.2rem;"),
+            ui.layout_columns(
+                # left col — upload + sample size
+                ui.div(
+                    ui.input_file("bg_upload", "Upload image",
+                                  accept=[".jpg",".jpeg",".png",".bmp",".tiff",".tif"]),
+                    ui.hr(),
+                    ui.input_numeric("bg_sample", "Pixel sample size", 10000,
+                                     min=1000, max=50000, step=1000),
+                    ui.p("Increase for denser scatter, decrease for speed.",
+                         style="font-size:1.4rem;color:#94a3b8;margin-top:-.4rem;"),
+                ),
+                # right col — scatter plot (auto on upload)
+                ui.div(ui.output_ui("bg_scatter_out")),
+                col_widths=[4, 8],
+            ),
+            style="padding:1.4rem;margin-bottom:1rem;",
+        ),
+        # ── Panel 2: HSV sliders + live mask preview ──────────────────────────
+        ui.div(
+            ui.hr(),
+            ui.layout_columns(
+                ui.input_select("bg_preset", "Preset values",
+                                choices=["custom", "blue", "white", "black"]),
+                ui.div(),
+                col_widths=[4, 8],
+            ),
+            ui.HTML('<p style="font-size:2rem;font-weight:600;color:var(--panel-title-color);'
+                    'margin-bottom:.8rem;">HSV Thresholds — live preview</p>'),
+            # Three paired sliders: one row each (lo / hi side by side)
+            ui.layout_columns(
+                ui.div(
+                    ui.HTML('<div style="font-size:1.7rem;font-weight:600;margin-bottom:.5rem;'
+                            'color:#3b82f6;">Lower bound</div>'),
+                    ui.input_slider("bg_h_lo", "H min", 0, 180, 0),
+                    ui.input_slider("bg_s_lo", "S min", 0, 255, 0),
+                    ui.input_slider("bg_v_lo", "V min", 0, 255, 0),
+                ),
+                ui.div(
+                    ui.HTML('<div style="font-size:1.7rem;font-weight:600;margin-bottom:.5rem;'
+                            'color:#1d4ed8;">Upper bound</div>'),
+                    ui.input_slider("bg_h_hi", "H max", 0, 180, 180),
+                    ui.input_slider("bg_s_hi", "S max", 0, 255, 255),
+                    ui.input_slider("bg_v_hi", "V max", 0, 255, 255),
+                ),
+                col_widths=[6, 6],
+            ),
+
+            ui.hr(),
+            # Live image + mask side by side
+            ui.output_ui("bg_preview"),
+            style="padding:1.4rem;margin-bottom:1rem;",
+        ),
+        # ── Panel 3: verify + copy ────────────────────────────────────────────
+        ui.div(
+            
+            ui.HTML('<p style="font-size:2rem;font-weight:600;color:var(--panel-title-color);'
+                    'margin-bottom:.5rem;">Copy these values</p>'),
+            ui.output_ui("bg_final_code"),
+            style="padding:1.4rem;margin-bottom:1rem;",
+        ),
+    ),
     value="tab_bg",
 )
 
@@ -1483,9 +1564,9 @@ def server(input: Inputs, output: Outputs, session: Session):
             ("step_color",  "", "Color"),
         ]
 
-    def mark_done(idx):
+    def mark_done(id):
         d = list(r_completed.get())
-        if idx not in d: d.append(idx)
+        if id not in d: d.append(id)
         r_completed.set(d)
 
     # ── JS → switch main tab ──────────────────────────────────────────────────
@@ -1757,59 +1838,6 @@ def server(input: Inputs, output: Outputs, session: Session):
     @render.ui
     def step1_results():
         return r_step1_result.get()
-
-    # ── Background helper preview (live) ──────────────────────────────────────
-    @render.ui
-    def bg_preview():
-        az = r_bg_analyzer.get()
-        if az is None or az.img_hsv is None: return ui.div()
-        lo = np.array([input.l_h(), input.l_s(), input.l_v()], dtype=np.uint8)
-        hi = np.array([input.u_h(), input.u_s(), input.u_v()], dtype=np.uint8)
-        mask = cv2.inRange(az.img_hsv, lo, hi)
-        prev = cv2.cvtColor(az.img_bgr.copy(), cv2.COLOR_BGR2RGB)
-        grn  = np.zeros_like(prev); grn[mask > 0] = [0, 220, 80]
-        prev = cv2.addWeighted(prev, .65, grn, .35, 0)
-        pct  = 100 * mask.sum() / 255 / mask.size
-        return ui.div(
-            ui.layout_columns(
-                ui.HTML(img_tag(prev) + '<p class="text-muted small">🟢 Background selected</p>'),
-                ui.HTML(img_tag(cv2.bitwise_not(mask)) + '<p class="text-muted small">Fruit mask (white = fruit)</p>'),
-                col_widths=[6,6],
-            ),
-            ui.p(f"Coverage: {pct:.1f}% of pixels", class_="text-muted small"),
-        )
-
-    @render.ui
-    @reactive.event(input.bg_detect_btn)
-    def bg_detect_out():
-        az = r_bg_analyzer.get()
-        if az is None: return ui.p("Upload an image first.", class_="text-info")
-        lo = [input.l_h(), input.l_s(), input.l_v()]
-        hi = [input.u_h(), input.u_s(), input.u_v()]
-        try:
-            az.generate_fruit_mask(lower_hsv=lo, upper_hsv=hi, plot=False)
-            az.detect_fruits(min_fruit_circularity=input.bg_circ(),
-                            min_fruit_area=input.bg_area(), verbose=False, plot=False)
-            n   = len(az.fruit_locule_map) if az.fruit_locule_map else 0
-            msg = "✅ Mask looks good!" if n > 0 else "⚠️ No fruits — adjust thresholds."
-            return ui.div(
-                ui.value_box("Fruits detected", n, theme="success" if n > 0 else "warning"),
-                ui.p(msg, class_="text-success" if n > 0 else "text-warning"),
-            )
-        except Exception as e:
-            return ui.div(ui.p(f"❌ {e}", class_="text-danger"), ui.pre(traceback.format_exc()))
-
-    @render.ui
-    def bg_final_code():
-        lo   = [input.l_h(), input.l_s(), input.l_v()]
-        hi   = [input.u_h(), input.u_s(), input.u_v()]
-        code = (f"lower_hsv = {lo}\nupper_hsv  = {hi}\n\n"
-                f"min_fruit_circularity = {input.bg_circ()}\n"
-                f"min_fruit_area        = {input.bg_area()}")
-        return ui.div(
-            ui.p("Use in Individual Analysis → Generate Mask or Batch:", class_="text-success"),
-            ui.pre(code, style="background:#f1f5f9;padding:1rem;border-radius:6px;font-size:.81rem"),
-        )
 
     # step 2
     @render.ui
@@ -2148,7 +2176,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                     centroid_locule_thickness=input.centroid_locule_thick_morph(),
                 ))
             df = az.analyze_morphology(**kw)
-            mark_done(idx)
+            mark_done(id)
             plt.close("all")
             b64 = arr_to_b64(cv2.cvtColor(az.results.annotated_image, cv2.COLOR_BGR2RGB))
             parts = [ui.HTML(
@@ -2378,73 +2406,108 @@ def server(input: Inputs, output: Outputs, session: Session):
     # ══════════════════════════════════════════════════════════════════════════
     # BACKGROUND HELPER
     # ══════════════════════════════════════════════════════════════════════════
+
+    _BG_PRESETS = {
+        "blue":  ([90, 50, 50],  [130, 255, 255]),
+        "white": ([0, 0, 180],   [180, 40, 255]),
+        "black": ([0, 0, 0],     [180, 255, 50]),
+    }
+
     @reactive.effect
     @reactive.event(input.bg_upload)
     def _load_bg():
         f = input.bg_upload()
         if not f: return
-        # ── CHANGE 3: use original filename for bg analyzer too ───────────────
         path = _copy_with_original_name(f[0])
-        # ─────────────────────────────────────────────────────────────────────
         az = FruitExternalAnalyzer(path)
         az.load_image(plot=False)
         r_bg_analyzer.set(az)
 
+    @reactive.effect
+    @reactive.event(input.bg_preset)
+    def _apply_bg_preset():
+        preset = input.bg_preset()
+        if preset not in _BG_PRESETS: return
+        lo, hi = _BG_PRESETS[preset]
+        ui.update_slider("bg_h_lo", value=lo[0], session=session)
+        ui.update_slider("bg_s_lo", value=lo[1], session=session)
+        ui.update_slider("bg_v_lo", value=lo[2], session=session)
+        ui.update_slider("bg_h_hi", value=hi[0], session=session)
+        ui.update_slider("bg_s_hi", value=hi[1], session=session)
+        ui.update_slider("bg_v_hi", value=hi[2], session=session)
+
     @render.ui
-    def bg_main_ui():
+    def bg_scatter_out():
         az = r_bg_analyzer.get()
         if az is None:
-            return ui.p("👆 Upload an image above.", class_="text-info")
+            return ui.div(
+                ui.HTML('<div style="display:flex;align-items:center;justify-content:center;'
+                        'height:200px;border:2px dashed #e2e8f0;border-radius:10px;'
+                        'color:#94a3b8;font-size:1.8rem;">Upload an image to see the HSV scatter plot</div>')
+            )
+        try:
+            plt.close("all")
+            az.generate_color_scatterplot(sample_size=input.bg_sample(), plot_size=(14, 4))
+            buf = io.BytesIO()
+            plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
+            buf.seek(0)
+            b64 = base64.b64encode(buf.read()).decode()
+            plt.close("all")
+            return ui.HTML(
+                f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
+                f'style="width:100%;border-radius:8px;">'
+            )
+        except Exception as e:
+            return ui.div(ui.p(f"❌ {e}", class_="text-danger"), ui.pre(traceback.format_exc()))
+
+    @render.ui
+    def bg_preview():
+        az = r_bg_analyzer.get()
+        if az is None: return ui.div()
+        lo = np.array([input.bg_h_lo(), input.bg_s_lo(), input.bg_v_lo()], dtype=np.uint8)
+        hi = np.array([input.bg_h_hi(), input.bg_s_hi(), input.bg_v_hi()], dtype=np.uint8)
+        mask = cv2.inRange(az.img_hsv, lo, hi)
+        orig = cv2.cvtColor(az.img.copy(), cv2.COLOR_BGR2RGB)
+        fruit_mask = cv2.bitwise_not(mask)
+        pct = 100 * mask.sum() / 255 / mask.size
         return ui.div(
-            ui.HTML(img_tag(cv2.cvtColor(az.img, cv2.COLOR_BGR2RGB),
-                            "width:100%;max-height:280px;object-fit:contain;"
-                            "border-radius:8px;margin-bottom:.8rem")),
-            ui.hr(),
-            ui.h6("2️⃣ Inspect HSV distribution"),
             ui.layout_columns(
                 ui.div(
-                    ui.input_numeric("bg_sample","Sample size",10000,min=1000,max=50000,step=1000),
-                    ui.input_action_button("bg_scatter_btn","▶  Generate scatterplot",
-                                           class_="btn btn-primary"),
-                ),
-                ui.output_ui("bg_scatter_out"),
-                col_widths=[3,9],
-            ),
-            ui.hr(),
-            ui.h6("3️⃣ Define HSV thresholds — live preview"),
-            ui.input_select("bg_preset","Preset",
-                            choices=["blue","white","black","gray (example)","custom"]),
-            ui.layout_columns(
-                ui.div(
-                    ui.HTML('<div style="font-size:1.6rem;font-weight:600;margin-bottom:.4rem">Lower HSV</div>'),
-                    ui.input_slider("lower_h", "H min", 0, 180, 0),
-                    ui.input_slider("lower_s", "S min", 0, 255, 0),
-                    ui.input_slider("lower_v", "V min", 0, 255, 0),
+                    ui.HTML(img_tag(orig, "width:100%;border-radius:8px;margin-top:.3rem")),
+                    ui.p("Original image",
+                         style="font-size:1.5rem;color:#64748b;text-align:center;margin-top:.3rem;"),
                 ),
                 ui.div(
-                    ui.HTML('<div style="font-size:1.6rem;font-weight:600;margin-bottom:.4rem">Upper HSV</div>'),
-                    ui.input_slider("upper_h", "H max", 0, 180, 180),
-                    ui.input_slider("upper_s", "S max", 0, 255, 255),
-                    ui.input_slider("upper_v", "V max", 0, 255, 255),
+                    ui.HTML(img_tag(fruit_mask, "width:100%;border-radius:8px;margin-top:.3rem")),
+                    ui.p(f"Fruit mask — background coverage: {pct:.1f}%",
+                         style="font-size:1.5rem;color:#64748b;text-align:center;margin-top:.3rem;"),
                 ),
                 col_widths=[6, 6],
             ),
-            ui.output_ui("bg_preview"),
-            ui.hr(),
-            ui.h6("4️⃣ Verify detections"),
-            ui.layout_columns(
-                ui.div(
-                    ui.input_slider("bg_circ","Min circularity",0.0,1.0,0.5,step=0.05),
-                    ui.input_numeric("bg_area","Min fruit area (px)",500,min=1,step=100),
-                    ui.input_action_button("bg_detect_btn","▶  Run detect_fruits",
-                                           class_="btn btn-primary"),
-                ),
-                ui.output_ui("bg_detect_out"),
-                col_widths=[4,8],
-            ),
-            ui.hr(),
-            ui.h6("5️⃣ Copy these values"),
-            ui.output_ui("bg_final_code"),
+        )
+
+    @render.ui
+    @reactive.event(input.bg_detect_btn)
+    def bg_detect_out():
+        az = r_bg_analyzer.get()
+        if az is None: return ui.p("Upload an image first.", class_="text-info")
+        lo = [input.bg_h_lo(), input.bg_s_lo(), input.bg_v_lo()]
+        hi = [input.bg_h_hi(), input.bg_s_hi(), input.bg_v_hi()]
+        try:
+            az.generate_fruit_mask(lower_hsv=lo, upper_hsv=hi, plot=False)
+        except Exception as e:
+            return ui.div(ui.p(f"❌ {e}", class_="text-danger"), ui.pre(traceback.format_exc()))
+
+    @render.ui
+    def bg_final_code():
+        lo = [input.bg_h_lo(), input.bg_s_lo(), input.bg_v_lo()]
+        hi = [input.bg_h_hi(), input.bg_s_hi(), input.bg_v_hi()]
+        code = (f"lower_hsv = {lo}\nupper_hsv  = {hi}")
+        return ui.div(
+            ui.p("Use these values in Individual Analysis → Generate Mask or Batch:",
+                 style="font-size:1.7rem;color:#059669;margin-bottom:.4rem;"),
+            ui.pre(code, style="background:#f1f5f9;padding:1rem;border-radius:6px;"
+                               "font-size:1.5rem;color:#1e293b;"),
         )
 
     # ══════════════════════════════════════════════════════════════════════════
