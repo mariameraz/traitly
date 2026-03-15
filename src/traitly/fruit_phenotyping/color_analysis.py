@@ -368,7 +368,7 @@ def analyze_all_fruits_color(img: np.ndarray,
                             renumber: bool = True,
                             color_space: str = 'all',
                             alpha: float = 0.0,
-                            dark_thresh: int = 15
+                            dark_threshold: int = 15
                     ) -> Dict[int, Dict[str, Dict[str, float]]]:
     """
     Analyze color features for all fruits in the fruit-locule map.
@@ -480,14 +480,14 @@ def analyze_all_fruits_color(img: np.ndarray,
             # Only save the results if 'locules' is required (e.g., tissue = 'all' or tissue = 'locules')
             if 'locules' in tissues_to_extract:
                 fruit_results['locules'] = (
-                    extract_color_features(roi_raw, mask_locules, stat, color_space, dark_thresh = dark_thresh)
+                    extract_color_features(roi_raw, mask_locules, stat, color_space, dark_thresh = dark_threshold)
                     if np.any(mask_locules) else nan_dict.copy()
                 )
 
         # Use the original mask (locules = 0, fruit(total_pericarp)= 255)
         if 'total_pericarp' in tissues_to_extract:
             fruit_results['total_pericarp'] = (
-                extract_color_features(roi_raw, mask_pericarp, stat, color_space, dark_thresh = dark_thresh)
+                extract_color_features(roi_raw, mask_pericarp, stat, color_space, dark_thresh = dark_threshold)
                 if np.any(mask_pericarp) else nan_dict.copy()
             )
 
@@ -531,7 +531,7 @@ def analyze_all_fruits_color(img: np.ndarray,
             if mask_locules is not None and np.any(mask_locules):
                 mask_internal[mask_locules == 255] = 0
             fruit_results['internal_pericarp'] = (
-                extract_color_features(roi_raw, mask_internal, stat, color_space, dark_thresh = dark_thresh)
+                extract_color_features(roi_raw, mask_internal, stat, color_space, dark_thresh = dark_threshold)
                 if np.any(mask_internal) else nan_dict.copy()
             )
 
@@ -539,7 +539,7 @@ def analyze_all_fruits_color(img: np.ndarray,
             mask_outer = mask_pericarp.copy()
             mask_outer[mask_internal_area == 255] = 0
             fruit_results['outer_pericarp'] = (
-                extract_color_features(roi_raw, mask_outer, stat, color_space, dark_thresh = dark_thresh)
+                extract_color_features(roi_raw, mask_outer, stat, color_space, dark_thresh = dark_threshold)
                 if np.any(mask_outer) else nan_dict.copy()
             )
 

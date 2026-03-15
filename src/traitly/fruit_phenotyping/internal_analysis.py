@@ -1870,7 +1870,7 @@ class FruitInternalAnalyzer:
         
     
         self.results.color_image = self.img_copy.copy()
-        
+
         # Annotate independent image for color results
         annotate_all_fruits(annotated_img = self.results.color_image,
                                 contours =  self.contours, 
@@ -1918,7 +1918,7 @@ class FruitInternalAnalyzer:
                                                           color_space = color_space,
                                                           renumber = True,
                                                           normalize = False,
-                                                          dark_thresh = dark_thresh)
+                                                          dark_threshold = dark_thresh)
             
             self.results.color_results = pd.DataFrame(color_results)
     
@@ -1932,7 +1932,7 @@ class FruitInternalAnalyzer:
                                     renumber = True,
                                     color_space = color_space,
                                     alpha = self.alpha,
-                                    dark_thresh = dark_thresh)
+                                    dark_threshold = dark_thresh)
             
 
             df = (
