@@ -1869,7 +1869,8 @@ class FruitInternalAnalyzer:
             )
         
     
-
+        self.results.color_image = self.img_copy.copy()
+        
         # Annotate independent image for color results
         annotate_all_fruits(annotated_img = self.results.color_image,
                                 contours =  self.contours, 
@@ -1892,8 +1893,6 @@ class FruitInternalAnalyzer:
                                 )
             
 
-        if saved_color_results is not None:
-            self.results.color_results = saved_color_results
         
         if plot:
             plt.figure(figsize = plot_size)
