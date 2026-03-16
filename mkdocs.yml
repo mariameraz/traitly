@@ -128,6 +128,7 @@ plugins:
                 - Quickstart: en/tutorials/quickstart.md
                 - External Analysis: en/tutorials/external.md
                 - Background Segmentation: en/tutorials/background_segmentation.md
+                - Individual Analysis: en/tutorials/individual_img_analysis.md
 
 
             - API Reference:
