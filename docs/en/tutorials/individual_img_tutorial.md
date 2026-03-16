@@ -1,6 +1,6 @@
 # External Analysis Individual Image Short Tutorial
 
-Traitly version used in this tutorial: 0.1.0
+*Traitly version used in this tutorial: 0.1.0*
 
 In this tutorial, we will demonstrate how to perform external appearance analysis of fruits using `FruitExternalAnalyzer` to extract morphology and color measurements from individual images.
 
