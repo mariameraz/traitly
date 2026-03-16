@@ -6,7 +6,7 @@ En este tutorial, demostraremos cómo realizar el análisis de apariencia extern
 
 
 !!! tip "Sigue el tutorial"
-    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí]().
+    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials_data/ext_analysis_ind_img_sample_es).
 
 
 En este tutorial, utilizaremos fotos con fondo blanco, que es un fondo predefinido en `FruitExternalAnalyzer.generate_fruit_mask()`, por lo que no será necesario ajustar los umbrales de color del fondo para eliminarlo. Si necesitas realizar ajustes para eliminar el fondo, consulta la sección de Segmentación de Fondo.
