@@ -128,8 +128,7 @@ plugins:
                 - Quickstart: en/tutorials/quickstart.md
                 - External Analysis: en/tutorials/external.md
                 - Background Segmentation: en/tutorials/background_segmentation.md
-                - Individual Analysis: en/tutorials/individual_img_analysis.md
-
+                - Individual Analysis: en/tutorials/individual_img_tutorial.md
 
             - API Reference:
                 - Classes:
@@ -174,6 +173,8 @@ plugins:
                 - Quickstart: es/tutorials/quickstart.md
                 - External Analysis: es/tutorials/external.md
                 - Background Segmentation: es/tutorials/background_segmentation.md
+                - Locule Segmentation: es/tutorials/segmentate_locules.md
+                - Individual Analysis: en/tutorials/individual_img_tutorial.md
 
             - API Reference:
                 - Classes:
@@ -212,6 +213,8 @@ plugins:
             Modules: Módulos
             About: Acerca de
             Command Line Interface: Interfaz de Línea de Comandos
+            Background Segmentation: Segmentación del Fondo
+            Locule Segmentation: Segmentación de lóculos
 
   - mkdocstrings:
       handlers:

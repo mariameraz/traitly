@@ -26,21 +26,27 @@ Here you'll find step-by-step guides covering the main traitly workflows, from l
 
 
 ## Internal fruit analysis
-
 <div class="grid cards" markdown>
 
--   :material-fruit-cherries:{ .lg .middle } **External analysis overview**
+<!-- CARD 1 -->
+<div class="card" markdown>
 
-    ---
+:material-fruit-watermelon:{ .lg .middle } **Locule segmentation**
 
-    Complete walkthrough of `FruitExternalAnalyzer`: loading images, generating masks, detecting fruits, and exporting morphology and color results.
+---
 
-    [:octicons-arrow-right-24: Go to tutorial](external.md)
+Complete walkthrough of `FruitInternalAnalyzer`
 
+<div class="card" markdown>
+![](../../en/tutorials/segmentate_locules_files/segmentate_locules_44_1.png){ width=300}
+</div>
+
+[:octicons-arrow-right-24: Go to tutorial](external.md)
 
 </div>
 
-<br>
+</div>
+
 
 ---
 
@@ -57,6 +63,7 @@ Here you'll find step-by-step guides covering the main traitly workflows, from l
 ---
 
 Complete walkthrough of `FruitExternalAnalyzer`: loading images, generating masks, detecting fruits, and exporting morphology and color results.
+
 
 [:octicons-arrow-right-24: Go to tutorial](external.md)
 
