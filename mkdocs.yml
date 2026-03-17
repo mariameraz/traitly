@@ -174,7 +174,7 @@ plugins:
                 - External Analysis: es/tutorials/external.md
                 - Background Segmentation: es/tutorials/background_segmentation.md
                 - Locule Segmentation: es/tutorials/segmentate_locules.md
-                - Análisis individual: es/tutorials/individual_img_tutorial_es.md
+                - Individual Analysis: es/tutorials/individual_img_tutorial_es.md
 
             - API Reference:
                 - Classes:
@@ -215,6 +215,7 @@ plugins:
             Command Line Interface: Interfaz de Línea de Comandos
             Background Segmentation: Segmentación del Fondo
             Locule Segmentation: Segmentación de lóculos
+            Individual Analysis: Análisis Individual
 
   - mkdocstrings:
       handlers:
