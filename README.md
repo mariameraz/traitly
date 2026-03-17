@@ -1,12 +1,3 @@
----
-title: Traitly
-colorFrom: green
-colorTo: red
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Traitly
 
 Disponible en: [![Spanish](https://img.shields.io/badge/Idioma-Espa%C3%B1ol-pink)](README_ES.md)
