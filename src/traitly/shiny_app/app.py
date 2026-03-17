@@ -1,4 +1,4 @@
-# src/traitly_shiny.py
+# traitly/shiny_app/app.py
 
 #########################################################################################
 # STANDARD LIBRARY
@@ -31,6 +31,10 @@ except ImportError:
 
 
 _CSS = """
+/* for HF */
+html { font-size: clamp(15px, 0.55vw, 12px); }
+body { font-size: clamp(15px, 0.55vw, 12px); }
+
 /* light theme (default) colors */
 :root {
     --header-bg: rgba(0,0,0,1);
@@ -411,12 +415,16 @@ button.action-button, a.action-button {
     justify-content: center;
     align-items: flex-start;
     padding-left: 2rem;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 #step1_preview img {
     max-height: 1500px;
-    max-width: 1500px;
+    max-width: 100%;
     object-fit: contain;
+    display: block;
+    margin: 0 auto;
 }
 
 /* step 1 result boxes */
@@ -589,9 +597,6 @@ body.dark-theme .tab-content input[type="file"]::file-selector-button {
     background-color: #4a5568 !important;
     color: var(--body-text) !important;
     border-color: #64748b !important;
-}
-body.dark-theme .tab-content hr { border-color: #3d3d5c !important; }
-body.dark-theme .tab-content details summary { color: #94a3b8 !important; }
 
 /* hr lines in dark */
 body.dark-theme hr {
@@ -602,6 +607,8 @@ body.dark-theme .tab-content hr {
     border-color: rgba(105,141,151, 0.8) !important;
     opacity: 1 !important;
 }
+
+body.dark-theme .tab-content details summary { color: #94a3b8 !important; }
 
 /* ? bubble in dark */
 body.dark-theme .tooltip-wrap > span {
@@ -617,9 +624,17 @@ body.dark-theme .tooltip-wrap > span {
     border-top-color: #3b82f6 !important;
     border-bottom-color: #3b82f6 !important;
 }
+
 .irs--shiny .irs-line {
-    background: #6f7a8a !important;
-    border-color: #6f7a8a !important;
+    background: #64748b !important;
+    border-color: #64748b !important;
+    height: 3px !important;
+    border-radius: 3px !important;
+}
+
+body.dark-theme .irs--shiny .irs-line {
+    background: #94a3b8 !important;
+    border-color: #94a3b8 !important;
 }
 
 /* slider handle */
@@ -650,6 +665,16 @@ body.dark-theme .irs--shiny .irs-bar {
     background: #3b82f6 !important;
 }
 
+#toast-msg {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    background: rgba(5,150,105,0.92); color: #fff;
+    font-size: 1.6rem; font-weight: 600;
+    padding: .6rem 1.5rem; border-radius: 30px;
+    z-index: 9998; opacity: 0; pointer-events: none;
+    transition: opacity .3s;
+}
+#toast-msg.show { opacity: 1; }
+
 .bslib-value-box { border-radius:10px !important; border:1px solid #e2e8f0 !important; }
 ::-webkit-scrollbar { width:5px; }
 ::-webkit-scrollbar-track { background:#f1f5f9; }
@@ -658,6 +683,8 @@ body.dark-theme .irs--shiny .irs-bar {
 
 
 _HEADER = f"""
+<div id="toast-msg"></div>
+
 <div id="lightbox-overlay">
     <button id="lightbox-close" onclick="closeLightbox()">✕</button>
     <img id="lightbox-img" src="" alt="zoom">
@@ -688,19 +715,20 @@ _HEADER = f"""
             <i id="theme-icon" class="fa-solid fa-moon" style="font-size:3rem"></i>
         </button>
 
-    <a class="gh-btn" href="https://github.com/mariameraz/traitly" target="_blank">
-        <i class="fa-brands fa-github-alt" style="font-size:2.4rem"></i>
-            mariameraz/traitly
-        <span class="gh-stat">
-            <svg viewBox="0 0 16 16" fill="rgba(255,255,255,.5)">
-                <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0
-                    1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8
-                    12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75
-                    0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/>
-            </svg>
-            0
+        <a class="gh-btn" href="https://github.com/mariameraz/traitly" target="_blank">
+            <i class="fa-brands fa-github-alt" style="font-size:2.4rem"></i>
+                mariameraz/traitly
+            <span class="gh-stat">
+                <svg viewBox="0 0 16 16" fill="rgba(255,255,255,.5)">
+                    <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0
+                        1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8
+                        12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75
+                        0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/>
+                </svg>
+                <span id="gh-stars">–</span>
         </span>
         </a>
+
     </div>
 </div>
 
@@ -792,6 +820,23 @@ document.addEventListener('keydown', function(e) {{
 }});
 
 document.body.classList.add('on-home');
+
+fetch('https://api.github.com/repos/mariameraz/traitly')
+    .then(function(r) {{ return r.json(); }})
+    .then(function(d) {{ 
+        var el = document.getElementById('gh-stars');
+        if (el && d.stargazers_count !== undefined) {{
+            el.textContent = d.stargazers_count;
+        }}
+    }})
+    .catch(function() {{}});
+
+function showToast(msg) {{
+    var t = document.getElementById('toast-msg');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function() {{ t.classList.remove('show'); }}, 2000);
+}}
 </script>
 """
 
@@ -1056,9 +1101,17 @@ step_setup = _panel("step_setup", "Setup Image Measurements",
                                 style="font-size: 2rem; padding: .8rem 1.5rem;")
         ),
         ui.div(
-            ui.output_image("step1_preview"),
-            ui.output_ui("step1_results"),),
-            col_widths=[3,9]
+            ui.div(
+                ui.output_ui("step1_preview"),
+                ui.div(
+                    ui.output_ui("step1_results"),
+                    style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);  "
+                          "width:90%; z-index:10;"
+                ),
+                style="position:relative;"
+            ),
+        ),
+        col_widths=[3, 9]
     ),
 )
 
@@ -1343,18 +1396,19 @@ tab_home = ui.nav_panel("Home",
             <h1 class="home-title">
                 Welcome to Traitly <span class="home-title-sub">Interactive Analyzer</span>
             </h1>
-            <h2>
+                
+            <div class="home-body">
                 <p style="margin-bottom:1.2rem">
-                <strong>Traitly</strong> is a Python library designed to <strong>automate fruit image analysis</strong>, 
-                    from a single sample to hundreds of fruits in one run. Using standard RGB images, it extracts 
-                <strong>color, shape, and size traits</strong> from both internal (cross-sections) and external 
-                (surface) fruit images, with no manual measurements required.
+                    <strong>Traitly</strong> is a Python library designed to <strong>automate fruit image analysis</strong>, 
+                        from a single sample to hundreds of fruits in one run. Using standard RGB images, it extracts 
+                    <strong>color, shape, and size traits</strong> from both internal (cross-sections) and external 
+                    (surface) fruit images, with no manual measurements required.
                 </p>
                 <p style="margin-bottom:1.2rem">
-                Traitly is committed to <strong>open and reproducible science</strong>: every analysis automatically 
-                generates a session report with all parameters and versions used, ensuring complete traceability of results.
+                    Traitly is committed to <strong>open and reproducible science</strong>: every analysis automatically 
+                    generates a session report with all parameters and versions used, ensuring complete traceability of results.
                 </p>
-            </h2>
+            </div>
 
             <h4 class="home-h4">
                 <div class="home-body">
@@ -1365,8 +1419,8 @@ tab_home = ui.nav_panel("Home",
                         and expected outputs, visit the full documentation at 
                         <a class="home-link" href="https://traitly.readthedocs.io/" target="_blank">traitly.readthedocs.io</a>
                         <br><br>
-                        ┈➤ Download example images to get started 
-                        <a class="home-link" href="https://github.com/mariameraz/traitly/tree/main/tutorials_data/images" target="_blank"> here</a> ˎˊ˗           
+                        <span style="color: #a70085;"><strong>┈➤ Download example images to get started</strong></span>
+                        <a class="home-link" href="https://github.com/mariameraz/traitly/tree/main/tutorials_data/images" target="_blank"><strong>here</strong></a> ˎˊ˗           
                     </p>
                 </div>
             </h4>
@@ -1502,7 +1556,7 @@ tab_bg = ui.nav_panel("BG Helper",
                 ui.div(),
                 col_widths=[4, 8],
                 ),
-            ui.hr(),
+            ui.HTML("<br>"),
             ui.layout_columns(
                 ui.div(
                     ui.HTML('<div style="font-size:1.7rem;font-weight:600;margin-bottom:.5rem;'
@@ -1571,10 +1625,9 @@ tab_batch = ui.nav_panel("Batch",
                 "If provided, all analysis parameters are loaded from this file. ",
                 ui.HTML("<br>"),
                 ui.span("➤ Don't have one yet? ", style="color:#94a3b8;"),
-                ui.a("Download the base json here", 
-                    href="parameters.json", 
-                    download="parameters.json",
-                    style="color: #2d63bc;text-decoration:underline;cursor:pointer;"),
+               ui.download_button("dl_base_json", "Download the base json here",
+                    style="color: #2d63bc;text-decoration:underline;cursor:pointer;"
+                        "background:none;border:none;padding:0;font-size:1.4rem;"),
                 style="font-size:1.4rem;color:#94a3b8;margin-top:-.4rem;"
             ),
             ui.hr(),
@@ -1625,7 +1678,7 @@ tab_pdf = ui.nav_panel("PDF Extractor",
 # side bar config
 sidebar_ui = ui.sidebar(
     ui.output_ui("sidebar_content"),
-    width="400px",
+    width="400px", ## HF 
     open="always",
 )
 
@@ -1664,6 +1717,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     r_morph_base = reactive.value("morphology")
     r_color_zip = reactive.value(None)
     r_color_base = reactive.value("color")
+    r_axis_b64 = reactive.value("")
     r_img_shape = reactive.value((100, 100))
     r_step1_result = reactive.value(ui.div())
     r_setup_done = reactive.value(0)
@@ -1711,6 +1765,11 @@ def server(input: Inputs, output: Outputs, session: Session):
         if idx not in d: d.append(idx)
         r_completed.set(d)
 
+    @render.download(filename="parameters.json")
+    async def dl_base_json():
+        json_path = os.path.join(os.path.dirname(__file__), "www", "parameters.json")
+        with open(json_path, "rb") as f:
+            yield f.read()
 
     @reactive.effect
     @reactive.event(input.js_main_tab)
@@ -1887,11 +1946,14 @@ def server(input: Inputs, output: Outputs, session: Session):
 
     @reactive.effect
     @reactive.event(input.upload_img)
-    def _load_image(): _do_load_image()
+    def _load_image(): 
+        _do_load_image()
 
     @reactive.effect
     @reactive.event(input.apply_crop)
-    def _on_apply_crop(): _do_load_image()
+    def _on_apply_crop(): 
+        r_axis_b64.set("")
+        _do_load_image()
 
     @reactive.effect
     @reactive.event(input.reset_crop)
@@ -1913,30 +1975,62 @@ def server(input: Inputs, output: Outputs, session: Session):
         r_analyzer.set(az)
         r_completed.set([])
 
-    @render.image
+    @reactive.effect
+    @reactive.event(input.use_crop)
+    def _on_use_crop_toggle():
+        az = r_analyzer.get()
+        if az is None:
+            return
+        if input.use_crop():
+            plt.close("all")
+            fig, ax_plot = plt.subplots(figsize=(12, 9))
+            rgb = cv2.cvtColor(az.img, cv2.COLOR_BGR2RGB)
+            ax_plot.imshow(rgb)
+            ax_plot.set_xlabel("x  (px)", fontsize=11)
+            ax_plot.set_ylabel("y  (px)", fontsize=11)
+            ax_plot.set_title("Reference axes — use these coordinates to set the crop region",
+                              fontsize=12)
+            plt.tight_layout()
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", bbox_inches="tight", dpi=90)
+            buf.seek(0)
+            r_axis_b64.set(base64.b64encode(buf.read()).decode())
+            plt.close("all")
+        else:
+            r_axis_b64.set("")
+
+    @render.ui
     def step1_preview():
         r_setup_done.get()
         if not r_img_ready.get():
-            return None
+            return ui.div()
         az = r_analyzer.get()
-        if az is None or az.img_rgb is None:
-            f = input.upload_img()
-            if not f: return None
-            return {"src": f[0]["datapath"], "alt": "Uploaded", "width": "100%"}
+        if az is None:
+            return ui.div()
         display_img = cv2.cvtColor(az.img_copy, cv2.COLOR_BGR2RGB) if \
-            (hasattr(az, "img_copy") and az.img_copy is not None) else az.img_rgb
-        if input.use_crop():
+            (hasattr(az, "img_copy") and az.img_copy is not None) else \
+            cv2.cvtColor(az.img, cv2.COLOR_BGR2RGB)
+        
+        if input.use_crop():  # ← ejes ON mientras crop esté activo
             fig, ax = plt.subplots(figsize=(9,9))
-            ax.imshow(display_img if display_img.shape[2] == 3 and display_img.dtype == np.uint8 else display_img)
+            ax.imshow(display_img)
             ax.axis("on")
             fig.tight_layout()
-            tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-            fig.savefig(tmp.name, dpi=100)
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", dpi=100)
+            buf.seek(0)
+            b64 = base64.b64encode(buf.read()).decode()
             plt.close(fig)
-            return {"src": tmp.name, "alt": "Preview", "class": "img-zoomable"}
-        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-        cv2.imwrite(tmp.name, cv2.cvtColor(display_img, cv2.COLOR_RGB2BGR))
-        return {"src": tmp.name, "alt": "Preview", "class": "img-zoomable"}
+            return ui.HTML(
+                f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
+                f'style="width:100%;border-radius:8px;margin-top:.5rem">'
+            )
+        
+        b64 = arr_to_b64(cv2.cvtColor(display_img, cv2.COLOR_RGB2BGR))
+        return ui.HTML(
+            f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
+            f'style="width:100%;border-radius:8px;margin-top:.5rem">'
+        )
 
     @reactive.effect
     @reactive.event(input.run_step1)
@@ -2030,6 +2124,9 @@ def server(input: Inputs, output: Outputs, session: Session):
                 r_mask_edited.set(az.mask_fruit.copy())
                 r_mask_history.set([])
                 r_mask_points.set([])
+            buf = io.BytesIO()
+            plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
+            buf.seek(0)
             buf = io.BytesIO()
             plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
             buf.seek(0)
@@ -2249,8 +2346,10 @@ def server(input: Inputs, output: Outputs, session: Session):
 
             function _screenToImg(clientX, clientY, panel) {{
                 var rect = panel.wrap.getBoundingClientRect();
-                var ix = Math.round((clientX - rect.left - _panX) / _zoom / rect.width  * IMG_W);
-                var iy = Math.round((clientY - rect.top  - _panY) / _zoom / rect.height * IMG_H);
+                var scaleX = panel.wrap.offsetWidth  > 0 ? rect.width  / panel.wrap.offsetWidth  : 1;
+                var scaleY = panel.wrap.offsetHeight > 0 ? rect.height / panel.wrap.offsetHeight : 1;
+                var ix = Math.round((clientX - rect.left - _panX) / _zoom / rect.width  * IMG_W * scaleX);
+                var iy = Math.round((clientY - rect.top  - _panY) / _zoom / rect.height * IMG_H * scaleY);
                 return {{x: Math.max(0,Math.min(ix,IMG_W-1)), y: Math.max(0,Math.min(iy,IMG_H-1))}};
             }}
 
@@ -2314,6 +2413,8 @@ def server(input: Inputs, output: Outputs, session: Session):
             if (!btn) return;
             if (btn.id === 'mask_edit_mode_add')    {{ _mode = 'white'; _drawOverlay(); }}
             if (btn.id === 'mask_edit_mode_remove') {{ _mode = 'black'; _drawOverlay(); }}
+            if (btn.id === 'mask_edit_apply')       {{ showToast('✓ Polygon applied'); }}
+            if (btn.id === 'mask_edit_save')        {{ showToast('✓ Mask saved!'); }}
         }});
 
 
@@ -2689,7 +2790,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 label_color=_pc(input.label_color_morph()),
                 pericarp_ext_color=_pc(input.pericarp_ext_color_morph()),
                 pericarp_ext_thickness=input.pericarp_ext_thick_morph(),
-                display_table=True, plot=True,
+                display_table=True, plot=True, plot_size = (20,20)
             )
             if is_int:
                 kw.update(dict(
@@ -2710,8 +2811,11 @@ def server(input: Inputs, output: Outputs, session: Session):
             df = az.analyze_morphology(**kw)
             idx = 5 if is_int else 3
             mark_done(idx)
+            buf = io.BytesIO()
+            plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
+            buf.seek(0)
+            b64 = base64.b64encode(buf.read()).decode()
             plt.close("all")
-            b64 = arr_to_b64(cv2.cvtColor(az.results.annotated_image, cv2.COLOR_BGR2RGB))
             parts = [ui.HTML(
                 f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
                 f'style="width:100%;border-radius:8px;margin-top:.5rem">'
@@ -2987,7 +3091,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         lo = np.array([input.bg_h_lo(), input.bg_s_lo(), input.bg_v_lo()], dtype=np.uint8)
         hi = np.array([input.bg_h_hi(), input.bg_s_hi(), input.bg_v_hi()], dtype=np.uint8)
         mask = cv2.inRange(az.img_hsv, lo, hi)
-        orig = cv2.cvtColor(az.img.copy(), cv2.COLOR_BGR2RGB)
+        orig = az.img.copy()
         fruit_mask = cv2.bitwise_not(mask)
         pct = 100 * mask.sum() / 255 / mask.size
         return ui.div(
@@ -3298,3 +3402,13 @@ app = App(app_ui, server)
 
 
 
+# Run the app with CLI
+def run():
+    import subprocess, os, argparse
+    parser = argparse.ArgumentParser(description="Run Traitly Shiny app")
+    parser.add_argument("--host", default="127.0.0.1", help="Host address")
+    parser.add_argument("--port", default=8000, type=int, help="Port number")
+    args = parser.parse_args()
+    app_path = os.path.join(os.path.dirname(__file__), "app.py")
+    subprocess.run(["shiny", "run", app_path, "--reload",
+                    "--host", args.host, "--port", str(args.port)])
