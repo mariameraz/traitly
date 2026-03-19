@@ -1,4 +1,4 @@
-# Tutorial Corto de Análisis Externo de Imágenes Individuales
+# Análisis de apariencia externa — imagen individual
 
 *Versión de Traitly utilizada en este tutorial: 0.1.0*
 
@@ -18,7 +18,7 @@ Primero, cargamos la clase `FruitExternalAnalyzer` desde traitly y la imagen a a
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 
-path_img = './ext_analysis_sample1.jpg'
+path_img = '~/ext_analysis_sample1.jpg'
 
 pic_test = FruitExternalAnalyzer(path_img)
 
