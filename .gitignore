@@ -16,14 +16,18 @@ __pycache__/
 .traitly_test/*
 
 # Specific files
-src/traitly_app.py
-tutorials/example.ipynb
 src/traitly/Untitled-1.ipynb
-src/traitly_shiny.py
 tests/sample_data/Results/
 Untitled-1.ipynb
 requirements-docs.txt
 mkdocs.yml 
+image.png
+testing_curve_fruit/
+tutorials/
+ml_color_correction/
+
+# Git cache
+.cache/
 
 # Build
 build/
@@ -35,3 +39,4 @@ dist/
 !.pixi/config.toml
 .docs_venv/
 .DS_Store
+.cache/
