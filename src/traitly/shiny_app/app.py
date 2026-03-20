@@ -32,8 +32,8 @@ except ImportError:
 
 _CSS = """
 /* for HF */
-html { font-size: clamp(15px, 0.55vw, 12px); }
-body { font-size: clamp(15px, 0.55vw, 12px); }
+html { font-size: clamp(12px, 0.55vw, 12px); }
+body { font-size: clamp(12px, 0.55vw, 12px); }
 
 /* light theme (default) colors */
 :root {
@@ -1678,7 +1678,7 @@ tab_pdf = ui.nav_panel("PDF Extractor",
 # side bar config
 sidebar_ui = ui.sidebar(
     ui.output_ui("sidebar_content"),
-    width="400px", ## HF 
+    width="300px", ## HF 
     open="always",
 )
 
