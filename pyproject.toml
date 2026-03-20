@@ -59,14 +59,14 @@ classifiers = [
 
 [project.optional-dependencies]
 pdf = ["PyMuPDF"]
-app = ["streamlit"]
 all = [
-  "PyMuPDF", "streamlit",
+  "PyMuPDF", "shiny",
 ]
 dev = ["pytest", "black", "isort", "flake8", "mypy"]
 
 [project.scripts]
 traitly = "traitly.cli:main"
+traitly-app = "traitly.shiny_app.app:run"
 
 [project.urls]
 Repository = "https://github.com/mariameraz/traitly"
