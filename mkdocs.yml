@@ -128,7 +128,9 @@ plugins:
                 - Quickstart: en/tutorials/quickstart.md
                 - External Analysis: en/tutorials/external.md
                 - Background Segmentation: en/tutorials/background_segmentation.md
-                - Individual Analysis: en/tutorials/individual_img_tutorial.md
+                - Locule Segmentation: en/tutorials/segmentate_locules.md
+                - Individual Analysis: en/tutorials/individual_img_tutorial_en.md
+                - Batch Analysis: en/tutorials/batch_tutorial_en.md
 
             - API Reference:
                 - Classes:
@@ -175,6 +177,7 @@ plugins:
                 - Background Segmentation: es/tutorials/background_segmentation.md
                 - Locule Segmentation: es/tutorials/segmentate_locules.md
                 - Individual Analysis: es/tutorials/individual_img_tutorial_es.md
+                - Batch Analysis: es/tutorials/batch_tutorial_es.md
 
             - API Reference:
                 - Classes:
@@ -216,6 +219,7 @@ plugins:
             Background Segmentation: Segmentación del Fondo
             Locule Segmentation: Segmentación de lóculos
             Individual Analysis: Análisis Individual
+            Batch Analysis: Análisis por Lotes
 
   - mkdocstrings:
       handlers:

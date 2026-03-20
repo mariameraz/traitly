@@ -1,6 +1,8 @@
-# External Analysis Individual Image Short Tutorial
+# External Appearance Analysis — Individual Processing
+
 
 *Traitly version used in this tutorial: 0.1.0*
+
 
 In this tutorial, we will demonstrate how to perform external appearance analysis of fruits using `FruitExternalAnalyzer` to extract morphology and color measurements from individual images.
 
@@ -18,7 +20,7 @@ First, we load the `FruitExternalAnalyzer` class from traitly and the image to b
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 
-path_img = './CNJ14-31-15_3-7_B8_.jpg'
+path_img = '~/ext_analysis_sample1.jpg'
 
 pic_test = FruitExternalAnalyzer(path_img)
 
@@ -27,7 +29,7 @@ pic_test.load_image()
 
 
     
-![png](individual_img_tutorial_files/individual_img_tutorial_2_0.png)
+![png](individual_img_tutorial_en_files/individual_img_tutorial_en_1_0.png)
     
 
 
@@ -35,7 +37,6 @@ Run `setup_measurements()` to detect the measurement references in the image (bl
 
 
 ```python
-
 pic_test.setup_measurements()
 ```
 
@@ -49,8 +50,8 @@ pic_test.setup_measurements()
     =======================================================
     > Reference size detected:
       - Processing reference box(es) with a confidence threshold >=0.6:
-                Ref 1: 453x2532 px, conf: 0.948
-                Ref 2: 452x2547 px, conf: 0.942
+                Ref 1: 452x2534 px, conf: 0.951
+                Ref 2: 450x2551 px, conf: 0.943
     
       - Total circles detected: 12
                 Range: [310.2, 314.1] px
@@ -73,18 +74,18 @@ pic_test.generate_fruit_mask(background_color='white')
 pic_test.detect_fruits(
     plot=True, plot_size=(5,5),
     contour_thickness=7,
-)               
+) 
 ```
 
 
     
-![png](individual_img_tutorial_files/individual_img_tutorial_6_0.png)
+![png](individual_img_tutorial_en_files/individual_img_tutorial_en_5_0.png)
     
 
 
 
     
-![png](individual_img_tutorial_files/individual_img_tutorial_6_1.png)
+![png](individual_img_tutorial_en_files/individual_img_tutorial_en_5_1.png)
     
 
 
@@ -120,13 +121,13 @@ pic_test.detect_fruits(
 
 
     
-![png](individual_img_tutorial_files/individual_img_tutorial_8_0.png)
+![png](individual_img_tutorial_en_files/individual_img_tutorial_en_7_0.png)
     
 
 
 
     
-![png](individual_img_tutorial_files/individual_img_tutorial_8_1.png)
+![png](individual_img_tutorial_en_files/individual_img_tutorial_en_7_1.png)
     
 
 
@@ -143,6 +144,7 @@ pic_test.detect_fruits(
 Now that the fruits have been correctly detected and segmented, we can perform the morphological and color analyses.
 
 
+
 ```python
 pic_test.analyze_morphology(display_table=False,
                             plot=True,
@@ -154,7 +156,7 @@ pic_test.analyze_color(display_table=False,
 
 
     
-![png](individual_img_tutorial_files/individual_img_tutorial_10_0.png)
+![png](individual_img_tutorial_en_files/individual_img_tutorial_en_9_0.png)
     
 
 
@@ -165,9 +167,9 @@ When `analyze_morphology()` and `analyze_color()` are run, `save_all()` will sav
 pic_test.results.save_all()
 ```
 
-    Image saved at: ./CNJ14-31-15_3-7_B8__annotated.jpg
-    Morphology CSV saved at: ./CNJ14-31-15_3-7_B8__morphology_results.csv
-    Color CSV saved at: ./CNJ14-31-15_3-7_B8__color_results.csv
+    Image saved at: ~/ext_analysis_ind_img_sample/ext_analysis_sample1_annotated.jpg
+    Morphology CSV saved at: ~/ext_analysis_ind_img_sample/ext_analysis_sample1_morphology_results.csv
+    Color CSV saved at: ~/ext_analysis_ind_img_sample/ext_analysis_sample1_color_results.csv
 
 
 Finally, you can save the parameters and session information from your analysis with `save_parameters()` to ensure reproducibility of your future analyses or to use them in batch processing.
@@ -179,6 +181,6 @@ pic_test.save_parameters()
 
     
     > Parameters saved:
-      - TXT:  ./CNJ14-31-15_3-7_B8__parameters.txt
-      - JSON: ./CNJ14-31-15_3-7_B8__parameters.json
+      - TXT:  ~/ext_analysis_ind_img_sample/ext_analysis_sample1_parameters.txt
+      - JSON: ~/ext_analysis_ind_img_sample/ext_analysis_sample1_parameters.json
 
