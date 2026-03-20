@@ -40,3 +40,4 @@ dist/
 .docs_venv/
 .DS_Store
 .cache/
+.cache/
