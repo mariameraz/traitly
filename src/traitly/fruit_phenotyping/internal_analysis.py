@@ -892,6 +892,7 @@ class FruitInternalAnalyzer:
             }
         if stamp:
             img = 255 - self.img_rgb
+            
         else:
             img = cv2.cvtColor(self.img_rgb, cv2.COLOR_RGB2HSV)
 
