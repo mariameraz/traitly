@@ -3388,7 +3388,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     
     @render.download(
         filename=lambda: (
-            f"{os.path.splitext(input.pdf_file()[0]["name"])[0]}_images.zip"
+            f"{os.path.splitext(input.pdf_file()[0]['name'])[0]}_images.zip"
             if input.pdf_file() and len(input.pdf_file()) == 1
             else "pdf_images.zip"
         )
