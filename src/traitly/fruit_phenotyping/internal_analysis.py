@@ -890,8 +890,10 @@ class FruitInternalAnalyzer:
                 'remove_roi': remove_roi,
                 'erosion_px': erosion_px
             }
-
-        img = cv2.cvtColor(self.img_rgb, cv2.COLOR_RGB2HSV)
+        if stamp:
+            img = 255 - self.img_rgb
+        else:
+            img = cv2.cvtColor(self.img_rgb, cv2.COLOR_RGB2HSV)
 
         # Create base mask
         self.mask_fruit = create_mask(
