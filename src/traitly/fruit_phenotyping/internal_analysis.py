@@ -1435,6 +1435,8 @@ class FruitInternalAnalyzer:
         display_table: Optional[bool] = True,
         is_locule: bool = True,
         alpha: float = None,
+        dilation_factor: Optional[float] = None
+        
     ) -> Optional[pd.DataFrame]:
         """
         Extract morphological metrics from detected fruits.
@@ -1548,6 +1550,7 @@ class FruitInternalAnalyzer:
 
         if alpha is not None:
             self.alpha = alpha
+
         
         # For color results
         self.is_morphology_results = True
@@ -1580,6 +1583,8 @@ class FruitInternalAnalyzer:
 
             # Internal pericarp contour
             alpha = self.alpha,
+            dilation_factor = dilation_factor,
+            img_shape = self.img_shape,
 
             # Plot annotated image
             plot=plot,
@@ -1640,7 +1645,8 @@ class FruitInternalAnalyzer:
                 'centroid_locule_color': centroid_locule_color,
                 'centroid_locule_thickness': centroid_locule_thickness,
                 'is_locule': is_locule,
-                'alpha': self.alpha
+                'alpha': self.alpha,
+                'dilation_factor': dilation_factor
                 }
 
         self.results.morphology_results = pd.DataFrame(self.results.morphology_results)

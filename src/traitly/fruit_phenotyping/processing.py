@@ -246,86 +246,6 @@ def get_fruit_contour(
     return fruit_contour
 
 
-# #################################################################################################
-# # Get internal pericarp contour and area
-# #################################################################################################
-
-
-def get_internal_pericarp_area(
-    locules: List[int],
-    contours: List[np.ndarray],
-    px_per_cm: Optional[float] = None,
-    img: Optional[np.ndarray] = None,
-    draw_inner_pericarp: bool = False,
-    contour_thickness: int = 2,
-    contour_color: Tuple[int, int, int] = (0, 240, 240),
-    alpha: float = 0.0,
-) -> Tuple[float, float]:
-    """
-    Calculate the area of the convex hull enclosing all locules.
-
-    Delegates hull computation to :func:`get_internal_pericarp_contour`
-    and measures its area with ``cv2.contourArea``. Optionally draws the
-    hull onto ``img`` in-place.
-
-    Parameters
-    ----------
-    locules : list of int
-        Indices into ``contours`` for the locule contours.
-    contours : list of np.ndarray
-        Full list of all detected contours in OpenCV format.
-    px_per_cm : float or None, optional
-        Pixel-to-centimetre conversion factor. If ``None`` or invalid,
-        the cm² value is returned as ``NaN``. Default is ``None``.
-    img : np.ndarray or None, optional
-        BGR image modified in-place with the hull contour when
-        ``draw_inner_pericarp=True``. Default is ``None``.
-    draw_inner_pericarp : bool, optional
-        If True, draw the internal pericarp hull onto ``img``.
-        Default is False.
-    contour_thickness : int, optional
-        Line thickness for the hull contour. Default is 2.
-    contour_color : tuple of int, optional
-        BGR color for the hull contour. Default is ``(0, 240, 240)``.
-
-    Returns
-    -------
-    tuple of float
-        ``(area_cm2, area_px2)`` where ``area_cm2`` is ``NaN`` if
-        ``px_per_cm`` is ``None`` or invalid, and both are ``NaN`` if
-        ``locules`` is empty or the hull is degenerate.
-
-    Raises
-    ------
-    ValueError
-        If ``draw_inner_pericarp=True`` and ``img`` is ``None``.
-    """
-    
-    if draw_inner_pericarp and img is None:
-        raise ValueError("img cannot be None when draw_inner_pericarp=True")
-    
-    if not locules:
-        return np.nan, np.nan
-    
-    # Reuse the previous ip contour function
-    hull = get_internal_pericarp_contour(locules, contours, alpha=alpha)
-    
-    if len(hull) == 0:
-        return np.nan, np.nan
-    
-    if draw_inner_pericarp:
-        cv2.drawContours(img, [hull], -1, contour_color, contour_thickness)
-    
-    area_px2 = cv2.contourArea(hull)
-    
-    if px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
-        inv = 1.0 / (px_per_cm * px_per_cm)
-        area_cm2 = area_px2 * inv
-    else:
-        area_cm2 = np.nan
-    
-    return area_cm2, area_px2, hull
-
 ######################################################
 # Calculate pericarp thickness using radial sampling #
 ######################################################
@@ -637,37 +557,111 @@ def get_internal_pericarp_contour(
     locules: List[int],
     contours: List[np.ndarray],
     alpha: float = 0.0,
+    dilation_factor: Optional[float] = None,
+    img_shape: Optional[Tuple] = None,
+    fruit_id: Optional[int] = None,
 ) -> np.ndarray:
-    """
-    Compute the hull enclosing all locule contours.
 
-    Parameters
-    ----------
-    locules : list of int
-        Indices into ``contours`` for the locule contours to enclose.
-    contours : list of np.ndarray
-        Full list of all detected contours in OpenCV format.
-    alpha : float or None, optional
-        Hull concavity parameter. ``0`` returns the convex hull. Values
-        ``> 0`` produce increasingly concave boundaries via Delaunay
-        triangulation. Default is ``0.0``.
-
-    Returns
-    -------
-    np.ndarray
-        Hull contour in OpenCV format ``(N, 1, 2)``, or an empty array
-        if ``locules`` is empty.
-    """
     if not locules:
         return np.array([])
 
     all_points = np.vstack([contours[i] for i in locules])
-    points_2d = all_points.reshape(-1, 2).astype(np.float64)
 
-    if not alpha:
+    if dilation_factor: # option 1, dilated mask 
+        if img_shape is None:
+            raise ValueError("img_shape is required when dilation_factor is provided")
+
+        ref = contours[fruit_id] if fruit_id is not None else all_points
+        x, y, w, h = cv2.boundingRect(ref)
+        pad = 5
+        x1, y1 = max(x - pad, 0), max(y - pad, 0)
+        x2, y2 = min(x + w + pad, img_shape[1]), min(y + h + pad, img_shape[0])
+
+        roi_mask = np.zeros((y2 - y1, x2 - x1), dtype=np.uint8)
+        shifted = [contours[i] - np.array([[[x1, y1]]]) for i in locules]
+        for c in shifted:
+            cv2.drawContours(roi_mask, [c], -1, 255, -1)
+
+        areas = [cv2.contourArea(contours[i]) for i in locules]
+        mean_radius = int(np.sqrt(np.mean(areas) / np.pi) * dilation_factor)
+        mean_radius = max(mean_radius, 3)
+
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (mean_radius * 2 + 1,) * 2)
+        dilated = cv2.dilate(roi_mask, kernel, iterations=2)
+
+        lo, hi = 1, mean_radius * 2
+        snapped = dilated.copy()
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (mid * 2 + 1,) * 2)
+            candidate = cv2.erode(dilated, k, iterations=1)
+            if np.all(candidate[roi_mask > 0]):
+                snapped = candidate
+                lo = mid + 1
+            else:
+                hi = mid - 1
+
+        cnts, _ = cv2.findContours(snapped, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        if not cnts:
+            return cv2.convexHull(all_points)
+
+        best = max(cnts, key=cv2.contourArea)
+        return (best + np.array([[[x1, y1]]], dtype=np.int32)).astype(np.int32)
+
+    elif alpha: # option 2, concave hull
+        points_2d = all_points.reshape(-1, 2).astype(np.float64)
+        return _alpha_shape_contour(points_2d, alpha=alpha, fallback=all_points)
+
+    else: # option 3, convex hull 
         return cv2.convexHull(all_points)
 
-    return _alpha_shape_contour(points_2d, alpha=alpha, fallback=all_points)
+#################################################################################################
+# Get internal pericarp area and draw it
+#################################################################################################
+
+def get_internal_pericarp_area(
+    locules: List[int],
+    contours: List[np.ndarray],
+    px_per_cm: Optional[float] = None,
+    img: Optional[np.ndarray] = None,
+    draw_inner_pericarp: bool = False,
+    contour_thickness: int = 2,
+    contour_color: Tuple[int, int, int] = (0, 240, 240),
+    alpha: float = 0.0,
+    dilation_factor: Optional[float] = None,
+    img_shape: Optional[Tuple] = None,
+    fruit_id: Optional[int] = None
+) -> Tuple[float, float]:
+
+    if draw_inner_pericarp and img is None:
+        raise ValueError("img cannot be None when draw_inner_pericarp=True")
+
+    if not locules:
+        return np.nan, np.nan, np.array([])
+
+    hull = get_internal_pericarp_contour(
+        locules,
+        contours,
+        alpha=alpha,
+        dilation_factor=dilation_factor,
+        img_shape=img_shape,
+        fruit_id=fruit_id
+    )
+
+    if len(hull) == 0:
+        return np.nan, np.nan, np.array([])
+
+    if draw_inner_pericarp:
+        cv2.drawContours(img, [hull], -1, contour_color, contour_thickness)
+
+    area_px2 = cv2.contourArea(hull)
+
+    if px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
+        area_cm2 = area_px2 / (px_per_cm ** 2)
+    else:
+        area_cm2 = np.nan
+
+    return area_cm2, area_px2, hull
 
 
 ###########################################################################################

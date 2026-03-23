@@ -587,7 +587,8 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             'centroid_fruit_color', 
             'centroid_fruit_thickness', 
             'is_locule',
-            'alpha'
+            'alpha',
+            'dilation_factor'
         ),
         'analyze_color_params': (
             'tissue',
