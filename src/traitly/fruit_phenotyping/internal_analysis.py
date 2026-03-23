@@ -1296,9 +1296,16 @@ class FruitInternalAnalyzer:
                 # Fruits
                 cv2.drawContours(img_copy, [self.contours[fruit_id]], -1, contour_color, contour_thickness)
                 # Locules
-                for loc_id in locule_ids:
-                    cv2.drawContours(img_copy, [self.contours[loc_id]], -1, locule_color, locule_thickness)
-                    
+                if locule_ids:
+                    for loc_id in locule_ids:
+                        # Locule contour
+                        cv2.drawContours(img_copy, [self.contours[loc_id]], -1, locule_color, locule_thickness)
+
+                        # Internal pericarp contour (convex hull)
+                        all_locule_points = np.concatenate([self.contours[loc_id] for loc_id in locule_ids])
+                        hull = cv2.convexHull(all_locule_points)
+                        cv2.drawContours(img_copy, [hull], -1, (93,238,255), 2)
+
             base_fontsize = 6
             fontsize = base_fontsize + (plot_size[0] )
             
