@@ -589,17 +589,13 @@ def get_internal_pericarp_contour(
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (mean_radius * 2 + 1,) * 2)
         dilated = cv2.dilate(roi_mask, kernel, iterations=2)
 
-        lo, hi = 1, mean_radius * 2
-        snapped = dilated.copy()
-        while lo <= hi:
-            mid = (lo + hi) // 2
-            k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (mid * 2 + 1,) * 2)
-            candidate = cv2.erode(dilated, k, iterations=1)
-            if np.all(candidate[roi_mask > 0]):
-                snapped = candidate
-                lo = mid + 1
-            else:
-                hi = mid - 1
+        dist = cv2.distanceTransform(dilated, cv2.DIST_L2, 5)
+        thresh = dist[roi_mask > 0].min()
+
+        snapped = (dist >= thresh).astype(np.uint8) * 255
+
+        k_smooth = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        snapped = cv2.morphologyEx(snapped, cv2.MORPH_CLOSE, k_smooth)
 
         cnts, _ = cv2.findContours(snapped, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         if not cnts:
