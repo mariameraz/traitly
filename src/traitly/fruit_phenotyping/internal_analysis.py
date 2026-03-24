@@ -1608,7 +1608,7 @@ class FruitInternalAnalyzer:
             # Contours color and thickness (width)
             pericarp_ext_color = pericarp_ext_color,
             pericarp_ext_thickness = pericarp_ext_thickness,
-            centroid_locules_thickness = centroid_locule_thickness,
+            centroid_locule_thickness = centroid_locule_thickness,
             centroid_fruit_thickness = centroid_fruit_thickness,
             pericarp_int_color = pericarp_int_color,
             pericarp_int_thickness = pericarp_int_thickness,
