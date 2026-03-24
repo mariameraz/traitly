@@ -169,7 +169,6 @@ def analyze_fruits_morphology(
     epsilon: float = 0.002,
     pericarp_int_color: Tuple[int, int, int] = (0, 240, 240),
     pericarp_int_thickness: int = 2,
-    alpha: float = 0.0,
     dilation_factor: Optional[float] = None,
     **kwargs
 ) -> ResultsImage:
@@ -277,7 +276,6 @@ def analyze_fruits_morphology(
                 pericarp_int_color = pericarp_int_color,
                 pericarp_int_thickness = pericarp_int_thickness,
                 is_locule = is_locule,
-                alpha = alpha,
                 dilation_factor = dilation_factor
             )
             
@@ -322,7 +320,6 @@ def _analyze_single_fruit_morphology(
     is_locule: bool = True,
     pericarp_int_color: Tuple[int, int, int] = (0, 240, 240),
     pericarp_int_thickness: int = 2,
-    alpha: float = 0.0,
     dilation_factor: Optional[float] = None,
 ) -> Optional[Dict[str, Any]]:
     """
@@ -429,7 +426,6 @@ def _analyze_single_fruit_morphology(
             unit,
             pericarp_int_color,
             pericarp_int_thickness,
-            alpha,
             dilation_factor = dilation_factor,
             fruit_id = fruit_id
         )
@@ -873,7 +869,6 @@ def _calculate_pericarp_metrics(
     unit: str,
     pericarp_int_color: Tuple[int, int, int] = (0, 240, 240),
     pericarp_int_thickness: int = 2,
-    alpha: float = 0.0,
     dilation_factor: Optional[float] = None,
     fruit_id: Optional[int] = None
 ) -> Dict[str, float]:
@@ -946,7 +941,6 @@ def _calculate_pericarp_metrics(
         draw_inner_pericarp=True, 
         contour_color = pericarp_int_color,
         contour_thickness = pericarp_int_thickness,
-        alpha = alpha,
         img_shape = img_shape,
         dilation_factor = dilation_factor,
         fruit_id = fruit_id

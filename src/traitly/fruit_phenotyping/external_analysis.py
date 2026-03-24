@@ -572,6 +572,13 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         'detect_fruits_params': (
             'min_locule_area',
             'min_locule_per_fruit',
+            'locule_thickness',
+            'locule_color',
+            'pericarp_int_color',
+            'pericarp_int_thickness',
+            'dilation_factor'
+
+
         ),
         'analyze_morphology_params': (
             'angle_shifts',
@@ -587,7 +594,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             'centroid_fruit_color', 
             'centroid_fruit_thickness', 
             'is_locule',
-            'alpha',
             'dilation_factor'
         ),
         'analyze_color_params': (
@@ -596,7 +602,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             'locule_thickness',
             'pericarp_int_color',
             'pericarp_int_thickness',
-            'alpha'
+            'dilation_factor'
         ),
     }
 

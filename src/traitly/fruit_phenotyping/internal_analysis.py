@@ -63,7 +63,7 @@ from .fruit_config import analyze_fruits_morphology
 from ..utils.basic_functions import (load_img,
                                       detect_img_name)
 
-from .processing import annotate_all_fruits
+from .processing import annotate_all_fruits, get_internal_pericarp_contour
 
 from ..utils.calibration import px_cm_density
 from ..utils.label import (detect_qr,
@@ -219,7 +219,7 @@ class FruitInternalAnalyzer:
         # analyze fruits
         self.px_per_cm = None  
         self.results = None
-        self.alpha = None
+        self.dilation_factor = None
         
         # save metadata
         self.parameters = AnalysisParameters() 
@@ -1191,6 +1191,9 @@ class FruitInternalAnalyzer:
         locule_color: Tuple[int, int, int] = (255, 0, 255),
         locule_thickness: int = 2,
         contour_thickness: int = 2,
+        pericarp_int_color: Tuple[int, int, int] = (93, 238, 255),
+        pericarp_int_thickness: int = 2,
+        dilation_factor: Optional[float] = None
     ) -> None:
         """
         Detect individual fruits and their locules from the binary mask.
@@ -1203,7 +1206,6 @@ class FruitInternalAnalyzer:
         ----------
         min_fruit_circularity : float, optional
             Minimum circularity score in [0, 1] to accept a contour as a
-            fruit. Default is 0.5.
         verbose : bool, optional
             If True, print a summary of detected fruits and parameters used.
             Default is True.
@@ -1291,6 +1293,9 @@ class FruitInternalAnalyzer:
             print("=" * 37)
 
         if plot:
+            if dilation_factor is not None:
+                self.dilation_factor = dilation_factor
+
             img_copy = self.img_rgb.copy()
             for fruit_id, locule_ids in self.fruit_locule_map.items():
                 # Fruits
@@ -1301,10 +1306,15 @@ class FruitInternalAnalyzer:
                         # Locule contour
                         cv2.drawContours(img_copy, [self.contours[loc_id]], -1, locule_color, locule_thickness)
 
-                        # Internal pericarp contour (convex hull)
-                        all_locule_points = np.concatenate([self.contours[loc_id] for loc_id in locule_ids])
-                        hull = cv2.convexHull(all_locule_points)
-                        cv2.drawContours(img_copy, [hull], -1, (93,238,255), 2)
+                    internal_contour = get_internal_pericarp_contour(
+                        locules = locule_ids,
+                        contours = self.contours,
+                        fruit_id = fruit_id,
+                        img_shape = self.img_shape,
+                        dilation_factor = dilation_factor)
+
+                    if internal_contour is not None and len(internal_contour) > 0:    
+                        cv2.drawContours(img_copy, [internal_contour], -1, pericarp_int_color, pericarp_int_thickness)
 
             base_fontsize = 6
             fontsize = base_fontsize + (plot_size[0] )
@@ -1328,7 +1338,7 @@ class FruitInternalAnalyzer:
         overlay_legend: bool = False,
         margin: int = 5,
         only_fruit: bool = False, # Needed for FruitExternalAnalysis, keep it False  for FruitInternalAnalysis
-        alpha: Optional[float] = None
+        dilation_factor: Optional[float] = None
     ) -> Dict[str, np.ndarray]:
         """
         Generate and display tissue masks for a single fruit.
@@ -1382,8 +1392,8 @@ class FruitInternalAnalyzer:
         else:
             mask = self.mask_fruit
 
-        if alpha is not None:
-            self.alpha = alpha
+        if dilation_factor is not None:
+            self.dilation_factor = dilation_factor
         
 
         get_single_fruit_masks(img = self.img, 
@@ -1398,7 +1408,7 @@ class FruitInternalAnalyzer:
                                overlay_legend = overlay_legend, 
                                plot = True,
                                only_fruit = only_fruit,
-                               alpha = self.alpha)  
+                               dilation_factor = self.dilation_factor)
         
     ##########################################################################################
     #                                     MORPHOLOGY 
@@ -1434,7 +1444,6 @@ class FruitInternalAnalyzer:
         centroid_locule_thickness: int = 2,
         display_table: Optional[bool] = True,
         is_locule: bool = True,
-        alpha: float = None,
         dilation_factor: Optional[float] = None
         
     ) -> Optional[pd.DataFrame]:
@@ -1548,8 +1557,8 @@ class FruitInternalAnalyzer:
         saved_color_results = getattr(self.results, 'color_results', None)
         saved_color_image   = getattr(self.results, 'color_image', None)
 
-        if alpha is not None:
-            self.alpha = alpha
+        if dilation_factor is not None:
+            self.dilation_factor = dilation_factor
 
         
         # For color results
@@ -1582,8 +1591,7 @@ class FruitInternalAnalyzer:
             num_rays=num_rays,
 
             # Internal pericarp contour
-            alpha = self.alpha,
-            dilation_factor = dilation_factor,
+            dilation_factor = self.dilation_factor,
             img_shape = self.img_shape,
 
             # Plot annotated image
@@ -1645,8 +1653,7 @@ class FruitInternalAnalyzer:
                 'centroid_locule_color': centroid_locule_color,
                 'centroid_locule_thickness': centroid_locule_thickness,
                 'is_locule': is_locule,
-                'alpha': self.alpha,
-                'dilation_factor': dilation_factor
+                'dilation_factor': self.dilation_factor
                 }
 
         self.results.morphology_results = pd.DataFrame(self.results.morphology_results)
@@ -1757,8 +1764,8 @@ class FruitInternalAnalyzer:
         label_color: Tuple[int, int, int] = (255, 255, 255),
         label_opacity: float = 0.7,
         get_color_histogram: bool = False,
-        alpha: Optional[float] = None,
-        dark_thresh: int = 20
+        dark_thresh: int = 20,
+        dilation_factor: Optional[float] = None,
     ) -> Optional[pd.DataFrame]:
         """
         Extract color features from detected fruit tissues.
@@ -1845,8 +1852,8 @@ class FruitInternalAnalyzer:
         if self.label_text is None:
             self.label_text = 'No label detected'
         
-        if alpha is not None:
-            self.alpha = alpha
+        if dilation_factor is not None:
+            self.dilation_factor = dilation_factor
 
         if self.img_copy is None:
             self.img_copy = self.img_rgb.copy()
@@ -1870,7 +1877,7 @@ class FruitInternalAnalyzer:
                 'label_color': label_color,
                 'label_opacity': label_opacity,
                 'get_color_histogram': get_color_histogram,
-                'alpha': self.alpha,
+                'dilation_factor': self.dilation_factor,
                 'dark_thresh': dark_thresh
             }
         
@@ -1891,7 +1898,6 @@ class FruitInternalAnalyzer:
         annotate_all_fruits(annotated_img = self.results.color_image,
                                 contours =  self.contours, 
                                 fruit_locule_map = self.fruit_locule_map, 
-                                img_shape = self.img_shape,
                                 font_scale = font_size,
                                 font_thickness = font_thickness,
                                 pericarp_ext_color = pericarp_ext_color,
@@ -1905,7 +1911,7 @@ class FruitInternalAnalyzer:
                                 text_color = font_color, 
                                 label_background_color = label_color,
                                 label_opacity = label_opacity,
-                                alpha=self.alpha
+                                dilation_factor=self.dilation_factor
                                 )
             
 
@@ -1947,7 +1953,7 @@ class FruitInternalAnalyzer:
                                     tissue = tissue,
                                     renumber = True,
                                     color_space = color_space,
-                                    alpha = self.alpha,
+                                    dilation_factor = self.dilation_factor,
                                     dark_threshold = dark_thresh)
             
 
@@ -2378,7 +2384,7 @@ class FruitInternalAnalyzer:
         locule_thickness: Optional[int] = None,
         centroid_locule_color: Optional[Tuple[int,int,int]] = None,
         centroid_locule_thickness: Optional[int] = None,
-        alpha: Optional[int] = None,
+        dilation_factor: Optional[float] = None, 
         
         # analyze_color
         stat: Optional[str] = None,
@@ -2633,13 +2639,13 @@ class FruitInternalAnalyzer:
             locule_color=locule_color, locule_thickness=locule_thickness,
             centroid_locule_color=centroid_locule_color,
             centroid_locule_thickness=centroid_locule_thickness,
-            alpha=alpha
+            dilation_factor = dilation_factor
         ))
         _apply('analyze_color_params', dict(
             stat=stat, tissue=tissue, color_space=color_space,
             label_opacity=label_opacity,
             get_color_histogram=get_color_histogram,
-            alpha=alpha,
+            dilation_factor = dilation_factor,
             pericarp_int_color=pericarp_int_color,
             pericarp_int_thickness=pericarp_int_thickness
         ))
