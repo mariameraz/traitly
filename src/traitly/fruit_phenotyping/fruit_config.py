@@ -762,7 +762,9 @@ def _process_locules(
     for loc_data in filtered_data:
         cx, cy = loc_data['centroid']
         cv2.circle(annotated_img, (int(cx), int(cy)), 
-                  config.centroid_locule_thickness, config.centroid_locule_color, -1)
+                radius=5,
+                color=config.centroid_locule_color, 
+                thickness=config.centroid_locule_thickness)
     
     # Calculate statistics in correct unit
     stats = _calculate_locule_statistics(filtered_data, px_per_cm, unit)
