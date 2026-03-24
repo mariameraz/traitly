@@ -367,7 +367,7 @@ def analyze_all_fruits_color(img: np.ndarray,
                             tissue: str = 'all',
                             renumber: bool = True,
                             color_space: str = 'all',
-                            alpha: float = 0.0,
+                            dilation_factor: Optional[float] = None,
                             dark_threshold: int = 15
                     ) -> Dict[int, Dict[str, Dict[str, float]]]:
     """
@@ -509,7 +509,11 @@ def analyze_all_fruits_color(img: np.ndarray,
             results[fruit_id] = fruit_results
             continue
 
-        internal_flesh_contour = get_internal_pericarp_contour(locule_indices, contours, alpha)
+        internal_flesh_contour = get_internal_pericarp_contour(locule_indices, 
+                                                               contours, 
+                                                               dilation_factor = dilation_factor,
+                                                               img_shape = img.shape[:2],
+                                                               fruit_id = original_fruit_id)
 
         if internal_flesh_contour is None or len(internal_flesh_contour) == 0:
             for t in ('outer_pericarp', 'internal_pericarp'):
@@ -564,7 +568,7 @@ def get_single_fruit_masks(img: np.ndarray,
                             margin: int = 5,
                             overlay_legend: bool = True,
                             only_fruit: bool = False,
-                            alpha: float = 0.0
+                            dilation_factor: Optional[float] = None,
                         ) -> Dict[str, np.ndarray]:
     """
     Generate tissue masks for a single fruit cropped to its bounding box.
@@ -681,7 +685,12 @@ def get_single_fruit_masks(img: np.ndarray,
         masks["locules"] = np.zeros((crop_h, crop_w), dtype=np.uint8)
 
     else:
-        inner_contour = get_internal_pericarp_contour(locule_indices, contours, alpha)
+        inner_contour = get_internal_pericarp_contour(locule_indices, 
+                                                      contours, 
+                                                      fruit_id = original_fruit_id,
+                                                      img_shape = img.shape[:2],
+                                                      dilation_factor = dilation_factor
+                                                      )
 
         if inner_contour is None or len(inner_contour) == 0:
             masks["outer_pericarp"] = total_pericarp.copy()
