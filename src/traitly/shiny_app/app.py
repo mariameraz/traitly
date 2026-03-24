@@ -32,6 +32,9 @@ except ImportError:
 
 _CSS = """
 /* for HF */
+/* html { font-size: clamp(7px, 0.55vw, 12px); } */
+/* body { font-size: clamp(7px, 0.55vw, 12px); } */ 
+
 html { font-size: clamp(12px, 0.55vw, 12px); }
 body { font-size: clamp(12px, 0.55vw, 12px); }
 
@@ -200,8 +203,12 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
 /* push content below header */
 .bslib-page-main, main {
     margin-top: 155px !important;
-    margin-left: 90px !important;
+    margin-left: 20px !important;
     padding-top: .5rem;
+}
+
+.bslib-sidebar-layout > .main {
+    padding-left: 0.5rem !important;
 }
 
 /* sidebar */
@@ -598,6 +605,7 @@ body.dark-theme .tab-content input[type="file"]::file-selector-button {
     color: var(--body-text) !important;
     border-color: #64748b !important;
 
+
 /* hr lines in dark */
 body.dark-theme hr {
     border-color: rgba(105,141,151, 0.8) !important;
@@ -615,7 +623,6 @@ body.dark-theme .tooltip-wrap > span {
     background: #3d3d5c !important;
     color: #cbd5e1 !important;
 }
-
 
 
 /* slider track + filled portion */
@@ -1106,7 +1113,7 @@ step_setup = _panel("step_setup", "Setup Image Measurements",
                 ui.div(
                     ui.output_ui("step1_results"),
                     style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);  "
-                          "width:90%; z-index:10;"
+                        "width:90%; z-index:10;"
                 ),
                 style="position:relative;"
             ),
@@ -1292,6 +1299,7 @@ step_detect = _panel("step_detect", "Detect Fruits",
                     </summary>
                 <div style="padding:.6rem 0 0 .4rem">
             '''),
+            ui.output_ui("detect_dilation_ui"),
             ui.input_numeric("rescale_factor_det", "Rescale factor", 0, min=0, step=0.1),
             ui.p("Set to 0 for no upper limit.", style="font-size:1.4rem;color:#94a3b8;margin-top:-.5rem;"),
             ui.hr(),
@@ -1526,7 +1534,7 @@ tab_bg = ui.nav_panel("BG Helper",
         ui.div(
             ui.HTML('<p class="panel-title">Background Color Helper</p>'),
             ui.p("⋆˙⟡ Upload an image to inspect its HSV pixel distribution, then tune thresholds to isolate the background.",
-                style="font-size: 2.5rem; margin-bottom: 1rem"),
+                style="font-size: 2rem; margin-bottom: 1rem"),
             ui.HTML("<br>"),
             ui.hr(),
             ui.layout_columns(
@@ -1678,7 +1686,8 @@ tab_pdf = ui.nav_panel("PDF Extractor",
 # side bar config
 sidebar_ui = ui.sidebar(
     ui.output_ui("sidebar_content"),
-    width="300px", ## HF 
+    #width="220px", ## HF 
+    width = "300px",
     open="always",
 )
 
@@ -2154,7 +2163,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             style="padding:.4rem 0 .2rem 0",
         )
     
-
+    
     def _render_editor_panels():
         az     = r_analyzer.get()
         edited = r_mask_edited.get()
@@ -2672,7 +2681,15 @@ def server(input: Inputs, output: Outputs, session: Session):
             return ui.div(
                 ui.input_slider("locule_thickness_det", "Locule contour thickness", 1, 10, 2),
                 ui.input_text("locule_color_det", "Locule contour color (R,G,B)", "255,0,255"),
+                ui.input_slider("pericarp_int_thickness_det", "Int. pericarp contour thickness", 1, 10, 2),
+                ui.input_text("pericarp_int_color_det", "Int. pericarp contour color (R,G,B)", "0,255,255"),
             )
+        return ui.div()
+    
+    @render.ui
+    def detect_dilation_ui():
+        if r_mode.get() == "internal":
+            return ui.input_numeric("dilation_factor", "Dilation factor", 0, min=0, step=0.1)
         return ui.div()
 
     @render.ui
@@ -2688,7 +2705,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             </summary>
             <div style="padding:.6rem 0 0 .4rem">
             '''),
-            ui.input_numeric("alpha_morph", "Alpha (Int. pericarp concave hull)", 0, min=0, step=0.05),
+            ui.input_numeric("dilation_morph", "Dilation factor (int. pericarp)", 0, min=0, step=0.05),
             ui.input_numeric("angle_shifts_morph", "Angle shifts (symmetry)", 500, min=0, step=50),
             ui.input_numeric("num_rays_morph", "Num rays (pericarp thickness)", 90, min=0, step=10),
             ui.HTML('</div></details>'),
@@ -2729,10 +2746,13 @@ def server(input: Inputs, output: Outputs, session: Session):
                 verbose=False, plot=True, plot_size=(20,20)
             )
             if is_int:
-                kw["min_locule_area"]      = input.min_locule_area()
+                kw["min_locule_area"]= input.min_locule_area()
                 kw["min_locule_per_fruit"] = input.min_locule_per_fruit()
-                kw["locule_thickness"]     = input.locule_thickness_det()
-                kw["locule_color"]         = _parse_color(input.locule_color_det())
+                kw["locule_thickness"] = input.locule_thickness_det()
+                kw["locule_color"] = _parse_color(input.locule_color_det())
+                kw["dilation_factor"] = input.dilation_factor() or None
+                kw["pericarp_int_color"] = _parse_color(input.pericarp_int_color_det())
+                kw["pericarp_int_thickness"] = input.pericarp_int_thickness_det()
             az.detect_fruits(**kw)
             idx = 4 if is_int else 2
             mark_done(idx)
@@ -2780,7 +2800,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             def _pc(s):
                 return tuple(int(x.strip()) for x in s.split(","))
             epsilon   = input.epsilon_morph() if input.contour_mode() == "approx" else 0.001
-            alpha_val = (input.alpha_morph() if input.alpha_morph() > 0 else None) if is_int else None
+            dilation_val = (input.dilation_morph() if input.dilation_morph() > 0 else None) if is_int else None
             max_loc   = (input.max_locule_area_morph() or None) if is_int else None
             kw = dict(
                 contour_mode=input.contour_mode(), epsilon=epsilon,
@@ -2794,7 +2814,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             )
             if is_int:
                 kw.update(dict(
-                    alpha=alpha_val,
+                    dilation_factor=dilation_val,
                     angle_shifts=input.angle_shifts_morph(),
                     num_rays=input.num_rays_morph(),
                     min_locule_area=input.min_locule_area_morph(),
@@ -2880,7 +2900,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     def color_int_styling_ui():
         if r_mode.get() == "internal":
             return ui.div(
-                ui.input_text("pericarp_int_color_color", "Int. pericarp color (R,G,B)", "255,255,0"),
+                ui.input_text("pericarp_int_color_color", "Int. pericarp color (R,G,B)", "0,255,255"),
                 ui.input_numeric("pericarp_int_thick_color","Int. pericarp thickness", 2, min=1, step=1),
                 ui.input_text("locule_color_color", "Locule color (R,G,B)", "255,0,255"),
                 ui.input_numeric("locule_thick_color", "Locule thickness", 2, min=1, step=1),
