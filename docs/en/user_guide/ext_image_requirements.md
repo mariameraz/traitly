@@ -6,19 +6,19 @@ Analysis quality depends directly on image quality. Traitly is designed to be ro
 
 ---
 
-## Image Acquisition
+## 1. Image Acquisition
 
-### Recommended Equipment
+### 1.1 Recommended Equipment
 
 For external fruit analysis, images can be captured with either a smartphone or a professional camera. Regardless of the device used, consistency is key. Use the **same device** for all images in an experiment, as color adjustments, white balance, and internal processing vary between manufacturers and models, and these differences can introduce bias in color measurements. 
 
 
-### Sample Preparation
+### 1.2 Sample Preparation
 
 - **Camera position**: Mount or secure the camera so it is **parallel** and **perpendicular** to the fruits, with no tilt or angle. Shooting at an angle introduces geometric distortion that can affect morphological measurements. We also recommend keeping the camera **fixed on a stand** throughout the experiment to ensure the same distance between the lens and the background in every image.
 - **Non-fruit objects**: Keep images as clean as possible (e.g., stems, leaves, loose seeds, or debris should be minimized). Although these can be filtered out in later analysis steps, they increase processing time since runtime scales with the number of contours detected per image.
 
-### Lighting
+### 1.3 Lighting
 
 Lighting is one of the most critical factors for reproducible color measurements. We strongly recommend using a **controlled, stable light source** (e.g., LED panels).
 
@@ -29,7 +29,7 @@ Use **diffusers** between the light source and the fruits whenever possible. Dir
 
     Regardless of the configuration you choose, it is essential to capture **all images in an experiment under the same conditions**: same device, same light source, same distance, and same software settings. Any variation between sessions can introduce inconsistencies in color and morphology measurements.
 
-### Background Setup
+### 1.4 Background Setup
 
 Background choice is especially important in external analysis, as it determines both segmentation quality and the absence of color artifacts at fruit edges.
 
@@ -46,12 +46,12 @@ Background choice is especially important in external analysis, as it determines
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">
   <figure style="text-align: center; margin: 0;">
-    <img src="../assets/images/cranberry_background_example.jpg" alt="Background examples for cranberry"
+    <img src="../../assets/images/cranberry_background_example.jpg" alt="Background examples for cranberry"
          style="height: 400px; width: auto;">
     <figcaption><em>Cranberry on different backgrounds. With light-colored fruits, a white background reduces contrast and makes segmentation harder.</em></figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
-    <img src="../assets/images/blackberry_background_example.jpg" alt="Background examples for blackberry"
+    <img src="../../assets/images/blackberry_background_example.jpg" alt="Background examples for blackberry"
          style="height: 400px; width: auto;">
     <figcaption><em>Blackberry on different backgrounds. With dark fruits, a black background does not provide enough contrast for reliable segmentation.</em></figcaption>
   </figure>
@@ -61,7 +61,7 @@ Background choice is especially important in external analysis, as it determines
 
 Traitly supports the predefined backgrounds `'black'`, `'white'`, `'blue'`, and `'gray'`, or allows defining custom HSV ranges for any other color.
 
-### Format and Resolution
+### 1.5 Format and Resolution
 
 **Supported formats:**
 
@@ -79,11 +79,11 @@ Traitly supports the predefined backgrounds `'black'`, `'white'`, `'blue'`, and 
 
 ---
 
-## Size References
+## 2. Size References
 
 Traitly offers two ways to convert pixels to real metric units in external analysis.
 
-### Calibration Methods
+### 2.1 Calibration Methods
 
 | Method | When to use | Reproducibility |
 |--------|-------------|----------------|
@@ -95,27 +95,26 @@ Traitly offers two ways to convert pixels to real metric units in external analy
 
     When using the template, verify the actual diameter of the printed circles with a ruler. Printers can scale documents during printing, so the final size may differ from the file. Always use the measured value, not the one in the file.
 
-    [:octicons-download-24: Download circular reference template](../assets/templates/size_reference_template.pdf)
+    [:octicons-download-24: Download circular reference template](../../assets/templates/size_reference_template.pdf)
 
-### Why use a circular reference?
+### 2.2 Why use a circular reference?
 
 Camera resolution can vary depending on capture distance and the lens used. The circular reference:
 
 - Provides per-image independent calibration
 - Is more accurate than assuming a fixed resolution
 - By deriving the scale from the average diameter of multiple detected circles, the method buffers the effect of small geometric distortions in the optical system
-- Allows direct comparison of results across different experiments, datasets, or devices, since all measurements are calibrated against a common standard
 - By deriving the scale from the reference rather than the image dimensions, it allows batch processing of images of different sizes, since the pixel/cm conversion is invariant to image size or cropping
 
 ---
 
-## Sample Identification
+## 3. Sample Identification
 
 Traitly can automatically extract sample information by reading QR codes or recognizing text (OCR), storing the information in the results tables. We recommend using **QR codes** whenever possible, as they are faster to detect, more tolerant of poor image quality, and do not depend on font type the way OCR does.
 
 To generate QR codes, any available tool will work. If you need to create multiple labels from a text file (`.txt`, `.csv` or `.tsv`), we recommend **[QRLabel](https://github.com/mariameraz/qrlabel)**, the tool we used to generate the labels in the example image.
 
-### Label Detection
+### 3.1 Label Detection
 
 Detection follows this order:
 
@@ -148,7 +147,7 @@ Avoid:  TOM-00I      CHlLE-02       MANZ-I23   <- ambiguous I/l/1
 
 ---
 
-## Best Practices Summary
+## 4. Best Practices Summary
 
 :octicons-check-circle-fill-24:{ .icon-green } **Do:**
 

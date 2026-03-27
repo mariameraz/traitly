@@ -2,7 +2,7 @@
 
 # Arquitectura de Traitly ⊹ ࣪ ˖
 
-Traitly está construido sobre una estructura de clases que separa claramente dos tipos de análisis fenotípicos: el análisis interno y el análisis externo de frutos. Esta organización te permite elegir el nivel de detalle que necesitas sin cargar con funcionalidades que no vas a utilizar.
+Traitly está construido sobre una estructura de clases de Python que separa claramente dos tipos de análisis fenotípicos: el análisis interno y el análisis externo de frutos. Esta organización te permite elegir el nivel de detalle que necesitas sin cargar con funcionalidades que no vas a utilizar.
 
 El módulo principal `traitly.fruit_phenotyping` contiene dos clases principales:
 
@@ -33,13 +33,15 @@ Ambas clases comparten la misma lógica de pipeline – procesamiento de imagen,
 
 ## ¿Cómo usar Traitly?
 
-Traitly puede usarse de dos formas, según el contexto de trabajo:
+Traitly puede usarse en tres distintos ambientes:
 
-**Desde Python**: recomendado para explorar parámetros sobre imágenes individuales antes de procesar un lote completo y para analizar múltiples imágenes usando `analyze_folder()` con un archivo `.json` de parámetros.
+**Desde Python (Jupyter Notebook o script)**: recomendado para explorar y ajustar parámetros de forma interactiva sobre imágenes individuales, y para el procesamiento eficiente de grandes lotes de imágenes.
 
 **Desde la terminal (CLI)**: para ejecutar el análisis directamente desde la terminal sin necesidad de un script de Python, especialmente útil en servidores o entornos de cómputo sin interfaz gráfica. Consulta la sección [CLI](cli.md) para más detalles.
 
+**Desde la aplicación Shiny**: para análisis interactivo sin necesidad de escribir código. Disponible localmente ejecutando `traitly-app` en la terminal (consulta la sección de [Instalación](../installation.md#dependencias-opcionales) para instalar las dependencias necesarias), o en línea a través del [demo interactivo](https://huggingface.co/spaces/mariameraz/traitly).
+
 !!! info ""
-    En las siguientes secciones encontrarás la documentación detallada de cada clase, incluyendo los rasgos específicos que extraen, ejemplos de uso, parámetros configurables y los requisitos de las imágenes para cada tipo de análisis.
+    Las siguientes secciones contienen la documentación detallada de cada entorno de uso, incluyendo ejemplos, parámetros configurables y rasgos extraídos. Consulta también las especificaciones de imágenes para [análisis interno](int_image_requirements.md) y [análisis externo](ext_image_requirements.md) para garantizar los mejores resultados.
 
 </div>

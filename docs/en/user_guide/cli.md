@@ -1,4 +1,3 @@
-[```markdown
 <div class="animate" markdown>
 
 # CLI: Command-Line Interface
@@ -112,4 +111,20 @@ The CLI generates the same files as `analyze_folder()` from Python:
 
 All files are saved to the directory specified with `-o`, or to a `Results/` subfolder inside the input folder if not specified.
 
+---
+
+## Shiny App
+
+To launch the Traitly interactive app from the terminal, run:
+```bash
+traitly-app
+```
+
+Optionally, you can specify the host and port:
+```bash
+traitly-app --host 127.0.0.1 --port 8000
+```
+!!! warning ""
+    Requires the app dependencies to be installed. See the [Installation](../installation.md#optional-dependencies) section for details.
+    
 </div>

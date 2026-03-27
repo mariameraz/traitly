@@ -111,4 +111,21 @@ El CLI genera los mismos archivos que `analyze_folder()` desde Python:
 
 Todos los archivos se guardan en el directorio indicado por `-o`, o en una subcarpeta `Results/` dentro de la carpeta de entrada si no se especifica.
 
+
+---
+
+## Shiny App
+
+Para iniciar la aplicación interactiva de Traitly desde la terminal, ejecuta:
+
+```bash
+traitly-app
+```
+Opcionalmente, puedes especificar el host y el puerto:
+```bash
+traitly-app --host 127.0.0.1 --port 8000
+```
+!!! warning ""
+    Requiere tener instaladas las dependencias de la app. Consulta la sección de [Instalación](../installation.md#dependencias-opcionales) para mas detalles.
+    
 </div>

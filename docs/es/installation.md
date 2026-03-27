@@ -29,7 +29,8 @@ Para los propósitos de este tutorial, crearemos un **entorno virtual de Python 
 !!! note "Nota"
     En **Windows**, al ejecutar el instalador de Python, asegúrate de marcar la opción **"Add Python to PATH"** para evitar problemas en los pasos siguientes.
 
-Opcionalmente, si prefieres no instalar nada en tu equipo o no cuentas con los requisitos necesarios, también puedes usar Traitly de manera remota en [Google Colab](https://colab.research.google.com/) (requiere cuenta de Google). La cuenta gratuita generalmente incluye ~12 GB de RAM y ~100 GB de espacio local en el disco. En ese caso, puedes saltar directamente a la pestaña **Google colab** en la sección de [instalación](#instalacion).
+Opcionalmente, si prefieres no instalar nada en tu equipo o no cuentas con los requisitos necesarios, también puedes usar Traitly de manera remota en [Google Colab](https://colab.research.google.com/) (requiere 
+cuenta de Google). La cuenta gratuita generalmente incluye ~12 GB de RAM y ~100 GB de espacio local en el disco. En ese caso, puedes saltar directamente a la pestaña **Google Colab** en la sección de [instalación](#instalacion).
 
 ---
 
@@ -141,24 +142,16 @@ mi-proyecto/
 
 Por defecto, Traitly instalará únicamente el **paquete base**. Dependiendo de tu caso de uso, puede que necesites instalar dependencias adicionales:
 
-| Extra | Uso | Comando |
-|-------|-----|---------|
-| `app` | Ejecutar la aplicación de Streamlit | `pip install "git+...traitly.git[app]"` |
-| `pdf` | Convertir archivos PDF a imágenes | `pip install "git+...traitly.git[pdf]"` |
-| `all` | Instalar todas las dependencias opcionales | `pip install "git+...traitly.git[all]"` |
+| Extra | Incluye                             | Comando                           |
+|-------|-------------------------------------|-----------------------------------|
+| `pdf` | Convertir archivos PDF a imágenes   | `pip install "git+https://github.com/mariameraz/traitly.git[pdf]"` |
+| `all` | Convertir PDF + Shiny app           | `pip install "git+https://github.com/mariameraz/traitly.git[all]"` |
 
-Por ejemplo, si quieres usar la aplicación de Streamlit:
-```bash
-pip install "git+https://github.com/mariameraz/traitly.git[app]"
-```
-
-Si quieres instalar todo de una vez:
-```bash
-pip install "git+https://github.com/mariameraz/traitly.git[all]"
-```
-
+!!! tip "¿No sabes cuál elegir?"
+    Si tienes dudas, te recomendamos instalar todas las dependencias con `all`, con las cuales puedes hacer uso de todas las funcionalidades de Traitly.
+    
 !!! warning "Importante"
-    Las comillas alrededor de la URL son necesarias en MacOS y Linux para evitar que la terminal interprete incorrectamente los caracteres `[` y `]`. En Windows son opcionales, pero se recomiendan por consistencia.
+    Las comillas alrededor de la URL de Git son necesarias en MacOS y Linux para evitar que la terminal interprete incorrectamente los caracteres `[` y `]`. En Windows son opcionales, pero se recomiendan por consistencia.
 
 ---
 

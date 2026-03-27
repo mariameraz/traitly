@@ -12,8 +12,8 @@ hide:
 
 Traitly apuesta por la **ciencia abierta y reproducible**: cada análisis genera automáticamente un reporte de sesión con todos los parámetros y versiones utilizadas, garantizando trazabilidad completa de los resultados. 
 
-!!! info ""
-    Puedes encontrar nuestra documentación tanto en **inglés** como en **español** :fontawesome-regular-face-smile-beam:
+!!! tip ""
+    Puedes encontrar nuestra documentación tanto en **inglés** como en **español** :fontawesome-regular-face-smile-beam:. Cambia entre lenguajes mediante el ícono que se encuentra a un lado de la barra de búsqueda :fontawesome-regular-hand-point-up:.
 
 ---
 
@@ -38,7 +38,7 @@ Traitly apuesta por la **ciencia abierta y reproducible**: cada análisis genera
 
     [:octicons-arrow-right-24: Ver tutorial](tutorials/quickstart.md)
 
--   :fontawesome-brands-readme: __**Tutoriales**__
+-   :fontawesome-solid-code: __**Tutoriales**__
 
     ---
 
@@ -46,13 +46,21 @@ Traitly apuesta por la **ciencia abierta y reproducible**: cada análisis genera
 
     [:octicons-arrow-right-24: Explorar guías](tutorials/overview.md)
 
+-   :material-sitemap: __**Arquitectura de Traitly**__
+
+    ---
+
+    Estructura de clases, flujo del análisis y entornos de uso disponibles.
+
+    [:octicons-arrow-right-24: Consultar referencia](user_guide/overview.md)
+
 -   :material-table-heart: __**Tabla de Rasgos**__
 
     ---
 
     Descripción detallada de todos los rasgos extraídos.
 
-    [:octicons-arrow-right-24: Consultar referencia](workflow/results/measurements.md)
+    [:octicons-arrow-right-24: Consultar referencia](user_guide/results/measurements.md)
 
 </div>
 
@@ -126,8 +134,15 @@ Este diseño prioriza la **robustez, interpretabilidad y reproducibilidad**, y p
 | -------------------------- | --------------- |
 | Jupyter Notebook           | :fontawesome-solid-square-check: Disponible    |
 | Línea de comandos (CLI)    | :fontawesome-solid-square-check: Disponible    |
-| Aplicación web (Streamlit) | :fontawesome-solid-hammer: Próximamente |
+| Aplicación web (Shiny)     | :fontawesome-solid-square-check: Disponible |
 
+!!! info ""
+    Traitly también está disponible en línea a través de su 
+    [demo interactivo](https://huggingface.co/spaces/mariameraz/traitly), 
+    sin necesidad de instalación local.
+   
+    :fontawesome-regular-hand-point-right: Consulta la [Guía de Uso](../user_guide/overview.md#como-usar-traitly) para encontrar el entorno más adecuado según tu caso.
+    
 ---
 
 ## Proyecto en crecimiento y colaboraciones
