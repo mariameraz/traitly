@@ -45,12 +45,12 @@ Results/
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">
   <figure style="text-align: center; margin: 0;">
-    <img src="../../assets/images/ext_annotation.png" alt="External analysis annotated image"
+    <img src="../../../assets/images/ext_annotation.png" alt="External analysis annotated image"
          style="height: 300px; width: auto;">
     <figcaption><em>External analysis — fruit contour, axes, bounding box, and fruit ID label.</em></figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
-    <img src="../../assets/images/int_annotation.png" alt="Internal analysis annotated image"
+    <img src="../../../assets/images/int_annotation.png" alt="Internal analysis annotated image"
          style="height: 300px; width: auto;">
     <figcaption><em>Internal analysis — fruit and locule contours, internal cavity boundary, axes, bounding box, centroids, and fruit ID with locule count label.</em></figcaption>
   </figure>
@@ -83,7 +83,7 @@ The annotations vary depending on the analyzer and the steps run:
 If a circular size reference is included in the image, the annotation also shows the detection result: a light blue bounding box around the detected reference strip labeled with its YOLO confidence score, each circle outlined in red, and its measured diameter in pixels marked with a blue line. This makes it easy to verify that the reference was detected correctly before trusting the calibrated measurements.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../assets/images/size_reference.png" alt="Size reference box and circles detected"
+  <img src="../../../assets/images/size_reference.png" alt="Size reference box and circles detected"
        style="height: 400px; width: auto;">
   <figcaption><em>Size reference box and circles detected</em></figcaption>
 </figure>
@@ -92,7 +92,7 @@ If a circular size reference is included in the image, the annotation also shows
 If a Macbeth color checker card is detected, the annotation draws a green rectangle over each color patch, marking the exact area used for color extraction from that patch.
 
 <figure style="text-align: center; margin: 0 auto;">
-  <img src="../../assets/images/color_card.png" alt="Color checker card and its color patches detected"
+  <img src="../../../assets/images/color_card.png" alt="Color checker card and its color patches detected"
        style="height: 300px; width: auto;">
   <figcaption><em>Color checker card and its color patches detected</em></figcaption>
 </figure>
@@ -134,4 +134,3 @@ traitly --fruit_external -i images/ --json parameters.json
 ```
 
 </div>
-

@@ -6,13 +6,13 @@ Analysis quality depends directly on image quality. Traitly is designed to be ro
 
 ---
 
-## Image Acquisition
+## 1. Image Acquisition
 
-### Recommended Equipment
+### 1.1 Recommended Equipment
 
 For consistent results, we recommend using a conventional **flatbed scanner**. This approach gives you control over lighting conditions and keeps the capture distance consistent across samples.
 
-### Sample Preparation
+### 1.2 Sample Preparation
 
 - **Fruit cutting**: Use a sharp knife or blade to obtain clean cross-sections.
 - **Blade maintenance**: Replace or sharpen the blade regularly — a dull blade affects cut quality and can introduce morphological measurement bias.
@@ -20,7 +20,7 @@ For consistent results, we recommend using a conventional **flatbed scanner**. T
 - **Juicy fruits**: For fruits with high juice content, gently blot excess juice with a cloth before placing them on the scanner. You can also wipe the scanner surface with alcohol between scans to remove residue that could be detected as fruit contours.
 - **Non-fruit objects**: Keep images as clean as possible — stems, leaves, loose seeds, or debris should be minimized. Although these can be filtered out in later analysis steps, they increase processing time since runtime scales with the number of contours detected per image.
 
-### Background Setup
+### 1.3 Background Setup
 
 Traitly assumes a **black background** by default. To achieve this:
 
@@ -37,12 +37,12 @@ Traitly assumes a **black background** by default. To achieve this:
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">
   <figure style="text-align: center; margin: 0;">
-    <img src="../assets/images/scanner_box.jpg" alt="Black box and scanner setup"
+    <img src="../../assets/images/scanner_box.jpg" alt="Black box and scanner setup"
          style="height: 600px; width: auto;">
     <figcaption><em>Example of a black box and scanner setup</em></figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
-    <img src="../assets/images/slices_image.jpg" alt="Example of a scanned image"
+    <img src="../../assets/images/slices_image.jpg" alt="Example of a scanned image"
          style="height: 600px; width: auto;">
     <figcaption><em>Example of a scanned image</em></figcaption>
   </figure>
@@ -50,7 +50,7 @@ Traitly assumes a **black background** by default. To achieve this:
 
 
 
-### Format and Resolution
+### 1.4 Format and Resolution
 
 **Supported formats:**
 
@@ -72,11 +72,11 @@ When scanning, it is more practical to configure the scanner to save all capture
 
 ---
 
-## Size References
+## 2. Size References
 
 Traitly offers multiple ways to convert pixels to real metric units.
 
-### Calibration Methods
+### 2.1 Calibration Methods
 
 | Method | When to use | Reproducibility |
 |--------|-------------|----------------|
@@ -91,7 +91,7 @@ Traitly offers multiple ways to convert pixels to real metric units.
 
     [:octicons-download-24: Download circular reference template](../assets/templates/size_reference_template.pdf)
 
-### Why use a circular reference?
+### 2.2 Why use a circular reference?
 
 Scanners can have small variations between their declared and actual capture dimensions.
 
@@ -105,13 +105,13 @@ The circular reference:
 
 ---
 
-## Sample Identification
+## 3. Sample Identification
 
 Traitly can automatically extract sample information by reading QR codes or recognizing text (OCR), storing the information in the results tables. We recommend using **QR codes** whenever possible, as they are faster to detect, more tolerant of poor image quality, and do not depend on font type the way OCR does.
 
 To generate QR codes, any available tool will work. If you need to create multiple labels from a text file (`.txt`, `.csv` or `.tsv`), we recommend **[QRLabel](https://github.com/mariameraz/qrlabel)**, the tool we used to generate the labels in the example image.
 
-### Label Detection
+### 3.1 Label Detection
 
 Detection follows this order:
 
@@ -142,7 +142,7 @@ Avoid:  TOM-00I      CHlLE-02       MANZ-I23   <- ambiguous I/l/1
         Tom-001      chile-02       Manz-123   <- mixed upper/lowercase
 ```
 
-## Best Practices Summary
+## 4 Best Practices Summary
 
 :octicons-check-circle-fill-24:{ .icon-green } **Do:**
 

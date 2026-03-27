@@ -6,13 +6,13 @@ La calidad de los análisis depende directamente de la calidad de las imágenes.
 
 ---
 
-## Adquisición de las imágenes
+## 1. Adquisición de las imágenes
 
-### Equipo recomendado
+### 1.1 Equipo recomendado
 
 Para obtener resultados consistentes, recomendamos usar un **escáner plano** convencional. Este método permite controlar las condiciones de iluminación y mantener la misma distancia de captura entre muestras.
 
-### Preparación de las muestras
+### 1.2 Preparación de las muestras
 
 - **Corte de frutos**: Utiliza una navaja o cuchillo afilado para obtener cortes transversales limpios.
 - **Mantenimiento**: Cambia o afila la navaja periódicamente para evitar que el desgaste afecte la calidad del corte.
@@ -20,7 +20,7 @@ Para obtener resultados consistentes, recomendamos usar un **escáner plano** co
 - **Frutos jugosos**: En frutos con alto contenido de jugo, retira el exceso suavemente con un paño antes de colocarlos sobre el escáner. Puedes limpiar la superficie del escáner con alcohol entre tomas para eliminar residuos que puedan ser detectados como contornos de fruto.
 - **Objetos ajenos al fruto**: Procura que las imágenes contengan únicamente los objetos de interés. La presencia de tallos, hojas, semillas sueltas o suciedad, aunque puede filtrarse en pasos posteriores del análisis, incrementa el tiempo de procesamiento, ya que este escala con el número de contornos detectados por imagen.
 
-### Configuración del fondo
+### 1.3 Configuración del fondo
 
 Traitly asume por defecto que el **fondo es negro**. Para lograr esto:
 
@@ -50,7 +50,7 @@ Traitly asume por defecto que el **fondo es negro**. Para lograr esto:
 
 
 
-### Formato y resolución
+### 1.4 Formato y resolución
 
 **Formatos soportados:**
 
@@ -72,11 +72,11 @@ Durante la toma de imágenes, es más práctico configurar el escáner para guar
 
 ---
 
-## Referencias de tamaño
+## 2. Referencias de tamaño
 
 Traitly ofrece múltiples formas de convertir píxeles a unidades métricas reales.
 
-### Métodos de calibración
+### 2.1 Métodos de calibración
 
 | Método | Cuándo usarlo | Reproducibilidad |
 |--------|---------------|----------------|
@@ -91,7 +91,7 @@ Traitly ofrece múltiples formas de convertir píxeles a unidades métricas real
 
     [:octicons-download-24: Descargar plantilla de referencia circular](../../assets/templates/size_reference_template.pdf)
 
-### ¿Por qué usar referencia circular?
+### 2.2 ¿Por qué usar referencia circular?
 
 Los escáneres pueden presentar pequeñas variaciones entre sus dimensiones declaradas y las reales de captura. 
 
@@ -105,13 +105,13 @@ La referencia circular:
 
 ---
 
-## Identificación de muestras
+## 3. Identificación de muestras
 
 Traitly puede extraer automáticamente información sobre las muestras mediante la lectura de códigos QR o el reconocimiento de texto (OCR), almacenando la información en las tablas de resultados. Recomendamos usar **códigos QR** siempre que sea posible, ya que son más rápidos de detectar, toleran peor iluminación y no dependen tanto de la calidad de la imagen ni del tipo de fuente como con OCR.
 
 Para generar códigos QR puede usarse cualquier herramienta disponible. Si necesitas crear múltiples etiquetas desde un archivo de texto (`.txt`, `.csv` o `.tsv`), recomendamos el software en línea **[QRLabel](https://github.com/mariameraz/qrlabel)**, con el que generamos las etiquetas de la imagen de ejemplo.
 
-### Detección de etiquetas
+### 3.1 Detección de etiquetas
 
 La detección sigue este orden:
 
@@ -142,7 +142,7 @@ Evitar:   TOM-00I      CHlLE-02       MANZ-I23   <- I/l/1 ambiguos
           Tom-001      chile-02       Manz-123   <- mezcla mayúsculas/minúsculas
 ```
 
-## Resumen de buenas prácticas
+## 4. Resumen de buenas prácticas
 
 :octicons-check-circle-fill-24:{ .icon-green } **Hacer:**
 

@@ -6,7 +6,7 @@ This section covers everything you need to work with `FruitInternalAnalyzer`, th
 
 ---
 
-## `FruitInternalAnalyzer` Class
+## 1. Main Class
 
 `FruitInternalAnalyzer` is the primary tool for analyzing the internal morphology, color, and symmetry of fruits from cross-section images. You can use it to process a single image or an entire folder with hundreds of images.
 
@@ -14,10 +14,10 @@ This section covers everything you need to work with `FruitInternalAnalyzer`, th
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
 
 # To analyze a single image
-analyzer = FruitInternalAnalyzer("path/to/my/image.jpg")
+analyzer = FruitInternalAnalyzer(image_path = "path/to/my/image.jpg")
 
 # To analyze multiple images in a folder
-analyzer = FruitInternalAnalyzer("path/to/my/folder/with/images/")
+analyzer = FruitInternalAnalyzer(image_path = "path/to/my/folder/with/images/")
 ```
 
 | Parameter | Type | Description |
@@ -43,7 +43,7 @@ analyzer = FruitInternalAnalyzer("path/to/my/folder/with/images/")
 
 ---
 
-## How the Analysis Is Organized
+## 2. How the Analysis Is Organized
 
 When working with `FruitInternalAnalyzer`, the analysis follows this logical order:
 
@@ -64,7 +64,7 @@ analyzer.detect_fruits()                       # Identify individual fruits
 analyzer.analyze_morphology()                  # Get morphological measurements
 analyzer.analyze_color()                       # (Optional) Get color measurements
 
-## Save results
+## 3. Save results
 analyzer.results.save_all()               # Save all results (CSV and annotated image)
 analyzer.save_parameters()                # (Optional) Save the parameters used in the session
 
@@ -84,13 +84,15 @@ analyzer.analyze_folder(json_path = 'path/to/my/parameters.json')  # Run the ana
 
 ---
 
-## What You Can Get from the Analyzer
+## 4. What You Can Get from the Analyzer
 
 After running the methods, the analyzer stores results in attributes you can inspect:
 
 | Attribute | Contents |
 |----------|--------------|
 | `img_path` | Path of the image being analyzed |
+| `img_name` | Image name |
+| `img_shape` | Image size |
 | `img`, `img_rgb`, `img_hsv` | The image in different color formats |
 | `mask_fruit` | Mask where fruits appear white and the background is black |
 | `mask_locules` | Mask where locules appear black and the rest of the fruit is white (if `generate_locule_mask()` was run) |
@@ -105,10 +107,10 @@ After running the methods, the analyzer stores results in attributes you can ins
 
 ---
 
-## Methods:
+## 5. Methods:
 
 !!! example ""
-    Each method is explained below with practical examples. All parameters have default values, so you can start simple and adjust as needed.
+    All the methods includes default values for the parameters, so you can start simple and adjust as needed.
 
 
 
@@ -266,7 +268,8 @@ analyzer.generate_fruit_mask(background_color = 'white')
 
 ---
 
-### `enhance_locule_contrast` 
+### `enhance_locule_contrast`
+
 
 *Optional*
 
@@ -540,7 +543,7 @@ The annotated image includes a **unique ID for each fruit**, its **locule count*
 
 
     <div style="text-align: center;">
-        <img src="../assets/images/contours.png" alt="contours" width="800">
+        <img src="../../assets/images/contours.png" alt="contours" width="800">
         <p><em>Examples of available contours with `contour_mode`</em></p>
     </div>
 
@@ -553,7 +556,7 @@ The annotated image includes a **unique ID for each fruit**, its **locule count*
         For more details on how these traits are calculated, see the [Measurements](results/measurements.md#pericarp-thickness-and-lobedness) section.
 
     <div style="text-align: center;">
-        <img src="../assets/images/num_rays.png" alt="num_rays" width="400">
+        <img src="../../assets/images/num_rays.png" alt="num_rays" width="400">
         <p><em>Effect of <code>num_rays</code> on ray density. Higher values capture more detail along the fruit contour.</em></p>
     </div>
 
@@ -632,7 +635,7 @@ By default, files are saved to the same folder as the input image, using the ori
 This function extracts color from different fruit tissues: **total pericarp**, **outer pericarp**, **inner pericarp**, and **locules**. To visually inspect how these tissues are segmented, use `generate_single_fruit_masks`. If you don't need all tissues, a specific one can be selected with `tissue='...'`.
 
 <div style="text-align: center;">
-    <img src="../assets/images/internal_tissues.png" alt="Setup with black box" width="900">
+    <img src="../../assets/images/internal_tissues.png" alt="Setup with black box" width="900">
     <p><em>Example of tissues from which color is extracted in cranberry slices</em></p>
 </div>
 
@@ -689,7 +692,8 @@ analyzer.analyze_color(
 
 ---
 
-### `generate_single_fruit_masks` 
+### `generate_single_fruit_masks`
+
 
 *Optional*
 

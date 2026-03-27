@@ -130,30 +130,24 @@ my-project/
     ```
 
 ---
-
 ## Optional Dependencies
 
-By default, Traitly will only install the **base package**. Depending on your use case, you might need to install additional dependencies:
+By default, Traitly will only install the **base package**. 
+Depending on your use case, you might need to install additional dependencies:
 
-| Extra | Purpose | Command |
-|-------|---------|---------|
-| `app` | Run the Streamlit application | `pip install "git+...traitly.git[app]"` |
-| `pdf` | Convert PDF files to images | `pip install "git+...traitly.git[pdf]"` |
-| `all` | Install all optional dependencies | `pip install "git+...traitly.git[all]"` |
+| Extra | Includes                   | Command                           |
+|-------|----------------------------|-----------------------------------|
+| `pdf` | PDF to image conversion    | `pip install "git+https://github.com/mariameraz/traitly.git[pdf]"` |
+| `all` | PDF conversion + Shiny app | `pip install "git+https://github.com/mariameraz/traitly.git[all]"` |
 
-For example, if you want to use the Streamlit application:
-```bash
-pip install "git+https://github.com/mariameraz/traitly.git[app]"
-```
-
-If you want to install everything at once:
-```bash
-pip install "git+https://github.com/mariameraz/traitly.git[all]"
-```
+!!! tip "Not sure which to choose?"
+    If you're unsure, we recommend installing `all`, since it includes everything you need to use Traitly's full functionality, including the interactive app.
 
 !!! warning "Important"
-    The quotes around the URL are necessary on macOS and Linux to prevent the terminal from incorrectly interpreting the `[` and `]` characters. On Windows they are optional, but recommended for consistency.
-
+    The quotes around the URL are necessary on macOS and Linux to prevent 
+    the terminal from incorrectly interpreting the `[` and `]` characters. 
+    On Windows they are optional, but recommended for consistency.
+    
 ---
 
 ## Verify Installation
