@@ -1,22 +1,35 @@
-# Segmenting locules
+<div style="text-align: center;" markdown>
 
-In this tutorial we'll go over how to segment fruits with complex locules using `FruitInternalAnalyzer`.
+# Locule Segmentation
 
+<p style="color:gray; margin-top: -35px; margin-bottom: 55px;" markdown>
+    *Traitly v0.1.0 – March, 2026*
+</p>
+
+</div>
+
+In this tutorial we'll go over how to segment fruits with complex locules using `FruitInternalAnalyzer`:
 
 ```python
-import traitly
-print(f'Traitly version used in this tutorial: {traitly.__version__}')
-
 # Import External Analysis Class
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
 ```
 
-    Traitly version used in this tutorial: 0.1.0
-
-
 In `FruitInternalAnalyzer`, fruit and locule contours are detected through hierarchical contour segmentation using [`cv2.RETR_TREE`](https://docs.opencv.org/4.x/d9/d8b/tutorial_py_contours_hierarchy.html), which identifies and organizes nested contours — that is, contours within contours. In this scheme, the outer fruit contour acts as the parent contour, while the internal locules are detected as child contours, as shown in the image. For this reason, `detect_fruits()` expects the fruit area to be white and the locules to be black in the binary mask.
 
-![Contours](../../docs/assets/images/retr_tree_example.png)
+<div style="text-align: center;" markdown>
+![Contours](../../../assets/images/retr_tree_example.png)
+</div>
+
+
+This tutorial covers three examples with increasing segmentation complexity:
+
+| Example | Fruit | Challenge |
+|---------|-------|-----------|
+| [Tomato – Example 1](#tomato-example-1) | Tomato | Clear contrast between locules and pericarp |
+| [Tomato – Example 2](#tomato-example-2) | Tomato | Overlapping pixel intensities — using CLAHE and manual editing |
+| [Dragon fruit](#dragon-fruit) | Dragon fruit | Locules are lighter than the surrounding tissue |
+
 
 # Tomato – Example 1
 

@@ -6,20 +6,18 @@ La calidad de los análisis depende directamente de la calidad de las imágenes.
 
 ---
 
-## Adquisición de las imágenes
+## 1. Adquisición de las imágenes
 
-### Equipo recomendado
+### 1.1 Equipo recomendado
 
 Para el análisis externo de los frutos, las imágenes se pueden capturar con una **cámara fotográfica**, ya sea de un teléfono inteligente o una cámara profesional. Sin importar el tipo de dispositivo que se elija, la consistencia es clave. Usa la **misma cámara** para tomar todas las imágenes de un experimento, ya que los ajustes de color, balance de blancos y procesamiento interno varían entre fabricantes y modelos, y estas diferencias pueden introducir sesgos en las mediciones de color. 
 
-
-
-### Preparación de las muestras
+### 1.2 Preparación de las muestras
 
 - **Posición de la cámara**: Fija la cámara de forma que quede **paralela y perpendicular** a los frutos, sin ángulo de inclinación. Tomar imágenes desde un ángulo introduce distorsión geométrica que puede afectar las mediciones morfológicas. También recomendamos mantener la cámara en la **misma posición y lugar** durante todo el experimento para asegurar la misma distancia entre la lente y fondo en cada imágen.
 - **Objetos ajenos al fruto**: Procura que las imágenes contengan únicamente los objetos de interés. La presencia de tallos, hojas, semillas sueltas o suciedad, aunque puede filtrarse en pasos posteriores del análisis, incrementa el tiempo de procesamiento, ya que este escala con el número de contornos detectados por imagen.
 
-### Iluminación
+### 1.3 Iluminación
 
 La iluminación es uno de los factores más críticos para obtener mediciones de color reproducibles. Recomendamos ampliamente el uso de una **fuente de luz controlada y estable** (ej., paneles LED). 
 
@@ -30,7 +28,7 @@ Siempre que sea posible, utiliza **difusores** entre la fuente de luz y los frut
 
     Independientemente de la configuración elegida, es fundamental capturar **todas las imágenes de un mismo experimento bajo las mismas condiciones**: mismo dispositivo, misma fuente de luz, misma distancia y mismos ajustes de software. Cualquier variación entre sesiones puede introducir inconsistencias en las mediciones de color y morfología.
 
-### Configuración del fondo
+### 1.4 Configuración del fondo
 
 La elección del fondo es especialmente importante en el análisis externo, ya que determina tanto la calidad de la segmentación como la ausencia de artefactos de color en los bordes de los frutos.
 
@@ -59,7 +57,7 @@ La elección del fondo es especialmente importante en el análisis externo, ya q
 
 Traitly soporta los fondos predefinidos `'black'`, `'white'`, `'blue'` y `'gray'`, o permite definir rangos HSV personalizados para cualquier otro color.
 
-### Formato y resolución
+### 1.5 Formato y resolución
 
 **Formatos soportados:**
 
@@ -77,11 +75,11 @@ Traitly soporta los fondos predefinidos `'black'`, `'white'`, `'blue'` y `'gray'
 
 ---
 
-## Referencias de tamaño
+## 2. Referencias de tamaño
 
 Traitly ofrece dos formas de convertir píxeles a unidades métricas reales en el análisis externo.
 
-### Métodos de calibración
+### 2.1 Métodos de calibración
 
 | Método | Cuándo usarlo | Reproducibilidad |
 |--------|---------------|----------------|
@@ -95,25 +93,24 @@ Traitly ofrece dos formas de convertir píxeles a unidades métricas reales en e
 
     [:octicons-download-24: Descargar plantilla de referencia circular](../../assets/templates/size_reference_template.pdf)
 
-### ¿Por qué usar referencia circular?
+### 2.2 ¿Por qué usar referencia circular?
 
 Las cámaras pueden variar en su resolución efectiva dependiendo de la distancia de captura y el lente utilizado. La referencia circular:
 
 - Proporciona una calibración por imagen independiente
 - Es más precisa que asumir una resolución fija
-- Al derivar la escala del diámetro promedio de múltiples círculos detectados, el método amortigua el efecto de pequeñas distorsiones geométricas del sistema óptico
 - Permite comparar directamente resultados entre diferentes experimentos, datasets o dispositivos, ya que todas las medidas están calibradas contra un estándar común
 
 
 ---
 
-## Identificación de muestras
+## 3. Identificación de muestras
 
 Traitly puede extraer automáticamente información sobre las muestras mediante la lectura de códigos QR o el reconocimiento de texto (OCR), almacenando la información en las tablas de resultados. Recomendamos usar **códigos QR** siempre que sea posible, ya que son más rápidos de detectar, toleran peor iluminación y no dependen tanto de la calidad de la imagen ni del tipo de fuente como con OCR.
 
 Para generar códigos QR puede usarse cualquier herramienta disponible. Si necesitas crear múltiples etiquetas desde un archivo de texto (`.txt`, `.csv` o `.tsv`), recomendamos el software en línea **[QRLabel](https://github.com/mariameraz/qrlabel)**, con el que generamos las etiquetas de la imagen de ejemplo.
 
-### Detección de etiquetas
+### 3.1 Detección de etiquetas
 
 La detección sigue este orden:
 
@@ -146,7 +143,7 @@ Evitar:   TOM-00I      CHlLE-02       MANZ-I23   <- I/l/1 ambiguos
 
 ---
 
-## Resumen de buenas prácticas
+## 4. Resumen de buenas prácticas
 
 :octicons-check-circle-fill-24:{ .icon-green } **Hacer:**
 

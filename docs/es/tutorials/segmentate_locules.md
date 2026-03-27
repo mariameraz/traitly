@@ -1,22 +1,32 @@
-# Segmentando lóculos
 
-In this tutorial we'll go over how to segmentate fruits with complex locules using `FruitInternalAnalyzer`. 
+<div style="text-align: center;" markdown>
 
+# Segmentación de lóculos
+
+<p style="color:gray; margin-top: -35px; margin-bottom: 55px;" markdown>**Traitly v0.1.0 – Marzo, 2026**</p>
+
+</div>
+
+En este tutorial veremos como segmentar frutos con lóculos complejos usando `FruitInternalAnalyzer`:
 
 ```python
-import traitly
-print(f'Traitly version used in this tutorial: {traitly.__version__}')
-
-# Import External Analysis Class
+# Importar External Analysis Class
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
 ```
 
-    Traitly version used in this tutorial: 0.1.0
-
-
 En `FruitInternalAnalyzer`, los contornos de los frutos y sus lóculos se detectan mediante una segmentación jerárquica de contornos usando [`cv2.RETR_TREE`](https://docs.opencv.org/4.x/d9/d8b/tutorial_py_contours_hierarchy.html), el cual identifica y organiza contornos anidados, es decir, contornos dentro de otros contornos. En este esquema, el contorno exterior del fruto actúa como contorno padre (parent), mientras que los lóculos internos son detectados como contornos hijos (child), como se muestra en la imagen. Por esta razón, `detect_fruits()` espera que en la máscara binaria el área del fruto sea de color blanco y los lóculos de color negro.
 
+<div style="text-align: center;" markdown>
 ![Contours](../../../assets/images/retr_tree_example.png)
+</div>
+
+Esta guía cubre tres ejemplos con complejidad de segmentación creciente:
+
+| Ejemplo | Fruto | Detalles |
+|---------|-------|---------|
+| [Tomate – Ejemplo 1](#tomate-ejemplo-1) | Tomate | Buen contraste entre lóculos y pericarpio |
+| [Tomate – Ejemplo 2](#tomate-ejemplo-2) | Tomate | Intensidades de píxeles superpuestas entre pericarpio y lóculos — uso de CLAHE y edición manual |
+| [Pitahaya](#pitahaya) | Pitahaya | Lóculos de color más claro que el resto del fruto |
 
 ## Tomate - Ejemplo 1
 
@@ -761,5 +771,3 @@ plot_tissue_colors(df,
 
     
 ![png](segmentate_locules_files/segmentate_locules_61_0.png)
-    
-

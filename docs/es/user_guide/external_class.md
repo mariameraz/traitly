@@ -6,7 +6,7 @@ En esta sección encontrarás todo lo que necesitas para usar `FruitExternalAnal
 
 ---
 
-## Clase `FruitExternalAnalyzer`
+## 1. Clase Principal
 
 `FruitExternalAnalyzer` es la herramienta principal para analizar la morfología y el color de frutos completos a partir de imágenes segmentadas de frutos enteros (sin incluir segmentación de tejidos internos). Puedes utilizarla para procesar una sola imagen o una carpeta completa con cientos de imágenes.
 
@@ -14,10 +14,10 @@ En esta sección encontrarás todo lo que necesitas para usar `FruitExternalAnal
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 # Para analizar una imagen
-analyzer = FruitExternalAnalyzer("ruta/a/imagen.jpg")
+analyzer = FruitExternalAnalyzer(image_path = "ruta/a/imagen.jpg")
 
 # Para analizar varias imágenes en carpeta
-analyzer = FruitExternalAnalyzer("ruta/de/mi/carpeta/con/imagenes/")
+analyzer = FruitExternalAnalyzer(image_path = "ruta/de/mi/carpeta/con/imagenes/")
 ```
 
 | Parámetro | Tipo | Descripción |
@@ -42,7 +42,7 @@ analyzer = FruitExternalAnalyzer("ruta/de/mi/carpeta/con/imagenes/")
 
 ---
 
-## Cómo se organiza el análisis
+## 2. Cómo se organiza el análisis
 
 Cuando trabajas con `FruitExternalAnalyzer`, el análisis sigue este orden lógico:
 
@@ -59,7 +59,7 @@ analyzer.detect_fruits()                  # Identificar frutos individuales
 analyzer.analyze_morphology()             # Obtener medidas morfológicas
 analyzer.analyze_color()                  # (Opcional) Obtener medidas de color
 
-## Guardar resultados
+## 3. Guardar resultados
 analyzer.results.save_all()               # Guardar todos los resultados (CSV e imagen anotada)
 analyzer.save_parameters()                # (Opcional) Guardar los parámetros usados en la sesión
 ```
@@ -77,13 +77,15 @@ analyzer.analyze_folder(json_path='ruta/a/mi/parameters.json')
 
 ---
 
-## Lo que puedes obtener del analizador
+## 4. Lo que puedes obtener del analizador
 
 Después de ejecutar los métodos, el analizador guarda los resultados en atributos que puedes consultar:
 
 | Atributo | Qué contiene |
 |----------|--------------|
 | `img_path` | Ruta de la imagen que estás analizando |
+| `img_name` | Nombre de la imagen |
+| `img_shape` | Tamaño de la imagen |
 | `img`, `img_rgb`, `img_hsv` | La imagen en diferentes formatos de color |
 | `mask_fruit` | Máscara donde los frutos aparecen en blanco y el fondo en negro |
 | `contours` | Lista de contornos de todos los frutos detectados |
@@ -97,12 +99,10 @@ Después de ejecutar los métodos, el analizador guarda los resultados en atribu
 
 ---
 
-## Métodos:
+## 5. Métodos:
 
 !!! example ""
-    Aquí explicamos cada método con ejemplos prácticos. Todos los parámetros tienen valores por defecto, así que puedes empezar con lo básico e ir ajustando según tus necesidades.
-
-
+    Todos los métodos incluyen valores por defecto para sus parámetros, así que puedes empezar corriendo el código con lo básico e ir ajustando según tus necesidades.
 
 ### `load_image`
 
