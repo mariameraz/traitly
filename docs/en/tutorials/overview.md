@@ -12,7 +12,7 @@ Here you'll find step-by-step guides covering the main Traitly workflows, from l
 
 <div class="card" markdown>
 
-#### **•󠁏 A complete analysis in minutes**
+#### **•󠁏 Complete cranberry analysis in minutes**
 
 ---
 
@@ -22,7 +22,7 @@ Simple demonstration of how to run external appearance and internal structure an
 ![](../../../assets/images/int_annotation.png){ style="width:20%;"}
 </figure>
 
-[:octicons-arrow-right-24: Go to tutorial](batch_tutorial_en.md)
+[:octicons-arrow-right-24: Go to tutorial](quickstart.md)
 
 </div>
 
@@ -70,7 +70,7 @@ Complete walkthrough of `FruitExternalAnalyzer`: load images, generate binary ma
 ![](../../en/tutorials/individual_img_tutorial_en_files/individual_img_tutorial_en_9_0.png){ width=300}
 </figure>
 
-[:octicons-arrow-right-24: Go to tutorial](individual_img_tutorial_en.md)
+[:octicons-arrow-right-24: Go to tutorial](individual_img_tutorial.md)
 
 </div>
 
@@ -110,7 +110,7 @@ Automatically process an entire folder of images in a single run.
 ![](../../en/tutorials/individual_img_tutorial_en_files/batch_results.png){ width=300}
 </figure>
 
-[:octicons-arrow-right-24: Go to tutorial](batch_tutorial_en.md)
+[:octicons-arrow-right-24: Go to tutorial](batch_tutorial.md)
 
 </div>
 

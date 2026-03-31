@@ -38,7 +38,7 @@ Traitly is available in three environments:
 
 **From the terminal (CLI)**: to run the analysis directly from the terminal without writing a Python script. This is especially useful on servers or computing environments without a graphical interface. See the [CLI](cli.md) section for details.
 
-**From the Shiny app**: for interactive analysis without writing code. Available locally by running `traitly-app` in the terminal (see the [Installation](../installation.md#optional-dependencies) section for the required dependencies), or online through the [interactive demo](https://huggingface.co/spaces/mariameraz/traitly).
+**From the Shiny app**: for interactive analysis without writing code. Available locally by running `traitly-app` in the terminal (see the [Shiny App](cli.md#shiny-app) section for more details), or online through the [interactive demo](https://huggingface.co/spaces/mariameraz/traitly).
 
 
 !!! info ""
