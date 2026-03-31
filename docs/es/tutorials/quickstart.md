@@ -1,8 +1,20 @@
-# Inicio Rápido
+---
+hide:
+  - navigation
+  - toc
+---
+<div style="text-align: center;" markdown>
 
-*Un análisis completo corriendo en minutos.*
+# Inicio Rápido: análisis completo corriendo en minutos.
 
-**Requisitos:** Traitly instalado ([Guía de instalación](../installation.md)) y una imagen escaneada de un corte transversal de fruta.
+<p style="color:gray; margin-top: -35px; margin-bottom: 55px;" markdown>**Traitly v0.1.0 – Marzo, 2026**</p>
+
+</div>
+
+**Requisitos:** Traitly instalado ([Guía de instalación](../installation.md)).
+
+!!! tip "Imágenes de muestra"
+    :fontawesome-solid-file-code: Los ejemplos de este tutorial usan imágenes de **cranberry**. Si no cuentas con tus propias imágenes, puedes descargar las imágenes de muestra [aquí](LINK). Para frutos con una estructura interna más compleja, explora el tutorial [Segmentación de Lóculos](segmentate_locules.md).
 
 ---
 
@@ -40,7 +52,6 @@ analyzer.load_image()
 analyzer.setup_measurements()
 analyzer.generate_fruit_mask()
 analyzer.detect_fruits()
-
 df = analyzer.analyze_morphology()
 ```
 
@@ -71,7 +82,13 @@ Esto genera en `resultados/`:
 
 ## ¿Qué sigue?
 
-- [Tutorial de Análisis Interno](internal.md) — guía detallada con todos los parámetros
-- [Tutorial de Análisis Externo](external.md) — análisis de fruta completa paso a paso
-- [Referencia API](../api/internal_analysis.md) — documentación completa de parámetros
-- [Tabla de Traits](../traits.md) — qué significa cada columna del CSV
+- [Guía para el Análisis Interno](../user_guide/internal_class.md) — guía detallada con todos los parámetros y métodos disponibles para `FruitInternalAnalyzer`.
+- [Guía para el Análisis Externo](../user_guide/external_class.md) — guía detallada con todos los parámetros y métodos disponibles para `FruitExternalAnalyzer`.
+- [Tutorial de Análisis Externo](external.md) — analizando una imagen paso a paso.
+- [Tabla de Traits](../user_guide/results/measurements.md) — qué significa cada columna del CSV.
+
+<div style="text-align: center;" markdown>
+
+[← Volver a Tutoriales](overview.md){ .md-button style="background-color: black; color: white; border-color: black;" }
+
+</div>
