@@ -1,6 +1,18 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
+<div style="text-align: center;" markdown>
+
 # Definiendo umbrales de color para la segmentación del fondo
 
-*Versión de Traitly utilizada en este tutorial: 0.1.0*
+<p style="color:gray; margin-top: -35px; margin-bottom: 55px;" markdown>
+    *Traitly v0.1.0 – March, 2026*
+</p>
+
+</div>
 
 En este tutorial veremos cómo ajustar los umbrales de color para segmentar el fondo de las imágenes con `FruitExternalAnalyzer`.
 
@@ -139,3 +151,19 @@ white_example.detect_fruits(plot = True,
             - min_fruit_circularity: 0.3
             - min_fruit_area: 500
     =====================================
+
+
+
+## ¿Qué sigue?
+
+- [Guía para el Análisis Interno](../user_guide/internal_class.md) — guía detallada con todos los parámetros y métodos disponibles para `FruitInternalAnalyzer`.
+- [Guía para el Análisis Externo](../user_guide/external_class.md) — guía detallada con todos los parámetros y métodos disponibles para `FruitExternalAnalyzer`.
+- [Tutorial de Análisis Externo](individual_img_tutorial.md) — analizando una imagen paso a paso.
+- [Cómo realizar un procesamiento por lotes](batch_tutorial.md) – análisis de la apariencia externa de múltiples imágenes.
+
+
+<div style="text-align: center;" markdown>
+
+[← Volver a Tutoriales](overview.md){ .md-button }
+
+</div>

@@ -1,3 +1,8 @@
+---
+hide:
+  - navigation
+  - toc
+---
 
 <div style="text-align: center;" markdown>
 
@@ -768,6 +773,20 @@ plot_tissue_colors(df,
                    plot_size = (5,3))
 ```
 
-
     
 ![png](segmentate_locules_files/segmentate_locules_61_0.png)
+
+
+## ¿Qué sigue?
+
+- [Guía para el Análisis Interno](../user_guide/internal_class.md) — guía detallada con todos los parámetros y métodos disponibles para `FruitInternalAnalyzer`.
+- [Guía para el Análisis Externo](../user_guide/external_class.md) — guía detallada con todos los parámetros y métodos disponibles para `FruitExternalAnalyzer`.
+- [Tutorial de Análisis Externo](individual_img_tutorial.md) — analizando una imagen paso a paso.
+- [Tabla de Traits](../user_guide/results/measurements.md) — qué significa cada columna del CSV.
+
+
+<div style="text-align: center;" markdown>
+
+[← Volver a Tutoriales](overview.md){ .md-button }
+
+</div>

@@ -1,6 +1,18 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
+<div style="text-align: center;" markdown>
+
 # Defiining color thresholds for background segmentation
 
-*Traitly version used in this tutorial: 0.1.0*
+<p style="color:gray; margin-top: -35px; margin-bottom: 55px;" markdown>
+    *Traitly v0.1.0 – March, 2026*
+</p>
+
+</div>
 
 In this tutorial we'll go over how to adjust the color thresholds for fruit background segmentation in `FruitExternalAnalyzer`. 
 
@@ -150,9 +162,6 @@ white_example.detect_fruits(plot = True,
 
 ![png](background_segmentation_files/background_segmentation_11_0.png)
     
-
-
-    
     =====================================
     . ݁₊ ⊹ . ݁ ⟡ ݁ Detected fruits: 17 ⟡ ݁ . ⊹ ₊ ݁.
     
@@ -161,3 +170,16 @@ white_example.detect_fruits(plot = True,
             - min_fruit_area: 500
     =====================================
 
+
+## What's next?
+
+- [Internal Analysis Guide](../user_guide/internal_class.md) — detailed guide with all available parameters and methods for `FruitInternalAnalyzer`.
+- [External Analysis Guide](../user_guide/external_class.md) — detailed guide with all available parameters and methods for `FruitExternalAnalyzer`.
+- [External Analysis Tutorial](individual_img_tutorial.md) — analyzing an image step by step.
+- [How to perform batch processing](batch_tutorial.md) — external appearance analysis of multiple images.
+
+<div style="text-align: center;" markdown>
+
+[← Back to Tutorials](overview.md){ .md-button style="background-color: black; color: white; border-color: black;" }
+
+</div>

@@ -39,7 +39,7 @@ Traitly puede usarse en tres distintos ambientes:
 
 **Desde la terminal (CLI)**: para ejecutar el análisis directamente desde la terminal sin necesidad de un script de Python, especialmente útil en servidores o entornos de cómputo sin interfaz gráfica. Consulta la sección [CLI](cli.md) para más detalles.
 
-**Desde la aplicación Shiny**: para análisis interactivo sin necesidad de escribir código. Disponible localmente ejecutando `traitly-app` en la terminal (consulta la sección de [Instalación](../installation.md#dependencias-opcionales) para instalar las dependencias necesarias), o en línea a través del [demo interactivo](https://huggingface.co/spaces/mariameraz/traitly).
+**Desde la aplicación Shiny**: para análisis interactivo sin necesidad de escribir código. Disponible localmente ejecutando `traitly-app` en la terminal (consulta la sección de [Shiny App](cli.md#shiny-app) para mas detalles), o en línea a través del [demo interactivo](https://huggingface.co/spaces/mariameraz/traitly).
 
 !!! info ""
     Las siguientes secciones contienen la documentación detallada de cada entorno de uso, incluyendo ejemplos, parámetros configurables y rasgos extraídos. Consulta también las especificaciones de imágenes para [análisis interno](int_image_requirements.md) y [análisis externo](ext_image_requirements.md) para garantizar los mejores resultados.

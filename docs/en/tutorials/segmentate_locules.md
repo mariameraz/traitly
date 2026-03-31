@@ -1,3 +1,9 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 <div style="text-align: center;" markdown>
 
 # Locule Segmentation
@@ -454,13 +460,9 @@ Unlike the previous examples, in this image the pulp is lighter than the rest of
 ```python
 dragon_fruit.generate_locule_mask(thresh_min = 150, invert_locule = True, min_locule_area = 500)
 ```
-
-
     
 ![png](segmentate_locules_files/segmentate_locules_53_0.png)
     
-
-
 
 ```python
 dragon_fruit.detect_fruits(plot = True, pericarp_int_color = (255,255,0))
@@ -477,30 +479,20 @@ dragon_fruit.detect_fruits(plot = True, pericarp_int_color = (255,255,0))
             - min_fruit_area: 5000
     =====================================
 
-
-
-    
+ 
 ![png](segmentate_locules_files/segmentate_locules_54_1.png)
     
-
-
 We can now move on to `analyze_morphology()` and/or `analyze_color()`.
 
 Since there is only one 'locule' covering the entire pulp region, before running `analyze_color()` we can check the tissue segmentation with `generate_single_fruit_masks()` and select only the relevant tissues. For this fruit, we'll work with `'total_pericarp'` and `'locules'` only, as the other tissues aren't meaningful in this case.
 
-
 ```python
 dragon_fruit.generate_single_fruit_masks()
 ```
-
-
     
 ![png](segmentate_locules_files/segmentate_locules_56_0.png)
-    
-
 
 By default, `analyze_color()` excludes pixels with a lightness value below 20 (`dark_thresh=20`) to avoid noise from the background or very dark elements like seeds. For this image, this threshold is enough to remove seed color and background noise. If you need to adjust it for other images, `plot_dark_threshold()` shows the pixel distribution across the entire fruit section to help identify the best cutoff value, which can then be passed directly with `dark_thresh` in `analyze_color()`.
-
 
 ```python
 from traitly.fruit_phenotyping import plot_dark_threshold
@@ -509,22 +501,17 @@ img = dragon_fruit.img
 mask = dragon_fruit.mask_fruit
 plot_dark_threshold(img, mask, dark_threshold = 20)
 ```
-
-
     
 ![png](segmentate_locules_files/segmentate_locules_58_0.png)
     
 
-
 Finally, we extract color metrics for the RGB channels with `analyze_color()` and visualize the mean color for each analyzed tissue.
-
 
 ```python
 dragon_fruit.analyze_color(tissue = 'outer_pericarp, locules', 
                            dark_thresh = 20,
                            color_space = 'rgb')
 ```
-
 
 ```python
 from traitly.fruit_phenotyping import plot_tissue_colors
@@ -534,7 +521,18 @@ df = dragon_fruit.results.color_results
 plot_tissue_colors(df, 
                    plot_size = (5,3))
 ```
-
-
     
 ![png](segmentate_locules_files/segmentate_locules_61_0.png)
+
+## What's next?
+
+- [Internal Analysis Guide](../user_guide/internal_class.md) — detailed guide with all available parameters and methods for `FruitInternalAnalyzer`.
+- [External Analysis Guide](../user_guide/external_class.md) — detailed guide with all available parameters and methods for `FruitExternalAnalyzer`.
+- [External Analysis Tutorial](individual_img_tutorial.md) — analyzing an image step by step.
+- [Traits Table](../user_guide/results/measurements.md) — what each column in the CSV means.
+
+<div style="text-align: center;" markdown>
+
+[← Back to Tutorials](overview.md){ .md-button style="background-color: black; color: white; border-color: black;" }
+
+</div>
