@@ -12,7 +12,7 @@ Aquí encontrarás tutoriales paso a paso sobre los principales flujos de trabaj
 
 <div class="card" markdown>
 
-#### **•󠁏 Análisis completo en minutos**
+#### **•󠁏 Análisis completo de cranberry en minutos**
 
 ---
 
@@ -22,7 +22,7 @@ Demostración sencilla de cómo realizar análisis de apariencia externa y estru
 ![](../../../assets/images/int_annotation.png){ style="width:20%;"}
 </figure>
 
-[:octicons-arrow-right-24: Ir al tutorial](batch_tutorial_en.md)
+[:octicons-arrow-right-24: Ir al tutorial](quickstart.md)
 
 </div>
 
@@ -70,7 +70,7 @@ Demostración completa del uso de `FruitExternalAnalyzer`: carga imágemes, gene
 ![](../../en/tutorials/individual_img_tutorial_en_files/individual_img_tutorial_en_9_0.png){ width=300}
 </figure>
 
-[:octicons-arrow-right-24: Ir al tutorial](individual_img_tutorial_en.md)
+[:octicons-arrow-right-24: Ir al tutorial](individual_img_tutorial.md)
 
 </div>
 
@@ -110,7 +110,7 @@ Analiza una carpeta completa de imágenes de forma automática.
 ![](../../en/tutorials/individual_img_tutorial_en_files/batch_results.png){ width=300}
 </figure>
 
-[:octicons-arrow-right-24: Ir al tutorial](batch_tutorial_en.md)
+[:octicons-arrow-right-24: Ir al tutorial](batch_tutorial.md)
 
 </div>
 
