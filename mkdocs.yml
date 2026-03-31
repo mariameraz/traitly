@@ -26,7 +26,7 @@ theme:
   palette:
     - scheme: default # Light theme
       primary: black
-      accent: blue gray # For headers, links, etc 
+      accent: blue gray # For headers, links, etc
       toggle:
         icon: octicons/sun-24
         name: Switch to dark mode
@@ -45,9 +45,9 @@ theme:
     - navigation.sections # Shows section headers in the nav as collapsible groups.
     - navigation.expand # Expand navegation tree
     - navigation.indexes
-    - navigation.top # Adds a top bar at the bottom of the page 
+    - navigation.top # Adds a top bar at the bottom of the page
     - navigation.footer
-    
+
     - search.highlight
     - search.share
     - search.suggest
@@ -59,16 +59,15 @@ theme:
     - toc.follow
     - toc.integrate
 
-
 #######################
 # Markdown extensions #
 #######################
 
 markdown_extensions:
   - admonition
-  - pymdownx.details # to collapse admotions 
+  - pymdownx.details # to collapse admotions
   - pymdownx.superfences
- 
+
   - pymdownx.highlight:
       anchor_linenums: true
 
@@ -76,18 +75,17 @@ markdown_extensions:
 
   - pymdownx.tabbed:
       alternate_style: true
-  
+
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
   - tables
   - attr_list # for markdowon atributes
-  - md_in_html # for html  
+  - md_in_html # for html
 
   - toc:
       permalink: true
-
 
 ###########
 # Plugins #
@@ -109,42 +107,35 @@ plugins:
 
             - Installation: en/installation.md
 
-            - User Guide: 
-                - Traitly Architecture: en/workflow/overview.md
-                - Internal analysis: 
-                  - Image Specifications: en/workflow/int_image_requirements.md
-                  - Internal Analyzer Class: en/workflow/internal_class.md  
-                - External analysis:
-                  - Image Specifications: en/workflow/ext_image_requirements.md
-                  - External Analyzer Class: en/workflow/external_class.md
-                - CLI:
-                  - Command Line Interface: en/workflow/cli.md
-                - Results: 
-                  - Overview: en/workflow/results/overview.md
-                  - Measurements: en/workflow/results/measurements.md
+            - User Guide:
+                - Overview: en/user_guide/overview.md
+                - Image Specifications:
+                    - Fruit Internal Images: en/user_guide/int_image_requirements.md
+                    - Fruit External Images: en/user_guide/ext_image_requirements.md
+                - How to Use Traitly:
+                    - Python:
+                        - Internal Analysis: en/user_guide/internal_class.md
+                        - External Analysis: en/user_guide/external_class.md
+                    - CLI: en/user_guide/cli.md
+                - Results:
+                    - Overview: en/user_guide/results/overview.md
+                    - Measurements: en/user_guide/results/measurements.md
 
             - Tutorials:
                 - Overview: en/tutorials/overview.md
-                - Quickstart: en/tutorials/quickstart.md
-                - External Analysis: en/tutorials/external.md
-                - Background Segmentation: en/tutorials/background_segmentation.md
-                - Locule Segmentation: en/tutorials/segmentate_locules.md
-                - Individual Analysis: en/tutorials/individual_img_tutorial_en.md
-                - Batch Analysis: en/tutorials/batch_tutorial_en.md
 
-            - API Reference:
-                - Classes:
-                    - FruitInternalAnalyzer: en/api/internal_analysis.md
-                    - FruitExternalAnalyzer: en/api/external_analysis.md
+                # - API Reference:
+                #     - Classes:
+                #         - FruitInternalAnalyzer: en/api/internal_analysis.md
+                #         - FruitExternalAnalyzer: en/api/external_analysis.md
+                # - Modules:
+                #     - mask: en/api/mask.md
+                #     - processing: en/api/processing.md
+                #     - color_analysis: en/api/color_analysis.md
+                #     - symmetry: en/api/symmetry.md
+                #     - color_plot: en/api/color_plot.md
+                #     - analysis_parameters: en/api/analysis_parameters.md
 
-                - Modules:
-                    - mask: en/api/mask.md
-                    - processing: en/api/processing.md
-                    - color_analysis: en/api/color_analysis.md
-                    - symmetry: en/api/symmetry.md
-                    - color_plot: en/api/color_plot.md
-                    - analysis_parameters: en/api/analysis_parameters.md
-            
             - About: en/about.md
             - Changelog: en/changelog.md
 
@@ -156,61 +147,60 @@ plugins:
 
             - Installation: es/installation.md
 
-            - User Guide: 
-                - Traitly Architecture: es/workflow/overview.md
-                - Internal analysis: 
-                  - Image Specifications: es/workflow/int_image_requirements.md
-                  - Internal Analyzer Class: es/workflow/internal_class.md  
-                - External analysis:
-                  - Image Specifications: es/workflow/ext_image_requirements.md
-                  - External Analyzer Class: es/workflow/external_class.md
-                - CLI:
-                  - Command Line Interface: es/workflow/cli.md
-                - Results: 
-                  - Overview: es/workflow/results/overview.md
-                  - Measurements: es/workflow/results/measurements.md
+            - User Guide:
+                - Overview: es/user_guide/overview.md
+                - Image Specifications:
+                    - Fruit Internal Images: es/user_guide/int_image_requirements.md
+                    - Fruit External Images: es/user_guide/ext_image_requirements.md
+                - How to Use Traitly:
+                    - Python:
+                        - Internal Analysis: es/user_guide/internal_class.md
+                        - External Analysis: es/user_guide/external_class.md
+                    - CLI: es/user_guide/cli.md
+                - Results:
+                    - Overview: es/user_guide/results/overview.md
+                    - Measurements: es/user_guide/results/measurements.md
 
             - Tutorials:
                 - Overview: es/tutorials/overview.md
-                - Quickstart: es/tutorials/quickstart.md
-                - External Analysis: es/tutorials/external.md
-                - Background Segmentation: es/tutorials/background_segmentation.md
-                - Locule Segmentation: es/tutorials/segmentate_locules.md
-                - Individual Analysis: es/tutorials/individual_img_tutorial_es.md
-                - Batch Analysis: es/tutorials/batch_tutorial_es.md
 
-            - API Reference:
-                - Classes:
-                    - FruitInternalAnalyzer: es/api/internal_analysis.md
-                    - FruitExternalAnalyzer: es/api/external_analysis.md
+                # - API Reference:
+                #     - Classes:
+                #         - FruitInternalAnalyzer: es/api/internal_analysis.md
+                #         - FruitExternalAnalyzer: es/api/external_analysis.md
+                #       - Modules:
+                #           - mask: es/api/mask.md
+                #           - processing: es/api/processing.md
+                #           - color_analysis: es/api/color_analysis.md
+                #           - symmetry: es/api/symmetry.md
+                #           - color_plot: es/api/color_plot.md
+                #           - analysis_parameters: es/api/analysis_parameters.md
 
-                - Modules:
-                    - mask: es/api/mask.md
-                    - processing: es/api/processing.md
-                    - color_analysis: es/api/color_analysis.md
-                    - symmetry: es/api/symmetry.md
-                    - color_plot: es/api/color_plot.md
-                    - analysis_parameters: es/api/analysis_parameters.md
-            
             - About: es/about.md
             - Changelog: es/changelog.md
-            
+
           nav_translations:
             Home: Inicio
             Installation: Instalación
+
             User Guide: Guía de Uso
+            Image Specifications: Especificaciones de Imágenes
+            Fruit Internal Image: Imagen interna del fruto
+            Fruit External Image: Imagen externa del fruto
+            How to Use Traitly: Cómo Usar Traitly
+            Internal Analysis: Análisis Interno
+            External Analysis: Análisis Externo
             Results: Resultados
             Measurements: Mediciones
+
             Tutorials: Tutoriales
             Overview: Descripción General
             Quickstart: Inicio Rápido
-            Internal Analysis: Análisis Interno
-            External Analysis: Análisis Externo
-            API Reference: Referencia API
+
+            # API Reference: Referencia API
+
             Changelog: Historial de Cambios
-            Image Specifications: Especificaciones de Imágenes
-            Internal Analyzer Class: Clase de Analizador Interno
-            External Analyzer Class: Clase de Analizador Externo
+
             Traitly Architecture: Arquitectura de Traitly
             Classes: Clases
             Modules: Módulos
@@ -247,12 +237,6 @@ plugins:
         - en/index.md
         - es/index.md
 
-####################
-# Navigation setup #
-####################
-
-
-
 #######################
 # Extra configuration ##
 #######################
@@ -260,7 +244,6 @@ plugins:
 copyright: Copyright &copy; 2026 Maria Alejandra Torres Meraz
 
 extra:
-
   alternate:
     - name: English
       link: ""
