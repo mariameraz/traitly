@@ -20,33 +20,33 @@ Provides functions to:
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
-from typing import Optional, List, Tuple, Union, Dict
 import os
-from pathlib import Path
 from functools import lru_cache
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
 
 # ===========================================================================
 # THIRD-PARTY LIBRARIES
 # ===========================================================================
 os.environ["OPENCV_LOG_LEVEL"] = "OFF"
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from ultralytics import YOLO
 
 # ============================================================================
 # INTERNAL IMPORTS
 # ===========================================================================
-from .constants import valid_extensions, valid_cv2_extensions, label_positions
-
+from .constants import label_positions, valid_cv2_extensions, valid_extensions
 
 ##############################################################################
 # Calculate px density from physical image dimensions
 ##############################################################################
 
+
 def img_px_per_cm(
     img: np.ndarray,
-    size: str = 'letter_ansi',
+    size: str = "letter_ansi",
     width_cm: Optional[float] = None,
     length_cm: Optional[float] = None,
 ) -> Tuple[float, float, float, float]:
@@ -94,40 +94,46 @@ def img_px_per_cm(
             raise TypeError("Input must be a numpy array")
         if img.ndim not in [2, 3]:
             raise ValueError("Image must be 2D (grayscale) or 3D (color)")
-        if size not in ['letter_ansi', 'legal_ansi', 'a4_iso', 'a3_iso'] and (width_cm is None or length_cm is None):
+        if size not in ["letter_ansi", "legal_ansi", "a4_iso", "a3_iso"] and (
+            width_cm is None or length_cm is None
+        ):
             raise ValueError("Provide either valid physical size or custom dimensions")
-        if width_cm is not None and (not isinstance(width_cm, (int, float)) or width_cm <= 0):
+        if width_cm is not None and (
+            not isinstance(width_cm, (int, float)) or width_cm <= 0
+        ):
             raise ValueError("width_cm must be positive")
-        if length_cm is not None and (not isinstance(length_cm, (int, float)) or length_cm <= 0):
+        if length_cm is not None and (
+            not isinstance(length_cm, (int, float)) or length_cm <= 0
+        ):
             raise ValueError("length_cm must be positive")
         if width_cm is not None and length_cm is not None and width_cm > length_cm:
             raise ValueError("width_cm cannot be greater than length_cm")
 
         paper_sizes = {
-            'letter_ansi': (21.6, 27.9),
-            'legal_ansi':  (21.59, 35.56),
-            'a4_iso':      (21.0, 29.7),
-            'a3_iso':      (29.7, 42.0),
+            "letter_ansi": (21.6, 27.9),
+            "legal_ansi": (21.59, 35.56),
+            "a4_iso": (21.0, 29.7),
+            "a3_iso": (29.7, 42.0),
         }
 
         img_height_px = img.shape[0]
-        img_width_px  = img.shape[1]
+        img_width_px = img.shape[1]
 
         if width_cm is not None and length_cm is not None:
-            used_width_cm  = width_cm
+            used_width_cm = width_cm
             used_length_cm = length_cm
         else:
             paper_w, paper_h = paper_sizes[size]
             if img_width_px > img_height_px:
                 # Landscape
-                used_width_cm  = max(paper_w, paper_h)
+                used_width_cm = max(paper_w, paper_h)
                 used_length_cm = min(paper_w, paper_h)
             else:
                 # Portrait
-                used_width_cm  = min(paper_w, paper_h)
+                used_width_cm = min(paper_w, paper_h)
                 used_length_cm = max(paper_w, paper_h)
 
-        px_per_cm_width  = img_width_px  / used_width_cm
+        px_per_cm_width = img_width_px / used_width_cm
         px_per_cm_length = img_height_px / used_length_cm
 
         return px_per_cm_width, px_per_cm_length, used_width_cm, used_length_cm
@@ -139,6 +145,7 @@ def img_px_per_cm(
 ##############################################################################
 # Obtain px per cm density from the average diameter of reference circles
 ##############################################################################
+
 
 def diameter_px_per_cm(
     all_circles: List[Tuple[int, int, int]],
@@ -179,17 +186,17 @@ def diameter_px_per_cm(
         If ``all_circles`` is empty.
     """
     if not all_circles:
-        raise ValueError('No circles provided.')
+        raise ValueError("No circles provided.")
 
     diameters = np.array([d[2] for d in all_circles], dtype=np.float32)
 
     mean_val = np.mean(diameters)
-    std_val  = np.std(diameters)
+    std_val = np.std(diameters)
 
     lower = mean_val - std_threshold * std_val
     upper = mean_val + std_threshold * std_val
 
-    mask     = (diameters >= lower) & (diameters <= upper)
+    mask = (diameters >= lower) & (diameters <= upper)
     filtered = diameters[mask]
 
     if len(filtered) == 0:
@@ -200,9 +207,15 @@ def diameter_px_per_cm(
     px_cm_density = np.mean(filtered) / diameter_cm
 
     if verbose:
-        print(f"            Range: [{lower:.1f}, {upper:.1f}] px")
-        print(f"            Filtered circles: {len(filtered)}/{len(diameters)} (std > {std_threshold})")
-        print(f"\n        . ݁₊ ⊹ . ݁ ⟡ ݁ px/cm density: {px_cm_density:.1f} (diameter_cm: {diameter_cm} cm) ⟡ ݁ . ⊹ ₊ ݁.")
+        print(
+            f"            Filtered circles: {len(filtered)}/{len(diameters)} (std > {std_threshold})"
+        )
+        print(
+            f"            Mean diameter: {np.mean(filtered):.1f} ± {np.std(filtered):.1f} px"
+        )
+        print(
+            f"\n        . ݁₊ ⊹ . ݁ ⟡ ݁ px/cm density: {px_cm_density:.1f} (diameter_cm: {diameter_cm} cm) ⟡ ݁ . ⊹ ₊ ݁."
+        )
 
     return float(px_cm_density)
 
@@ -210,6 +223,7 @@ def diameter_px_per_cm(
 ##############################################################################
 # Load models and obtain their path
 ##############################################################################
+
 
 def _get_package_model_path(model_name: str) -> str:
     """
@@ -235,12 +249,14 @@ def _get_package_model_path(model_name: str) -> str:
     """
     try:
         from importlib.resources import files
-        model_path = files('traitly').joinpath('package_data', 'models', model_name)
+
+        model_path = files("traitly").joinpath("package_data", "models", model_name)
         return str(model_path)
     except (ImportError, AttributeError):
         import traitly
+
         package_dir = Path(traitly.__file__).parent
-        model_path  = package_dir / 'package_data' / 'models' / model_name
+        model_path = package_dir / "package_data" / "models" / model_name
 
         if not model_path.exists():
             raise FileNotFoundError(
@@ -254,6 +270,7 @@ def _get_package_model_path(model_name: str) -> str:
 ##############################################################################
 # Wrapper: calculate px/cm density from YOLO circles or physical dimensions
 ##############################################################################
+
 
 def px_cm_density(
     img: np.ndarray,
@@ -333,7 +350,7 @@ def px_cm_density(
         and ``roi_contours`` is a list of contour arrays or ``None``.
     """
     if model_path is None:
-        model_path = _get_package_model_path('size_reference.pt')
+        model_path = _get_package_model_path("size_reference.pt")
 
     try:
         _get_yolo_model(model_path)
@@ -364,16 +381,14 @@ def px_cm_density(
 
     if all_circles:
         px_cm = diameter_px_per_cm(
-            all_circles, verbose=verbose,
-            diameter_cm=diameter_cm, std_threshold=2
+            all_circles, verbose=verbose, diameter_cm=diameter_cm, std_threshold=2
         )
 
         if return_coordinates:
             circle_coords = []
-            for (x1, y1, x2, y2) in roi_boxes:
+            for x1, y1, x2, y2 in roi_boxes:
                 contour = np.array(
-                    [[x1, y1], [x2, y1], [x2, y2], [x1, y2]],
-                    dtype=np.int32
+                    [[x1, y1], [x2, y1], [x2, y2], [x1, y2]], dtype=np.int32
                 )
                 circle_coords.append(contour)
             return px_cm, img_annotated, circle_coords if circle_coords else None
@@ -382,10 +397,10 @@ def px_cm_density(
 
     # Method 2: predetermined paper size
     valid_sizes = {
-        'letter_ansi': (21.6, 27.9),
-        'legal_ansi':  (21.59, 35.56),
-        'a4_iso':      (21.0, 29.7),
-        'a3_iso':      (29.7, 42.0),
+        "letter_ansi": (21.6, 27.9),
+        "legal_ansi": (21.59, 35.56),
+        "a4_iso": (21.0, 29.7),
+        "a3_iso": (29.7, 42.0),
     }
 
     if physical_size is not None:
@@ -396,7 +411,11 @@ def px_cm_density(
             )
         px_per_cm_width, px_per_cm_length, _, _ = img_px_per_cm(img, size=physical_size)
         px_cm = float(np.sqrt(px_per_cm_width * px_per_cm_length))
-        return (px_cm, img_annotated, None) if return_coordinates else (px_cm, img_annotated)
+        return (
+            (px_cm, img_annotated, None)
+            if return_coordinates
+            else (px_cm, img_annotated)
+        )
 
     # Method 3: custom width and length
     if width_cm is not None and length_cm is not None:
@@ -404,7 +423,11 @@ def px_cm_density(
             img, width_cm=width_cm, length_cm=length_cm
         )
         px_cm = float(np.sqrt(px_per_cm_width * px_per_cm_length))
-        return (px_cm, img_annotated, None) if return_coordinates else (px_cm, img_annotated)
+        return (
+            (px_cm, img_annotated, None)
+            if return_coordinates
+            else (px_cm, img_annotated)
+        )
 
     # Method 4: no calibration available
     return (None, img_annotated, None) if return_coordinates else (None, img_annotated)
@@ -413,6 +436,7 @@ def px_cm_density(
 ##############################################################################
 # Detect label ROI by contour filtering
 ##############################################################################
+
 
 def detect_label_box(
     imagen_path: Optional[str] = None,
@@ -489,18 +513,22 @@ def detect_label_box(
 
         if 2 < aspect_ratio < 6:
             box_info = {
-                'x': x, 'y': y, 'width': w, 'height': h,
-                'area': area, 'aspect_ratio': aspect_ratio,
+                "x": x,
+                "y": y,
+                "width": w,
+                "height": h,
+                "area": area,
+                "aspect_ratio": aspect_ratio,
             }
             boxes.append(box_info)
 
             if plot:
                 cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    
+
     if plot:
         plt.figure(figsize=(8, 8))
         plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        plt.axis('off')
+        plt.axis("off")
         plt.show()
 
     if verbose:
@@ -514,6 +542,7 @@ def detect_label_box(
 ##############################################################################
 # Find black circles in a size reference box
 ##############################################################################
+
 
 def find_size_ref_circles(
     roi_gray: np.ndarray,
@@ -555,24 +584,23 @@ def find_size_ref_circles(
         ``debug_dict`` contains ``'roi_gray'``, ``'binary'``,
         ``'overlay'``, ``'num_contours'``, and ``'num_circles'``.
     """
-    h, w   = roi_gray.shape
+    h, w = roi_gray.shape
     min_area = max(50, int(min_area_ratio * h * w))
 
     kernel_size = 3 if min(h, w) < 100 else 5
     blurred = cv2.GaussianBlur(roi_gray, (kernel_size, kernel_size), 0)
 
     binary = cv2.adaptiveThreshold(
-        blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY_INV, 11, 2
+        blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
     )
 
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN,  kernel, iterations=1)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=1)
     binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=1)
 
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    circles        = []
+    circles = []
     valid_contours = []
 
     for contour in contours:
@@ -594,16 +622,16 @@ def find_size_ref_circles(
 
     if return_debug:
         overlay = cv2.cvtColor(roi_gray, cv2.COLOR_GRAY2BGR)
-        for (cx, cy, r) in circles:
+        for cx, cy, r in circles:
             cv2.circle(overlay, (cx, cy), r, (0, 0, 255), 2)
             cv2.circle(overlay, (cx, cy), 2, (255, 0, 0), -1)
 
         return circles, {
-            "roi_gray":     roi_gray,
-            "binary":       binary,
-            "overlay":      overlay,
+            "roi_gray": roi_gray,
+            "binary": binary,
+            "overlay": overlay,
             "num_contours": len(contours),
-            "num_circles":  len(circles),
+            "num_circles": len(circles),
         }
 
     return circles
@@ -616,7 +644,7 @@ def find_size_ref_circles(
 _YOLO_MODEL_CACHE = {}
 
 
-def _get_yolo_model(model_path: str) -> 'YOLO':
+def _get_yolo_model(model_path: str) -> "YOLO":
     """
     Load and cache a YOLO model by path.
 
@@ -635,6 +663,7 @@ def _get_yolo_model(model_path: str) -> 'YOLO':
     """
     if model_path not in _YOLO_MODEL_CACHE:
         from ultralytics import YOLO
+
         _YOLO_MODEL_CACHE[model_path] = YOLO(model_path)
     return _YOLO_MODEL_CACHE[model_path]
 
@@ -642,6 +671,7 @@ def _get_yolo_model(model_path: str) -> 'YOLO':
 ##############################################################################
 # Detect size reference circles using YOLOv8
 ##############################################################################
+
 
 def detect_size_ref_yolo(
     img: Optional[np.ndarray] = None,
@@ -658,7 +688,11 @@ def detect_size_ref_yolo(
     return_roi_coords: bool = False,
 ) -> Union[
     Tuple[List[Tuple[int, int, int]], np.ndarray],
-    Tuple[List[Tuple[int, int, int]], np.ndarray, Optional[List[Tuple[int, int, int, int]]]],
+    Tuple[
+        List[Tuple[int, int, int]],
+        np.ndarray,
+        Optional[List[Tuple[int, int, int, int]]],
+    ],
 ]:
     """
     Detect size reference circles in an image using a YOLOv8 model.
@@ -721,7 +755,7 @@ def detect_size_ref_yolo(
         If neither ``img`` nor ``img_path`` is provided.
     """
     if model_path is None:
-        model_path = _get_package_model_path('size_reference.pt')
+        model_path = _get_package_model_path("size_reference.pt")
 
     try:
         model = _get_yolo_model(model_path)
@@ -731,8 +765,7 @@ def detect_size_ref_yolo(
 
     if img is None and img_path is None:
         raise ValueError(
-            "No image or image path provided. "
-            "Please pass either 'img' or 'img_path'."
+            "No image or image path provided. Please pass either 'img' or 'img_path'."
         )
 
     if img_path is not None:
@@ -740,15 +773,15 @@ def detect_size_ref_yolo(
         if img is None:
             raise ValueError(f"Error loading image from {img_path}")
 
-    h, w  = img.shape[:2]
-    gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    h, w = img.shape[:2]
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     results = model(img, conf=0.1, iou=iou_threshold, verbose=False)
 
-    box_detected  = False
-    all_circles   = []
-    rois_debug    = []
-    roi_boxes     = []
+    box_detected = False
+    all_circles = []
+    rois_debug = []
+    roi_boxes = []
     img_annotated = None
 
     pad_x_pct = 0.15
@@ -762,8 +795,8 @@ def detect_size_ref_yolo(
             continue
 
         # Filter by confidence threshold
-        filtered_boxes  = []
-        low_conf_boxes  = []
+        filtered_boxes = []
+        low_conf_boxes = []
 
         for box in boxes:
             conf = float(box.conf[0].cpu().numpy())
@@ -771,7 +804,6 @@ def detect_size_ref_yolo(
                 filtered_boxes.append(box)
             else:
                 low_conf_boxes.append((box, conf))
-        
 
         boxes = filtered_boxes
         box_detected = True
@@ -780,7 +812,7 @@ def detect_size_ref_yolo(
             img_annotated = img.copy()
 
         if yolo_verbose:
-            print('> Reference size detected:')
+            print("> Reference size detected:")
             print(
                 f"  - Processing reference box(es) with a confidence "
                 f"threshold >={confidence_threshold}:"
@@ -803,11 +835,11 @@ def detect_size_ref_yolo(
             y1 = max(0, min(y1, h - 1))
             y2 = max(0, min(y2, h - 1))
 
-            confidence  = float(box.conf[0].cpu().numpy())
-            box_width   = x2 - x1 + 1
-            box_height  = y2 - y1 + 1
-            padx        = int(pad_x_pct * box_width)
-            pady        = int(pad_y_pct * box_height)
+            confidence = float(box.conf[0].cpu().numpy())
+            box_width = x2 - x1 + 1
+            box_height = y2 - y1 + 1
+            padx = int(pad_x_pct * box_width)
+            pady = int(pad_y_pct * box_height)
 
             roi_x1 = max(0, x1 - padx)
             roi_y1 = max(0, y1 - pady)
@@ -821,7 +853,7 @@ def detect_size_ref_yolo(
             if yolo_verbose:
                 roi_height, roi_width = roi_gray.shape[:2]
                 print(
-                    f"            Ref {i+1}: {roi_width}x{roi_height} px, "
+                    f"            Ref {i + 1}: {roi_width}x{roi_height} px, "
                     f"conf: {confidence:.3f}"
                 )
 
@@ -830,52 +862,74 @@ def detect_size_ref_yolo(
                 continue
 
             # Annotate bounding box on result image
-            cv2.rectangle(img_annotated, (roi_x1, roi_y1), (roi_x2, roi_y2), (200, 100, 0), 2)
+            cv2.rectangle(
+                img_annotated, (roi_x1, roi_y1), (roi_x2, roi_y2), (200, 100, 0), 2
+            )
             cv2.putText(
                 img_annotated,
-                f"Ref {i+1} ({confidence:.2f})",
+                f"Ref {i + 1} ({confidence:.2f})",
                 (roi_x1 + 5, max(roi_y1 - 5, 10)),
-                cv2.FONT_HERSHEY_SIMPLEX, font_size, (200, 100, 0), 3, cv2.LINE_AA,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                font_size,
+                (200, 100, 0),
+                3,
+                cv2.LINE_AA,
             )
 
             # Detect circles within ROI
             if plot_roi_analysis:
-                circles, dbg = find_size_ref_circles(roi_gray, return_debug=True, ref_circularity=0.7)
-                rois_debug.append({
-                    "idx":         i + 1,
-                    "conf":        confidence,
-                    "roi_box":     (roi_x1, roi_y1, roi_x2, roi_y2),
-                    "roi_gray":    dbg["roi_gray"],
-                    "binary":      dbg["binary"],
-                    "overlay":     dbg["overlay"],
-                    "num_circles": len(circles),
-                })
+                circles, dbg = find_size_ref_circles(
+                    roi_gray, return_debug=True, ref_circularity=0.7
+                )
+                rois_debug.append(
+                    {
+                        "idx": i + 1,
+                        "conf": confidence,
+                        "roi_box": (roi_x1, roi_y1, roi_x2, roi_y2),
+                        "roi_gray": dbg["roi_gray"],
+                        "binary": dbg["binary"],
+                        "overlay": dbg["overlay"],
+                        "num_circles": len(circles),
+                    }
+                )
             else:
-                circles = find_size_ref_circles(roi_gray, return_debug=False, ref_circularity=0.7)
+                circles = find_size_ref_circles(
+                    roi_gray, return_debug=False, ref_circularity=0.7
+                )
 
             # Convert circle coordinates to global and annotate
-            for (cx_roi, cy_roi, radius) in circles:
+            for cx_roi, cy_roi, radius in circles:
                 cx_global = cx_roi + roi_x1
                 cy_global = cy_roi + roi_y1
-                diameter  = 2 * radius
+                diameter = 2 * radius
 
-                cv2.circle(img_annotated, (cx_global, cy_global), radius, (0, 0, 255), 5)
+                cv2.circle(
+                    img_annotated, (cx_global, cy_global), radius, (0, 0, 255), 5
+                )
 
                 cv2.line(
                     img_annotated,
                     (cx_global - radius, cy_global),
                     (cx_global + radius, cy_global),
-                    (255, 139, 99), 3,
+                    (255, 139, 99),
+                    3,
                 )
 
-                text      = f"{diameter}px"
-                text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_size, 4)[0]
-                text_x    = cx_global - (text_size[0] // 2)
-                text_y    = cy_global - 20
+                text = f"{diameter}px"
+                text_size = cv2.getTextSize(
+                    text, cv2.FONT_HERSHEY_SIMPLEX, font_size, 4
+                )[0]
+                text_x = cx_global - (text_size[0] // 2)
+                text_y = cy_global - 20
 
                 cv2.putText(
-                    img_annotated, text, (text_x, text_y),
-                    cv2.FONT_HERSHEY_SIMPLEX, font_size, (0, 0, 255), 4,
+                    img_annotated,
+                    text,
+                    (text_x, text_y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    font_size,
+                    (0, 0, 255),
+                    4,
                 )
 
                 all_circles.append((cx_global, cy_global, diameter))
@@ -896,11 +950,11 @@ def detect_size_ref_yolo(
     if plot and img_annotated is not None:
         plt.figure(figsize=plot_size)
         plt.imshow(cv2.cvtColor(img_annotated, cv2.COLOR_BGR2RGB))
-        plt.axis('off')
+        plt.axis("off")
         plt.show()
 
     if plot_roi_analysis and box_detected and rois_debug:
-        n    = min(len(rois_debug), show_max_rois)
+        n = min(len(rois_debug), show_max_rois)
         cols = 3
         rows = n
         plt.figure(figsize=(14, 4 * rows))
@@ -910,19 +964,21 @@ def detect_size_ref_yolo(
             x1, y1, x2, y2 = item["roi_box"]
 
             plt.subplot(rows, cols, r_i * cols + 1)
-            plt.imshow(item["roi_gray"], cmap='gray')
-            plt.title(f'Ref {item["idx"]} ({item["conf"]:.2f})\nROI: ({x1},{y1})-({x2},{y2})')
-            plt.axis('off')
+            plt.imshow(item["roi_gray"], cmap="gray")
+            plt.title(
+                f"Ref {item['idx']} ({item['conf']:.2f})\nROI: ({x1},{y1})-({x2},{y2})"
+            )
+            plt.axis("off")
 
             plt.subplot(rows, cols, r_i * cols + 2)
-            plt.imshow(item["binary"], cmap='gray')
-            plt.title('Binarization')
-            plt.axis('off')
+            plt.imshow(item["binary"], cmap="gray")
+            plt.title("Binarization")
+            plt.axis("off")
 
             plt.subplot(rows, cols, r_i * cols + 3)
             plt.imshow(cv2.cvtColor(item["overlay"], cv2.COLOR_BGR2RGB))
-            plt.title(f'Overlay (circles: {item["num_circles"]})')
-            plt.axis('off')
+            plt.title(f"Overlay (circles: {item['num_circles']})")
+            plt.axis("off")
 
         plt.tight_layout()
         plt.show()
@@ -939,6 +995,7 @@ def detect_size_ref_yolo(
 ##############################################################################
 # Detect label ROI using YOLOv8
 ##############################################################################
+
 
 def detect_label_box_yolo(
     img: np.ndarray,
@@ -975,7 +1032,7 @@ def detect_label_box_yolo(
         boxes are detected or the model fails to load.
     """
     if model_path is None:
-        model_path = _get_package_model_path('label.pt')
+        model_path = _get_package_model_path("label.pt")
 
     try:
         model = _get_yolo_model(model_path)
@@ -996,26 +1053,31 @@ def detect_label_box_yolo(
         for box in boxes:
             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
 
-            width        = x2 - x1
-            height       = y2 - y1
-            area         = width * height
+            width = x2 - x1
+            height = y2 - y1
+            area = width * height
             aspect_ratio = width / height if height > 0 else 0
 
-            label_boxes.append({
-                'x': x1, 'y': y1,
-                'width': width, 'height': height,
-                'area': area, 'aspect_ratio': aspect_ratio,
-            })
+            label_boxes.append(
+                {
+                    "x": x1,
+                    "y": y1,
+                    "width": width,
+                    "height": height,
+                    "area": area,
+                    "aspect_ratio": aspect_ratio,
+                }
+            )
 
         if plot:
             plt.figure(figsize=(8, 8))
             img_copy = img.copy()
             for box in label_boxes:
-                x, y = box['x'], box['y']
-                w, h = box['width'], box['height']
+                x, y = box["x"], box["y"]
+                w, h = box["width"], box["height"]
                 cv2.rectangle(img_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
             plt.imshow(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))
-            plt.axis('off')
+            plt.axis("off")
             plt.show()
 
         return label_boxes if label_boxes else None
