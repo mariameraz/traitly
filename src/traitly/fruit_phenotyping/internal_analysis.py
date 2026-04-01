@@ -203,7 +203,7 @@ class FruitInternalAnalyzer:
 
         ## Verify image path exists
         # Assign the path first
-        self.img_path = image_path
+        self.img_path = os.path.abspath(image_path)
 
         # Then verify if it was provided and exists
         if self.img_path is not None:
@@ -214,7 +214,7 @@ class FruitInternalAnalyzer:
                 )
 
         # load_img
-        self.is_directory = os.path.isdir(image_path)
+        self.is_directory = os.path.isdir(os.path.dirname(image_path))
         self.img = None
         self.img_name = None
         self.img_copy = None
@@ -323,6 +323,8 @@ class FruitInternalAnalyzer:
         self.img_hsv = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
         self.img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
         self.img_name = detect_img_name(self.img_path)
+
+        self.parameters.img_params = {"img_path": self.img_path}
 
         return None
 
@@ -1822,6 +1824,7 @@ class FruitInternalAnalyzer:
         if output_path is None:
             output_path = os.path.dirname(self.img_path)
 
+        output_path = os.path.abspath(output_path)
         base_name = os.path.splitext(os.path.basename(self.img_path))[0]
 
         # Save as .txt
@@ -1832,7 +1835,7 @@ class FruitInternalAnalyzer:
         json_path = os.path.join(output_path, f"{base_name}_parameters.json")
         self.parameters.save_to_json(json_path)
 
-        print(f"\n> Parameters saved:")
+        print(f"\n> Parameters saved at:")
         print(f"  - TXT:  {txt_path}")
         print(f"  - JSON: {json_path}")
 
@@ -2854,7 +2857,7 @@ class FruitInternalAnalyzer:
             else:
                 print(f"    > num_cores: {num_cores}\n")
             if json_path is not None:
-                print(f"    > Parameters loaded from: {json_path}\n")
+                print(f"    > Parameters loaded from: {os.path.abspath(json_path)}\n")
 
         # Create lists to save results
         all_morphology: List[pd.DataFrame] = []
@@ -3000,7 +3003,7 @@ class FruitInternalAnalyzer:
             }
 
         if json_path is not None:
-            json_report = json_path
+            json_report = os.path.abspath(json_path)
         else:
             json_report = "No JSON file provided"
 
