@@ -1,6 +1,6 @@
 # traitly/fruit_phenotyping/analysis_parameters.py
 """
-Analysis metadata tracking for traitly `FruitInternalAnalyzer` and 
+Analysis metadata tracking for traitly `FruitInternalAnalyzer` and
 `FruitExternalAnalyzer` pipelines.
 
 Provides the :class:`AnalysisParameters` dataclass for capturing and
@@ -11,12 +11,12 @@ phenotyping pipeline, supporting reproducibility and traceability.
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
-from dataclasses import dataclass, field, asdict
-from typing import Dict, Any
-from datetime import datetime
 import importlib.metadata
-import sys
 import json
+import sys
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from typing import Any, Dict
 
 # ============================================================================
 # INTERNAL IMPORTS
@@ -26,6 +26,7 @@ from traitly import __version__
 # ============================================================================
 # Save parameters used and session information as txt and json files
 # ============================================================================
+
 
 @dataclass
 class AnalysisParameters:
@@ -53,7 +54,9 @@ class AnalysisParameters:
     analyze_color_params : Dict[str, Any]
         Parameters used in the color analysis step.
     """
+
     # Create a dictionary for each step
+    img_params: Dict[str, Any] = field(default_factory=dict)
     setup_measurements_params: Dict[str, Any] = field(default_factory=dict)
     generate_fruit_mask_params: Dict[str, Any] = field(default_factory=dict)
     enhance_locule_contrast_params: Dict[str, Any] = field(default_factory=dict)
@@ -61,7 +64,7 @@ class AnalysisParameters:
     detect_fruits_params: Dict[str, Any] = field(default_factory=dict)
     analyze_morphology_params: Dict[str, Any] = field(default_factory=dict)
     analyze_color_params: Dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert dataclass fields to a dictionary.
@@ -72,8 +75,7 @@ class AnalysisParameters:
             Dictionary representation of all analysis parameter fields.
         """
         return asdict(self)
-    
-    
+
     def to_formatted_string(self) -> str:
         """
         Return analysis parameters as a readable formatted string.
@@ -88,15 +90,16 @@ class AnalysisParameters:
         """
 
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
+
         lines = [
             "=" * 70,
             "ANALYSIS PROCESSING PARAMETERS",
             "=" * 70,
             f"traitly: v{__version__}",
-            f"run date: {date}"
+            f"run date: {date}",
+            f"image: {self.img_params.get('img_path', 'not set')}",
         ]
-        
+
         sections = {
             "SETUP_MEASUREMENTS": self.setup_measurements_params,
             "GENERATE_FRUIT_MASK": self.generate_fruit_mask_params,
@@ -111,7 +114,7 @@ class AnalysisParameters:
                 lines.append(f"\n{title}:")
                 for key, value in params.items():
                     lines.append(f"   - {key}: {value}")
-        
+
         lines.append("\n" + "=" * 70)
 
         # Version summary
@@ -120,9 +123,9 @@ class AnalysisParameters:
             lines.append(f"   - {pkg}: {version}")
 
         return "\n".join(lines)
-    
+
     def save_to_file(self, filepath: str) -> None:
-        """ 
+        """
         Save formatted parameters to a plain text file.
 
         Parameters
@@ -135,10 +138,9 @@ class AnalysisParameters:
         OSError
             If the file cannot be created or written to ``filepath``.
         """
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             f.write(self.to_formatted_string())
 
-    
     def save_to_json(self, filepath: str) -> None:
         """
         Save parameters to a JSON file.
@@ -154,10 +156,10 @@ class AnalysisParameters:
             If the file cannot be created or written to ``filepath``.
         """
         data = self.to_dict()
-        
-        with open(filepath, 'w', encoding='utf-8') as f:
+
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-    
+
     def get_package_versions(self) -> Dict[str, str]:
         """
         Return installed versions of key dependencies used by traitly.
@@ -170,7 +172,7 @@ class AnalysisParameters:
             Packages not found are reported as ``'not installed'``.
         """
         packages = [
-              "opencv-contrib-python",
+            "opencv-contrib-python",
             "numpy",
             "pandas",
             "scipy",
@@ -179,14 +181,12 @@ class AnalysisParameters:
             "psutil",
             "easyocr",
             "PyMuPDF",
-            "ultralytics"
+            "ultralytics",
         ]
-        versions = {'python': sys.version.split()[0]}
+        versions = {"python": sys.version.split()[0]}
         for pkg in packages:
             try:
                 versions[pkg] = importlib.metadata.version(pkg)
             except importlib.metadata.PackageNotFoundError:
-                versions[pkg] = 'not installed'
+                versions[pkg] = "not installed"
         return versions
-
-
