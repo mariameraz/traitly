@@ -388,7 +388,8 @@ class FruitInternalAnalyzer:
             # Try to detect label roi
             self.label_roi = None
             self.label_text = "No label detected"
-            print("> Label detection: SKIPPED (detect_label=False)")
+            if verbose:
+                print("> Label detection: SKIPPED (detect_label=False)")
 
             return None
 
