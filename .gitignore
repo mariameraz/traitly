@@ -6,27 +6,10 @@ __pycache__/
 *.pyd
 .Python
 
-# macOS
-.DS_Store
-**/.DS_Store
-.AppleDouble
-.LSOverride
-
 # python environments
 .traitly_test/*
 
-# Specific files
-src/traitly/Untitled-1.ipynb
-tests/sample_data/Results/
-Untitled-1.ipynb
-requirements-docs.txt
-mkdocs.yml 
-image.png
-testing_curve_fruit/
-tutorials/
-ml_color_correction/
-
-# Git cache
+# Cache
 .cache/
 
 # Build
@@ -34,11 +17,5 @@ build/
 dist/
 *.egg-info/
 
-# pixi environments
-.pixi/*
-!.pixi/config.toml
-.docs_venv/
-.DS_Store
-.cache/
-.cache/
-.cache/
+# zed files
+.zed
