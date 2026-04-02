@@ -34,6 +34,25 @@ Demostración sencilla de cómo realizar análisis de apariencia externa y estru
 
 <div class="grid cards" markdown>
 
+
+<div class="card" markdown>
+
+#### **•󠁏 Análisis de morfología y color en Cranberry**
+
+---
+
+Análisis de rodajas de cranberry ,
+
+<figure markdown>
+    
+![](../../en/tutorials/cranberry_internal_analysis_files/cranberry_internal_analysis_12_0.png){ style="width:45%;"}
+</figure>
+
+
+[:octicons-arrow-right-24: Ir al tutorial](cranberry_internal_analysis.md)
+
+</div>
+
 <div class="card" markdown>
 
 #### **•󠁏 Segmentación de lóculos**
