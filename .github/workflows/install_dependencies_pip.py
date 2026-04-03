@@ -1,4 +1,5 @@
 name: Install dependencies with pip
+
 on:
   push:
     branches: ["main"]
@@ -7,11 +8,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
+
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v4
@@ -20,13 +24,15 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-
+          
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-
+        pip install -e .
+          
     - name: Test with pytest
       run: |
         pytest tests/cranberry_internal_analysis.py -v
