@@ -3,8 +3,9 @@ name: Install dependencies with pip
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    paths: 
+      - "src/**"
+      - "tests/**"
 
 jobs:
   test:
