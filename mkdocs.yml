@@ -67,6 +67,9 @@ markdown_extensions:
   - admonition
   - pymdownx.details # to collapse admotions
   - pymdownx.superfences
+  - tables
+  - attr_list # for markdowon atributes
+  - md_in_html # for html
 
   - pymdownx.highlight:
       anchor_linenums: true
@@ -79,10 +82,6 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-
-  - tables
-  - attr_list # for markdowon atributes
-  - md_in_html # for html
 
   - toc:
       permalink: true
@@ -136,7 +135,7 @@ plugins:
                 #     - color_plot: en/api/color_plot.md
                 #     - analysis_parameters: en/api/analysis_parameters.md
 
-            - About: en/about.md
+            #- About: en/about.md
             - Changelog: en/changelog.md
 
         - locale: es
@@ -176,7 +175,7 @@ plugins:
                 #           - color_plot: es/api/color_plot.md
                 #           - analysis_parameters: es/api/analysis_parameters.md
 
-            - About: es/about.md
+            #- About: es/about.md
             - Changelog: es/changelog.md
 
           nav_translations:
