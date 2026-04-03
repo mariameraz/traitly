@@ -19,3 +19,6 @@ dist/
 
 # zed files
 .zed
+
+# Jupyter files
+**/.ipynb_checkpoints/
