@@ -142,8 +142,8 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         Path to an image file or a folder containing images.
     """
 
-    def __init__(self, img_path: str):
-        super().__init__(img_path)
+    def __init__(self, image_path: str):
+        super().__init__(image_path)
 
         self.external_features = None
 
