@@ -339,7 +339,7 @@ class FruitInternalAnalyzer:
         blur_label: Tuple[int, int] = (11, 11),
         gpu: bool = True,
         skip_qr: bool = False,
-        skip_label_detection: bool = False,
+        skip_label_roi: bool = False,
     ) -> None:
         """
         Detect QR code, label ROI, and label text for the loaded image.
@@ -351,7 +351,7 @@ class FruitInternalAnalyzer:
         2. Label ROI detection via
         :func:`~traitly.utils.basic_functions.detect_label_box_yolo` then
         :func:`~traitly.utils.basic_functions.detect_label_box` as fallback
-        (skipped if ``skip_label_detection=True``).
+        (skipped if ``skip_label_roi=True``).
         3. OCR via :func:`~traitly.utils.basic_functions.detect_label_text`
         only if a ROI was found and no QR text was detected.
 
@@ -375,7 +375,7 @@ class FruitInternalAnalyzer:
             If True, use GPU acceleration for OCR. Default is True.
         skip_qr : bool, optional
             If True, skip QR code detection. Default is False.
-        skip_label_detection : bool, optional
+        skip_label_roi : bool, optional
             If True, skip both ROI detection and OCR. Default is False.
         """
 
@@ -405,7 +405,7 @@ class FruitInternalAnalyzer:
                 print("> QR detection: SKIPPED")
 
         # ROI + OCR (optional)
-        if not skip_label_detection:
+        if not skip_label_roi:
             label_start = time.time()
 
             # 1. YOLO
@@ -461,9 +461,7 @@ class FruitInternalAnalyzer:
         if self.label_text == "No label detected":
             if verbose:
                 print("> No label detected.")
-                print(
-                    "     - Use skip_label_detection=True to disable label detection."
-                )
+                print(f"    - Use detect_label=False to disable label detection.")
 
         return None
 
@@ -479,12 +477,12 @@ class FruitInternalAnalyzer:
         width_cm: Optional[float] = None,
         length_cm: Optional[float] = None,
         diameter_cm: Optional[float] = None,
-        fast_calibration: bool = False,
+        skip_yolo: bool = False,
     ) -> None:
         """
         Detect the size reference and calculate the pixel-to-centimetre factor.
 
-        When ``fast_calibration=True`` and both ``width_cm`` and ``length_cm``
+        When ``skip_yolo=True`` and both ``width_cm`` and ``length_cm``
         are provided, the scale is derived geometrically without YOLO detection.
         Otherwise, delegates to
         :func:`~traitly.utils.basic_functions.px_cm_density` for automatic
@@ -512,7 +510,7 @@ class FruitInternalAnalyzer:
         diameter_cm : float or None, optional
             Known diameter of the reference object. Defaults to 2.5 cm if
             not provided. Default is None.
-        fast_calibration : bool, optional
+        skip_yolo : bool, optional
             If True and ``width_cm`` and ``length_cm`` are set, skip YOLO
             detection and calculate scale using phyisical data; else, if
             ``width_cm`` and ``length_cm`` are None, return pixel measurements.
@@ -535,31 +533,33 @@ class FruitInternalAnalyzer:
         # create an image copy to work with
         self.img_copy = self.img.copy()
 
-        if fast_calibration:
-            if width_cm and length_cm:
-                # Fast method: use physical dimensions
-                self.px_per_cm = np.sqrt((w * h) / (width_cm * length_cm))
-                self.ref_roi = None
-                if verbose:
-                    print("> Size reference detection: SKIPPED.")
-            else:
-                # No calibration available: measurements will be in pixels
-                self.px_per_cm = None
-                self.ref_roi = None
-                if verbose:
-                    print("> Size reference detection: SKIPPED.")
+        if (width_cm is not None) != (length_cm is not None):
+            raise ValueError("Error: both width_cm and length_cm are required")
+
+        if width_cm and length_cm:
+            self.px_per_cm = np.sqrt((w * h) / (width_cm * length_cm))
+            self.ref_roi = None
+            if verbose:
+                print("> Size reference detection: SKIPPED (skip_yolo=True).")
         else:
-            self.px_per_cm, self.img_copy, self.ref_roi = px_cm_density(
-                self.img_copy,
-                confidence_threshold=confidence,
-                plot=False,
-                font_size=font_size,
-                verbose=verbose,
-                width_cm=width_cm,
-                length_cm=length_cm,
-                diameter_cm=diameter_cm,
-                return_coordinates=True,
-            )
+            # No calibration available: measurements will be in pixels
+            self.px_per_cm = None
+            self.ref_roi = None
+            if skip_yolo:
+                if verbose:
+                    print("> Size reference detection: SKIPPED (skip_yolo=True).")
+            else:
+                self.px_per_cm, self.img_copy, self.ref_roi = px_cm_density(
+                    self.img_copy,
+                    confidence_threshold=confidence,
+                    plot=False,
+                    font_size=font_size,
+                    verbose=verbose,
+                    width_cm=width_cm,
+                    length_cm=length_cm,
+                    diameter_cm=diameter_cm,
+                    return_coordinates=True,
+                )
 
         if self.ref_roi is not None:
             if verbose and using_default_diameter:
@@ -568,7 +568,7 @@ class FruitInternalAnalyzer:
         else:
             if width_cm is not None and length_cm is not None:
                 if verbose:
-                    print("> Using provided physical dimensions:")
+                    print("\n> Using provided physical dimensions:")
                     print(f"    - width_cm:  {width_cm} cm")
                     print(f"    - length_cm: {length_cm} cm")
                     print(
@@ -577,9 +577,9 @@ class FruitInternalAnalyzer:
 
             else:
                 if verbose:
-                    print("> Using provided physical dimensions:")
-                    print(f"    - width_cm:  None")
-                    print(f"    - length_cm: None")
+                    print("\n> Using provided physical dimensions:")
+                    print(f"    - width_cm:  {width_cm}")
+                    print(f"    - length_cm: {width_cm}")
                     print(
                         "\n        . ݁₊ ⊹ . ݁ ⟡ ݁ Measurements will be returned in PIXEL units ⟡ ݁ . ⊹ ₊ ݁."
                     )
@@ -604,7 +604,7 @@ class FruitInternalAnalyzer:
         diameter_cm: Optional[float] = None,
         gpu: bool = False,
         skip_qr: bool = False,
-        fast_calibration: bool = False,
+        skip_yolo: bool = False,
         detect_color_checker: bool = False,
         scale_factor: float = 0.5,
     ) -> None:
@@ -653,7 +653,7 @@ class FruitInternalAnalyzer:
         skip_qr : bool, optional
             If True, skip QR detection in :meth:`setup_label`. Default is
             False.
-        fast_calibration : bool, optional
+        skip_yolo : bool, optional
             If True and ``width_cm`` and ``length_cm`` are set, skip YOLO
             detection in :meth:`setup_calibration`. Default is False.
         detect_color_checker : bool, optional
@@ -680,7 +680,7 @@ class FruitInternalAnalyzer:
                 "width_cm": width_cm,
                 "length_cm": length_cm,
                 "diameter_cm": diameter_cm,
-                "fast_calibration": fast_calibration,
+                "skip_yolo": skip_yolo,
                 "skip_qr": skip_qr,
                 "detect_label": detect_label,
                 "language_label": language_label,
@@ -708,10 +708,8 @@ class FruitInternalAnalyzer:
             width_cm=width_cm,
             length_cm=length_cm,
             diameter_cm=diameter_cm,
-            fast_calibration=fast_calibration,
+            skip_yolo=skip_yolo,
         )
-
-        # self.img_copy = cv2.cvtColor(self.img_copy, cv2.COLOR_BGR2RGB)
 
         if detect_color_checker:
             self.detect_color_checker(
@@ -2443,7 +2441,7 @@ class FruitInternalAnalyzer:
         width_cm: Optional[float] = None,
         length_cm: Optional[float] = None,
         diameter_cm: Optional[float] = None,
-        fast_calibration: Optional[bool] = None,
+        skip_yolo: Optional[bool] = None,
         skip_qr: Optional[bool] = None,
         detect_label: Optional[bool] = None,
         confidence: Optional[float] = None,
@@ -2554,7 +2552,7 @@ class FruitInternalAnalyzer:
             Known reference length in centimetres for scale calibration.
         diameter_cm : float or None, optional
             Known reference diameter in centimetres for scale calibration.
-        fast_calibration : bool or None, optional
+        skip_yolo : bool or None, optional
             If True, use geometric calibration without YOLO detection.
         skip_qr : bool or None, optional
             If True, skip QR code detection.
@@ -2726,7 +2724,7 @@ class FruitInternalAnalyzer:
                 width_cm=width_cm,
                 length_cm=length_cm,
                 diameter_cm=diameter_cm,
-                fast_calibration=fast_calibration,
+                skip_yolo=skip_yolo,
                 skip_qr=skip_qr,
                 detect_label=detect_label,
                 confidence=confidence,
