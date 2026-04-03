@@ -61,7 +61,7 @@ Traitly assumes a **black background** by default. To achieve this:
 
 **PDF:**
 
-When scanning, it is more practical to configure the scanner to save all captures as a single multi-page PDF rather than managing individual files. Traitly includes functions to automatically extract each page as a separate image ready for analysis. See [Tutorials](tutorials/quickstart.md) for details.
+When scanning, it is more practical to configure the scanner to save all captures as a single multi-page PDF rather than managing individual files. Traitly includes functions to automatically extract each page as a separate image ready for analysis. See [Tutorials](../tutorials/quickstart.md) for details.
 
 **Resolution (DPI):**
 

@@ -43,12 +43,12 @@ La elección del fondo es especialmente importante en el análisis externo, ya q
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">
   <figure style="text-align: center; margin: 0;">
-    <img src="../../../assets/images/cranberry_background_example.jpg" alt="Ejemplos de fondo para cranberry"
+    <img src="../../assets/images/cranberry_background_example.jpg" alt="Ejemplos de fondo para cranberry"
          style="height: 400px; width: auto;">
     <figcaption><em>Arándano sobre distintos fondos. En frutos de colores claros, el fondo blanco reduce el contraste y dificulta la segmentación</em></figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
-    <img src="../../../assets/images/blackberry_background_example.jpg" alt="Ejemplos de fondo para mora"
+    <img src="../../assets/images/blackberry_background_example.jpg" alt="Ejemplos de fondo para mora"
          style="height: 400px; width: auto;">
     <figcaption><em>Mora sobre distintos fondos. En frutos oscuros, el fondo negro no genera suficiente contraste para una segmentación confiable</em></figcaption>
   </figure>

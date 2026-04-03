@@ -37,12 +37,12 @@ Traitly asume por defecto que el **fondo es negro**. Para lograr esto:
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">
   <figure style="text-align: center; margin: 0;">
-    <img src="../../../assets/images/scanner_box.jpg" alt="Caja negra y escáner"
+    <img src="../../assets/images/scanner_box.jpg" alt="Caja negra y escáner"
          style="height: 600px; width: auto;">
     <figcaption><em>Ejemplo de caja negra y escáner</em></figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
-    <img src="../../../assets/images/slices_image.jpg" alt="Ejemplo de imágen obtenida con el escáner"
+    <img src="../../assets/images/slices_image.jpg" alt="Ejemplo de imágen obtenida con el escáner"
          style="height: 600px; width: auto;">
     <figcaption><em>Ejemplo de imágen escaneada</em></figcaption>
   </figure>
@@ -61,7 +61,7 @@ Traitly asume por defecto que el **fondo es negro**. Para lograr esto:
 
 **PDF:**
 
-Durante la toma de imágenes, es más práctico configurar el escáner para guardar todas las capturas en un único archivo PDF con múltiples páginas, en lugar de manejar archivos individuales. Traitly incluye funciones para extraer automáticamente cada página como una imagen independiente, lista para el análisis. Ver detalles en [Tutoriales](tutorials/quickstart.md).
+Durante la toma de imágenes, es más práctico configurar el escáner para guardar todas las capturas en un único archivo PDF con múltiples páginas, en lugar de manejar archivos individuales. Traitly incluye funciones para extraer automáticamente cada página como una imagen independiente, lista para el análisis. Ver detalles en [Tutoriales](../tutorials/quickstart.md).
 
 **Resolución (DPI):**
 
