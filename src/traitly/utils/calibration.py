@@ -936,16 +936,16 @@ def detect_size_ref_yolo(
 
     if yolo_verbose:
         print(f"\n  - Total circles detected: {len(all_circles)}")
-        if not box_detected:
-            print(
-                "No size reference box detected in the image by YOLO. "
-                "Try adjusting confidence threshold or image quality."
-            )
-        elif len(all_circles) == 0:
-            print(
-                "No circles detected within the detected size reference boxes. "
-                "Try adjusting thresholds or check image quality."
-            )
+        # if not box_detected:
+        #     print(
+        #         "No size reference box detected in the image by YOLO. "
+        #         "Try adjusting confidence threshold or image quality."
+        #     )
+        # elif len(all_circles) == 0:
+        #     print(
+        #         "No circles detected within the detected size reference boxes. "
+        #         "Try adjusting thresholds or check image quality."
+        #     )
 
     if plot and img_annotated is not None:
         plt.figure(figsize=plot_size)
