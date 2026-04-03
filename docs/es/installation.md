@@ -77,7 +77,7 @@ mi-proyecto/
 
 ## Instalación
 
-=== "MacOS y Linux"
+=== ":fontawesome-solid-terminal: MacOS y Linux"
 
     **1. Crear un nuevo entorno de Python:**
 
@@ -98,7 +98,7 @@ mi-proyecto/
     pip install git+https://github.com/mariameraz/traitly.git
     ```
 
-=== "Windows"
+=== ":fontawesome-brands-windows:{.icon-blue} Windows"
 
     **1. Crear un nuevo entorno de Python:**
     
@@ -119,7 +119,7 @@ mi-proyecto/
     pip install git+https://github.com/mariameraz/traitly.git
     ```
 
-=== "Google Colab"
+=== ":simple-googlecolab:{.icon-orange} Google Colab"
 
     !!! warning "Nota importante"
         Google Colab no guarda sesiones. Cada vez que cierres el navegador o la sesión expire, tendrás que volver a instalar Traitly desde el paso 3.

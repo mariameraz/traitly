@@ -8,7 +8,7 @@ hide:
 
 # Segmentación de lóculos
 
-<p style="color:gray; margin-top: -35px; margin-bottom: 55px;" markdown>**Traitly v0.1.0 – Marzo, 2026**</p>
+<p style="color:gray; margin-top: -35px; margin-bottom: 55px;" markdown>**Creado por: María A. Torres-Meraz; Traitly v0.1.0 – Marzo, 2026**</p>
 
 </div>
 

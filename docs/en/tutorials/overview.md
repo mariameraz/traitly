@@ -1,119 +1,49 @@
 <div class="animate" markdown>
-
 # Tutorials ⊹ ࣪ ˖
 
-Here you'll find step-by-step guides covering the main Traitly workflows, from loading your first image to extracting morphology, color, and symmetry traits.
+Here you will find step-by-step tutorials on the main Traitly workflows, from loading your first image to extracting morphology, color, and symmetry traits.
 
 ---
 
-## 1. Quickstart
+## 1. Quick Start
 
-<div class="grid cards" markdown>
-
-<div class="card" markdown>
-
-#### **•󠁏 Complete cranberry analysis in minutes**
+| Tutorial | Description |
+|----------|-------------|
+| [Complete cranberry analysis in minutes](quickstart.md) | Simple demonstration of how to perform external appearance and internal structure analysis with cranberry images. |
 
 ---
 
-Simple demonstration of how to run external appearance and internal structure analysis using cranberry images.
+## 2. Internal Analysis
 
-<figure markdown>
-![](../../../assets/images/int_annotation.png){ style="width:20%;"}
-</figure>
-
-[:octicons-arrow-right-24: Go to tutorial](quickstart.md)
-
-</div>
-
-</div>
+| Tutorial | Description |
+|----------|-------------|
+| [Morphology and color analysis in Cranberry](cranberry_internal_analysis.md) | Using `FruitInternalAnalyzer` to analyze cranberry cross-sections. |
+| [Locule segmentation](segmentate_locules.md) | Analysis of fruits with complex locule segmentation such as tomato, orange, and others. |
+| [Cranberry stamp analysis](cranberry_stamps_analysis.md) | Internal morphology analysis using stamp images. |
 
 ---
 
-## 2. Internal analysis
+## 3. External Analysis
 
-<div class="grid cards" markdown>
-
-<div class="card" markdown>
-
-#### **•󠁏 Locule segmentation**
-
----
-
-Fruit analysis with complex locule segmentation across different image conditions.
-
-<figure markdown>
-![](../../en/tutorials/segmentate_locules_files/segmentate_locules_44_1.png){ style="width:65%;"}
-</figure>
-
-[:octicons-arrow-right-24: Go to tutorial](segmentate_locules.md)
-
-</div>
-
-</div>
+| Tutorial | Description |
+|----------|-------------|
+| [Step-by-step image analysis](individual_img_tutorial.md) | Full walkthrough of `FruitExternalAnalyzer`: load images, generate binary masks, detect fruits, and export morphology and color results. |
+| [Background segmentation](background_segmentation.md) | Define custom HSV thresholds to segment fruits against any background color. |
 
 ---
 
-## 3. External analysis
+## 4. Batch Processing
 
-<div class="grid cards" markdown>
-
-<div class="card" markdown>
-
-#### **•󠁏 Step-by-step single image analysis**
+| Tutorial | Description |
+|----------|-------------|
+| [Multiple image analysis](batch_tutorial.md) | Automatically analyze a full folder of images. |
 
 ---
 
-Complete walkthrough of `FruitExternalAnalyzer`: load images, generate binary masks, detect fruits, and export morphology and color results.
+## 5. Image Preprocessing
+| Tutorial | Description |
+|----------|-------------|
+| [PDF to Images](pdf_extraction.md) | Extract images from a PDF file. |
 
-<figure markdown>
-![](../../en/tutorials/individual_img_tutorial_en_files/individual_img_tutorial_en_9_0.png){ width=300}
-</figure>
-
-[:octicons-arrow-right-24: Go to tutorial](individual_img_tutorial.md)
-
-</div>
-
-<div class="card" markdown>
-
-#### **•󠁏 Background segmentation**
-
----
-
-Define custom HSV thresholds to segment fruits from any background color.
-
-<figure markdown>
-![](../../../../assets/images/cranberry_background_example.jpg){ width=300}
-</figure>
-
-[:octicons-arrow-right-24: Go to tutorial](background_segmentation.md)
-
-</div>
-
-</div>
-
----
-
-## 4. Batch processing
-
-<div class="grid cards" markdown>
-
-<div class="card" markdown>
-
-#### **•󠁏 Multiple image analysis**
-
----
-
-Automatically process an entire folder of images in a single run.
-
-<figure markdown>
-![](../../en/tutorials/individual_img_tutorial_en_files/batch_results.png){ width=300}
-</figure>
-
-[:octicons-arrow-right-24: Go to tutorial](batch_tutorial.md)
-
-</div>
-
-</div>
 
 </div>

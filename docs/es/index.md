@@ -132,9 +132,9 @@ Este diseño prioriza la **robustez, interpretabilidad y reproducibilidad**, y p
 
 | Entorno                    | Estado          |
 | -------------------------- | --------------- |
-| Jupyter Notebook           | :fontawesome-solid-square-check: Disponible    |
-| Línea de comandos (CLI)    | :fontawesome-solid-square-check: Disponible    |
-| Aplicación web (Shiny)     | :fontawesome-solid-square-check: Disponible |
+| Jupyter Notebook           | :fontawesome-solid-square-check:{.icon-green} Disponible    |
+| Línea de comandos (CLI)    | :fontawesome-solid-square-check:{.icon-green} Disponible    |
+| Aplicación web (Shiny)     | :fontawesome-solid-square-check:{.icon-green} Disponible |
 
 !!! info ""
     Traitly también está disponible en línea a través de su 

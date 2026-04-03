@@ -9,7 +9,7 @@ hide:
 # Definiendo umbrales de color para la segmentación del fondo
 
 <p style="color:gray; margin-top: -35px; margin-bottom: 55px;" markdown>
-    *Traitly v0.1.0 – March, 2026*
+    *Creado por: Maria A. Torres-Meraz; Traitly v0.1.0 – March, 2026*
 </p>
 
 </div>
