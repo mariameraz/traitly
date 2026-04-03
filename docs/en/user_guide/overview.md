@@ -34,7 +34,7 @@ Both classes share the same pipeline logic — image processing, segmentation, c
 
 Traitly is available in three environments:
 
-**From Python (Jupyter Notebook or script)**: recommended for interactively exploring and adjusting parameters on individual images, and for efficient processing of large image batches.
+**From Python (Jupyter Notebook or script)**: recommended for interactively exploring and adjusting parameters on individual images, and for efficient processing of large image batches. If you don't have Jupyter installed, refer to the [official documentation](https://jupyter.org/install).
 
 **From the terminal (CLI)**: to run the analysis directly from the terminal without writing a Python script. This is especially useful on servers or computing environments without a graphical interface. See the [CLI](cli.md) section for details.
 

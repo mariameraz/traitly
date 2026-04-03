@@ -35,7 +35,7 @@ Ambas clases comparten la misma lógica de pipeline – procesamiento de imagen,
 
 Traitly puede usarse en tres distintos ambientes:
 
-**Desde Python (Jupyter Notebook o script)**: recomendado para explorar y ajustar parámetros de forma interactiva sobre imágenes individuales, y para el procesamiento eficiente de grandes lotes de imágenes.
+**Desde Python (Jupyter Notebook o script)**: recomendado para explorar y ajustar parámetros de forma interactiva sobre imágenes individuales, y para el procesamiento eficiente de grandes lotes de imágenes. Si no tienes Jupyter instalado, consulta su [documentación oficial](https://jupyter.org/install).
 
 **Desde la terminal (CLI)**: para ejecutar el análisis directamente desde la terminal sin necesidad de un script de Python, especialmente útil en servidores o entornos de cómputo sin interfaz gráfica. Consulta la sección [CLI](cli.md) para más detalles.
 
