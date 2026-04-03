@@ -31,7 +31,7 @@ La entrada (`-i`) puede ser una imagen individual o una carpeta con múltiples i
 
     Copia el archivo base, modifica los parámetros que necesites en cualquier editor de texto y guárdalo como `.json`. Luego pásalo con `--json`.
 
-    [:octicons-file-code-24: Ver plantilla JSON](../assets/templates/parameters_template.json)
+    [:octicons-file-code-24: Ver plantilla JSON](../../assets/templates/parameters_template.json)
 
     Para conocer qué hace cada parámetro, consulta la documentación de [`FruitInternalAnalyzer`](internal_class.md) o [`FruitExternalAnalyzer`](external_class.md).
 
