@@ -162,7 +162,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         diameter_cm: Optional[float] = None,
         gpu: bool = False,
         skip_qr: bool = False,
-        fast_calibration: bool = False,
+        skip_yolo: bool = False,
         detect_color_checker: bool = False,
         scale_factor: float = 0.5,
     ):
@@ -187,7 +187,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             diameter_cm=diameter_cm,
             gpu=gpu,
             skip_qr=skip_qr,
-            fast_calibration=fast_calibration,
+            skip_yolo=skip_yolo,
             detect_color_checker=detect_color_checker,
             scale_factor=scale_factor,
         )
@@ -743,7 +743,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         width_cm=None,
         length_cm=None,
         diameter_cm=None,
-        fast_calibration=None,
+        skip_yolo=None,
         skip_qr=None,
         detect_label=None,
         confidence=None,
@@ -823,7 +823,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             Known reference length in centimeters for scale calibration.
         diameter_cm : float or None, optional
             Known reference diameter in centimeters for scale calibration.
-        fast_calibration : bool or None, optional
+        skip_yolo : bool or None, optional
             If True, use a faster but less precise calibration method.
         skip_qr : bool or None, optional
             If True, skip QR code detection during calibration.
@@ -949,7 +949,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                 width_cm=width_cm,
                 length_cm=length_cm,
                 diameter_cm=diameter_cm,
-                fast_calibration=fast_calibration,
+                skip_yolo=skip_yolo,
                 skip_qr=skip_qr,
                 detect_label=detect_label,
                 confidence=confidence,
