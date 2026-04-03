@@ -147,9 +147,10 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
 /* hide shiny default nav */
 .navbar, nav.navbar, .bslib-page-title { display:none !important; }
 
-/* header bar */
+/* header bar HF*/
 .traitly-header {
-    position:fixed; top:0; left:0; right:0; height:150px;
+    position:fixed; top:0; left:0; right:0; height:100px;
+    /* position:fixed; top:0; left:0; right:0; height:150px; */
     background: var(--header-bg);
     display:flex; align-items:center; padding:0 1.5rem;
     z-index:1050; box-shadow:0 1px 4px rgba(0,0,0,.3);
@@ -209,9 +210,10 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
 }
 .gh-stat svg { width:12px; height:12px; }
 
-/* push content below header */
+/* push content below header HF */
 .bslib-page-main, main {
-    margin-top: 155px !important;
+    /* margin-top: 155px !important; */
+    margin-top: 105px !important;
     margin-left: 20px !important;
     padding-top: .5rem;
 }
@@ -220,11 +222,12 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
     padding-left: 0.5rem !important;
 }
 
-/* sidebar */
+/* sidebar HF */
 .bslib-sidebar-layout > .sidebar {
     background: var(--sidebar-bg) !important;
     border-right:1px solid var(--sidebar-border) !important;
-    padding-top:.7rem; top:155px !important;
+    /* padding-top:.7rem; top:155px !important; */
+    padding-top:.7rem; top:105px !important;
 }
 
 .sb-label {
