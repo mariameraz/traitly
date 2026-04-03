@@ -9,7 +9,7 @@ hide:
 # Defiining color thresholds for background segmentation
 
 <p style="color:gray; margin-top: -35px; margin-bottom: 55px;" markdown>
-    *Traitly v0.1.0 – March, 2026*
+    *Created by: María A. Torres-Meraz; Traitly v0.1.0 – March, 2026*
 </p>
 
 </div>

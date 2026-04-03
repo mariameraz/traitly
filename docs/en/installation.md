@@ -69,7 +69,7 @@ my-project/
 
 ## Installation
 
-=== "macOS and Linux"
+=== ":fontawesome-solid-terminal: macOS and Linux"
 
     **1. Create a new Python environment:**
 
@@ -91,7 +91,7 @@ my-project/
     pip install git+https://github.com/mariameraz/traitly.git
     ```
 
-=== "Windows"
+=== ":fontawesome-brands-windows:{.icon-blue} Windows"
 
     **1. Create a new Python environment:**
     
@@ -112,7 +112,7 @@ my-project/
     pip install git+https://github.com/mariameraz/traitly.git
     ```
 
-=== "Google Colab"
+=== ":simple-googlecolab:{.icon-orange} Google Colab"
 
     !!! warning "Important Note"
         Google Colab does not save sessions. Every time you close your browser or your session expires, you'll need to reinstall Traitly starting from step 3.

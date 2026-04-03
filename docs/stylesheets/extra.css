@@ -18,6 +18,8 @@
 .md-content .icon-green { color: #4CAF50 !important; fill: #4CAF50 !important; }
 .md-content .icon-red   { color: #F44336 !important; fill: #F44336 !important; }
 .md-content .icon-yellow { color: #E4A800 !important; fill: #E4A800 !important; }
+.md-content .icon-blue { color: #0277d6 !important; fill: #0277d6 !important; }
+.md-content .icon-orange { color: #e97109 !important; fill: #e97109 !important; }
 
 .animate {
   opacity: 0;

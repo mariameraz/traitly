@@ -1,21 +1,27 @@
 # Changelog ⊹ ࣪ ˖
 
-All notable changes to Traitly are documented here.
+All notable changes to Traitly are documented here:
 
 ---
 
-## v0.1.0 — February 2026
+## v0.1.0 — March 2026
 
 Initial release.
 
-### Added
-- `FruitInternalAnalyzer` — internal fruit analysis with locule segmentation
-- `FruitExternalAnalyzer` — whole-fruit analysis without locule segmentation
-- Batch folder processing with optional multiprocessing (`analyze_folder`)
-- Pixel-to-metric calibration via reference markers
+**Includes:**
+
+- `FruitInternalAnalyzer`: internal fruit and locule analysis
+- `FruitExternalAnalyzer`: whole fruit analysis
+- Fruit stamp analysis with `FruitInternalAnalyzer`
+- Batch processing with optional multiprocessing (`analyze_folder`)
+- Pixel-to-centimeter conversion using size references
 - QR code and text label detection
-- Morphology traits: area, perimeter, axes, shape indices, pericarp, symmetry
-- Color traits: RGB, HSV, Lab channels per tissue region
-- Annotated image output
+- Color checker card detection
+- Morphological traits: area, perimeter, axes, shape indices, pericarp thickness, symmetry
+- Color traits: RGB, HSV, Lab and Gray channels per tissue region
+- Annotated images as output
+- Analysis results as CSV files
 - Session report and error report for batch processing
-- `AnalysisParameters` dataclass for reproducibility tracking
+- Export session parameters as TXT and JSON files
+- Module to explore color results
+- Extraction of images from PDF
