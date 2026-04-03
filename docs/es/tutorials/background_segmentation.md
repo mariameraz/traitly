@@ -19,7 +19,7 @@ En este tutorial veremos cómo ajustar los umbrales de color para segmentar el f
 !!! tip ""
     :fontawesome-solid-file-code: :fontawesome-solid-download: Descarga el **Jupyter notebook** y todas las imágenes de este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials_data/background_segmentation).
 
-Por defecto, `FruitExternalAnalyzer.generate_fruit_mask()` asume un fondo azul. Además, tiene umbrales preconfigurados para fondos blancos (`'white'`) y negros (`'black'`). Sin embargo, también es posible definir umbrales personalizados de forma manual. Para más detalles, ver la sección [External Analyzer Class](../workflow/external_class.md#generate_fruit_mask).
+Por defecto, `FruitExternalAnalyzer.generate_fruit_mask()` asume un fondo azul. Además, tiene umbrales preconfigurados para fondos blancos (`'white'`) y negros (`'black'`). Sin embargo, también es posible definir umbrales personalizados de forma manual. Para más detalles, ver la sección [External Analyzer Class](../user_guide/external_class.md#generate_fruit_mask).
 
 !!! note "Segmentación de fondo en el análisis interno de frutos"
     Aunque `FruitInternalAnalyzer` espera un fondo negro, la segmentación con fondos de otro color funciona exactamente de la misma manera que se muestra aquí.
@@ -28,7 +28,7 @@ Por defecto, `FruitExternalAnalyzer.generate_fruit_mask()` asume un fondo azul. 
 
 ## Fondo azul
 
-Primero, cargamos la clase `FruitExternalAnalyzer` de la librería `traitly` y la imagen que queremos analizar. Como la imagen incluye una tira de referencia de tamaño, corremos `setup_measurements()` para detectar su posición y excluir esa zona de las máscaras de frutos (ver sección [External Analyzer Class](../workflow/external_class.md#setup_measurements) para más detalles sobre cómo funciona `setup_measurements()`).
+Primero, cargamos la clase `FruitExternalAnalyzer` de la librería `traitly` y la imagen que queremos analizar. Como la imagen incluye una tira de referencia de tamaño, corremos `setup_measurements()` para detectar su posición y excluir esa zona de las máscaras de frutos (ver sección [External Analyzer Class](../user_guide/external_class.md#setup_measurements) para más detalles sobre cómo funciona `setup_measurements()`).
 ```python
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
@@ -67,7 +67,7 @@ blue_example.detect_fruits(plot = True, contour_thickness = 8)
 
 ## Fondo gris
 
-En este segundo ejemplo tenemos una imagen con fondo gris. Como el gris no es un color preconfigurado, definiremos **umbrales HSV personalizados** de forma manual. Para esto, podemos usar `generate_color_scatterplot()`, que muestra los colores de los píxeles de la imagen (10,000 por defecto) en el espacio HSV (ver sección [External Analyzer Class](../workflow/external_class.md#generate_color_scatterplot) para más detalles sobre cómo funciona esta función). Cada punto en los gráficos representa un píxel, coloreado con su valor **RGB** real. El objetivo es encontrar el rango [H,S,V] en el que caen los píxeles del fondo gris.
+En este segundo ejemplo tenemos una imagen con fondo gris. Como el gris no es un color preconfigurado, definiremos **umbrales HSV personalizados** de forma manual. Para esto, podemos usar `generate_color_scatterplot()`, que muestra los colores de los píxeles de la imagen (10,000 por defecto) en el espacio HSV (ver sección [External Analyzer Class](../user_guide/external_class.md#generate_color_scatterplot) para más detalles sobre cómo funciona esta función). Cada punto en los gráficos representa un píxel, coloreado con su valor **RGB** real. El objetivo es encontrar el rango [H,S,V] en el que caen los píxeles del fondo gris.
 ```python
 path = './Test_27.png'
 gray_example = FruitExternalAnalyzer(path)

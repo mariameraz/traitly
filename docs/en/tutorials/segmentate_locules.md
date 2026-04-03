@@ -78,7 +78,7 @@ tomato.generate_fruit_mask()
     
 
 
-In these cases, we need to create an additional locule mask based on an intensity threshold on the L channel (lightness) of the LAB color space, where darker pixels correspond to locules and lighter pixels to the rest of the fruit. `FruitInternalAnalyzer` internally converts the image from BGR to LAB and extracts the L channel, so we can go straight to `generate_locule_mask()`. However, when the contrast between the pericarp and the locules isn't sufficient for a good segmentation, we can improve it beforehand with `enhance_locule_contrast()`, which allows applying one of three transformations to the L channel: `'gamma'`, `'sigmoid'`, or `'exp'` (exponential). For more details on how both methods work, see the [Internal Analyzer Class](../../docs/en/workflow/internal_class.md#enhance_locule_contrast) section.
+In these cases, we need to create an additional locule mask based on an intensity threshold on the L channel (lightness) of the LAB color space, where darker pixels correspond to locules and lighter pixels to the rest of the fruit. `FruitInternalAnalyzer` internally converts the image from BGR to LAB and extracts the L channel, so we can go straight to `generate_locule_mask()`. However, when the contrast between the pericarp and the locules isn't sufficient for a good segmentation, we can improve it beforehand with `enhance_locule_contrast()`, which allows applying one of three transformations to the L channel: `'gamma'`, `'sigmoid'`, or `'exp'` (exponential). For more details on how both methods work, see the [Internal Analyzer Class](../user_guide/en/user_guide/internal_class.md#enhance_locule_contrast) section.
 
 The `compare_method=True` parameter generates a side-by-side comparison showing the result of all three transformations against the original image, using default values that can be adjusted with the corresponding parameters. This makes it easier to choose the most suitable method before applying it.
 
@@ -326,7 +326,7 @@ tomato.generate_l_channel_histogram()
     
 
 
-The resulting mask captures most of the locules, though some noise remains that is hard to remove with thresholds alone. To fix this, we can use `edit_mask()`, which opens an interactive editor to manually add or remove regions from the mask (see [Internal Fruit Analyzer](../../docs/en/workflow/internal_class.md#edit_mask) for more details).
+The resulting mask captures most of the locules, though some noise remains that is hard to remove with thresholds alone. To fix this, we can use `edit_mask()`, which opens an interactive editor to manually add or remove regions from the mask (see [Internal Fruit Analyzer](../user_guide/internal_class.md#edit_mask) for more details).
 
 
 ```python

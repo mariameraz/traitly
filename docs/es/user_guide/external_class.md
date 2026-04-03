@@ -33,7 +33,7 @@ analyzer = FruitExternalAnalyzer(image_path = "ruta/de/mi/carpeta/con/imagenes/"
     3. Guarda la configuración ideal con `save_parameters()`
     4. Usa `analyze_folder(json_path="tu_archivo.json")` para procesar todo el lote automáticamente con los mismos parámetros
     
-    Para ver ejemplos prácticos de este flujo de trabajo, consulta los [Tutoriales](tutorials/quickstart.md).
+    Para ver ejemplos prácticos de este flujo de trabajo, consulta los [Tutoriales](../tutorials/quickstart.md).
 
 
 <br>

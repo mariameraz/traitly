@@ -33,7 +33,7 @@ analizador = FruitInternalAnalyzer(image_path = "ruta/de/mi/carpeta/con/imagenes
     3. Guarda la configuración ideal con `save_parameters()`
     4. Usa `analyze_folder(json_path="tu_archivo.json")` para procesar todo el lote automáticamente con los mismos parámetros
     
-    Para ver ejemplos prácticos de este flujo de trabajo, consulta los [Tutoriales](tutorials/quickstart.md).
+    Para ver ejemplos prácticos de este flujo de trabajo, consulta los [Tutoriales](../tutorials/quickstart.md).
 
 
 
@@ -541,7 +541,7 @@ En la imagen anotada se indica un **ID único para cada fruto**, su **número de
 
 
     <div style="text-align: center;">
-        <img src="../../../assets/images/contours.png" alt="contours" width="800">
+        <img src="../../assets/images/contours.png" alt="contours" width="800">
         <p><em>Ejemplos de los contornos disponibles con `contour_mode` </em></p>
     </div>
 
@@ -553,7 +553,7 @@ En la imagen anotada se indica un **ID único para cada fruto**, su **número de
         Para más detalles sobre cómo se calculan estos traits, consulta la sección de [Mediciones](results/measurements.md#grosor-del-pericarpio-y-lobedness).
     
     <div style="text-align: center;">
-        <img src="../../../assets/images/num_rays.png" alt="num_rays" width="400">
+        <img src="../../assets/images/num_rays.png" alt="num_rays" width="400">
         <p><em>Efecto de <code>num_rays</code> en la densidad de rayos. Valores más altos capturan más detalle a lo largo del contorno del fruto.</em></p>
     </div>
 
@@ -631,7 +631,7 @@ Por defecto, los archivos se guardan en la misma carpeta que la imagen de entrad
 Esta función extrae color para los distintos tejidos del fruto: **pericarpio total**, **pericarpio externo**, **pericarpio interno** y **lóculos**. Para inspeccionar visualmente cómo se segmentan estos tejidos, puede consultarse `generate_single_fruit_masks`. Si no se desean todos los tejidos, puede seleccionarse uno específico con `tissue='...'`.
 
 <div style="text-align: center;">
-    <img src="../../../assets/images/internal_tissues.png" alt="Configuración con caja negra" width="900">
+    <img src="../../assets/images/internal_tissues.png" alt="Configuración con caja negra" width="900">
     <p><em>Ejemplo de tejidos para los cuales se extrae color en rodajas de arándano rojo</em></p>
 </div>
 

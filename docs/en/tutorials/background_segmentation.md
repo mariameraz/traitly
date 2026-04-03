@@ -19,7 +19,7 @@ In this tutorial we'll go over how to adjust the color thresholds for fruit back
 !!! tip "Follow along"
     :fontawesome-solid-file-code: Download the Jupyter notebook and sample images for this tutorial [here](https://github.com/mariameraz/traitly/tree/main/tutorials_data/background_segmentation).
 
-By default `FruitExternalAnalyzer.generate_fruit_mask()` assumes a blue background. Also, it has pre-configured thresholds for `'white'` and `'black'` backgrounds. However, custom thresholds can also by provided manually. For more details, see section [External Analyzer Class](../workflow/external_class.md#generate_fruit_mask).
+By default `FruitExternalAnalyzer.generate_fruit_mask()` assumes a blue background. Also, it has pre-configured thresholds for `'white'` and `'black'` backgrounds. However, custom thresholds can also by provided manually. For more details, see section [External Analyzer Class](../user_guide/external_class.md#generate_fruit_mask).
 
 !!! note "Background segmentation in fruit internal analysis"
     Although  `FruitInternalAnalyzer` expects a black background, segmenting images with a different background color works the same way as shown here.
@@ -28,7 +28,7 @@ By default `FruitExternalAnalyzer.generate_fruit_mask()` assumes a blue backgrou
 
 ## Blue background
 
-First, we load the `FruitExternalAnalyzer` class from `traitly` and the image we want to analyze. Since the image includes a size reference strip, we'll run `setup_measurements()` to detect its position and exclude that region from the fruit masks (see section [External Analyzer Class](../workflow/external_class.md#setup_measurements) for more details on how `setup_measurements()` works.)
+First, we load the `FruitExternalAnalyzer` class from `traitly` and the image we want to analyze. Since the image includes a size reference strip, we'll run `setup_measurements()` to detect its position and exclude that region from the fruit masks (see section [External Analyzer Class](../user_guide/external_class.md#setup_measurements) for more details on how `setup_measurements()` works.)
 
 ```python
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
@@ -72,7 +72,7 @@ blue_example.detect_fruits(plot = True, contour_thickness = 8)
 
 ## Gray background
 
-In this second example we have an image with a gray background. Since gray is not one of the pre-configured colors, we'll define **custom HSV thresholds** manually. To help with this, we can use `generate_color_scatterplots()`, which displays the pixel colors (10,000 pixels by default) of the whole image in HSV space (see section [External Analyzer Class](../workflow/external_class.md#generate_color_scatterplot) for more details on how this function works). Each point in the plots represents a pixel, colored with its actual **RGB** value. The goal is to identify the [H,S,V] range that covers the grey background pixels.
+In this second example we have an image with a gray background. Since gray is not one of the pre-configured colors, we'll define **custom HSV thresholds** manually. To help with this, we can use `generate_color_scatterplots()`, which displays the pixel colors (10,000 pixels by default) of the whole image in HSV space (see section [External Analyzer Class](../user_guide/external_class.md#generate_color_scatterplot) for more details on how this function works). Each point in the plots represents a pixel, colored with its actual **RGB** value. The goal is to identify the [H,S,V] range that covers the grey background pixels.
 
 
 ```python

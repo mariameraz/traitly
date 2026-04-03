@@ -33,7 +33,7 @@ analyzer = FruitInternalAnalyzer(image_path = "path/to/my/folder/with/images/")
     3. Save the best configuration with `save_parameters()`
     4. Use `analyze_folder(json_path="your_file.json")` to run the full batch automatically with those same parameters
     
-    For hands-on examples of this workflow, check out the [Tutorials](tutorials/quickstart.md).
+    For hands-on examples of this workflow, check out the [Tutorials](../tutorials/quickstart.md).
 
 
 

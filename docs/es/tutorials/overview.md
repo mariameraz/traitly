@@ -27,8 +27,8 @@ Aquí encontrarás tutoriales paso a paso sobre los principales flujos de trabaj
 
 | Tutorial | Descripción |
 |----------|-------------|
-| [Análisis de una imagen paso a paso](individual_img_tutorial.md) | Uso completo de `FruitExternalAnalyzer`: carga imágenes, genera máscaras binarias, detecta frutos y exporta resultados de morfología y color. |
-| [Segmentación del fondo](background_segmentation.md) | Define umbrales HSV personalizados para segmentar frutos sobre cualquier color de fondo. |
+| [Análisis de una imagen paso a paso](./individual_img_tutorial.md) | Uso completo de `FruitExternalAnalyzer`: carga imágenes, genera máscaras binarias, detecta frutos y exporta resultados de morfología y color. |
+| [Segmentación del fondo](./background_segmentation.md) | Define umbrales HSV personalizados para segmentar frutos sobre cualquier color de fondo. |
 
 ---
 
@@ -36,7 +36,7 @@ Aquí encontrarás tutoriales paso a paso sobre los principales flujos de trabaj
 
 | Tutorial | Descripción |
 |----------|-------------|
-| [Análisis de múltiples imágenes](batch_tutorial.md) | Analiza una carpeta completa de imágenes de forma automática. |
+| [Análisis de múltiples imágenes](./batch_tutorial.md) | Analiza una carpeta completa de imágenes de forma automática. |
 
 ---
 
@@ -44,6 +44,6 @@ Aquí encontrarás tutoriales paso a paso sobre los principales flujos de trabaj
 
 | Tutorial | Descripción |
 |----------|-------------|
-| [PDF a imágenes](pdf_extraction.md) | Extrae imágenes desde un archivo PDF. |
+| [PDF a imágenes](./pdf_extraction.md) | Extrae imágenes desde un archivo PDF. |
 
 </div>
