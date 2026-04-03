@@ -192,7 +192,7 @@ def _process_folder(
         )
         print(f"    – Images extracted: {len(all_saved_paths)}")
         if qr_detected > 0:
-            print(f"    - QR detected in {qr_detected}/{len(all_saved_paths)} image(s)")
+            print(f"    – QR detected: {qr_detected}/{len(all_saved_paths)} img(s)")
         if num_cores is not None:
             print(f"    – num_cores: {num_cores}")
         print(f"    – Results folder: {os.path.abspath(final_dir)}")
