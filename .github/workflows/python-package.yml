@@ -2,8 +2,10 @@ name: Tests python packages
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "requirements*"
 
 jobs:
   build:
