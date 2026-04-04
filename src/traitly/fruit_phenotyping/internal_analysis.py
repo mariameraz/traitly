@@ -36,7 +36,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # ============================================================================
 # THIRD-PARTY LIBRARIES
@@ -45,7 +45,8 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import psutil
+
+# import psutil
 from tqdm import tqdm
 
 from traitly import __version__
@@ -291,7 +292,7 @@ class FruitInternalAnalyzer:
 
         if self.img_path is None:
             raise ValueError(
-                f"No image loaded."
+                "No image loaded."
                 "Run FruitInternalAnalyzer('path/to/your/image.jpg') first."
             )
 
@@ -406,7 +407,7 @@ class FruitInternalAnalyzer:
 
         # ROI + OCR (optional)
         if not skip_label_roi:
-            label_start = time.time()
+            # label_start = time.time()
 
             # 1. YOLO
             self.label_roi = detect_label_box_yolo(img=self.img, plot=False, conf=0.4)
@@ -461,7 +462,7 @@ class FruitInternalAnalyzer:
         if self.label_text == "No label detected":
             if verbose:
                 print("> No label detected.")
-                print(f"    - Use detect_label=False to disable label detection.")
+                print("    - Use detect_label=False to disable label detection.")
 
         return None
 
@@ -1834,7 +1835,7 @@ class FruitInternalAnalyzer:
         json_path = os.path.join(output_path, f"{base_name}_parameters.json")
         self.parameters.save_to_json(json_path)
 
-        print(f"\n> Parameters saved at:")
+        print("\n> Parameters saved at:")
         print(f"  - TXT:  {txt_path}")
         print(f"  - JSON: {json_path}")
 
@@ -1987,9 +1988,6 @@ class FruitInternalAnalyzer:
                 "dilation_factor": self.dilation_factor,
                 "dark_thresh": dark_thresh,
             }
-
-        # Always reannotate from clean image
-        saved_color_results = getattr(self.results, "color_results", None)
 
         if self.is_morphology_results is None:
             self.results = ResultsImage(
@@ -2223,7 +2221,7 @@ class FruitInternalAnalyzer:
             print("\n" + "=" * 55)
             print("★ COLOR CARD:")
             print("=" * 55)
-            print(f"> Color checker detected: ")
+            print("> Color checker detected: ")
             print(
                 f"    - Coordinates: x={x_expanded}, y={y_expanded}, w={w_expanded}, h={h_expanded}"
             )
@@ -3100,12 +3098,11 @@ class FruitInternalAnalyzer:
             total_img_processed = len(img_paths) - len(errors)
             if len(errors) == len(img_paths):
                 print("\n( ദ്ദി ༎ຶ‿༎ຶ ) Task failed successfully " + "=" * 37)
-                print(f"    > Image(s) processed:")
+                print("    > Image(s) processed:")
                 print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
                 print(
                     f"    > For more details, check error_report.txt saved in: {output_path}"
                 )
-
             else:
                 print("\n( ദ്ദി ˙ᗜ˙ ) Finished " + "=" * 47)
                 print("    > Image(s) processed:")
@@ -3128,8 +3125,6 @@ class FruitInternalAnalyzer:
                 if error_txt:
                     print(f"        - {os.path.basename(error_txt)}")
                 print(f"        - Results folder: {output_path}")
-
-        return None
 
     def plot_image(
         self,
