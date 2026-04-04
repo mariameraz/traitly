@@ -12,6 +12,7 @@ QR code detection for automatic renaming of output files.
 # ============================================================================
 import os
 import re
+from pathlib import Path
 from typing import List, Optional
 
 # ============================================================================
@@ -210,8 +211,9 @@ def _process_single(
     num_cores: Optional[int] = None,
 ) -> List[str]:
     """Process a single PDF file and convert each page to an image."""
+    pdf_path = Path(pdf_path)
 
-    if not pdf_path.lower().endswith(".pdf"):
+    if pdf_path.suffix.lower() != ".pdf":
         raise ValueError("Input file must be a PDF (.pdf extension)")
 
     pdf_dir = os.path.dirname(os.path.abspath(pdf_path))
