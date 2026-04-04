@@ -264,7 +264,7 @@ def _process_single(
                         final_name = f"{cleaned_name}.{output_format}"
 
                     new_path = os.path.join(out_dir, final_name)
-                    os.rename(img_path, new_path)
+                    Path(img_path).replace(new_path)
                     img_path = new_path
                     qr_detected += 1
 
