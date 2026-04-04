@@ -8,6 +8,7 @@ on:
       - "tests/**"
       - "requirements.txt"
       - "requirements-dev.txt"
+      - ".github/workflows/**"
 
 jobs:
   test:
@@ -34,8 +35,10 @@ jobs:
         pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-        pip install -e .
+        pip install -e ".[all]"
           
     - name: Test with pytest
       run: |
-        pytest tests/cranberry_internal_analysis.py -v
+        pytest tests/test_cranberry_internal_analysis.py -v
+        pytest tests/test_cranberry_external_analysis.py -v
+        pytest tests/test_pdf_extraction.py -v
