@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "traitly"
-version = "0.1.0"
+version = "0.1.4"
 description = "Open-source computer vision toolkit for high-throughput fruit phenotyping. Analyze fruit morphology (size, shape), internal anatomy (locule number, shape, size, symmetry), pericarp thickness, and extract tissue color metrics (RGB, LAB, HSV, grayscale)."
 readme = "README.md"
 requires-python = ">=3.9"
