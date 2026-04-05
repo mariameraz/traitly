@@ -126,7 +126,7 @@ class ResultsImage:
         ----------
         path : str or None, optional
             Output file path. If ``None``, the image is saved next to
-            :attr:`image_path` with ``'_annotated'`` appended to the stem.
+            :attr:`image_path` with ``'_processed'`` appended to the stem.
             Default is ``None``.
         format : str or None, optional
             Image format extension (e.g. ``'jpg'``, ``'png'``). If ``None``,
@@ -161,7 +161,7 @@ class ResultsImage:
                     if output_path is not None
                     else os.path.dirname(self.image_path)
                 )
-                output_path = os.path.join(out_dir, f"{base_name}_annotated.{ext}")
+                output_path = os.path.join(out_dir, f"{base_name}_processed.{ext}")
 
             full_path = self._ensure_dir_exists(output_path)
             format = format or os.path.splitext(full_path)[1][1:].lower()
@@ -252,7 +252,7 @@ class ResultsImage:
 
             # Build complete paths
             img_path = os.path.join(
-                abs_output_dir, f"{base_name}_annotated.{format.lower()}"
+                abs_output_dir, f"{base_name}_processed.{format.lower()}"
             )
             morph_csv_path = os.path.join(
                 abs_output_dir, f"{base_name}_morphology_results.csv"
