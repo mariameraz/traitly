@@ -40,7 +40,7 @@ Por cada imagen procesada, Traitly guarda una versión anotada que muestra los c
 
 ```
 Results/
-└── nombre_imagen_annotated.jpg
+└── nombre_imagen_processed.jpg
 ```
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">

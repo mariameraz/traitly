@@ -34,7 +34,7 @@ from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 
 ```python
-path = './Test_10.png'
+input_path = './Test_10.png'
 blue_example = FruitExternalAnalyzer(path)
 blue_example.load_image()
 blue_example.setup_measurements(verbose = False)
@@ -74,7 +74,7 @@ In this second example we have an image with a gray background. Since gray is no
 
 
 ```python
-path = './Test_27.png'
+input_path = './Test_27.png'
 gray_example = FruitExternalAnalyzer(path)
 gray_example.load_image()
 gray_example.setup_measurements(verbose = False)
@@ -134,7 +134,7 @@ gray_example.detect_fruits(plot = True,
 Finally, we have an example with a white background. Since `white` is a pre-configured color, we can simply use `background_color='white'` in `generate_fruit_mask()`.
 
 ```python
-path = './Test_56.png'
+input_path = './Test_56.png'
 white_example = FruitExternalAnalyzer(path)
 white_example.load_image()
 white_example.setup_measurements(verbose = False)
