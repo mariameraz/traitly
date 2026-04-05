@@ -23,15 +23,15 @@ En este tutorial, demostraremos cómo realizar el análisis de la morfología in
 
 El primer paso es cargar la clase `FruitInternalAnalyzer` desde Traitly para crear el objeto `cranberry`, que contendrá todo lo necesario para el análisis. Puedes elegir el nombre de objeto que prefieras.
 
-A continuación, inicializamos la clase indicando la ubicación de nuestra imagen mediante el parámetro `image_path`.  
+A continuación, inicializamos la clase indicando la ubicación de nuestra imagen mediante el parámetro `path`.  
 
 ```python
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
 ```
 
 ```python
-path = "./cranberry_slices.jpg"
-cranberry = FruitInternalAnalyzer(image_path = path)
+input_path = "./cranberry_slices.jpg"
+cranberry = FruitInternalAnalyzer(path = path)
 ```
 
 Primero, cargamos la imagen en el objeto mediante `load_image()`. Por defecto, la imagen se mostrará en pantalla (`plot=True`). Una vez cargada, puede accederse a ella a través de `cranberry.img`. Para más detalles sobre los datos almacenados en el objeto, consulta el apartado de [atributos de la clase].
@@ -541,7 +541,7 @@ cranberry.results.save_all()
 ```
 
     > Results saved at:
-        – Image: /Users/traitly/tutorials_data/internal_analysis/cranberry_slices_annotated.jpg
+        – Image: /Users/traitly/tutorials_data/internal_analysis/cranberry_slices_processed.jpg
         – Morphology CSV: /Users/traitly/tutorials_data/internal_analysis/cranberry_slices_morphology_results.csv
         – Color CSV: /Users/traitly/tutorials_data/internal_analysis/cranberry_slices_color_results.csv
 

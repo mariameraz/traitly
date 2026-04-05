@@ -39,7 +39,7 @@ Cabe destacar que la función retorna las rutas de cada imagen generada. Si no d
 
 
 ```python
-path = "./cranberry_slices.pdf"  # Path del archivo PDF
+input_path = "./cranberry_slices.pdf"  # Path del archivo PDF
 
 temp = pdf_to_img(pdf_path = path,
                   dpi = 150, 
@@ -68,7 +68,7 @@ Es importante tener en cuenta que un DPI bajo puede interferir con la detección
 
 
 ```python
-path = "./cranberry_slices.pdf"  # Path del archivo PDF
+input_path = "./cranberry_slices.pdf"  # Path del archivo PDF
 
 temp = pdf_to_img(pdf_path = path,
                   dpi = 70, 
@@ -91,7 +91,7 @@ Cuando se trabaja con un gran número de archivos, el proceso de extracción pue
 
 
 ```python
-path = "./" # Path de la carpeta que contiene los PDFs
+input_path = "./" # Path de la carpeta que contiene los PDFs
 
 temp = pdf_to_img(pdf_path = path,
                   dpi = 150, 
