@@ -1,4 +1,4 @@
-# tests/test_internal_analyzer.py
+# tests/test_internal_analysis.py
 
 # ============================================================================
 # STANDARD LIBRARY
@@ -24,17 +24,20 @@ valid_img = Path(__file__).parent / "data/internal/img_test_1.jpg"
 
 @pytest.fixture
 def cranberry_valid():
-    cranberry = FruitInternalAnalyzer(image_path=valid_img)
+    cranberry = FruitInternalAnalyzer(path=valid_img)
     cranberry.load_image(plot=False)
     cranberry.setup_measurements()
     cranberry.generate_fruit_mask(plot=False)
     cranberry.detect_fruits(plot=False)
     cranberry.analyze_morphology(plot=False, display_table=False)
+    cranberry.analyze_color(plot=False, display_table=False, tissue="OUTER_PERICARP", color_space="rgb")
+    cranberry.results.save_csv()
+    cranberry.save_parameters()
     return cranberry
 
 
 def test_load_image():
-    cranberry = FruitInternalAnalyzer(image_path=valid_img)
+    cranberry = FruitInternalAnalyzer(path=valid_img)
     cranberry.load_image(plot=False)
     assert cranberry.img is not None
 
@@ -52,7 +55,7 @@ def test_circularity_valid_ranges(cranberry_valid):
 
 
 def test_skip_yolo():
-    cranberry = FruitInternalAnalyzer(image_path=valid_img)
+    cranberry = FruitInternalAnalyzer(path=valid_img)
     cranberry.load_image(plot=False)
     cranberry.setup_measurements(skip_yolo=True)
     cranberry.generate_fruit_mask(plot=False)
@@ -72,7 +75,7 @@ invalid_path = Path(__file__).parent / "data/internal/img_test_5.jpg"
 
 def test_invalid_path():
     with pytest.raises((FileNotFoundError, ValueError)):
-        cranberry = FruitInternalAnalyzer(image_path=invalid_path)
+        cranberry = FruitInternalAnalyzer(path=invalid_path)
         cranberry.load_image(plot=False)
 
 
@@ -84,7 +87,7 @@ invalid_img = Path(__file__).parent / "data/internal/img_test_4.jpg"
 
 
 def test_invalid_locule_segmentation():
-    cranberry = FruitInternalAnalyzer(image_path=invalid_img)
+    cranberry = FruitInternalAnalyzer(path=invalid_img)
     cranberry.load_image(plot=False)
     cranberry.setup_measurements(skip_yolo=True)
     cranberry.generate_fruit_mask(plot=False)

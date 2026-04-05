@@ -1,0 +1,104 @@
+======================================================================
+SESSION REPORT
+======================================================================
+traitly              : v0.1.0
+run date             : 2026-04-04 23:21:12
+image folder         : /Users/alejandra/Documents/traitly/tests/data/internal
+results folder       : /Users/alejandra/Documents/traitly/tests/data/internal/Results
+images found         : 2
+images ok            : 1
+images failed        : 1
+total fruits         : 25
+analyze_morphology   : True
+analyze_color        : True
+JSON path            : /Users/alejandra/Documents/traitly/tests/data/internal/img_test_1_parameters.json
+num_cores            : 1
+total time           : 1.5s
+avg per image        : 0.8s
+
+======================================================================
+ANALYSIS PARAMETERS
+======================================================================
+
+SETUP_MEASUREMENTS:
+   - width_cm: None
+   - length_cm: None
+   - diameter_cm: None
+   - skip_yolo: False
+   - skip_qr: False
+   - detect_label: False
+   - language_label: ['es', 'en']
+   - confidence: 0.6
+   - gpu: False
+   - font_size: 3
+   - scale_factor: 0.5
+
+GENERATE_FRUIT_MASK:
+   - stamp: False
+   - lower_hsv: None
+   - upper_hsv: None
+   - kernel_blur: None
+   - kernel_open: None
+   - kernel_close: None
+   - canny_min: None
+   - canny_max: None
+   - n_iteration: 1
+   - fill_holes: False
+   - apply_convex_hull: False
+   - roi_expansion: 0
+   - remove_roi: True
+   - erosion_px: 0
+
+DETECT_FRUITS:
+   - min_fruit_area: 5000
+   - max_fruit_area: None
+   - min_fruit_circularity: 0.5
+   - min_locule_area: 50
+   - min_locule_per_fruit: 1
+   - rescale_factor: None
+
+ANALYZE_MORPHOLOGY:
+   - contour_mode: raw
+   - epsilon: None
+   - min_locule_area: 10
+   - max_locule_area: None
+   - angle_shifts: 500
+   - num_rays: 90
+   - font_size: 1.5
+   - font_thickness: 2
+   - label_position: top
+   - pericarp_int_thickness: 2
+   - locule_thickness: 2
+   - pericarp_ext_thickness: 2
+   - centroid_fruit_thickness: 2
+   - centroid_locule_thickness: 2
+   - is_locule: True
+   - dilation_factor: None
+
+ANALYZE_COLOR:
+   - stat: mean
+   - tissue: OUTER_PERICARP
+   - font_size: 2
+   - font_thickness: 2
+   - pericarp_ext_thickness: 2
+   - pericarp_int_thickness: 2
+   - locule_thickness: 2
+   - label_position: top
+   - label_opacity: 0.7
+   - dilation_factor: None
+   - dark_thresh: 20
+
+======================================================================
+DEPENDENCIES
+======================================================================
+   - python                         3.13.7
+   - opencv-contrib-python          4.13.0.92
+   - numpy                          2.3.5
+   - pandas                         2.3.3
+   - scipy                          1.17.0
+   - matplotlib                     3.10.8
+   - tqdm                           4.67.3
+   - psutil                         7.2.2
+   - easyocr                        1.7.2
+   - PyMuPDF                        1.27.1
+   - ultralytics                    8.4.14
