@@ -43,7 +43,7 @@ class ResultsImage:
     color_results : list, optional
         List of per-fruit color result dictionaries. Default is an empty
         list.
-    image_path : str or None, optional
+    path : str or None, optional
         Filesystem path to the original source image, used to derive
         default output paths in save methods. Default is ``None``.
     processing_metadata : dict or None, optional
@@ -56,15 +56,15 @@ class ResultsImage:
         bgr_img: np.ndarray,
         morphology_results: list = None,
         color_results: list = None,
-        image_path: Optional[str] = None,
+        path: Optional[str] = None,
         processing_metadata: Optional[Dict[str, Any]] = None,
     ):
         # Save both BGR (for cv2) and RGB (for display) to avoid reconversion
-        self.annotated_image = bgr_img
+        self.morphology_image = bgr_img
         self.color_image = bgr_img.copy()
         self.morphology_results = morphology_results if morphology_results else []
         self.table = self.morphology_results
-        self.image_path = image_path
+        self.path = path
         self._dir_cache = {}  # Cache for directory checks
         self.color_results = color_results if color_results else []
 
@@ -117,7 +117,7 @@ class ResultsImage:
         """
         Save the annotated image to disk.
 
-        Converts :attr:`annotated_image` from RGB back to BGR before writing
+        Converts :attr:`morphology_image` from RGB back to BGR before writing
         via ``cv2.imwrite``. JPEG and PNG are written with explicit quality
         and compression settings; all other formats use ``cv2.imwrite``
         defaults.
@@ -126,7 +126,7 @@ class ResultsImage:
         ----------
         path : str or None, optional
             Output file path. If ``None``, the image is saved next to
-            :attr:`image_path` with ``'_processed'`` appended to the stem.
+            :attr:`path` with ``'_processed'`` appended to the stem.
             Default is ``None``.
         format : str or None, optional
             Image format extension (e.g. ``'jpg'``, ``'png'``). If ``None``,
@@ -142,31 +142,31 @@ class ResultsImage:
         Raises
         ------
         ValueError
-            If ``path`` is ``None`` and :attr:`image_path` is not set.
+            If ``path`` is ``None`` and :attr:`path` is not set.
         RuntimeError
             If the image cannot be saved due to an unexpected error.
         """
         try:
             if output_path is None or os.path.isdir(str(output_path)):
-                if not self.image_path:
+                if not self.path:
                     raise ValueError(
                         "No path provided and no original image reference available"
                     )
                 if base_name is None:
-                    base_name = os.path.splitext(os.path.basename(self.image_path))[0]
+                    base_name = os.path.splitext(os.path.basename(self.path))[0]
 
                 ext = format.lower() if format else "jpg"
                 out_dir = (
                     output_path
                     if output_path is not None
-                    else os.path.dirname(self.image_path)
+                    else os.path.dirname(self.path)
                 )
                 output_path = os.path.join(out_dir, f"{base_name}_processed.{ext}")
 
             full_path = self._ensure_dir_exists(output_path)
             format = format or os.path.splitext(full_path)[1][1:].lower()
 
-            bgr_image = self.annotated_image
+            bgr_image = self.morphology_image
             # Use cv2.imwrite
             if format.lower() in ["jpg", "jpeg"]:
                 # JPEG with quality setting
@@ -196,7 +196,7 @@ class ResultsImage:
         """
         Save the annotated image, morphology CSV, and color CSV in one call.
 
-        Derives default output paths from :attr:`image_path` when
+        Derives default output paths from :attr:`path` when
         ``base_name`` or ``output_dir`` are not provided. CSV files are only
         written when the corresponding result table is non-empty.
 
@@ -204,10 +204,10 @@ class ResultsImage:
         ----------
         base_name : str or None, optional
             Stem used for all output filenames. If ``None``, derived from
-            :attr:`image_path`. Default is ``None``.
+            :attr:`path`. Default is ``None``.
         output_dir : str or None, optional
             Directory where all files are saved. If ``None``, derived from
-            :attr:`image_path`. Default is ``None``.
+            :attr:`path`. Default is ``None``.
         format : str, optional
             Image format extension for the annotated image. Default is
             ``'jpg'``.
@@ -222,26 +222,26 @@ class ResultsImage:
         ------
         ValueError
             If ``base_name`` or ``output_dir`` cannot be determined because
-            :attr:`image_path` is not set.
+            :attr:`path` is not set.
         RuntimeError
             If any file cannot be saved due to an unexpected error.
         """
         try:
             # Determine base name
             if base_name is None:
-                if not self.image_path:
+                if not self.path:
                     raise ValueError(
                         "Cannot determine base name: no original image available"
                     )
-                base_name = os.path.splitext(os.path.basename(self.image_path))[0]
+                base_name = os.path.splitext(os.path.basename(self.path))[0]
 
             # Determine output directory
             if output_dir is None:
-                if not self.image_path:
+                if not self.path:
                     raise ValueError(
                         "Cannot determine directory: no original image available"
                     )
-                output_dir = os.path.dirname(self.image_path)
+                output_dir = os.path.dirname(self.path)
 
             # Ensure output directory exists (once)
             abs_output_dir = os.path.abspath(os.path.expanduser(output_dir))
@@ -262,7 +262,7 @@ class ResultsImage:
             )
 
             # Save annotated image
-            bgr_image = self.annotated_image
+            bgr_image = self.morphology_image
 
             if format.lower() in ["jpg", "jpeg"]:
                 cv2.imwrite(img_path, bgr_image, [cv2.IMWRITE_JPEG_QUALITY, quality])
@@ -320,9 +320,9 @@ class ResultsImage:
         Save morphology results, color results, or both to CSV files.
 
         Resolves output paths from ``path``, ``base_name``, and
-        :attr:`image_path`. Supports three path modes:
+        :attr:`path`. Supports three path modes:
 
-        - ``path=None`` — saves next to :attr:`image_path` using
+        - ``path=None`` — saves next to :attr:`path` using
         ``base_name`` as the filename stem.
         - ``path`` is a directory — saves inside that directory using
         ``base_name``.
@@ -350,14 +350,14 @@ class ResultsImage:
             Default is ``'auto'``.
         base_name : str or None, optional
             Filename stem used when ``path`` is ``None`` or a directory. If
-            ``None``, derived from :attr:`image_path`, or ``'results'`` if
-            :attr:`image_path` is not set. Default is ``None``.
+            ``None``, derived from :attr:`path`, or ``'results'`` if
+            :attr:`path` is not set. Default is ``None``.
 
         Raises
         ------
         ValueError
             If the requested result table is empty, ``path`` is ``None`` and
-            :attr:`image_path` is not set, ``path`` has a non-CSV extension,
+            :attr:`path` is not set, ``path`` has a non-CSV extension,
             or ``data`` is not one of the supported modes.
         """
 
@@ -378,17 +378,17 @@ class ResultsImage:
 
         # Resolve default base_name
         if base_name is None:
-            if self.image_path:
-                base_name = os.path.splitext(os.path.basename(self.image_path))[0]
+            if self.path:
+                base_name = os.path.splitext(os.path.basename(self.path))[0]
             else:
                 base_name = "results"
 
         if output_path is None:
-            if not self.image_path:
+            if not self.path:
                 raise ValueError(
                     "No path provided and no original image reference available"
                 )
-            out_dir = os.path.dirname(self.image_path)
+            out_dir = os.path.dirname(self.path)
             base_path = os.path.join(out_dir, base_name)
 
         else:
