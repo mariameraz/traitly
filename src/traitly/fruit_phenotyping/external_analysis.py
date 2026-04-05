@@ -29,7 +29,6 @@ import json
 import multiprocessing as mp
 import os
 import time
-import time as t
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
@@ -58,7 +57,7 @@ from traitly.utils.constants import valid_extensions as _valid_ext
 
 
 def _process_external_worker(
-    img_path: str, config: Dict, analyze_morphology: bool, analyze_color: bool
+    path: str, config: Dict, analyze_morphology: bool, analyze_color: bool
 ):
     """
     Worker function for parallel processing of a single image.
@@ -69,7 +68,7 @@ def _process_external_worker(
 
     Parameters
     ----------
-    img_path : str
+    path : str
         Absolute path to the image file to process.
     config : Dict
         Analysis configuration dictionary passed to
@@ -88,7 +87,7 @@ def _process_external_worker(
     """
     t0 = time.time()
     try:
-        analyzer = FruitExternalAnalyzer(img_path)
+        analyzer = FruitExternalAnalyzer(path)
         analyzer.load_image(plot=False)
         df_morphology, df_color, error_dict, n_fruits, annotated_img = (
             analyzer.process_single_file(
@@ -100,7 +99,7 @@ def _process_external_worker(
             )
         )
         elapsed = time.time() - t0
-        filename = os.path.basename(img_path)
+        filename = os.path.basename(path)
         return (
             df_morphology,
             df_color,
@@ -114,10 +113,10 @@ def _process_external_worker(
         return (
             None,
             None,
-            {"filename": os.path.basename(img_path), "status": f"Error: {str(e)}"},
+            {"filename": os.path.basename(path), "status": f"Error: {str(e)}"},
             0,
             None,
-            os.path.basename(img_path),
+            os.path.basename(path),
             time.time() - t0,
         )
 
@@ -138,12 +137,12 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
 
     Parameters
     ----------
-    img_path : str
+    path : str
         Path to an image file or a folder containing images.
     """
 
-    def __init__(self, image_path: str):
-        super().__init__(image_path)
+    def __init__(self, path: str):
+        super().__init__(path)
 
         self.external_features = None
 
@@ -473,7 +472,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
 
         if plot:
             plt.figure(figsize=plot_size)
-            plt.imshow(cv2.cvtColor(self.results.annotated_image, cv2.COLOR_BGR2RGB))
+            plt.imshow(cv2.cvtColor(self.results.morphology_image, cv2.COLOR_BGR2RGB))
             plt.axis("off")
             plt.show()
 
@@ -902,7 +901,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                 "Pass a folder to FruitExternalAnalyzer(), not a single file."
             )
 
-        folder_path = self.img_path
+        folder_path = self.input_path
 
         # Validate cores
         num_cores_message = None
@@ -1046,10 +1045,10 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         all_morphology, all_color, errors = [], [], []
         total_fruits = 0
 
-        def _run_one(img_path):
-            t0 = t.time()
+        def _run_one(path):
+            t0 = time.time()
             try:
-                worker = FruitExternalAnalyzer(img_path)
+                worker = FruitExternalAnalyzer(path)
                 worker.load_image(plot=False)
                 df_m, df_c, err, n, ann_img = worker.process_single_file(
                     config=cfg,
@@ -1066,28 +1065,28 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                     err,
                     n,
                     ann_img,
-                    os.path.basename(img_path),
-                    t.time() - t0,
+                    os.path.basename(path),
+                    time.time() - t0,
                 )
             except Exception as e:
                 return (
                     None,
                     None,
                     {
-                        "filename": os.path.basename(img_path),
+                        "filename": os.path.basename(path),
                         "status": f"Error: {str(e)}",
                     },
                     0,
                     None,
-                    os.path.basename(img_path),
-                    t.time() - t0,
+                    os.path.basename(path),
+                    time.time() - t0,
                 )
 
         if num_cores == 1:
-            for img_path in tqdm(
+            for path in tqdm(
                 img_paths, desc="Processing images", unit="img", disable=not verbose
             ):
-                df_m, df_c, err, n, _, fname, _ = _run_one(img_path)
+                df_m, df_c, err, n, _, fname, _ = _run_one(path)
                 if err:
                     errors.append(err)
                 else:

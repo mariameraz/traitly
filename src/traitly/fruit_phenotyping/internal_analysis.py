@@ -186,36 +186,36 @@ class FruitInternalAnalyzer:
 
     Parameters
     ----------
-    image_path : str
+    path : str
         Path to an image file or a folder containing images. Raises
         :exc:`FileNotFoundError` if the path does not exist.
     """
 
-    def __init__(self, image_path: str) -> None:
+    def __init__(self, path: str) -> None:
         """
         Initialize the analyzer and validate the image path.
 
         Parameters
         ----------
-        image_path : str
+        path : str
             Path to an image file or a directory. Raises
             :exc:`FileNotFoundError` if the path does not exist.
         """
 
         ## Verify image path exists
         # Assign the path first
-        self.img_path = os.path.abspath(image_path)
+        self.input_path = os.path.abspath(path)
 
         # Then verify if it was provided and exists
-        if self.img_path is not None:
-            if not os.path.exists(self.img_path):
+        if self.input_path is not None:
+            if not os.path.exists(self.input_path):
                 raise FileNotFoundError(
-                    f"The path does not exist: {self.img_path}\n"
+                    f"The path does not exist: {self.input_path}\n"
                     f"Verify that the file exists and the path is correct."
                 )
 
         # load_img
-        self.is_directory = os.path.isdir(os.path.dirname(image_path))
+        self.is_directory = os.path.isdir(os.path.dirname(path))
         self.img = None
         self.img_name = None
         self.img_copy = None
@@ -290,13 +290,13 @@ class FruitInternalAnalyzer:
             the image failed to load.
         """
 
-        if self.img_path is None:
+        if self.input_path is None:
             raise ValueError(
                 "No image loaded."
                 "Run FruitInternalAnalyzer('path/to/your/image.jpg') first."
             )
 
-        path = Path(self.img_path)
+        path = Path(self.input_path)
         if path.suffix.lower() not in valid_extensions:
             raise ValueError(
                 f"No valid image format: '{path.suffix.lower()}' -> "
@@ -304,7 +304,7 @@ class FruitInternalAnalyzer:
             )
 
         self.img = load_img(
-            self.img_path,
+            self.input_path,
             plot=plot,
             plot_size=plot_size,
             show_axis=show_axis,
@@ -316,16 +316,16 @@ class FruitInternalAnalyzer:
 
         if self.img is None:
             raise ValueError(
-                f"Failed to load image: {self.img_path}."
+                f"Failed to load image: {self.input_path}."
                 "The file may be corrupted or not in a supported format."
             )
 
         self.img_shape = self.img.shape[:2]
         self.img_hsv = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
         self.img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
-        self.img_name = detect_img_name(self.img_path)
+        self.img_name = detect_img_name(self.input_path)
 
-        self.parameters.img_params = {"img_path": self.img_path}
+        self.parameters.img_params = {"img_path": self.input_path}
 
         return None
 
@@ -462,7 +462,7 @@ class FruitInternalAnalyzer:
         if self.label_text == "No label detected":
             if verbose:
                 print("> No label detected.")
-                print("    - Use detect_label=False to disable label detection.")
+                print(f"    - Use detect_label=False to disable label detection.")
 
         return None
 
@@ -1655,7 +1655,7 @@ class FruitInternalAnalyzer:
         self.results = analyze_fruits_morphology(
             # Image
             img=self.img_copy,
-            path=self.img_path,
+            path=self.input_path,
             contours=self.contours,
             fruit_locule_map=self.fruit_locule_map,
             # Size reference and image metadata
@@ -1822,10 +1822,10 @@ class FruitInternalAnalyzer:
             saved in the same directory as :attr:`img_path`. Default is None.
         """
         if output_path is None:
-            output_path = os.path.dirname(self.img_path)
+            output_path = os.path.dirname(self.input_path)
 
         output_path = os.path.abspath(output_path)
-        base_name = os.path.splitext(os.path.basename(self.img_path))[0]
+        base_name = os.path.splitext(os.path.basename(self.input_path))[0]
 
         # Save as .txt
         txt_path = os.path.join(output_path, f"{base_name}_parameters.txt")
@@ -1991,7 +1991,7 @@ class FruitInternalAnalyzer:
 
         if self.is_morphology_results is None:
             self.results = ResultsImage(
-                bgr_img=self.img_copy, morphology_results=[], image_path=self.img_path
+                bgr_img=self.img_copy, morphology_results=[], path=self.input_path
             )
 
         self.results.color_image = self.img_copy.copy()
@@ -2406,19 +2406,19 @@ class FruitInternalAnalyzer:
             # 8. Get annotated image
             if self.results is not None:
                 if analyze_morphology:
-                    annotated_img = self.results.annotated_image
+                    annotated_img = self.results.morphology_image
                 else:
                     annotated_img = self.results.color_image
 
             # 9. Save image if requested
             if save_image and annotated_img is not None:
-                out_dir = output_path or os.path.dirname(self.img_path)
-                base = os.path.splitext(os.path.basename(self.img_path))[0]
+                out_dir = output_path or os.path.dirname(self.input_path)
+                base = os.path.splitext(os.path.basename(self.input_path))[0]
                 out_img = os.path.join(out_dir, f"{base}_annotated.jpg")
                 cv2.imwrite(out_img, annotated_img)
 
         except Exception as e:
-            error_dict = {"filename": os.path.basename(self.img_path), "status": str(e)}
+            error_dict = {"filename": os.path.basename(self.input_path), "status": str(e)}
 
         return df_morph, df_color, error_dict, n_fruits, annotated_img
 
@@ -2667,7 +2667,7 @@ class FruitInternalAnalyzer:
                 "Pass a folder to FruitInternalAnalyzer(), not a single file."
             )
 
-        folder_path = self.img_path
+        folder_path = self.input_path
 
         # Validate number of cores (num_cores)
         num_cores_message = None
@@ -3103,6 +3103,7 @@ class FruitInternalAnalyzer:
                 print(
                     f"    > For more details, check error_report.txt saved in: {output_path}"
                 )
+
             else:
                 print("\n( ദ്ദി ˙ᗜ˙ ) Finished " + "=" * 47)
                 print("    > Image(s) processed:")
@@ -3125,6 +3126,8 @@ class FruitInternalAnalyzer:
                 if error_txt:
                     print(f"        - {os.path.basename(error_txt)}")
                 print(f"        - Results folder: {output_path}")
+
+        return None
 
     def plot_image(
         self,
@@ -3158,7 +3161,7 @@ class FruitInternalAnalyzer:
                 )
                 img = self.img_rgb
             else:
-                img = self.results.annotated_image
+                img = self.results.morphology_image
         else:
             img = self.img_rgb
 
