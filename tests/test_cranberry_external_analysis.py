@@ -1,4 +1,4 @@
-# tests/test_external_analyzer.py
+# tests/test_external_analysis.py
 
 # ============================================================================
 # STANDARD LIBRARY
@@ -19,12 +19,12 @@ from traitly.fruit_phenotyping import FruitExternalAnalyzer
 # Valid cranberry image
 ##########################################################################
 
-white_bg = Path(__file__).parent / "data/external/cranberry_white_bg.jpg"
+white_bg = Path(__file__).parent / "data/external/white_bg/cranberry_white_bg.jpg"
 
 
 @pytest.fixture
 def cranberry_white():
-    cranberry = FruitExternalAnalyzer(image_path=white_bg)
+    cranberry = FruitExternalAnalyzer(path=white_bg)
     cranberry.load_image(plot=False)
     cranberry.setup_measurements()
     return cranberry
@@ -35,6 +35,7 @@ def test_cranberry_white_bg(cranberry_white):
     cranberry_white.detect_fruits(plot=False)
     cranberry_white.analyze_morphology(plot=False, display_table=False)
     cranberry_white.analyze_color(plot=False, display_table=False)
+    cranberry_white.save_parameters()
 
 
 def test_invalid_bg_color(cranberry_white):
@@ -49,12 +50,12 @@ def test_skip_setup_measurements(cranberry_white):
     cranberry_white.analyze_color(plot=False, display_table=False)
 
 
-blue_bg = Path(__file__).parent / "data/external/cranberry_blue_bg.jpg"
+blue_bg = Path(__file__).parent / "data/external/blue_bg/cranberry_blue_bg.jpg"
 
 
 @pytest.fixture
 def cranberry_blue():
-    cranberry = FruitExternalAnalyzer(image_path=blue_bg)
+    cranberry = FruitExternalAnalyzer(path=blue_bg)
     cranberry.load_image(plot=False)
     return cranberry
 
@@ -65,6 +66,7 @@ def test_cranberry_blue_bg(cranberry_blue):
     cranberry_blue.generate_fruit_mask(plot=False, background_color="blue")
     cranberry_blue.detect_fruits(plot=False)
     cranberry_blue.analyze_morphology(plot=False, display_table=False)
+    cranberry_blue.save_parameters()
 
 
 def test_detect_label(cranberry_blue):
@@ -81,3 +83,14 @@ def test_detect_color_checker(cranberry_blue):
 def test_skip_yolo_model(cranberry_blue):
     cranberry_blue.setup_measurements(skip_yolo=True)
     assert cranberry_blue.ref_roi is None
+
+
+def test_invalid_tissue(cranberry_blue):
+    cranberry_blue.setup_measurements()
+    cranberry_blue.generate_fruit_mask(plot=False, background_color="blue")
+    cranberry_blue.detect_fruits(plot=False)
+
+    with pytest.raises(TypeError):
+        cranberry_blue.analyze_color(
+            plot=False, display_table=False, tissue="outer_pericarp"
+        )
