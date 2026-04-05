@@ -3329,7 +3329,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 r_original_img_name.get()
                 or os.path.splitext(os.path.basename(az.img_path))[0]
             )
-            ann_path = os.path.join(tmp_dir, f"{base}_annotated.png")
+            ann_path = os.path.join(tmp_dir, f"{base}_processed.png")
             if az.results is not None and az.results.annotated_image is not None:
                 cv2.imwrite(ann_path, az.results.annotated_image)
             if df is not None and not df.empty:
@@ -3534,7 +3534,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             ann_img = getattr(az.results, "annotated_image", None)
             col_img = getattr(az.results, "color_image", None)
             if ann_img is not None:
-                img_to_save, img_filename = ann_img, f"{base}_annotated.png"
+                img_to_save, img_filename = ann_img, f"{base}_processed.png"
             elif col_img is not None:
                 img_to_save, img_filename = col_img, f"{base}_color.png"
             else:
@@ -3776,7 +3776,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         ann_images = [
             f
             for f in out_files
-            if f.endswith("_annotated.jpg") or f.endswith("_annotated.png")
+            if f.endswith("_processed.jpg") or f.endswith("_processed.png")
         ]
         morph_csv = next((f for f in out_files if f == "morphology_results.csv"), None)
         color_csv = next((f for f in out_files if f == "color_results.csv"), None)
