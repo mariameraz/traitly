@@ -41,11 +41,11 @@ except ImportError:
 
 _CSS = """
 /* for HF */
-html { font-size: clamp(7px, 0.55vw, 12px); }
-body { font-size: clamp(7px, 0.55vw, 12px); }
+/* html { font-size: clamp(7px, 0.55vw, 12px); } */
+/* body { font-size: clamp(7px, 0.55vw, 12px); } */
 
-/* html { font-size: clamp(12px, 0.55vw, 12px); } */
-/* body { font-size: clamp(12px, 0.55vw, 12px); } */
+html { font-size: clamp(9px, 0.55vw, 12px); }
+body { font-size: clamp(9px, 0.55vw, 12px); }
 
 /* light theme (default) colors */
 :root {
@@ -259,10 +259,11 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
 .step-link.done .step-num { background:#059669; color:#fff; }
 .step-link.active .step-num { background:#3b82f6; color:#fff; }
 
+/* HF */
 .step-num {
     width: 38px; height: 38px; border-radius: 50%;
     background: var(--step-num-bg); color: var(--step-num-color);
-    font-size: .8rem; font-weight: 800;
+    font-size: 1.5rem; font-weight: 800;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
 .step-check { color:#059669; font-size:.72rem; margin-left:auto; }
@@ -1893,7 +1894,7 @@ tab_pdf = ui.nav_panel(
 sidebar_ui = ui.sidebar(
     ui.output_ui("sidebar_content"),
     # width="220px", ## HF
-    width="300px",
+    width="250px",
     open="always",
 )
 
@@ -3327,11 +3328,11 @@ def server(input: Inputs, output: Outputs, session: Session):
             tmp_dir = tempfile.mkdtemp()
             base = (
                 r_original_img_name.get()
-                or os.path.splitext(os.path.basename(az.img_path))[0]
+                or os.path.splitext(os.path.basename(az.input_path))[0]
             )
             ann_path = os.path.join(tmp_dir, f"{base}_processed.png")
-            if az.results is not None and az.results.annotated_image is not None:
-                cv2.imwrite(ann_path, az.results.annotated_image)
+            if az.results is not None and az.results.morphology_image is not None:
+                cv2.imwrite(ann_path, az.results.morphology_image)
             if df is not None and not df.empty:
                 df.to_csv(
                     os.path.join(tmp_dir, f"{base}_morphology_results.csv"), index=False
@@ -3528,10 +3529,10 @@ def server(input: Inputs, output: Outputs, session: Session):
             tmp_dir = tempfile.mkdtemp()
             base = (
                 r_original_img_name.get()
-                or os.path.splitext(os.path.basename(az.img_path))[0]
+                or os.path.splitext(os.path.basename(az.input_path))[0]
             )
 
-            ann_img = getattr(az.results, "annotated_image", None)
+            ann_img = getattr(az.results, "morphology_image", None)
             col_img = getattr(az.results, "color_image", None)
             if ann_img is not None:
                 img_to_save, img_filename = ann_img, f"{base}_processed.png"
