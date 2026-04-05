@@ -27,7 +27,7 @@ from traitly.fruit_phenotyping import FruitInternalAnalyzer
 
 ```python
 # Create the `cranberry` object
-path = "./cranberry_stamps.jpg"
+input_path = "./cranberry_stamps.jpg"
 cranberry = FruitInternalAnalyzer(path)
 
 # Load our image
@@ -133,7 +133,7 @@ cranberry.results.save_all()
 ```
 
     > Results saved at:
-        – Image: /Users/traitly/tutorials_data/cranberry_stamp_analysis/cranberry_stamps_annotated.jpg
+        – Image: /Users/traitly/tutorials_data/cranberry_stamp_analysis/cranberry_stamps_processed.jpg
         – Morphology CSV: /Users/traitly/tutorials_data/cranberry_stamp_analysis/cranberry_stamps_morphology_results.csv
 
 

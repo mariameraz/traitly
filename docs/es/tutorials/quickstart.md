@@ -107,7 +107,7 @@ Esto genera una carpeta llamada `resultados/` con:
 
 - `morphology_results.csv` *(si `analyze_morphology=True`)* 
 - `color_results.csv` *(si `analyze_color=True`)*
-- `*_annotated.jpg` por cada imagen analizada **exitosamente**
+- `*_processed.jpg` por cada imagen analizada **exitosamente**
 - `session_report.txt`
 - `error_report.txt` *(solo si alguna imagen falló)*
 

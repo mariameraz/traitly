@@ -14,15 +14,15 @@ This section covers everything you need to work with `FruitExternalAnalyzer`, th
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 # To analyze a single image
-analyzer = FruitExternalAnalyzer(image_path = "path/to/image.jpg")
+analyzer = FruitExternalAnalyzer(path = "path/to/image.jpg")
 
 # To analyze multiple images in a folder
-analyzer = FruitExternalAnalyzer(image_path = "path/to/my/folder/with/images/")
+analyzer = FruitExternalAnalyzer(path = "path/to/my/folder/with/images/")
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `image_path` | `str` | Path to the image or folder you want to analyze |
+| `path` | `str` | Path to the image or folder you want to analyze |
 
 
 !!! tip "Recommendation"
@@ -83,7 +83,7 @@ After running the methods, the analyzer stores results in attributes you can ins
 
 | Attribute | Contents |
 |----------|--------------|
-| `img_path` | Path of the image being analyzed |
+| `input_path` | Path of the image being analyzed |
 | `img_name` | Image name |
 | `img_shape` | Image size |
 | `img`, `img_rgb`, `img_hsv` | The image in different color formats |
@@ -141,7 +141,7 @@ Handles label detection and size reference detection, then calculates the pixel/
 
     - When `detect_label=True`, labels are detected in this order: QR first, falling back to OCR if no QR code is found. To skip QR detection and go straight to OCR, set `skip_qr=True`.
 
-    - When `fast_calibration=False` (default), the size reference is first detected with YOLO; if that fails, it falls back to the physical dimensions provided (`width_cm`, `length_cm`). If no reference is found and both `width_cm` and `length_cm` are `None`, results are expressed in pixels.
+    - When `skip_yolo=False` (default), the size reference is first detected with YOLO; if that fails, it falls back to the physical dimensions provided (`width_cm`, `length_cm`). If no reference is found and both `width_cm` and `length_cm` are `None`, results are expressed in pixels.
     
     - For size reference detection, the reference circles are assumed to be black on a white background.
 
@@ -173,7 +173,7 @@ analyzer.setup_measurements(
 | `width_cm` | `float` | `None` | Known image width in cm |
 | `length_cm` | `float` | `None` | Known image length in cm |
 | `diameter_cm` | `float` | `None` | Known diameter of the reference circle in cm; defaults to 2.5 cm if not provided |
-| `fast_calibration` | `bool` | `False` | If `True`, skips YOLO and calibrates using `width_cm` and `length_cm`; results are in pixels if neither is provided |
+| `skip_yolo` | `bool` | `False` | If `True`, skips YOLO and calibrates using `width_cm` and `length_cm`; results are in pixels if neither is provided |
 | `confidence` | `float` | `0.6` | Minimum confidence for YOLO reference detection |
 | `skip_qr` | `bool` | `False` | If `True`, skips QR detection and attempts OCR directly |
 | `gpu` | `bool` | `False` | If `True`, uses GPU for OCR; NVIDIA only. Falls back to CPU on failure |
@@ -318,7 +318,7 @@ analyzer.results.save_csv() # Saves only the CSV
 analyzer.results.save_img() # Saves only the image
 ```
 
-By default, files are saved to the same folder as the input image, using the original filename as a base. The output directory and an alternative base name can be specified with `output_dir='PATH/'` and `base_name='new_name'`. For more details, see the `ResultsImage` class documentation.
+By default, files are saved to the same folder as the input image, using the original filename as a base. The output directory and an alternative base name can be specified with `output_path='PATH/'` and `base_name='new_name'`. For more details, see the `ResultsImage` class documentation.
 
 The annotated image includes a **unique ID for each fruit** and highlights the following elements:
 
@@ -387,7 +387,7 @@ analyzer.results.save_csv() # Saves only the CSV
 analyzer.results.save_img() # Saves only the image
 ```
 
-By default, files are saved to the same folder as the input image. The output directory and base name can be specified with `output_dir='PATH/'` and `base_name='new_name'`.
+By default, files are saved to the same folder as the input image. The output directory and base name can be specified with `output_path='PATH/'` and `base_name='new_name'`.
 
 ??? note "Notes"
     * `analyze_color()` is **independent** of `analyze_morphology()`. Running only `analyze_color()` generates a basic annotated image with the **fruit ID** and the **fruit contour** in green.
@@ -603,7 +603,7 @@ analyzer.analyze_folder(json_path="image_parameters.json")
 | `width_cm` | `float` | `None` | Known image width in cm -> `setup_measurements` |
 | `length_cm` | `float` | `None` | Known image length in cm -> `setup_measurements` |
 | `diameter_cm` | `float` | `None` | Known reference diameter in cm -> `setup_measurements` |
-| `fast_calibration` | `bool` | `None` | If `True`, skips YOLO and calibrates with physical dimensions -> `setup_measurements` |
+| `skip_yolo` | `bool` | `None` | If `True`, skips YOLO and calibrates with physical dimensions -> `setup_measurements` |
 | `skip_qr` | `bool` | `None` | If `True`, skips QR detection -> `setup_measurements` |
 | `detect_label` | `bool` | `None` | If `True`, enables label detection with OCR -> `setup_measurements` |
 | `confidence` | `float` | `None` | Minimum confidence for YOLO detection -> `setup_measurements` |

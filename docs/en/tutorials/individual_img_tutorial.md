@@ -26,7 +26,7 @@ First, we load the `FruitExternalAnalyzer` class from Traitly and the image to b
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 
-path_img = '~/ext_analysis_sample1.jpg'
+input_path_img = '~/ext_analysis_sample1.jpg'
 
 pic_test = FruitExternalAnalyzer(path_img)
 
@@ -141,7 +141,7 @@ When `analyze_morphology()` and `analyze_color()` are run, the results object co
 pic_test.results.save_all()
 ```
 
-    Image saved at: ./ext_analysis_sample1_annotated.jpg
+    Image saved at: ./ext_analysis_sample1_processed.jpg
     Morphology CSV saved at: ./ext_analysis_sample1_morphology_results.csv
     Color CSV saved at: ./ext_analysis_sample1_color_results.csv
 

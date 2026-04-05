@@ -31,7 +31,7 @@ Primero, cargamos la clase `FruitExternalAnalyzer` de la librería `traitly` y l
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 
-path = './Test_10.png'
+input_path = './Test_10.png'
 blue_example = FruitExternalAnalyzer(path)
 blue_example.load_image()
 blue_example.setup_measurements(verbose = False)
@@ -67,7 +67,7 @@ blue_example.detect_fruits(plot = True, contour_thickness = 8)
 
 En este segundo ejemplo tenemos una imagen con fondo gris. Como el gris no es un color preconfigurado, definiremos **umbrales HSV personalizados** de forma manual. Para esto, podemos usar `generate_color_scatterplot()`, que muestra los colores de los píxeles de la imagen (10,000 por defecto) en el espacio HSV (ver sección [External Analyzer Class](../user_guide/external_class.md#generate_color_scatterplot) para más detalles sobre cómo funciona esta función). Cada punto en los gráficos representa un píxel, coloreado con su valor **RGB** real. El objetivo es encontrar el rango [H,S,V] en el que caen los píxeles del fondo gris.
 ```python
-path = './Test_27.png'
+input_path = './Test_27.png'
 gray_example = FruitExternalAnalyzer(path)
 gray_example.load_image()
 gray_example.setup_measurements(verbose = False)
@@ -121,7 +121,7 @@ gray_example.detect_fruits(plot = True,
 
 Por último, tenemos un ejemplo con fondo blanco. Como `white` es un color preconfigurado, simplemente usamos `background_color='white'` en `generate_fruit_mask()`.
 ```python
-path = './Test_56.png'
+input_path = './Test_56.png'
 white_example = FruitExternalAnalyzer(path)
 white_example.load_image()
 white_example.setup_measurements(verbose = False)

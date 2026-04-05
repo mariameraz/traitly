@@ -40,7 +40,7 @@ For every processed image, Traitly saves an annotated version that overlays the 
 
 ```
 Results/
-└── image_name_annotated.jpg
+└── image_name_processed.jpg
 ```
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">

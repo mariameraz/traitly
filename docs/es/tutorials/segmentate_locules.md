@@ -39,7 +39,7 @@ Como primer ejemplo usaremos una imagen de tomate. Dado que la imagen contiene u
 
 
 ```python
-path = "./tomato_2.tif"
+input_path = "./tomato_2.tif"
 tomato = FruitInternalAnalyzer(path)
 tomato.load_image()
 ```
@@ -418,7 +418,7 @@ Al igual que antes, comenzamos generando la máscara del fruto con `generate_fru
 
 
 ```python
-path = "./tomato_1.tif"
+input_path = "./tomato_1.tif"
 tomato = FruitInternalAnalyzer(path)
 tomato.load_image(show_axis = True, x = 400, y = 500, w = 1200, h = 1200)
 tomato.generate_fruit_mask()
@@ -562,7 +562,7 @@ Procederemos de la misma forma que en los ejemplos anteriores: cargando la image
 
 
 ```python
-path = './dragon_fruit.tif'
+input_path = './dragon_fruit.tif'
 
 dragon_fruit = FruitInternalAnalyzer(path)
 dragon_fruit.load_image(show_axis = True, 

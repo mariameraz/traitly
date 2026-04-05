@@ -14,15 +14,15 @@ En esta sección encontrarás todo lo que necesitas para usar `FruitInternalAnal
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
 
 # Para analizar una imagen
-analizador = FruitInternalAnalyzer(image_path = "ruta/de/mi/imagen.jpg")
+analizador = FruitInternalAnalyzer(path = "ruta/de/mi/imagen.jpg")
 
 # Para analizar varias imágenes en carpeta
-analizador = FruitInternalAnalyzer(image_path = "ruta/de/mi/carpeta/con/imagenes/")
+analizador = FruitInternalAnalyzer(path = "ruta/de/mi/carpeta/con/imagenes/")
 ```
 
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
-| `image_path` | `str` | Ruta a la imagen o carpeta que quieres analizar |
+| `path` | `str` | Ruta a la imagen o carpeta que quieres analizar |
 
 
 !!! tip "Recomendación"
@@ -90,7 +90,7 @@ Después de ejecutar los métodos, el analizador guarda los resultados en atribu
 
 | Atributo | Qué contiene |
 |----------|--------------|
-| `img_path` | Ruta de la imagen que estás analizando |
+| `input_path` | Ruta de la imagen que estás analizando |
 | `img_name` | Nombre de la imagen |
 | `img_shape` | Tamaño de la imagen |
 | `img`, `img_rgb`, `img_hsv` | La imagen en diferentes formatos de color |
@@ -147,7 +147,7 @@ Realiza la detección de etiqueta y la referencia de tamaño y calcula el factor
 
     - Cuando `detect_label=True`, la etiqueta se detecta en orden: primero QR y si no se encuentra, recurre a OCR. Para saltar la detección de QR e ir directo a OCR, activar `skip_qr=True`.
 
-    - Cuando `fast_calibration=False` (default), la referencia de tamaño se detecta primero con YOLO y si falla, recurre a las medidas físicas de la imagen proporcionadas (`width_cm`, `length_cm`). Si no se encuentra referencia y `width_cm` y `length_cm` son `None`, los resultados se expresan en píxeles.
+    - Cuando `skip_yolo=False` (default), la referencia de tamaño se detecta primero con YOLO y si falla, recurre a las medidas físicas de la imagen proporcionadas (`width_cm`, `length_cm`). Si no se encuentra referencia y `width_cm` y `length_cm` son `None`, los resultados se expresan en píxeles.
     
     - Para la detección de la referencia de tamaño, se asume que los círculos de la referencia son de color negro y que el fondo de la referencia es blanco.
 
@@ -178,7 +178,7 @@ analyzer.setup_measurements(
 | `width_cm` | `float` | `None` | Ancho conocido de la imagen en cm |
 | `length_cm` | `float` | `None` | Largo conocido de la imagen en cm |
 | `diameter_cm` | `float` | `None` | Diámetro conocido del círculo de referencia en cm; si no se proporciona, usa 2.5 cm por defecto |
-| `fast_calibration` | `bool` | `False` | Si `True`, omite YOLO y calibra usando `width_cm` y `length_cm`; si no se proporcionan, los resultados se expresan en píxeles |
+| `skip_yolo` | `bool` | `False` | Si `True`, omite YOLO y calibra usando `width_cm` y `length_cm`; si no se proporcionan, los resultados se expresan en píxeles |
 | `confidence` | `float` | `0.6` | Confianza mínima para detección YOLO de la referencia |
 | `skip_qr` | `bool` | `False` | Si `True`, omite detección de QR e intenta OCR directamente |
 | `gpu` | `bool` | `False` | Si `True`, usa GPU para OCR; solo compatible con NVIDIA. Si falla, continua con CPU |
@@ -507,7 +507,7 @@ analyzer.results.save_all() # Guarda la imagen anotada y el archivo CSV
 analyzer.results.save_csv() # Guarda únicamente el CSV
 analyzer.results.save_img() # Guarda únicamente la imagen
 ```
-Por defecto, los archivos se guardan en la misma carpeta que la imagen de entrada, utilizando como base el nombre del archivo original. No obstante, el directorio de salida y un nombre base alternativo pueden especificarse mediante `output_dir='RUTA/'` y `base_name='nuevo_nombre'`, respectivamente. Para más detalles y parámetros adicionales, consultar la documentación de la clase `ResultsImage` en **Referencia API**.
+Por defecto, los archivos se guardan en la misma carpeta que la imagen de entrada, utilizando como base el nombre del archivo original. No obstante, el directorio de salida y un nombre base alternativo pueden especificarse mediante `output_path='RUTA/'` y `base_name='nuevo_nombre'`, respectivamente. Para más detalles y parámetros adicionales, consultar la documentación de la clase `ResultsImage` en **Referencia API**.
 
 En la imagen anotada se indica un **ID único para cada fruto**, su **número de lóculos**, y se resaltan los siguientes elementos:
 
@@ -626,7 +626,7 @@ analyzer.results.save_csv() # Guarda únicamente el CSV.
 analyzer.results.save_img() # Guarda únicamente la imagen.
 ```
 
-Por defecto, los archivos se guardan en la misma carpeta que la imagen de entrada, utilizando como base el nombre del archivo original. No obstante, el directorio de salida y un nombre base alternativo pueden especificarse mediante `output_dir='RUTA/'` y `base_name='nuevo_nombre'`, respectivamente. Para más detalles y parámetros adicionales, consultar la documentación de la clase `ResultsImage`.
+Por defecto, los archivos se guardan en la misma carpeta que la imagen de entrada, utilizando como base el nombre del archivo original. No obstante, el directorio de salida y un nombre base alternativo pueden especificarse mediante `output_path='RUTA/'` y `base_name='nuevo_nombre'`, respectivamente. Para más detalles y parámetros adicionales, consultar la documentación de la clase `ResultsImage`.
 
 Esta función extrae color para los distintos tejidos del fruto: **pericarpio total**, **pericarpio externo**, **pericarpio interno** y **lóculos**. Para inspeccionar visualmente cómo se segmentan estos tejidos, puede consultarse `generate_single_fruit_masks`. Si no se desean todos los tejidos, puede seleccionarse uno específico con `tissue='...'`.
 
@@ -834,7 +834,7 @@ analyzer.analyze_folder(json_path="imagen_parameters.json")
 | `width_cm` | `float` | `None` | Ancho conocido de la imagen en cm -> `setup_measurements` |
 | `length_cm` | `float` | `None` | Largo conocido de la image en cm -> `setup_measurements` |
 | `diameter_cm` | `float` | `None` | Diámetro conocido de la referencia en cm -> `setup_measurements` |
-| `fast_calibration` | `bool` | `None` | Si `True`, omite YOLO y calibra con dimensiones físicas -> `setup_measurements` |
+| `skip_yolo` | `bool` | `None` | Si `True`, omite YOLO y calibra con dimensiones físicas -> `setup_measurements` |
 | `skip_qr` | `bool` | `None` | Si `True`, omite detección de QR -> `setup_measurements` |
 | `detect_label` | `bool` | `None` | Si `True`, activa detección de etiqueta con OCR -> `setup_measurements` |
 | `confidence` | `float` | `None` | Confianza mínima para detección YOLO -> `setup_measurements` |
