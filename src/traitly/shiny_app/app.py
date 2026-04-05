@@ -3847,10 +3847,10 @@ def server(input: Inputs, output: Outputs, session: Session):
                 f'<div style="font-size:1.7rem;color:#475569;margin:.5rem 0;">'
                 f"<b>Files generated:</b><br>"
                 f"&nbsp;&nbsp;★ {len(ann_images)} annotated image(s)<br>"
-                + (f"&nbsp;&nbsp;★ morphology_results.csv<br>" if morph_csv else "")
-                + (f"&nbsp;&nbsp;★ color_results.csv<br>" if color_csv else "")
-                + (f"&nbsp;&nbsp;★ session_report.txt<br>" if session_txt else "")
-                + (f"&nbsp;&nbsp;★ error_report.txt<br>" if error_txt else "")
+                + ("&nbsp;&nbsp;★ morphology_results.csv<br>" if morph_csv else "")
+                + ("&nbsp;&nbsp;★ color_results.csv<br>" if color_csv else "")
+                + ("&nbsp;&nbsp;★ session_report.txt<br>" if session_txt else "")
+                + ("&nbsp;&nbsp;★ error_report.txt<br>" if error_txt else "")
                 + "</div>"
             ),
             ui.hr(),
@@ -4011,7 +4011,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             ui.download_button(
                 "dl_pdf_zip",
                 ui.HTML(
-                    f'<i class="fa-solid fa-file-arrow-down"></i> Download all images (.zip)'
+                    '<i class="fa-solid fa-file-arrow-down"></i> Download all images (.zip)'
                 ),
                 class_="btn btn-primary",
                 style="font-size:1.8rem;padding:.7rem 1.2rem;margin-bottom:1.5rem;",
