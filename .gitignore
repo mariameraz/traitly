@@ -25,3 +25,4 @@ dist/
 **/.ipynb_checkpoints/
 
 requirements.txt
+requirements-dev.txt
