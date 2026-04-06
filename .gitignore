@@ -23,3 +23,5 @@ dist/
 
 # Jupyter files
 **/.ipynb_checkpoints/
+
+requirements.txt
