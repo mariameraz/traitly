@@ -24,8 +24,14 @@ import matplotlib.pyplot as plt
 matplotlib.use("Agg")
 import numpy as np
 import pandas as pd
-from shiny import App, Inputs, Outputs, Session, reactive, render, ui
 
+try:
+    from shiny import App, Inputs, Outputs, Session, reactive, render, ui
+except ImportError:
+    raise RuntimeError(
+        f"Traitly App requires shiny installed. To install, run:\n"
+        "pip install traitly[all]"
+    )
 #########################################################################################
 # INTERNAL IMPORTS
 #########################################################################################
