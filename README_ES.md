@@ -149,7 +149,7 @@ Para ejemplos más detallados, [consulta nuestros tutoriales](https://traitly.re
 
 Para preguntas o comentarios sobre el proyecto, puedes escribirnos a:
 
-* [ma.torresmeraz@gmail.com](mailto:ma.torresmeraz@gmail.com)
+* [ma.meraz@proton.me](mailto:ma.meraz@proton.me)
 * [torresmeraz@wisc.edu](mailto:torresmeraz@wisc.edu)
 
 Estamos abiertos a colaboraciones, incluyendo la incorporación de nuevos rasgos, y la creación de tutoriales o flujos de trabajo para cultivos o tejidos vegetales específicos.
