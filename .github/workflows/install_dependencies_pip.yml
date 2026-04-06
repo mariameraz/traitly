@@ -1,4 +1,4 @@
-name: Install dependencies with pip
+name: Testing 
 
 on:
   push:
@@ -32,8 +32,10 @@ jobs:
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[all, dev]"
 
-      - name: Test with pytest
+      - name: Run tests with coverage
         run: |
-          pytest tests/test_cranberry_internal_analysis.py -v
-          pytest tests/test_cranberry_external_analysis.py -v
-          pytest tests/test_pdf_extraction.py -v
+          python -m pytest tests/ -v --cov=src/traitly --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
