@@ -15,7 +15,7 @@ hide:
 In this tutorial we'll go over how to adjust the color thresholds for fruit background segmentation in `FruitExternalAnalyzer`. 
 
 !!! tip "Follow along"
-    :fontawesome-solid-file-code: Download the Jupyter notebook and sample images for this tutorial [here](https://github.com/mariameraz/traitly/tree/main/tutorials_data/background_segmentation).
+    :fontawesome-solid-file-code: Download the Jupyter notebook and sample images for this tutorial [here](https://github.com/mariameraz/traitly/tree/main/tutorials/background_segmentation).
 
 By default `FruitExternalAnalyzer.generate_fruit_mask()` assumes a blue background. Also, it has pre-configured thresholds for `'white'` and `'black'` backgrounds. However, custom thresholds can also by provided manually. For more details, see section [External Analyzer Class](../user_guide/external_class.md#generate_fruit_mask).
 

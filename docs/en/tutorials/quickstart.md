@@ -15,7 +15,7 @@ hide:
 **Requirements:** Traitly installed ([Installation Guide](../installation.md)).
 
 !!! tip "Sample images"
-    :fontawesome-solid-file-code: The examples in this tutorial use **cranberry** images. If you don't have your own images, you can download the sample images [here](https://github.com/mariameraz/traitly/tree/main/tutorials_data/images). For fruits with a more complex internal structure (e.g., tomato, orange, or cucumber), explore the [Locule Segmentation](segmentate_locules.md) tutorial.
+    :fontawesome-solid-file-code: The examples in this tutorial use **cranberry** images. If you don't have your own images, you can download the sample images [here](https://github.com/mariameraz/traitly/tree/main/tutorials/images). For fruits with a more complex internal structure (e.g., tomato, orange, or cucumber), explore the [Locule Segmentation](segmentate_locules.md) tutorial.
 
 ---
 

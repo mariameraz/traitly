@@ -15,7 +15,7 @@ hide:
 In this tutorial, we will demonstrate how to analyze the internal morphology of cranberry fruits using stamp images with `FruitInternalAnalyzer`. Here we will focus on which parameters to adjust when working with this type of image. For a more detailed review of each method and a complete analysis with `FruitInternalAnalyzer`, see the [Morphology and Color Analysis in Cranberry](./cranberry_internal_analysis.md) tutorial.
 
 !!! tip "Follow along"
-    :fontawesome-solid-file-code: Download the Jupyter notebook and sample images for this tutorial [here](https://github.com/mariameraz/traitly/tree/main/tutorials_data/cranberry_internal_analysis).
+    :fontawesome-solid-file-code: Download the Jupyter notebook and sample images for this tutorial [here](https://github.com/mariameraz/traitly/tree/main/tutorials/cranberry_internal_analysis).
 
 
 The first step is to initialize the `FruitInternalAnalyzer` class and load our image.
@@ -133,8 +133,8 @@ cranberry.results.save_all()
 ```
 
     > Results saved at:
-        – Image: /Users/traitly/tutorials_data/cranberry_stamp_analysis/cranberry_stamps_processed.jpg
-        – Morphology CSV: /Users/traitly/tutorials_data/cranberry_stamp_analysis/cranberry_stamps_morphology_results.csv
+        – Image: /Users/traitly/tutorials/cranberry_stamp_analysis/cranberry_stamps_processed.jpg
+        – Morphology CSV: /Users/traitly/tutorials/cranberry_stamp_analysis/cranberry_stamps_morphology_results.csv
 
 
 ## What's next?

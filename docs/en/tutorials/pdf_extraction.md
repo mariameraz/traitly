@@ -16,7 +16,7 @@ hide:
     **Requirements:** The optional dependencies for PDF manipulation in Traitly must be installed. For more details, see the [Installation Guide](../installation.md#optional-dependencies).
 
 !!! tip "Follow along"
-    :fontawesome-solid-file-code: Download the Jupyter notebook and sample images for this tutorial [here](https://github.com/mariameraz/traitly/tree/main/tutorials_data/cranberry_internal_analysis).
+    :fontawesome-solid-file-code: Download the Jupyter notebook and sample images for this tutorial [here](https://github.com/mariameraz/traitly/tree/main/tutorials/cranberry_internal_analysis).
 
 In this tutorial, we will learn how to extract images from a PDF using Traitly.
 
@@ -53,7 +53,7 @@ temp = pdf_to_img(pdf_path = path,
     > Processing 1 PDF file:
         – Images extracted: 2
         – QR detected: 2/2 img(s)
-        – Results folder: /Users/traitly/tutorials_data/pdf_extraction/Images_from_PDF
+        – Results folder: /Users/traitly/tutorials/pdf_extraction/Images_from_PDF
 
 We can inspect `temp` to see in detail what `pdf_to_img` returns:
 
@@ -61,7 +61,7 @@ We can inspect `temp` to see in detail what `pdf_to_img` returns:
 print(temp)
 ```
 
-    ['/Users/traitly/tutorials_data/pdf_extraction/Images_from_PDF/SW-1073.png', '/Users/traitly/tutorials_data/pdf_extraction/Images_from_PDF/DP14-497.png']
+    ['/Users/traitly/tutorials/pdf_extraction/Images_from_PDF/SW-1073.png', '/Users/traitly/tutorials/pdf_extraction/Images_from_PDF/DP14-497.png']
 
 
 It is important to keep in mind that a low DPI can interfere with the correct detection of QR codes, as illustrated in the following example. When extracting images with `dpi=70`, the output message indicates that no QR codes could be detected for the same PDF. This is not a problem: when QR codes are not detected, images are simply renamed based on the PDF filename, as mentioned earlier. For this reason, we recommend adjusting the DPI according to the size of the objects in the image, ensuring they are sharp and legible.
@@ -82,7 +82,7 @@ temp = pdf_to_img(pdf_path = path,
     > Processing 1 PDF file:
         – Images extracted: 2
         – QR detected: 0/2 img(s)
-        – Results folder: /Users/traitly/tutorials_data/pdf_extraction/Images_from_PDF
+        – Results folder: /Users/traitly/tutorials/pdf_extraction/Images_from_PDF
 
 
 Finally, the function is also capable of processing multiple PDFs contained in a folder. You only need to provide the path to the folder and the function will automatically search for all available PDF files within it.
@@ -106,7 +106,7 @@ temp = pdf_to_img(pdf_path = path,
         – Images extracted: 2
         - QR detected: 2/2 img(s)
         – num_cores: 2
-        – Results folder: /Users/traitly/tutorials_data/pdf_extraction/Images_from_PDF
+        – Results folder: /Users/traitly/tutorials/pdf_extraction/Images_from_PDF
 
 
 !!! note ""
