@@ -8,10 +8,10 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18738367.svg)](https://doi.org/10.5281/zenodo.18738367)
 [![Licencia: AGPL v3](https://img.shields.io/badge/Licencia-AGPL%20v3-green?logo=gnu&logoColor=white)](https://github.com/mariameraz/traitly/blob/main/LICENSE)
 
-<a href="https://traitly.readthedocs.io/es/latest/">Documentación</a> ⋆
-<a href="https://traitly.readthedocs.io/es/latest/installation/">Instalación</a> ⋆
-<a href="https://traitly.readthedocs.io/es/latest/user_guide/overview/">Guía de usuario</a> ⋆
-<a href="https://traitly.readthedocs.io/es/latest/tutorials/overview/">Tutoriales</a>
+<a href="https://traitly.readthedocs.io/en/latest/es/tutorials/overview/">Documentación</a> ⋆
+<a href="https://traitly.readthedocs.io/en/latest/es/installation/">Instalación</a> ⋆
+<a href="https://traitly.readthedocs.io/en/latest/es/user_guide/overview/">Guía de usuario</a> ⋆
+<a href="https://traitly.readthedocs.io/en/latest/es/tutorials/overview/">Tutoriales</a>
 
 </div>
 
@@ -141,7 +141,7 @@ traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --
 
 </br>
 
-Para ejemplos más detallados, [consulta nuestros tutoriales](https://traitly.readthedocs.io/es/latest/tutorials/overview/) ᯓ★
+Para ejemplos más detallados, [consulta nuestros tutoriales](https://traitly.readthedocs.io/en/latest/es/tutorials/overview/) ᯓ★
 
 </br>
 
