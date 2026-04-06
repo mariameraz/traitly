@@ -15,7 +15,7 @@ hide:
 En este tutorial veremos cómo ajustar los umbrales de color para segmentar el fondo de las imágenes con `FruitExternalAnalyzer`.
 
 !!! tip ""
-    :fontawesome-solid-file-code: :fontawesome-solid-download: Descarga el **Jupyter notebook** y todas las imágenes de este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials_data/background_segmentation).
+    :fontawesome-solid-file-code: :fontawesome-solid-download: Descarga el **Jupyter notebook** y todas las imágenes de este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/background_segmentation).
 
 Por defecto, `FruitExternalAnalyzer.generate_fruit_mask()` asume un fondo azul. Además, tiene umbrales preconfigurados para fondos blancos (`'white'`) y negros (`'black'`). Sin embargo, también es posible definir umbrales personalizados de forma manual. Para más detalles, ver la sección [External Analyzer Class](../user_guide/external_class.md#generate_fruit_mask).
 

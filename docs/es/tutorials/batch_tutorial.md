@@ -18,7 +18,7 @@ En este tutorial demostraremos cómo utilizar `FruitExternalAnalyzer` para proce
     Aunque este tutorial se enfoca en `FruitExternalAnalyzer`, el mismo flujo de trabajo aplica para el procesamiento por lotes con `FruitInternalAnalyzer`.
   
 !!! tip "Sigue el tutorial"
-    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter, el folder con las imágenes de muestra y el archivo `.json` para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials_data/ext_analysis_batch_sample).
+    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter, el folder con las imágenes de muestra y el archivo `.json` para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/ext_analysis_batch_sample).
 
 A diferencia del [análisis en imágenes individuales](individual_img_tutorial.md), el procesamiento por lotes se realiza corriendo solamente `analyze_folder()`, el cual itera todos los pasos del análisis individual para cada imagen encontrada en una carpeta. 
 

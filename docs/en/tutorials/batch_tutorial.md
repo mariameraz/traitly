@@ -18,7 +18,7 @@ In this tutorial, we demonstrate how to use `FruitExternalAnalyzer` to run autom
     Although this tutorial focuses on `FruitExternalAnalyzer`, the same workflow applies to batch processing with `FruitInternalAnalyzer`.
 
 !!! tip "Follow along"
-    :fontawesome-solid-file-code: Download the Jupyter notebook, the folder with sample images, and the `.json` file for this tutorial [here](https://github.com/mariameraz/traitly/tree/main/tutorials_data/ext_analysis_batch_sample).
+    :fontawesome-solid-file-code: Download the Jupyter notebook, the folder with sample images, and the `.json` file for this tutorial [here](https://github.com/mariameraz/traitly/tree/main/tutorials/ext_analysis_batch_sample).
     
 Unlike the [individual image analysis](individual_img_tutorial.md), batch processing is performed by running only `analyze_folder()`, which iterates through all the steps of the individual analysis for each image found in a folder.
 

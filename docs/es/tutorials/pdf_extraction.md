@@ -16,7 +16,7 @@ hide:
     **Requisitos:** Es necesario tener instaladas las dependencias opcionales para la manipulación de PDF de Traitly. Para más detalles, consulta la [Guía de Instalación](../installation.md#dependencias-opcionales).
 
 !!! tip "Sigue el tutorial"
-    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials_data/cranberry_internal_analysis).
+    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/cranberry_internal_analysis).
 
 En este tutorial aprenderemos cómo extraer imágenes desde un PDF utilizando Traitly.
 
@@ -53,7 +53,7 @@ temp = pdf_to_img(pdf_path = path,
     > Processing 1 PDF file:
         – Images extracted: 2
         – QR detected: 2/2 img(s)
-        – Results folder: /Users/traitly/tutorials_data/pdf_extraction/Images_from_PDF
+        – Results folder: /Users/traitly/tutorials/pdf_extraction/Images_from_PDF
 
 Podemos explorar `temp` para ver con detalle que regresa `pdf_to_img`:
 
@@ -61,7 +61,7 @@ Podemos explorar `temp` para ver con detalle que regresa `pdf_to_img`:
 print(temp)
 ```
 
-    ['/Users/traitly/tutorials_data/pdf_extraction/Images_from_PDF/SW-1073.png', '/Users/traitly/tutorials_data/pdf_extraction/Images_from_PDF/DP14-497.png']
+    ['/Users/traitly/tutorials/pdf_extraction/Images_from_PDF/SW-1073.png', '/Users/traitly/tutorials/pdf_extraction/Images_from_PDF/DP14-497.png']
 
 
 Es importante tener en cuenta que un DPI bajo puede interferir con la detección correcta de los códigos QR, como se ilustra en el siguiente ejemplo. Al extraer las imágenes con `dpi=70`, el mensaje de salida indica que no fue posible detectar ningún código QR para el mismo PDF. Esto no representa un problema ya que cuando no se detectan códigos QR, las imágenes simplemente se renombran con base en el nombre del PDF, tal como se mencionó anteriormente. Por ello, recomendamos ajustar el DPI en función del tamaño de los objetos presentes en la imagen, asegurando que estos sean nítidos y legibles.
@@ -82,7 +82,7 @@ temp = pdf_to_img(pdf_path = path,
     > Processing 1 PDF file:
         – Images extracted: 2
         – QR detected: 0/2 img(s)
-        – Results folder: /Users/traitly/tutorials_data/pdf_extraction/Images_from_PDF
+        – Results folder: /Users/traitly/tutorials/pdf_extraction/Images_from_PDF
 
 
 Por último, la función también es capaz de procesar múltiples PDFs contenidos en una carpeta. Basta con indicar la ruta a dicha carpeta y la función buscará automáticamente todos los archivos PDF disponibles en ella.
@@ -106,7 +106,7 @@ temp = pdf_to_img(pdf_path = path,
         – Images extracted: 2
         - QR detected: 2/2 img(s)
         – num_cores: 2
-        – Results folder: /Users/traitly/tutorials_data/pdf_extraction/Images_from_PDF
+        – Results folder: /Users/traitly/tutorials/pdf_extraction/Images_from_PDF
 
 
 !!! note ""
