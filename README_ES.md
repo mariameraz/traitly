@@ -27,7 +27,7 @@ Admite tanto el análisis de imágenes individuales como el procesamiento por lo
 > **Nota:**  
 > Estamos trabajando en un manuscrito que describe este trabajo y su uso, y se espera que esté listo en **primavera–verano de 2026**. Mientras tanto, si utilizas Traitly, puedes cítarlo como:
 >
-> Torres-Meraz, M. A., & Lopez-Moreno, H. (2026). Traitly: A Python Tool for High-Throughput Fruit Phenotyping. Zenodo. https://doi.org/10.5281/zenodo.18738367
+> Torres-Meraz, M. A., Lopez-Moreno, H. & Juan Zalapa (2026). Traitly: A Python Tool for High-Throughput Fruit Phenotyping. Zenodo. https://doi.org/10.5281/zenodo.18738367
 
 </br>
 
