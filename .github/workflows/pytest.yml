@@ -8,6 +8,7 @@ on:
       - "tests/**"
       #- ".github/workflows/**"
       - "pyproject.toml"
+  workflow_dispatch:
 
 jobs:
   test:
