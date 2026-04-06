@@ -15,7 +15,7 @@ hide:
 En este tutorial, demostraremos cómo realizar el análisis de la morfología interna de frutos utilizando `FruitInternalAnalyzer`, una herramienta para extraer medidas de morfología y color a partir de una imagenes de rodajas transversales de cranberry.
 
 !!! tip "Sigue el tutorial"
-    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials_data/cranberry_internal_analysis).
+    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/cranberry_internal_analysis).
 
 !!! info "Referencia de métodos y parámetros"
     A lo largo de este tutorial se utilizan métodos como `setup_measurements()`, `generate_fruit_mask()`, `detect_fruits()`, `analyze_morphology()` y `analyze_color()`. Para una descripción completa de cada método y sus parámetros disponibles, consulta la [Clase Internal Analyzer](../user_guide/internal_class.md).
@@ -541,9 +541,9 @@ cranberry.results.save_all()
 ```
 
     > Results saved at:
-        – Image: /Users/traitly/tutorials_data/internal_analysis/cranberry_slices_processed.jpg
-        – Morphology CSV: /Users/traitly/tutorials_data/internal_analysis/cranberry_slices_morphology_results.csv
-        – Color CSV: /Users/traitly/tutorials_data/internal_analysis/cranberry_slices_color_results.csv
+        – Image: /Users/traitly/tutorials/internal_analysis/cranberry_slices_processed.jpg
+        – Morphology CSV: /Users/traitly/tutorials/internal_analysis/cranberry_slices_morphology_results.csv
+        – Color CSV: /Users/traitly/tutorials/internal_analysis/cranberry_slices_color_results.csv
 
 
 También podemos exportar los parámetros utilizados en la sesión con `save_parameters()`, que genera dos archivos: uno `.txt` y uno `.json`. El archivo `.txt` está pensado para el usuario y contiene los parámetros de cada método, la versión de Traitly, la fecha y hora del análisis, y el nombre de la imagen. El archivo `.json`, en cambio, es útil para replicar el análisis, por ejemplo al procesar múltiples imágenes con `analyze_folder()` o al usar Traitly desde la terminal.
@@ -554,8 +554,8 @@ cranberry.save_parameters()
 
     
     > Parameters saved at:
-      - TXT:  /Users/traitly/tutorials_data/internal_analysis/cranberry_slices_parameters.txt
-      - JSON: /Users/traitly/tutorials_data/internal_analysis/cranberry_slices_parameters.json
+      - TXT:  /Users/traitly/tutorials/internal_analysis/cranberry_slices_parameters.txt
+      - JSON: /Users/traitly/tutorials/internal_analysis/cranberry_slices_parameters.json
 
 
 
