@@ -3,7 +3,7 @@
     "width_cm": null,
     "length_cm": null,
     "diameter_cm": 2.5,
-    skip_yolo": false,
+    "skip_yolo": false,
     "skip_qr": false,
     "detect_label": false,
     "language_label": [
