@@ -141,11 +141,11 @@ tomato.generate_l_channel_histogram(otsu_offset = 15, plot_size = (9,3))
     
 
 
-Al final, seleccionamos un valor de `otsu_offset=25` ajustando ligeramente el umbral de Otsu hasta estar conformes con la máscara final. 
+Al final, seleccionamos un valor de `otsu_offset=15` ajustando ligeramente el umbral de Otsu hasta estar conformes con la máscara final. 
 
 
 ```python
-tomato.generate_locule_mask(otsu_offset = 25)
+tomato.generate_locule_mask(otsu_offset = 15)
 ```
 
 
