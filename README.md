@@ -6,8 +6,9 @@
 [![Testing](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml)
 [![Coverage](https://codecov.io/gh/mariameraz/traitly/branch/main/graph/badge.svg)](https://codecov.io/gh/mariameraz/traitly)
 [![Documentation Status](https://readthedocs.org/projects/traitly/badge/?version=latest)](https://traitly.readthedocs.io/en/latest/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18738367.svg)](https://doi.org/10.5281/zenodo.18738367)
+[![DOI](https://zenodo.org/badge/latestdoi/TU_REPO_ID.svg)](https://zenodo.org/badge/latestdoi/TU_REPO_ID)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green?logo=gnu&logoColor=white)](https://github.com/mariameraz/traitly/blob/main/LICENSE)
+
 
 <a href="https://traitly.readthedocs.io/en/latest/">Documentation</a> ⋆
 <a href="https://traitly.readthedocs.io/en/latest/installation/">Installation</a> ⋆
@@ -29,7 +30,7 @@ It supports both single-image analysis and batch processing workflows, making it
 > [!IMPORTANT]
 > We are working on a manuscript describing this software and its applications, expected to be submitted in **Spring–Summer 2026**. In the meantime, if you use Traitly in your research, please cite it as:
 >
-> Torres-Meraz, M. A., Lopez-Moreno, H. & Zalapa, J. (2026). Traitly: A Python Tool for High-Throughput Fruit Phenotyping. Zenodo. https://doi.org/10.5281/zenodo.18738367
+> Torres-Meraz, M. A., Lopez-Moreno, H., & Zalapa, J. (2026). Traitly: A Python Toolkit for High-Throughput Fruit Phenotyping. Zenodo. https://doi.org/10.5281/zenodo.18738366
 
 </br>
 

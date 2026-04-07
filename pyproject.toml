@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "traitly"
-version = "0.1.5"
+version = "0.1.0"
 description = "Computer vision toolkit for high-throughput fruit phenotyping."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -60,6 +60,7 @@ traitly-app = "traitly.shiny_app.app:run"
 Repository = "https://github.com/mariameraz/traitly"
 Documentation = "https://traitly.readthedocs.io/en/latest/"
 Issues = "https://github.com/mariameraz/traitly/issues"
+Changelog = "https://github.com/mariameraz/traitly/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/traitly"]
