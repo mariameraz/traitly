@@ -16,7 +16,7 @@ hide:
     **Requisitos:** Es necesario tener instaladas las dependencias opcionales para la manipulación de PDF de Traitly. Para más detalles, consulta la [Guía de Instalación](../installation.md#dependencias-opcionales).
 
 !!! tip "Sigue el tutorial"
-    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/cranberry_internal_analysis).
+    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/pdf_extraction).
 
 En este tutorial aprenderemos cómo extraer imágenes desde un PDF utilizando Traitly.
 

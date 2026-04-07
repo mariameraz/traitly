@@ -13,7 +13,7 @@ hide:
 </div>
 
 
-En este tutorial, demostraremos cómo realizar el análisis de la morfología interna de frutos de cranberry usando imágenes de estampas mediante `FruitInternalAnalyzer`. Aquí nos enfocaremos en qué parámetros ajustar cuando tenemos este tipo de imágenes. Para revisar qué hace cada método con más detalle y cómo se realiza un análisis completo con `FruitInternalAnalyzer`, ver el tutorial de [Análisis de morfología y color en Cranberry](./cranberry_internal_analysis.md).
+En este tutorial, demostraremos cómo realizar el análisis de la morfología interna de frutos de cranberry usando imágenes de estampas mediante `FruitInternalAnalyzer`. Aquí nos enfocaremos en qué parámetros ajustar cuando tenemos este tipo de imágenes. Para revisar qué hace cada método con más detalle y cómo se realiza un análisis completo con `FruitInternalAnalyzer`, ver el tutorial de [Análisis de morfología y color en Cranberry](./cranberry_stamp_analysis.md).
 
 !!! tip "Sigue el tutorial"
     :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/cranberry_internal_analysis).
