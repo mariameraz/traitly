@@ -2,7 +2,7 @@
 ANALYSIS PROCESSING PARAMETERS
 ======================================================================
 traitly: v0.1.0
-run date: 2026-04-04 23:21:44
+run date: 2026-04-06 22:15:45
 image: /Users/alejandra/Documents/traitly/tests/data/internal/img_test_1.jpg
 
 SETUP_MEASUREMENTS:

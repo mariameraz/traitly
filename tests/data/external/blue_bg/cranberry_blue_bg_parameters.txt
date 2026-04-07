@@ -2,7 +2,7 @@
 ANALYSIS PROCESSING PARAMETERS
 ======================================================================
 traitly: v0.1.0
-run date: 2026-04-04 23:21:34
+run date: 2026-04-06 22:15:33
 image: /Users/alejandra/Documents/traitly/tests/data/external/blue_bg/cranberry_blue_bg.jpg
 
 SETUP_MEASUREMENTS:
@@ -68,6 +68,26 @@ ANALYZE_MORPHOLOGY:
    - centroid_locule_thickness: 2
    - is_locule: False
    - dilation_factor: None
+
+ANALYZE_COLOR:
+   - stat: mean
+   - tissue: total_pericarp
+   - color_space: all
+   - font_size: 2
+   - font_thickness: 2
+   - pericarp_ext_color: (0, 255, 0)
+   - pericarp_ext_thickness: 2
+   - pericarp_int_color: (255, 255, 0)
+   - pericarp_int_thickness: 2
+   - locule_thickness: 2
+   - locule_color: (255, 0, 255)
+   - label_position: top
+   - font_color: (0, 0, 0)
+   - label_color: (255, 255, 255)
+   - label_opacity: 0.7
+   - get_color_histogram: True
+   - dilation_factor: None
+   - dark_thresh: 15
 
 ======================================================================
 

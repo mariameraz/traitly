@@ -15,9 +15,6 @@ import pytest
 # ============================================================================
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
-##########################################################################
-# Valid cranberry image
-##########################################################################
 
 white_bg = Path(__file__).parent / "data/external/white_bg/cranberry_white_bg.jpg"
 
@@ -29,6 +26,17 @@ def cranberry_white():
     cranberry.setup_measurements()
     return cranberry
 
+def test_circularity_valid_ranges(cranberry_white):
+    cranberry_white.generate_fruit_mask(plot=False, background_color="white")
+    cranberry_white.detect_fruits(plot=False)
+    cranberry_white.analyze_morphology(plot=False, display_table=False)
+    df = cranberry_white.results.morphology_results
+    assert df["fruit_circularity"].between(0, 1).all()
+
+def test_fruits_detected(cranberry_white):
+    cranberry_white.generate_fruit_mask(plot=False, background_color="white")
+    cranberry_white.detect_fruits(plot=False)
+    assert len(cranberry_white.fruit_locule_map) > 0
 
 def test_cranberry_white_bg(cranberry_white):
     cranberry_white.generate_fruit_mask(plot=False, background_color="white")
@@ -65,8 +73,15 @@ def test_cranberry_blue_bg(cranberry_blue):
     assert cranberry_blue.ref_roi
     cranberry_blue.generate_fruit_mask(plot=False, background_color="blue")
     cranberry_blue.detect_fruits(plot=False)
+    cranberry_blue.analyze_color(display_table = False, get_color_histogram = True)
+    cranberry_blue.results.save_csv(base_name = 'hist')
     cranberry_blue.analyze_morphology(plot=False, display_table=False)
     cranberry_blue.save_parameters()
+
+    unwanted_file = Path("cranberry_blue") / "Results" / "hist_morphology.csv"
+    wanted_file = Path("cranberry_blue") / "Results" / "hist_color.csv"
+    assert not unwanted_file.exists(), (f"File {unwanted_file} shouldn't be created")
+    assert not wanted_file.exists(), (f"File {wanted_file} created successfully")
 
 
 def test_detect_label(cranberry_blue):
@@ -94,3 +109,12 @@ def test_invalid_tissue(cranberry_blue):
         cranberry_blue.analyze_color(
             plot=False, display_table=False, tissue="outer_pericarp"
         )
+
+def test_analyze_color_channels(cranberry_blue):
+    cranberry_blue.setup_measurements()
+    cranberry_blue.generate_fruit_mask(plot=False, background_color="blue")
+    cranberry_blue.detect_fruits(plot=False)
+    cranberry_blue.analyze_color(plot=False, display_table=False, color_space="lab")
+    df = cranberry_blue.results.color_results
+    assert df is not None
+    assert len(df) > 0

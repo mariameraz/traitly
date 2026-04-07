@@ -1,7 +1,7 @@
 ======================================================================
 ERROR REPORT
 ======================================================================
-run date   : 2026-04-04 23:21:12
+run date   : 2026-04-06 22:15:07
 folder     : /Users/alejandra/Documents/traitly/tests/data/internal
 failed     : 1/2 images
 
