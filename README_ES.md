@@ -17,6 +17,7 @@
 
 </div>
 
+<br>
 
 Available in: [![English](https://img.shields.io/badge/Language-English-purple)](README.md)
 
