@@ -6,7 +6,7 @@
 [![Testing](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml)
 [![Coverage](https://codecov.io/gh/mariameraz/traitly/branch/main/graph/badge.svg)](https://codecov.io/gh/mariameraz/traitly)
 [![Documentation Status](https://readthedocs.org/projects/traitly/badge/?version=latest)](https://traitly.readthedocs.io/en/latest/)
-[![DOI](https://zenodo.org/badge/latestdoi/TU_REPO_ID.svg)](https://zenodo.org/badge/latestdoi/TU_REPO_ID)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19447593.svg)](https://doi.org/10.5281/zenodo.19447593)
 [![Licencia: AGPL v3](https://img.shields.io/badge/Licencia-AGPL%20v3-green?logo=gnu&logoColor=white)](https://github.com/mariameraz/traitly/blob/main/LICENSE)
 
 <a href="https://traitly.readthedocs.io/en/latest/es/tutorials/overview/">Documentación</a> ⋆
