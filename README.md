@@ -1,18 +1,34 @@
-# Traitly
+<div align="center">
+<h1>Traitly</h1>
 
-Disponible en: [![Spanish](https://img.shields.io/badge/Idioma-Espa%C3%B1ol-pink)](README_ES.md)
+[![Python](https://img.shields.io/badge/Python-3.9%2B-yellow?logo=python&logoColor=white)](https://www.python.org/)
+[![Version](https://img.shields.io/badge/Version-0.1.0--beta-orange?logo=github)](https://github.com/mariameraz/traitly)
+[![Testing](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml)
+[![Coverage](https://codecov.io/gh/mariameraz/traitly/branch/main/graph/badge.svg)](https://codecov.io/gh/mariameraz/traitly)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18738367.svg)](https://doi.org/10.5281/zenodo.18738367)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green?logo=gnu&logoColor=white)](https://github.com/mariameraz/traitly/blob/main/LICENSE)
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green.svg)](https://github.com/mariameraz/traitly/blob/main/LICENSE) [![Python](https://img.shields.io/badge/Python-3.8%2B-yellow)](https://www.python.org/) [![Version](https://img.shields.io/badge/Version-0.1.0--beta-orange)]() [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18738367.svg)](https://doi.org/10.5281/zenodo.18738367)
+<a href="https://traitly.readthedocs.io/en/latest/">Documentation</a> ⋆
+<a href="https://traitly.readthedocs.io/en/latest/installation/">Installation</a> ⋆
+<a href="https://traitly.readthedocs.io/en/latest/user_guide/overview/">User Guide</a> ⋆
+<a href="https://traitly.readthedocs.io/en/latest/tutorials/overview/">Tutorials</a>
 
-***Traitly*** is an open-source Python tool for high-throughput fruit phenotyping that automatically extracts quantitative traits from digital images of whole fruits or fruit slices. It focuses on the phenotyping of internal fruit structures and external morphology, using computer vision–based methods to quantify morphology, anatomy, symmetry, and color traits.
+</div>
 
-The tool supports both single-image and batch processing workflows, allowing users to analyze large image datasets with only a few lines of code, making it suitable for plant breeding and research.
+
+Página disponible en: [![Spanish](https://img.shields.io/badge/Idioma-Espa%C3%B1ol-pink)](README_ES.md)
+
+
+**Traitly** is an open-source Python tool for automated, high-throughput fruit phenotyping from digital images. Using computer vision methods, it quantifies morphological, symmetry, and color traits across both internal structures and the external appearance of the fruit.
+
+It supports both single-image analysis and batch processing workflows, making it easy to handle large image datasets with just a few lines of code, which is especially useful in plant breeding programs and research.
+
 </br>
 
-> **Note:**  
-> A manuscript describing the software and its applications is currently in preparation and is expected to be submitted in **Spring-Summer, 2026**. In the meantime, if you use Traitly in your research, please cite it as:
+> [!IMPORTANT]
+> We are working on a manuscript describing this software and its applications, expected to be submitted in **Spring–Summer 2026**. In the meantime, if you use Traitly in your research, please cite it as:
 >
-> Torres-Meraz, M. A., & Lopez-Moreno, H. (2026). Traitly: A Python Tool for High-Throughput Fruit Phenotyping. Zenodo. https://doi.org/10.5281/zenodo.18738367
+> Torres-Meraz, M. A., Lopez-Moreno, H. & Zalapa, J. (2026). Traitly: A Python Tool for High-Throughput Fruit Phenotyping. Zenodo. https://doi.org/10.5281/zenodo.18738367
 
 </br>
 
@@ -20,30 +36,18 @@ The tool supports both single-image and batch processing workflows, allowing use
 
 Traitly processes fruit images to measure:
 
-* **Fruit morphology**: Area, perimeter, circularity, aspect ratio, and bounding box dimensions
+* **Fruit morphology**: Area, perimeter, circularity, dimensions, and aspect ratio
 * **Locule anatomy**: Locule number, size distribution, and spatial arrangement
-* **Pericarp structure**: Thickness profiles, uniformity (CV), and surface irregularity (lobedness)
+* **Pericarp structure**: Thickness, uniformity (CV), and surface irregularity (lobedness)
 * **Color phenotypes**: Multi-channel analysis (RGB, HSV, Lab) across different fruit regions
-
-
-**👉 For a complete list of extracted traits, see:** 
-- [![Documentation_EN](https://img.shields.io/badge/Documentation-English-lightblue)](docs/documentation.md)
-- [![Documentation_ES](https://img.shields.io/badge/Documentaci%C3%B3n-Espa%C3%B1ol-red)](docs/documentation_ES.md)
 
 </br>
 
 ## Project Status
 
-**Traitly is currently in beta and undergoing testing across different systems and environments.**
+The project's architecture and core logic are established, and a group of early testers is currently evaluating the tool across different workflows and use cases. We expect to publish the package on PyPI soon.
 
-The source code is now publicly available. The project's architecture and core logic are established, and early testers are currently evaluating the tool across different systems, workflows, and use cases.
-
-Documentation is a work in progress, and additional details, examples, and clarifications will be added as testing advances.
-
-A web application built with Streamlit is currently under development, aiming to provide a user-friendly interface for running Traitly without writing code.
-
-Updates will be announced through this repository and [LinkedIn](https://www.linkedin.com/in/alemeraz/).
-Interested users are encouraged to follow or watch the repository to stay informed.
+All updates will be announced through this repository and on [LinkedIn](https://www.linkedin.com/in/alemeraz/), so we encourage interested users to follow or watch the repository to stay informed.
 
 </br>
 
@@ -53,23 +57,33 @@ Posters related to Traitly can be found in this folder:
 
 - [Posters](https://drive.google.com/drive/folders/1AvlHWKcDvoE9m9QcmCJ5o-ma9W-LNQMe?usp=share_link) ★ˎˊ˗
 
-These materials provide additional methodological details and related research results.
+These materials provide additional methodological details and results from research derived from our package.
 
 </br>
 
 ## Usage
 
-Below is a basic example of how to use **traitly**.
+Traitly can be run in different ways:
 
-### Running with Python
+| Environment                | Status         |
+| -------------------------- | -------------- |
+| Jupyter Notebook           | ✔ Available    |
+| Command line (CLI)         | ✔ Available    |
+| Web app (Shiny)            | ✔ Available    |
 
-#### Internal analysis
+ ⤷ You can also try our [interactive demo](https://huggingface.co/spaces/mariameraz/traitly) onlineˎˊ˗
+
+---
+
+Below is a basic example of how to use **Traitly**.
+
+### ⋆ Python usage
+
+#### Internal fruit morphology analysis
 ```python
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
 
-##########################
-# Single image analysis  #
-##########################
+# Single image analysis
 path = 'PATH/my_image.jpg'
 analyzer = FruitInternalAnalyzer(path)  # Initialize the FruitInternalAnalyzer class
 analyzer.load_image()                   # Read the image
@@ -78,76 +92,83 @@ analyzer.generate_fruit_mask()          # Create a binary mask to segment fruits
 analyzer.detect_fruits()                # Filter detected fruits
 analyzer.analyze_morphology()           # Run the morphology analysis
 analyzer.analyze_color()                # Run the color analysis
-analyzer.results.save_all()             # Save the color and morphology .csv files and the annotated image
+analyzer.results.save_all()             # Save results (color and morphology .csv files and annotated image)
 analyzer.save_parameters()              # Save session parameters as .txt and .json files
 
-###################
-# Batch analysis  #
-###################
+# Batch analysis
 path = 'PATH/my_folder'
 json = 'my_parameters.json'
-analyzer = FruitInternalAnalyzer(path)          # Initialize the FruitInternalAnalyzer class
-analyzer.analyze_folder(json_path = json)       # Run the analysis on all valid images in the folder
-# A single CSV file and the corresponding annotated images will be saved.
+analyzer = FruitInternalAnalyzer(path)
+analyzer.analyze_folder(json_path = json)
 ```
 
-#### External analysis
+#### External fruit morphology analysis
 ```python
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
-##########################
-# Single image analysis  #
-##########################
+# Single image analysis
 path = 'PATH/my_image.jpg'
-analyzer = FruitExternalAnalyzer(path)  # Initialize the FruitExternalAnalyzer class
-analyzer.load_image()                   # Read the image
-analyzer.setup_measurements()           # Obtain label and reference size information
-analyzer.generate_fruit_mask()          # Create a binary mask to segment fruits
-analyzer.detect_fruits()                # Filter detected fruits
-analyzer.analyze_morphology()           # Run the morphology analysis
-analyzer.analyze_color(stat='median',
- color_channel='RGB')  # Extract median RGB channel values for each fruit
-analyzer.results.save_all()             # Save the color and morphology .csv files and the annotated image
-analyzer.save_parameters()              # Save session parameters as .txt and .json files
+analyzer = FruitExternalAnalyzer(path)       # Initialize the FruitExternalAnalyzer class
+analyzer.load_image()                        # Read the image
+analyzer.setup_measurements()                # Obtain label and reference size information
+analyzer.generate_fruit_mask()               # Create a binary mask to segment fruits
+analyzer.detect_fruits()                     # Filter detected fruits
+analyzer.analyze_morphology()                # Run the morphology analysis
+analyzer.analyze_color(color_channel='RGB')  # Extract mean RGB channel values for each fruit
+analyzer.results.save_all()                  # Save results (color and morphology .csv files and annotated image)
+analyzer.save_parameters()                   # Save session parameters as .txt and .json files
 
-###################
-# Batch analysis  #
-###################
+# Batch analysis
 path = 'PATH/my_folder'
 json = 'my_parameters.json'
-analyzer = FruitExternalAnalyzer(path)          # Initialize the FruitExternalAnalyzer class
-analyzer.analyze_folder(json_path = json)       # Run the analysis on all valid images in the folder
-# A single CSV file and the corresponding annotated images will be saved.
+analyzer = FruitExternalAnalyzer(path)
+analyzer.analyze_folder(json_path = json)
 ```
 
-### Command-line usage
+### ⋆ Command-line usage
 
 ```bash
-# Internal structure analysis (single image or folder)
+# Run the web app
+traitly-app
+
+# Internal morphology analysis (single image or folder)
 traitly --fruit_internal -i tests/sample_data/
 traitly --fruit_internal -i tests/sample_data/ -o results/ --num_cores 4
 traitly --fruit_internal -i tests/sample_data/ --json config.json
 
-# External analysis (single image or folder)
+# External morphology analysis (single image or folder)
 traitly --fruit_external -i tests/sample_data/
 traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --num_cores 4
 ```
 
 </br>
 
-
-
-More detailed examples:
-👉 [https://github.com/mariameraz/traitly/tutorials](https://github.com/mariameraz/traitly/blob/main/tutorials)
+For more detailed examples, [check our tutorials](https://traitly.readthedocs.io/en/latest/tutorials/overview/) ᯓ★
 
 </br>
 
+## Contact
 
-## Contact ˖᯽ ݁˖
+For questions or comments about the project, feel free to reach out to:
 
-For inquiries regarding the project or potential collaborations, please reach out to:
-
-* [ma.torresmeraz@gmail.com](mailto:ma.torresmeraz@gmail.com)
+* [ma.meraz@proton.me](mailto:ma.meraz@proton.me)
 * [torresmeraz@wisc.edu](mailto:torresmeraz@wisc.edu)
 
-We are open to collaborations, including developing species-specific pipelines, adding new traits or measurements, and creating tutorials or workflows tailored to specific crops or plant tissues.
+We are open to collaborations, including adding new traits, and creating tutorials or workflows for specific crops or plant tissues.
+
+## Contributors
+
+<a href="https://github.com/mariameraz/traitly/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=mariameraz/traitly" />
+</a>
+
+| Contributor                                  | [Role](https://allcontributors.org/en/emoji-key/) |
+|----------------------------------------------|---------------------------------------------------|
+| [María Meraz](https://github.com/mariameraz) | 💻 📆 💬 🚧 📓 ✅ 🐛 📖 ⚠️ 🤔 🔣 🌍 🎨           |
+| [Héctor López](https://github.com/hector-LM) | 📖 📓 ✅ 🤔 🐛 🔣 🌍                              |
+| Juan Zalapa                                  | 🔣                                                |
+
+
+## Acknowledgements ♡
+
+We thank the developers of [OpenCV](https://opencv.org/), [Ultralytics](https://github.com/ultralytics/ultralytics), [EasyOCR](https://github.com/JaidedAI/EasyOCR), [NumPy](https://numpy.org/), [Pandas](https://pandas.pydata.org/), [Matplotlib](https://matplotlib.org/), and [Shiny](https://shiny.posit.co/py/), as well as all  open-source libraries that made this project possible.
