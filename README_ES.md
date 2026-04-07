@@ -24,7 +24,7 @@ Available in: [![English](https://img.shields.io/badge/Language-English-purple)]
 Admite tanto el análisis de imágenes individuales como el procesamiento por lotes, lo que facilita el análisis de grandes conjuntos de datos con pocas líneas de código, lo cual es especialmente util en el contexto de programas de mejoramiento de plantas e investigación.
 </br>
 
-> **Nota:**  
+> [!IMPORTANT]
 > Estamos trabajando en un manuscrito que describe este trabajo y su uso, y se espera que esté listo en **primavera–verano de 2026**. Mientras tanto, si utilizas Traitly, puedes cítarlo como:
 >
 > Torres-Meraz, M. A., Lopez-Moreno, H. & Zalapa, J. (2026). Traitly: A Python Tool for High-Throughput Fruit Phenotyping. Zenodo. https://doi.org/10.5281/zenodo.18738367
