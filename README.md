@@ -5,6 +5,7 @@
 [![Version](https://img.shields.io/badge/Version-0.1.0--beta-orange?logo=github)](https://github.com/mariameraz/traitly)
 [![Testing](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml)
 [![Coverage](https://codecov.io/gh/mariameraz/traitly/branch/main/graph/badge.svg)](https://codecov.io/gh/mariameraz/traitly)
+[![Documentation Status](https://readthedocs.org/projects/traitly/badge/?version=latest)](https://traitly.readthedocs.io/en/latest/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18738367.svg)](https://doi.org/10.5281/zenodo.18738367)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green?logo=gnu&logoColor=white)](https://github.com/mariameraz/traitly/blob/main/LICENSE)
 
