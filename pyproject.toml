@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "traitly"
-version = "0.1.4"
-description = "Open-source computer vision toolkit for high-throughput fruit phenotyping. Analyze fruit morphology (size, shape), internal anatomy (locule number, shape, size, symmetry), pericarp thickness, and extract tissue color metrics (RGB, LAB, HSV, grayscale)."
+version = "0.1.5"
+description = "Computer vision toolkit for high-throughput fruit phenotyping."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "AGPL-3.0-or-later" }
@@ -32,36 +32,23 @@ dependencies = [
 keywords = [
   "plant-phenotyping",
   "fruit-morphology",
-  "crop-anatomy",
-  "fruit-phenotyping",
-  "locule-analysis",
-  "locule-detection",
-  "pericarp-thickness",
-  "computer-vision",
-  "agricultural-image-analysis",
-  "plant-breeding-tools",
-  "open-source-agriculture",
-  "high-throughput-phenotyping"
+  "plant-breeding"
 ]
 
 classifiers = [
   "Development Status :: 4 - Beta",
   "Operating System :: OS Independent",
-  "Operating System :: Microsoft :: Windows",
-  "Operating System :: POSIX :: Linux",
-  "Operating System :: MacOS :: MacOS X",
-  "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12"
+  "Programming Language :: Python :: 3.12",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Image Processing",
 ]
 
 [project.optional-dependencies]
 pdf = ["PyMuPDF"]
-all = [
-  "PyMuPDF", "shiny",
-]
+all = ["PyMuPDF", "shiny"]
 
 dev = ["pytest", "pytest-cov"]
 
@@ -71,9 +58,8 @@ traitly-app = "traitly.shiny_app.app:run"
 
 [project.urls]
 Repository = "https://github.com/mariameraz/traitly"
-Source = "https://github.com/mariameraz/traitly/src"
+Documentation = "https://traitly.readthedocs.io/en/latest/"
 Issues = "https://github.com/mariameraz/traitly/issues"
-Discussion = "https://github.com/mariameraz/traitly/discussions"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/traitly"]
@@ -82,5 +68,5 @@ packages = ["src/traitly"]
 include = [
   "src/traitly/**",
   "README.md",
-  "LICENSE*",
+  "LICENSE*"
 ]
