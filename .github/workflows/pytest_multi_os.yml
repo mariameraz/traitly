@@ -1,16 +1,8 @@
-name: Testing
+name: Testing MultiOS
 permissions:
   contents: read
   pull-requests: write
-
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "src/**"
-      - "tests/**"
-      #- ".github/workflows/**"
-      - "pyproject.toml"
   workflow_dispatch:
 
 jobs:
