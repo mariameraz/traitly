@@ -45,3 +45,11 @@ For questions or collaborations, feel free to reach out at [ma.torresmeraz@gmail
 You can also find us on the platforms listed in the footer :fontawesome-regular-hand-point-down: .✦ ݁˖.
 
 </div>
+
+----
+
+## Contributors
+
+<a href="https://github.com/mariameraz/traitly/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=mariameraz/traitly" />
+</a>
