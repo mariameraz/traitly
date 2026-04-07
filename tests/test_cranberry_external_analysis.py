@@ -120,10 +120,7 @@ def test_analyze_color_channels(cranberry_blue):
     assert len(df) > 0
 
 def test_setup_measurements_attributes(cranberry_blue):
-    cranberry_blue.setup_measurements()
-    cranberry_blue.generate_fruit_mask(plot=False, 
-                                       background_color="blue", 
-                                       detect_label = True,
+    cranberry_blue.setup_measurements(detect_label = True,
                                        detect_color_checker = True,
                                        skip_yolo = False)
     assert cranberry_blue.checker_roi is not None
