@@ -40,15 +40,8 @@ Traitly procesa imágenes de frutos para medir:
 * **Estructura del pericarpo**: grosor, uniformidad (CV) e irregularidad de la superficie (lobulación)
 * **Cuantificación de color**: análisis multicanal (RGB, HSV, Lab) en diferentes regiones del fruto
 
-</br>
 
-## Estatus del proyecto
-
-La arquitectura del proyecto y su lógica central están definidas, y un grupo de early testers está evaluando la herramienta en diferentes flujos de trabajo. Esperamos publicar el paquete en PyPI próximamente.
-
-Todas las actualizaciones se anunciarán a través de este repositorio y en [LinkedIn](https://www.linkedin.com/in/alemeraz/), por lo que recomendamos a las personas interesadas en seguir o vigilar el repositorio para mantenerse informadas.
-
-</br>
+<br>
 
 ## Publicaciones y presentaciones
 
