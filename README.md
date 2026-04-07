@@ -2,7 +2,7 @@
 <h1>Traitly</h1>
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-yellow?logo=python&logoColor=white)](https://www.python.org/)
-[![Version](https://img.shields.io/badge/Version-0.1.0--beta-orange?logo=github)](https://github.com/mariameraz/traitly)
+[![PyPI](https://img.shields.io/pypi/v/traitly?logo=pypi&logoColor=white)](https://pypi.org/project/traitly)
 [![Testing](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml)
 [![Coverage](https://codecov.io/gh/mariameraz/traitly/branch/main/graph/badge.svg)](https://codecov.io/gh/mariameraz/traitly)
 [![Documentation Status](https://readthedocs.org/projects/traitly/badge/?version=latest)](https://traitly.readthedocs.io/en/latest/)
