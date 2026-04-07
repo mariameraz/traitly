@@ -227,7 +227,7 @@ class FruitInternalAnalyzer:
         # setup_measurements
         self.ref_roi = None
         self.label_roi = None
-        self.checker_roi = None
+        self.checker_coords = None
         self.label_text = None
         self.label_id = None
 
@@ -2134,8 +2134,6 @@ class FruitInternalAnalyzer:
                     UserWarning,
                     stacklevel=2,
                 )
-            self.checker_roi = None
-            self.checker_coords = None
             return None
 
         checker = checkers[0]
