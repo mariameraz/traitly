@@ -2,7 +2,7 @@
 SESSION REPORT
 ======================================================================
 traitly              : v0.1.0
-run date             : 2026-04-04 23:21:22
+run date             : 2026-04-06 22:15:15
 image folder         : /Users/alejandra/Documents/traitly/tests/data/external/white_bg
 results folder       : /Users/alejandra/Documents/traitly/tests/data/external/white_bg/Results
 images found         : 1
@@ -13,8 +13,8 @@ analyze_morphology   : False
 analyze_color        : True
 JSON path            : /Users/alejandra/Documents/traitly/tests/data/external/white_bg/cranberry_white_bg.json
 num_cores            : 1
-total time           : 3.3s
-avg per image        : 3.3s
+total time           : 2.6s
+avg per image        : 2.6s
 
 ======================================================================
 ANALYSIS PARAMETERS

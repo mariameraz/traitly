@@ -99,5 +99,44 @@
     "is_locule": false,
     "dilation_factor": null
   },
-  "analyze_color_params": {}
+  "analyze_color_params": {
+    "stat": "mean",
+    "tissue": "total_pericarp",
+    "color_space": "all",
+    "font_size": 2,
+    "font_thickness": 2,
+    "pericarp_ext_color": [
+      0,
+      255,
+      0
+    ],
+    "pericarp_ext_thickness": 2,
+    "pericarp_int_color": [
+      255,
+      255,
+      0
+    ],
+    "pericarp_int_thickness": 2,
+    "locule_thickness": 2,
+    "locule_color": [
+      255,
+      0,
+      255
+    ],
+    "label_position": "top",
+    "font_color": [
+      0,
+      0,
+      0
+    ],
+    "label_color": [
+      255,
+      255,
+      255
+    ],
+    "label_opacity": 0.7,
+    "get_color_histogram": true,
+    "dilation_factor": null,
+    "dark_thresh": 15
+  }
 }

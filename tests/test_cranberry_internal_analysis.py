@@ -21,7 +21,6 @@ from traitly.fruit_phenotyping import FruitInternalAnalyzer
 
 valid_img = Path(__file__).parent / "data/internal/img_test_1.jpg"
 
-
 @pytest.fixture
 def cranberry_valid():
     cranberry = FruitInternalAnalyzer(path=valid_img)
@@ -93,3 +92,12 @@ def test_invalid_locule_segmentation():
     cranberry.generate_fruit_mask(plot=False)
     cranberry.detect_fruits(plot=False)
     assert len(cranberry.fruit_locule_map.items()) == 0
+
+def test_fruits_detected(cranberry_valid):
+    assert len(cranberry_valid.fruit_locule_map) > 0
+
+
+def test_color_columns(cranberry_valid):
+    df = cranberry_valid.results.color_results
+    assert df is not None
+    assert len(df) > 0
