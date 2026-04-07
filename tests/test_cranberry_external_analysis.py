@@ -88,16 +88,12 @@ def test_detect_label(cranberry_blue):
     cranberry_blue.setup_measurements(detect_label=True)
     assert cranberry_blue.label_roi
     assert cranberry_blue.label_text
-
-
-def test_detect_color_checker(cranberry_blue):
-    cranberry_blue.setup_measurements(detect_label=False, detect_color_checker=True)
-    assert cranberry_blue.checker_coords
-
-
-def test_skip_yolo_model(cranberry_blue):
-    cranberry_blue.setup_measurements(skip_yolo=True)
-    assert cranberry_blue.ref_roi is None
+    assert cranberry_blue.img
+    assert cranberry_blue.img_name
+    assert cranberry_blue.img_copy
+    assert cranberry_blue.img_rgb
+    assert cranberry_blue.img_hsv
+    assert cranberry_blue.l_transformed
 
 
 def test_invalid_tissue(cranberry_blue):
@@ -123,9 +119,19 @@ def test_setup_measurements_attributes(cranberry_blue):
     cranberry_blue.setup_measurements(detect_label = True,
                                        detect_color_checker = True,
                                        skip_yolo = False)
-    assert cranberry_blue.checker_roi is not None
-    assert cranberry_blue.label_id is not None
-    assert cranberry_blue.label_text is not None
-    assert cranberry_blue.label_roi is not None
-    assert cranberry_blue.ref_roi is not None
-    
+    assert cranberry_blue.checker_coords
+    assert cranberry_blue.label_id
+    assert cranberry_blue.label_text
+    assert cranberry_blue.label_roi
+    assert cranberry_blue.ref_roi
+    assert cranberry_blue.px_per_cm
+
+
+def test_create_mask_attributes(cranberry_blue):
+    cranberry_blue.setup_measurements(detect_label = False,
+                                       skip_yolo = True)
+    cranberry_blue.generate_fruit_mask()
+    assert cranberry_blue.mask_fruit
+    assert cranberry_blue.mask_locules is None
+    assert cranberry_blue.contours is None
+    assert cranberry_blue.fruit_locule_map is None
