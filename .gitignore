@@ -28,3 +28,5 @@ requirements.txt
 requirements-dev.txt
 __pycache__/
 
+.DS_Store
+.ipynb_checkpoints/
