@@ -1,8 +1,8 @@
-name: Testing 
+name: Testing
 permissions:
   contents: read
-  pull-requests: write 
-  
+  pull-requests: write
+
 on:
   push:
     branches: ["main"]
@@ -34,7 +34,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install -e ".[all,dev]"
+          pip install -e "traitly[all,dev]"
 
       - name: Run tests with coverage
         run: |
