@@ -1,6 +1,6 @@
 <div class="animate" markdown>
 
-# Installating Traitly ⊹ ࣪ ˖
+# Installing Traitly ⊹ ࣪ ˖
 
 *Last updated: March 2026 - Traitly v0.1.0*
 
@@ -14,9 +14,7 @@ For this tutorial, we'll create a **Python virtual environment (venv)**, but you
 
 ## Requirements
 
-- Python 3.8 or higher ([download here](https://www.python.org/downloads/))
-- `pip` (included with Python)
-- `git` installed on your system ([download here](https://git-scm.com/downloads))
+- Python 3.9 or higher ([download here](https://www.python.org/downloads/))
 - RAM: 4 GB (8 GB recommended)
 - Free disk space: ~2 GB for full installation
 
@@ -76,7 +74,7 @@ my-project/
     You can replace `traitly-env` with any name you prefer.
 
     ```bash
-    python -m venv traitly-env
+    python3 -m venv traitly-env
     ```
 
     **2. Activate the environment:**
@@ -88,7 +86,7 @@ my-project/
 
     **3. Install Traitly:**
     ```bash
-    pip install git+https://github.com/mariameraz/traitly.git
+    pip install traitly
     ```
 
 === ":fontawesome-brands-windows:{.icon-blue} Windows"
@@ -97,7 +95,7 @@ my-project/
     
     You can replace `traitly-env` with any name you prefer.
     ```bash
-    python -m venv traitly-env
+    py -m venv traitly-env
     ```
 
     **2. Activate the environment:**
@@ -109,7 +107,7 @@ my-project/
 
     **3. Install Traitly:**
     ```bash
-    pip install git+https://github.com/mariameraz/traitly.git
+    pip install traitly
     ```
 
 === ":simple-googlecolab:{.icon-orange} Google Colab"
@@ -126,7 +124,7 @@ my-project/
     **3. Install Traitly:**
     In the first cell, copy and run the following command:
     ```python
-    !pip install "git+https://github.com/mariameraz/traitly.git"
+    !pip install traitly
     ```
 
 ---
@@ -137,8 +135,8 @@ Depending on your use case, you might need to install additional dependencies:
 
 | Extra | Includes                   | Command                           |
 |-------|----------------------------|-----------------------------------|
-| `pdf` | PDF to image conversion    | `pip install "git+https://github.com/mariameraz/traitly.git[pdf]"` |
-| `all` | PDF conversion + Shiny app | `pip install "git+https://github.com/mariameraz/traitly.git[all]"` |
+| `pdf` | PDF to image conversion    | `pip install "traitly[pdf]"` |
+| `all` | PDF conversion + Shiny app | `pip install "traitly[all]"` |
 
 !!! tip "Not sure which to choose?"
     If you're unsure, we recommend installing `all`, since it includes everything you need to use Traitly's full functionality, including the interactive app.
@@ -152,17 +150,21 @@ Depending on your use case, you might need to install additional dependencies:
 
 ## Verify Installation
 
-Once installed, you can confirm everything is working correctly by running in the terminal:
+Once installed, you can confirm everything is working correctly by running:
 
-```bash
-python -c "import traitly; print(traitly.__version__)"
-```
-or
+
+**In the terminal:**
 ```bash
 traitly --version
 ```
 
-If the installation was successful, you should see the installed version number in the terminal.
+**In Python or Jupyter Notebook:**
+```python
+import traitly
+print(traitly.__version__)
+```
+
+If the installation was successful, you should see the installed version number printed in the console.
 
 ---
 
@@ -177,29 +179,16 @@ deactivate
 
 ## Troubleshooting
 
-**1. `python` not found:**
-Try using `python3` instead (common on macOS and Linux):
+**1. `pip` not found after activating the environment:**
+Try using `pip3` instead of `pip`:
+
 ```bash
-python3 -m venv traitly-env
-```
-On Windows, you can also try with `py` (available through the Python Launcher in most modern installations):
-```bash
-py -m venv traitly-env
+pip3 install traitly
 ```
 
-!!! Note ""
-    `py` might not be available on older versions (e.g., Python 3.6 on Windows 7). In that case, we recommend reinstalling Python from [python.org](https://www.python.org/downloads/) and checking **"Add Python to PATH"** during installation.
+Or reinstall Python making sure to check **"Add Python to PATH"** during installation (**Windows**).
 
-**2. `git` not found:**
-Make sure `git` is installed and available in your PATH. You can verify it with:
-```bash
-git --version
-```
-
-**3. `pip` not found after activating the environment:**
-Try using `pip3` instead of `pip`, or reinstall Python making sure to check the "Add to PATH" option during installation (Windows).
-
-**4. Permission errors on macOS/Linux:**
+**2. Permission errors on macOS/Linux:**
 Avoid using `sudo pip install`. Instead, make sure your virtual environment is properly activated before installing.
 
 </div>
