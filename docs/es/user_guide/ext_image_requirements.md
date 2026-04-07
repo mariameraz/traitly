@@ -42,9 +42,9 @@ La elección del fondo es especialmente importante en el análisis externo, ya q
 - Para la mayoría de los frutos, recomendamos un **gris neutro de saturación media-baja**, ya que ofrece buen contraste con una amplia gama de colores de fruto y minimiza los artefactos de reflexión
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">
-  <figure style="text-align: center; margin: 0;">
-    <img src="../../assets/images/cranberry_background_example.jpg" alt="Ejemplos de fondo para cranberry"
-         style="height: 400px; width: auto;">
+    <figure style="text-align: center; margin: 0;">
+      <img src="../../assets/images/cranberry_background_example.jpg" alt="Background examples for cranberry"
+           style="height: 400px; width: auto;">
     <figcaption><em>Arándano sobre distintos fondos. En frutos de colores claros, el fondo blanco reduce el contraste y dificulta la segmentación</em></figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">

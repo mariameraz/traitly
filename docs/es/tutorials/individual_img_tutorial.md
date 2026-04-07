@@ -15,7 +15,7 @@ hide:
 En este tutorial, demostraremos cómo realizar el análisis de apariencia externa de frutos utilizando `FruitExternalAnalyzer`, una herramienta para extraer medidas de morfología y color a partir de una sola imagen.
 
 !!! tip "Sigue el tutorial"
-    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/ext_analysis_ind_img_sample_es).
+    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/ext_analysis_ind_img_sample).
 
 !!! info "Referencia de métodos y parámetros"
     A lo largo de este tutorial se utilizan métodos como `setup_measurements()`, `generate_fruit_mask()`, `detect_fruits()`, `analyze_morphology()` y `analyze_color()`. Para una descripción completa de cada método y sus parámetros disponibles, consulta la [Clase External Analyzer](../user_guide/external_class.md).

@@ -14,6 +14,9 @@ hide:
 
 En este tutorial veremos como segmentar frutos con lóculos complejos usando `FruitInternalAnalyzer`:
 
+!!! tip "Sigue el tutorial"
+    :fontawesome-solid-file-code: Descarga el cuaderno de Jupyter y las imágenes de muestra para este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/segmentate_locules).
+    
 ```python
 # Importar External Analysis Class
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
