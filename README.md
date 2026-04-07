@@ -45,14 +45,6 @@ Traitly processes fruit images to measure:
 
 </br>
 
-## Project Status
-
-The project's architecture and core logic are established, and a group of early testers is currently evaluating the tool across different workflows and use cases. We expect to publish the package on PyPI soon.
-
-All updates will be announced through this repository and on [LinkedIn](https://www.linkedin.com/in/alemeraz/), so we encourage interested users to follow or watch the repository to stay informed.
-
-</br>
-
 ## Publications & Presentations
 
 Posters related to Traitly can be found in this folder:
