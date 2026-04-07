@@ -118,3 +118,14 @@ def test_analyze_color_channels(cranberry_blue):
     df = cranberry_blue.results.color_results
     assert df is not None
     assert len(df) > 0
+
+def test_no_checker_roi(cranberry_blue):
+    cranberry_blue.setup_measurements()
+    cranberry_blue.generate_fruit_mask(plot=False, background_color="blue")
+    assert cranberry_blue.checker_roi is None
+
+def test_no_label_id(cranberry_blue):
+    cranberry_blue.setup_measurements()
+    cranberry_blue.generate_fruit_mask(plot=False, background_color="blue")
+    assert cranberry_blue.label_id is None
+    
