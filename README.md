@@ -25,7 +25,7 @@ It supports both single-image analysis and batch processing workflows, making it
 
 </br>
 
-> **Note:**  
+> [!IMPORTANT]
 > We are working on a manuscript describing this software and its applications, expected to be submitted in **Spring–Summer 2026**. In the meantime, if you use Traitly in your research, please cite it as:
 >
 > Torres-Meraz, M. A., Lopez-Moreno, H. & Zalapa, J. (2026). Traitly: A Python Tool for High-Throughput Fruit Phenotyping. Zenodo. https://doi.org/10.5281/zenodo.18738367
