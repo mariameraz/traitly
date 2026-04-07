@@ -3,6 +3,7 @@ import pytest
 from traitly.cli import create_parser, _validate_input, _validate_json
 from pathlib import Path
 
+
 def test_fruit_internal():
     parser = create_parser()
     args = parser.parse_args(['--fruit_internal', '-i', 'tests/data/internal/'])
