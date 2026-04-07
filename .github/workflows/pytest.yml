@@ -1,4 +1,4 @@
-name: Testing 
+name: Testing
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install -e ".[all, dev]"
+          pip install -e "traitly[all, dev]"
 
       - name: Run tests with coverage
         run: |
