@@ -68,7 +68,7 @@ Now let's generate the fruit masks with `generate_fruit_mask()` using the defaul
 !!! note "About background color"
     If you need to segment fruits on a background color other than the predefined ones – `white`, `blue`, and `black` – you can refer to the [Background Segmentation](background_segmentation.md) tutorial for more details.
 
-As we can see in the plots generated below, most fruits have been effectively segmented. However, we notice that some fruits were not detected by `detect_fruits()` (they don't have the green contour). In these cases, we need to modify some parameters to improve both the masks and the detection; let's address that below.
+As we can see in the plots generate, most fruits have been effectively segmented. However, we notice that some fruits were not detected by `detect_fruits()` (they don't have the green contour). In these cases, we need to modify some parameters to improve both the masks and the detection; let's address that below.
 
 ```python
 pic_test.generate_fruit_mask(background_color='white')

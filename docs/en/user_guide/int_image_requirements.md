@@ -49,7 +49,6 @@ Traitly assumes a **black background** by default. To achieve this:
 </div>
 
 
-
 ### 1.4 Format and Resolution
 
 **Supported formats:**
