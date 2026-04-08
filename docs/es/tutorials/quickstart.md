@@ -5,16 +5,19 @@ hide:
 ---
 <div style="text-align: center;" markdown>
 
-# Inicio Rápido: análisis completo de cranberry corriendo en minutos.
+# Inicio Rápido: análisis completo de cranberry en minutos.
 
-<p style="color:gray; margin-top: -35px; margin-bottom: 55px;" markdown>**Creado por: María A. Torres Meraz; Traitly v0.1.0 – Marzo, 2026**</p>
+<p style="color:gray; margin-top: -35px;" markdown>**Creado por: María A. Torres Meraz; Marzo, 2026** </p>
+
+[![PyPI](https://img.shields.io/badge/PyPI-v0.1.0-blue?logo=pypi&logoColor=white)](https://pypi.org/project/traitly/)
+
 
 </div>
 
 **Requisitos:** Traitly instalado ([Guía de instalación](../installation.md)).
 
-!!! tip "Imágenes de muestra"
-    :fontawesome-solid-file-code: Los ejemplos de este tutorial usan imágenes de **cranberry**. Si no cuentas con tus propias imágenes, puedes descargar las imágenes de muestra [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/images). Para frutos con una estructura interna más compleja (ej., tomate, naranja o pepino), explora el tutorial [Segmentación de Lóculos](segmentate_locules.md).
+!!! tip "Imágenes de Muestra"
+    Puedes descargar imágenes de frutos de cranberry para seguir este tutorial [aquí](https://github.com/mariameraz/traitly/tree/main/tutorials/images). Para frutos con una segmentación de lóculos más compleja (ej., tomate, naranja, o pepino), explora el tutorial [Segmentación de Lóculos](segmentate_locules.md).
 
 ---
 

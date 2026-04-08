@@ -27,7 +27,7 @@ from traitly.fruit_phenotyping import FruitInternalAnalyzer
 In `FruitInternalAnalyzer`, fruit and locule contours are detected through hierarchical contour segmentation using [`cv2.RETR_TREE`](https://docs.opencv.org/4.x/d9/d8b/tutorial_py_contours_hierarchy.html), which identifies and organizes nested contours — that is, contours within contours. In this scheme, the outer fruit contour acts as the parent contour, while the internal locules are detected as child contours, as shown in the image. For this reason, `detect_fruits()` expects the fruit area to be white and the locules to be black in the binary mask.
 
 <div style="text-align: center;" markdown>
-![Contours](../../../assets/images/retr_tree_example.png)
+![Contours](../assets/images/retr_tree_example.png)
 </div>
 
 
@@ -81,7 +81,7 @@ tomato.generate_fruit_mask()
     
 
 
-In these cases, we need to create an additional locule mask based on an intensity threshold on the L channel (lightness) of the LAB color space, where darker pixels correspond to locules and lighter pixels to the rest of the fruit. `FruitInternalAnalyzer` internally converts the image from BGR to LAB and extracts the L channel, so we can go straight to `generate_locule_mask()`. However, when the contrast between the pericarp and the locules isn't sufficient for a good segmentation, we can improve it beforehand with `enhance_locule_contrast()`, which allows applying one of three transformations to the L channel: `'gamma'`, `'sigmoid'`, or `'exp'` (exponential). For more details on how both methods work, see the [Internal Analyzer Class](../user_guide/en/user_guide/internal_class.md#enhance_locule_contrast) section.
+In these cases, we need to create an additional locule mask based on an intensity threshold on the L channel (lightness) of the LAB color space, where darker pixels correspond to locules and lighter pixels to the rest of the fruit. `FruitInternalAnalyzer` internally converts the image from BGR to LAB and extracts the L channel, so we can go straight to `generate_locule_mask()`. However, when the contrast between the pericarp and the locules isn't sufficient for a good segmentation, we can improve it beforehand with `enhance_locule_contrast()`, which allows applying one of three transformations to the L channel: `'gamma'`, `'sigmoid'`, or `'exp'` (exponential). For more details on how both methods work, see the [Internal Analyzer Class](../user_guide/internal_class.md#enhance_locule_contrast) section.
 
 The `compare_method=True` parameter generates a side-by-side comparison showing the result of all three transformations against the original image, using default values that can be adjusted with the corresponding parameters. This makes it easier to choose the most suitable method before applying it.
 

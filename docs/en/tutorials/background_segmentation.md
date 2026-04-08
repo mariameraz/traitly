@@ -8,14 +8,15 @@ hide:
 
 # Defiining color thresholds for background segmentation
 
-<p style="color:gray; margin-top: -35px; margin-bottom: 55px;" markdown>*Created by: María A. Torres-Meraz; Traitly v0.1.0 – March, 2026*</p>
+<p style="color:gray; margin-top: -35px; margin-bottom: -10px;" markdown>*Created by: María A. Torres-Meraz; March, 2026*</p>
+
+[![PyPI](https://img.shields.io/badge/PyPI-v0.1.0-blue?logo=pypi&logoColor=white)](https://pypi.org/project/traitly/)
+[![GitHub](https://img.shields.io/badge/View%20on-GitHub-181717?logo=github&logoColor=white)](https://github.com/mariameraz/traitly/tree/main/tutorials/background_segmentation)
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1NwDbvqyPPNCV-rots-rrvU6Nbr4J6ZTX?usp=sharing)
 
 </div>
 
 In this tutorial we'll go over how to adjust the color thresholds for fruit background segmentation in `FruitExternalAnalyzer`. 
-
-!!! tip "Follow along"
-    :fontawesome-solid-file-code: Download the Jupyter notebook and sample images for this tutorial [here](https://github.com/mariameraz/traitly/tree/main/tutorials/background_segmentation).
 
 By default `FruitExternalAnalyzer.generate_fruit_mask()` assumes a blue background. Also, it has pre-configured thresholds for `'white'` and `'black'` backgrounds. However, custom thresholds can also by provided manually. For more details, see section [External Analyzer Class](../user_guide/external_class.md#generate_fruit_mask).
 
