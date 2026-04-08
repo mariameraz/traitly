@@ -1583,7 +1583,7 @@ tab_home = ui.nav_panel(
                         <a class="home-link" href="https://traitly.readthedocs.io/" target="_blank">traitly.readthedocs.io</a>
                         <br><br>
                         <span style="color: #a70085;"><strong>┈➤ Download example images to get started</strong></span>
-                        <a class="home-link" href="https://github.com/mariameraz/traitly/tree/main/tutorials_data/images" target="_blank"><strong>here</strong></a> ˎˊ˗
+                        <a class="home-link" href="https://github.com/mariameraz/traitly/tree/main/tutorials/images" target="_blank"><strong>here</strong></a> ˎˊ˗
                     </p>
                 </div>
             </h4>
