@@ -1,4 +1,4 @@
-name: Testing in Python 3.9
+name: Testing in Python 3.9 (ubuntu-latest) 
 permissions:
   contents: read
   pull-requests: write
