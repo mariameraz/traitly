@@ -1,4 +1,4 @@
-name: Testing in Python 3.12 (ubuntu-latest)
+name: Tests
 permissions:
   contents: read
   pull-requests: write
