@@ -25,7 +25,7 @@ from traitly.fruit_phenotyping import FruitInternalAnalyzer
 En `FruitInternalAnalyzer`, los contornos de los frutos y sus lóculos se detectan mediante una segmentación jerárquica de contornos usando [`cv2.RETR_TREE`](https://docs.opencv.org/4.x/d9/d8b/tutorial_py_contours_hierarchy.html), el cual identifica y organiza contornos anidados, es decir, contornos dentro de otros contornos. En este esquema, el contorno exterior del fruto actúa como contorno padre (parent), mientras que los lóculos internos son detectados como contornos hijos (child), como se muestra en la imagen. Por esta razón, `detect_fruits()` espera que en la máscara binaria el área del fruto sea de color blanco y los lóculos de color negro.
 
 <div style="text-align: center;" markdown>
-![Contours](../../../assets/images/retr_tree_example.png)
+![Contours](../assets/images/retr_tree_example.png)
 </div>
 
 Esta guía cubre tres ejemplos con complejidad de segmentación creciente:
@@ -77,7 +77,7 @@ tomato.generate_fruit_mask()
     
 
 
-En estos casos, necesitamos crear una máscara adicional de los lóculos a partir de un umbral de intensidad en el canal L (luminosidad) del espacio de color LAB, donde los píxeles más oscuros corresponden a los lóculos y los más claros al resto del fruto. `FruitInternalAnalyzer` convierte internamente la imagen de BGR a LAB y extrae el canal L, por lo que podemos pasar directamente a `generate_locule_mask()`. Sin embargo, cuando el contraste entre el pericarpio y los lóculos no es suficiente para una buena segmentación, podemos mejorarlo previamente con `enhance_locule_contrast()`, el cual permite aplicar una de tres transformaciones al canal L: `'gamma'`, `'sigmoid'` o `'exp'` (exponential). Para más detalles sobre cómo funcionan ambos métodos, ver la sección [Internal Analyzer Class](../user_guide/es/user_guide/internal_class.md#enhance_locule_contrast).
+En estos casos, necesitamos crear una máscara adicional de los lóculos a partir de un umbral de intensidad en el canal L (luminosidad) del espacio de color LAB, donde los píxeles más oscuros corresponden a los lóculos y los más claros al resto del fruto. `FruitInternalAnalyzer` convierte internamente la imagen de BGR a LAB y extrae el canal L, por lo que podemos pasar directamente a `generate_locule_mask()`. Sin embargo, cuando el contraste entre el pericarpio y los lóculos no es suficiente para una buena segmentación, podemos mejorarlo previamente con `enhance_locule_contrast()`, el cual permite aplicar una de tres transformaciones al canal L: `'gamma'`, `'sigmoid'` o `'exp'` (exponential). Para más detalles sobre cómo funcionan ambos métodos, ver la sección [Internal Analyzer Class](../user_guide/internal_class.md#enhance_locule_contrast).
 
 El parámetro `compare_method=True` genera una visualización comparativa que muestra el resultado de las tres transformaciones frente a la imagen original, usando valores por defecto que pueden ajustarse con los parámetros correspondientes. Esto facilita elegir el método más adecuado antes de aplicarlo.
 
@@ -494,7 +494,7 @@ tomato.generate_l_channel_histogram()
     
 
 
-La máscara resultante captura la mayor parte de los lóculos, aunque aún persiste algo de ruido difícil de eliminar solo con umbrales. Para corregirlo, podemos usar `edit_mask()`, que abre un editor interactivo para agregar o remover regiones de la máscara manualmente (ver [Internal Fruit Analyzer](../user_guide/es/user_guide/internal_class.md#edit_mask) para más detalles sobre este método).
+La máscara resultante captura la mayor parte de los lóculos, aunque aún persiste algo de ruido difícil de eliminar solo con umbrales. Para corregirlo, podemos usar `edit_mask()`, que abre un editor interactivo para agregar o remover regiones de la máscara manualmente (ver [Internal Fruit Analyzer](../user_guide/internal_class.md#edit_mask) para más detalles sobre este método).
 
 
 ```python
