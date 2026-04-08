@@ -6,7 +6,6 @@ __pycache__/
 *.pyd
 .Python
 
-
 # python environments
 .traitly_test/*
 
@@ -18,15 +17,9 @@ build/
 dist/
 *.egg-info/
 
-# zed files
-.zed
-
 # Jupyter files
 **/.ipynb_checkpoints/
 
 requirements.txt
 requirements-dev.txt
 __pycache__/
-
-.DS_Store
-.ipynb_checkpoints/

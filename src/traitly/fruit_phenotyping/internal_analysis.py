@@ -229,7 +229,6 @@ class FruitInternalAnalyzer:
         self.label_roi = None
         self.checker_coords = None
         self.label_text = None
-        self.label_id = None
 
         # create_mask
         self.mask_fruit = None
