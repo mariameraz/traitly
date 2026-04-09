@@ -1,0 +1,34 @@
+translations:
+  en:
+    contributor: "Contributor"
+    role: "Role"
+  es:
+    contributor: "Contribuidor"
+    role: "Rol"
+
+roles_map:
+  code:                "💻"
+  docs:                "📖"
+  bug:                 "🐛"
+  design:              "🎨"
+  translation:         "🌍"
+  data:                "🔣"
+  tutorials:           "✅"
+  ideas:               "🤔"
+  projectManagement:   "📆"
+  questions:           "💬"
+  maintenance:         "🚧"
+  tests:               "⚠️"
+  userTesting:         "📓"
+
+contributors:
+  - name: "María Meraz"
+    github: "mariameraz"
+    roles: [code, projectManagement, questions, maintenance, userTesting, tutorials, bug, docs, tests, ideas, data, translation, design]
+
+  - name: "Héctor López"
+    github: "hector-LM"
+    roles: [docs, userTesting, tutorials, ideas, bug, data, translation]
+
+  - name: "Juan Zalapa"
+    roles: [data]
