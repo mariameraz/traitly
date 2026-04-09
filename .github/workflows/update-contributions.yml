@@ -1,0 +1,27 @@
+name: Update Contributors
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/contributors.yml"
+  workflow_dispatch:
+
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update contributors table
+        run: python .github/update-contributors.py
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet || (git add README.md README_es.md && git commit -m "chore: update contributors table [skip ci]" && git push)
