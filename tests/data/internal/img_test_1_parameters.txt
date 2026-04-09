@@ -2,7 +2,7 @@
 ANALYSIS PROCESSING PARAMETERS
 ======================================================================
 traitly: v0.1.0
-run date: 2026-04-06 22:15:45
+run date: 2026-04-09 18:25:06
 image: /Users/alejandra/Documents/traitly/tests/data/internal/img_test_1.jpg
 
 SETUP_MEASUREMENTS:
@@ -94,12 +94,12 @@ ANALYZE_COLOR:
 DEPENDENCIES:
    - python: 3.13.7
    - opencv-contrib-python: 4.13.0.92
-   - numpy: 2.3.5
-   - pandas: 2.3.3
-   - scipy: 1.17.0
+   - numpy: 2.4.4
+   - pandas: 3.0.2
+   - scipy: 1.17.1
    - matplotlib: 3.10.8
    - tqdm: 4.67.3
    - psutil: 7.2.2
    - easyocr: 1.7.2
-   - PyMuPDF: 1.27.1
-   - ultralytics: 8.4.14
+   - PyMuPDF: 1.27.2.2
+   - ultralytics: 8.4.36
