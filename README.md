@@ -158,6 +158,11 @@ We are open to collaborations, including adding new traits, and creating tutoria
 </a>
 
 <!-- CONTRIBUTORS-START -->
+| Contributor | Role |
+|-------------|------|
+| [María Meraz](https://github.com/mariameraz) | 💻 📆 💬 🚧 📓 ✅ 🐛 📖 ⚠️ 🤔 🔣 🌍 🎨 |
+| [Héctor López](https://github.com/hector-LM) | 📖 📓 ✅ 🤔 🐛 🔣 🌍 |
+| Juan Zalapa | 🔣 |
 <!-- CONTRIBUTORS-END -->
 
 ## Acknowledgements ♡

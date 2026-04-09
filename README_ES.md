@@ -155,6 +155,11 @@ Estamos abiertos a colaboraciones, incluyendo la incorporación de nuevos rasgos
 </a>
 
 <!-- CONTRIBUTORS-START -->
+| Contribuidor | Rol |
+|-------------|------|
+| [María Meraz](https://github.com/mariameraz) | 💻 📆 💬 🚧 📓 ✅ 🐛 📖 ⚠️ 🤔 🔣 🌍 🎨 |
+| [Héctor López](https://github.com/hector-LM) | 📖 📓 ✅ 🤔 🐛 🔣 🌍 |
+| Juan Zalapa | 🔣 |
 <!-- CONTRIBUTORS-END -->
 
 ## Agradecimientos ♡
