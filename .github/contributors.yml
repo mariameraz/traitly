@@ -5,7 +5,8 @@ translations:
   es:
     contributor: "Contribuidor"
     role: "Rol"
-
+    
+# Roles are defined based on allcontributors emoji-key: https://allcontributors.org/
 roles_map:
   code:                "💻"
   docs:                "📖"
@@ -20,11 +21,14 @@ roles_map:
   maintenance:         "🚧"
   tests:               "⚠️"
   userTesting:         "📓"
+  infra:               "🚇"
+  review:              "👀"
+  
 
 contributors:
   - name: "María Meraz"
     github: "mariameraz"
-    roles: [code, projectManagement, questions, maintenance, userTesting, tutorials, bug, docs, tests, ideas, data, translation, design]
+    roles: [code, projectManagement, questions, maintenance, userTesting, infra, tutorials, bug, docs, tests, ideas, translation, design]
 
   - name: "Héctor López"
     github: "hector-LM"
