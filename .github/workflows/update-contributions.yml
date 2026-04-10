@@ -15,7 +15,7 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Update contributors table
         run: python .github/update-contributors.py
@@ -25,4 +25,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add README*.md
-          git diff --quiet || (git add README.md README_es.md && git commit -m "chore: update contributors table [skip ci]" && git push)
+          git diff --cached --quiet || (git commit -m "chore: update contributors table [skip ci]" && git push)
+          
