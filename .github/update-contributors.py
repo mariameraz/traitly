@@ -17,9 +17,12 @@ def build_table(path):
     rows = []
     for c in contributors:
         emojis = " ".join(roles_map.get(r, f"Unknown role:({r})") for r in c["roles"])
-        name = f"[{c['name']}](https://github.com/{c['github']})" if "github" in c else c["name"]
+        if "github" in c:
+            avatar = f'<img src="https://github.com/{c["github"]}.png" width="44" height="44" valign="middle">&nbsp;'
+            name = f'[{avatar}{c["name"]}](https://github.com/{c["github"]})'
+        else:
+            name = c["name"]
         rows.append(f"| {name} | {emojis} |")
-
     return "\n".join([
         f"| {t['contributor']} | {t['role']} |",
         "|-------------|------|",

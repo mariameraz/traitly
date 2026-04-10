@@ -153,15 +153,11 @@ We are open to collaborations, including adding new traits, and creating tutoria
 
 ## Contributors
 
-<a href="https://github.com/mariameraz/traitly/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=mariameraz/traitly" />
-</a>
-
 <!-- CONTRIBUTORS-START -->
 | Contributor | Role |
 |-------------|------|
-| [María Meraz](https://github.com/mariameraz) | 💻 📆 💬 🚧 📓 ✅ 🐛 📖 ⚠️ 🤔 🔣 🌍 🎨 |
-| [Héctor López](https://github.com/hector-LM) | 📖 📓 ✅ 🤔 🐛 🔣 🌍 |
+| [<img src="https://github.com/mariameraz.png" width="24" height="24" valign="middle">&nbsp;María Meraz](https://github.com/mariameraz) | 💻 📆 💬 🚧 📓 ✅ 🐛 📖 ⚠️ 🤔 🔣 🌍 🎨 |
+| [<img src="https://github.com/hector-LM.png" width="24" height="24" valign="middle">&nbsp;Héctor López](https://github.com/hector-LM) | 📖 📓 ✅ 🤔 🐛 🔣 🌍 |
 | Juan Zalapa | 🔣 |
 <!-- CONTRIBUTORS-END -->
 
