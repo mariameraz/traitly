@@ -1,4 +1,17 @@
-# About commits
+# Contributions
+
+To keep the contributors table organized across README files, this repository uses GitHub Actions to automate the process.
+
+To add a new contributor to the table, refer to `.github/contributors.yml`.
+
+Under the `contributors` section, add:
+- Contributor name (`name`)
+- GitHub username (`github`)
+- Contribution role(s) (emoji key based on allcontributors.org) (`roles`)
+
+Once changes to the `.yml` file are saved and pushed, a `chore: update contributors table` commit will be made automatically by our `contributions-bot` across all available `README*.md` files.
+
+# Commits
 
 When contributions are made, we kindly ask you to use [Conventional Commits](https://www.conventionalcommits.org/) to keep the history readable and consistent.
 
