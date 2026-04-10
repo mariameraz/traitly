@@ -20,6 +20,11 @@ jobs:
       - name: Update contributors table
         run: python .github/update-contributors.py
 
+      - name: Debug git status
+        run: |
+          git status
+          git diff README_ES.md
+
       - name: Commit changes
         run: |
           git config user.name "contributors-bot"
