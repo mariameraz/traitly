@@ -43,4 +43,4 @@ def update_readme(path):
     print(f"Successfully updated: {path}")
 
 update_readme("README.md")
-update_readme("README_es.md")
+update_readme("README_ES.md")
