@@ -28,7 +28,7 @@ roles_map:
 contributors:
   - name: "María Meraz"
     github: "mariameraz"
-    roles: [code, projectManagement, questions, maintenance, userTesting, infra, tutorials, bug, docs, tests, ideas, translation, design]
+    roles: [code, projectManagement, questions, maintenance, infra, userTesting, tutorials, bug, docs, tests, ideas, translation, design]
 
   - name: "Héctor López"
     github: "hector-LM"
