@@ -148,7 +148,7 @@ Para preguntas o comentarios sobre el proyecto, puedes escribirnos a:
 
 Estamos abiertos a colaboraciones, incluyendo la incorporación de nuevos rasgos, y la creación de tutoriales o flujos de trabajo para cultivos o tejidos vegetales específicos.
 
-## Contribuidores
+## Contribuciones 
 
 <!-- CONTRIBUTORS-START -->
 | Contribuidor | Rol |
