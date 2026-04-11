@@ -151,7 +151,7 @@ For questions or comments about the project, feel free to reach out to:
 
 We are open to collaborations, including adding new traits, and creating tutorials or workflows for specific crops or plant tissues.
 
-## Contributors
+## Contributions
 
 <!-- CONTRIBUTORS-START -->
 | Contributor | Role |
