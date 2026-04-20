@@ -1,4 +1,4 @@
-name: Testing MultiOS
+name: MultiOS
 permissions:
   contents: read
   pull-requests: write
