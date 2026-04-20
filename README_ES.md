@@ -1,13 +1,14 @@
 <div align="center">
 <h1>Traitly</h1>
 
-[![Python](https://img.shields.io/badge/Python-3.9%2B-yellow?logo=python&logoColor=white)](https://www.python.org/)
 [![PyPI](https://img.shields.io/pypi/v/traitly?logo=pypi&logoColor=white)](https://pypi.org/project/traitly)
+[![Python 3.9+](https://github.com/mariameraz/traitly/actions/workflows/python_compatibility.yml/badge.svg)](https://github.com/mariameraz/traitly/actions/workflows/python_compatibility.yml)
+[![MultiOS](https://github.com/mariameraz/traitly/actions/workflows/pytest_multi_os.yml/badge.svg)](https://github.com/mariameraz/traitly/actions/workflows/pytest_multi_os.yml)
 [![Testing](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml)
 [![Coverage](https://codecov.io/gh/mariameraz/traitly/branch/main/graph/badge.svg)](https://codecov.io/gh/mariameraz/traitly)
-[![Documentation Status](https://readthedocs.org/projects/traitly/badge/?version=latest)](https://traitly.readthedocs.io/en/latest/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19447593.svg)](https://doi.org/10.5281/zenodo.19447593)
-[![Licencia: AGPL v3](https://img.shields.io/badge/Licencia-AGPL%20v3-green?logo=gnu&logoColor=white)](https://github.com/mariameraz/traitly/blob/main/LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green?logo=gnu&logoColor=white)](https://github.com/mariameraz/traitly/blob/main/LICENSE)
+
 
 <a href="https://traitly.readthedocs.io/en/latest/es/tutorials/overview/">Documentación</a> ⋆
 <a href="https://traitly.readthedocs.io/en/latest/es/installation/">Instalación</a> ⋆
@@ -148,12 +149,12 @@ Para preguntas o comentarios sobre el proyecto, puedes escribirnos a:
 
 Estamos abiertos a colaboraciones, incluyendo la incorporación de nuevos rasgos, y la creación de tutoriales o flujos de trabajo para cultivos o tejidos vegetales específicos.
 
-## Contribuidores
+## Contribuciones 
 
 <!-- CONTRIBUTORS-START -->
 | Contribuidor | Rol |
 |-------------|------|
-| [<img src="https://github.com/mariameraz.png" width="44" height="44" valign="middle">&nbsp;María Meraz](https://github.com/mariameraz) | 💻 📆 💬 🚧 📓 🚇 ✅ 🐛 📖 ⚠️ 🤔 🌍 🎨 |
+| [<img src="https://github.com/mariameraz.png" width="44" height="44" valign="middle">&nbsp;María Meraz](https://github.com/mariameraz) | 💻 📆 💬 🚧 🚇 📓 ✅ 🐛 📖 ⚠️ 🤔 🌍 🎨 |
 | [<img src="https://github.com/hector-LM.png" width="44" height="44" valign="middle">&nbsp;Héctor López](https://github.com/hector-LM) | 📖 📓 ✅ 🤔 🐛 🔣 🌍 |
 | Juan Zalapa | 🔣 |
 <!-- CONTRIBUTORS-END -->
