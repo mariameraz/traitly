@@ -214,6 +214,7 @@ class FruitInternalAnalyzer:
                     f"Verify that the file exists and the path is correct."
                 )
 
+        ## Class attributes:
         # load_img
         self.is_directory = os.path.isdir(os.path.dirname(path))
         self.img = None
@@ -222,10 +223,10 @@ class FruitInternalAnalyzer:
         self.img_shape = None
         self.img_rgb = None
         self.img_hsv = None
-        self.l_transformed = None
 
         # setup_measurements
         self.ref_roi = None
+        self.px_per_cm = None
         self.label_roi = None
         self.checker_coords = None
         self.label_text = None
@@ -233,11 +234,13 @@ class FruitInternalAnalyzer:
         # create_mask
         self.mask_fruit = None
         self.mask_locules = None
+        self.l_transformed = None
+
+        # detect fruits
         self.contours = None
         self.fruit_locule_map = None
 
         # analyze fruits
-        self.px_per_cm = None
         self.results = None
         self.dilation_factor = None
 
@@ -295,6 +298,7 @@ class FruitInternalAnalyzer:
                 "Run FruitInternalAnalyzer('path/to/your/image.jpg') first."
             )
 
+        # Check image format
         path = Path(self.input_path)
         if path.suffix.lower() not in valid_extensions:
             raise ValueError(
@@ -302,6 +306,7 @@ class FruitInternalAnalyzer:
                 f"Supported formats are: {valid_extensions}"
             )
 
+        # Load image
         self.img = load_img(
             self.input_path,
             plot=plot,
@@ -313,18 +318,19 @@ class FruitInternalAnalyzer:
             h=h,
         )
 
+        # Check image loaded successfully
         if self.img is None:
             raise ValueError(
                 f"Failed to load image: {self.input_path}."
-                "The file may be corrupted or not in a supported format."
             )
 
-        self.img_shape = self.img.shape[:2]
-        self.img_hsv = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
-        self.img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
-        self.img_name = detect_img_name(self.input_path)
+        # Save some image attributes
+        self.img_shape = self.img.shape[:2] # Image shape
+        self.img_hsv = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV) # HSV Image
+        self.img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB) # RGB Image
+        self.img_name = detect_img_name(self.input_path) # Image name
 
-        self.parameters.img_params = {"img_path": self.input_path}
+        self.parameters.img_params = {"img_path": self.input_path} # Save used parameters
 
         return None
 
