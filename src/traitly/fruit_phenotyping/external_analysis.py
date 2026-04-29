@@ -196,8 +196,8 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         plot: bool = True,
         plot_size: Tuple[int, int] = (5, 5),
         stamp: bool = False,
-        lower_hsv: Optional[List[int]] = None,
-        upper_hsv: Optional[List[int]] = None,
+        lower_hsv: Optional[Tuple[int,int,int]] = None,
+        upper_hsv: Optional[Tuple[int,int,int]] = None,
         n_iteration: int = 1,
         kernel_blur: Optional[int] = None,
         kernel_open: Optional[int] = None,
@@ -247,7 +247,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
 
     def detect_fruits(
         self,
-        min_fruit_area: int = 500,
+        min_fruit_area: int = 1000,
         max_fruit_area: Optional[int] = None,
         min_fruit_circularity: float = 0.5,
         rescale_factor: Optional[float] = None,
@@ -267,7 +267,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         ----------
         min_fruit_area : int, optional
             Minimum contour area in pixels to be considered a fruit.
-            Default is 500.
+            Default is 1000.
         max_fruit_area : int or None, optional
             Maximum contour area in pixels. If None, no upper limit is applied.
         min_fruit_circularity : float, optional
@@ -733,59 +733,60 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         analyze_morphology: bool = True,
         analyze_color: bool = True,
         # Configuration
-        json_path=None,
-        config=None,
-        output_path=None,
         num_cores: int = 1,
         verbose: bool = True,
+        json_path: Optional[str] = None,
+        config: Optional[dict] = None,
+        output_path: Optional[str] = None,
         # setup_measurements
-        width_cm=None,
-        length_cm=None,
-        diameter_cm=None,
-        skip_yolo=None,
-        skip_qr=None,
-        detect_label=None,
-        confidence=None,
-        detect_color_checker=None,
-        scale_factor=None,
+        width_cm: Optional[float] = None,
+        length_cm: Optional[float] = None,
+        diameter_cm: Optional[float] = None,
+        skip_yolo: Optional[bool] = None,
+        skip_qr: Optional[bool] = None,
+        detect_label: Optional[bool] = None,
+        confidence: Optional[float] = None,
+        detect_color_checker: Optional[bool] = None,
+        scale_factor: Optional[float] = None,
         # generate_fruit_mask
-        lower_hsv=None,
-        upper_hsv=None,
-        background_color=None,
-        n_iteration=None,
-        kernel_blur=None,
-        kernel_open=None,
-        kernel_close=None,
-        canny_min=None,
-        canny_max=None,
-        fill_holes=None,
-        apply_convex_hull=None,
-        remove_roi=None,
-        roi_expansion=None,
-        stamp=None,
+        lower_hsv: Optional[Tuple[int, int, int]] = None,
+        upper_hsv: Optional[Tuple[int, int, int]] = None,
+        background_color: Optional[str] = None,
+        n_iteration: Optional[int]=None,
+        kernel_blur: Optional[int]=None,
+        kernel_open: Optional[int]=None,
+        kernel_close: Optional[int]=None,
+        canny_min: Optional[int]=None,
+        canny_max: Optional[int]=None,
+        fill_holes: Optional[bool] = None,
+        apply_convex_hull: Optional[bool] = None,
+        remove_roi: Optional[bool] = None,
+        roi_expansion: Optional[int] = None,
+        stamp: Optional[bool] = None,
+        erosion_px: Optional[int] = None,
         # detect_fruits
-        min_fruit_area=None,
-        max_fruit_area=None,
-        min_fruit_circularity=None,
-        rescale_factor=None,
+        min_fruit_area: Optional[int] = None,
+        max_fruit_area: Optional[int]=None,
+        min_fruit_circularity: Optional[float]=None,
+        rescale_factor: Optional[float]=None,
         # analyze_morphology
-        contour_mode=None,
-        epsilon=None,
-        angle_shifts=None,
-        num_rays=None,
+        contour_mode: Optional[str]=None,
+        epsilon: Optional[float]=None,
+        angle_shifts: Optional[int]=None,
+        num_rays: Optional[int]=None,
         # analyze_color
-        stat=None,
-        color_space=None,
-        label_opacity=None,
-        get_color_histogram=None,
+        stat: Optional[str]=None,
+        color_space: Optional[str]=None,
+        label_opacity: Optional[float]=None,
+        get_color_histogram: Optional[bool]=None,
         # plot
-        pericarp_ext_color=None,
-        pericarp_ext_thickness=None,
-        label_position=None,
-        label_color=None,
-        font_size=None,
-        font_thickness=None,
-        font_color=None,
+        pericarp_ext_color: Optional[Tuple[int, int, int]]=None,
+        pericarp_ext_thickness: Optional[int] = None,
+        label_position: Optional[str] = None,
+        label_color: Optional[Tuple[int, int, int]]=None,
+        font_size: Optional[int] = None,
+        font_thickness: Optional[int]=None,
+        font_color: Optional[Tuple[int, int, int]]=None,
     ):
         """
         Process all images in the folder passed to :class:`FruitExternalAnalyzer`.
@@ -834,9 +835,9 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             If True, detect a color checker for color correction.
         scale_factor : float or None, optional
             Downscaling factor applied during reference detection.
-        lower_hsv : List[int] or None, optional
+        lower_hsv : Tuple[int,int,int] or None, optional
             Lower HSV threshold for fruit segmentation.
-        upper_hsv : List[int] or None, optional
+        upper_hsv : Tuple[int,int,int] or None, optional
             Upper HSV threshold for fruit segmentation.
         background_color : str or None, optional
             Expected background color used to guide segmentation.
@@ -899,6 +900,12 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             raise ValueError(
                 "analyze_folder() requires a directory path. "
                 "Pass a folder to FruitExternalAnalyzer(), not a single file."
+            )
+
+        if not analyze_color and not analyze_morphology:
+            raise ValueError(
+                "analyze_color=False and analyze_morphology=False.\n"
+                "analyze_folder() requires that at least one of them is True."
             )
 
         folder_path = self.input_path
@@ -973,6 +980,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                 background_color=background_color,
                 fill_holes=fill_holes,
                 apply_convex_hull=apply_convex_hull,
+                erosion_px = erosion_px
             ),
         )
         _apply(
@@ -1150,6 +1158,11 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         total_time = (session_end - session_start).total_seconds()
         avg_time = total_time / len(img_paths) if img_paths else 0
 
+        if total_time < 60:
+            time_str = f"{total_time:.1f}s"
+        else:
+            time_str = f"{total_time / 60:.1f}min"
+
         def _filter_params(p):
             return {
                 k: v
@@ -1178,7 +1191,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             f"analyze_color        : {analyze_color}",
             f"JSON path            : {json_report}",
             f"num_cores            : {num_cores}",
-            f"total time           : {total_time:.1f}s",
+            f"total time           : {time_str}",
             f"avg per image        : {avg_time:.1f}s",
             "",
             "=" * 70,
@@ -1264,7 +1277,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                     print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
                 print(f"        - Total fruits: {total_fruits}")
                 print(
-                    f"        - Total time: {total_time:.1f}s  (avg {avg_time:.1f}s/img)"
+                    f"        - Total time: {time_str} (avg {avg_time:.1f}s/img)"
                 )
                 print("    > Files saved:")
                 print(f"        - {total_img_processed} annotated image(s)")

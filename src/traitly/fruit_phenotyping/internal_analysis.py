@@ -904,8 +904,8 @@ class FruitInternalAnalyzer:
         plot: bool = True,
         plot_size: Tuple[int, int] = (5, 5),
         stamp: bool = False,
-        lower_hsv: Optional[List[int]] = None,
-        upper_hsv: Optional[List[int]] = None,
+        lower_hsv: Optional[Tuple[int,int,int]] = None,
+        upper_hsv: Optional[Tuple[int,int,int]] = None,
         n_iteration: int = 1,
         kernel_blur: Optional[int] = None,
         kernel_open: Optional[int] = None,
@@ -1143,7 +1143,7 @@ class FruitInternalAnalyzer:
         kernel_blur: Optional[int] = None,
         erosion_px: int = 10,
         otsu_offset: Optional[int] = None,
-        min_fruit_area: int = 5000,
+        min_fruit_area: int = 1000,
         min_locule_area: int = 0,
         invert_locule: bool = False,
         plot: bool = True,
@@ -1173,7 +1173,7 @@ class FruitInternalAnalyzer:
             Default is None.
         min_fruit_area : int, optional
             Minimum area in pixels to retain a fruit region during mask
-            fusion. Default is 5000.
+            fusion. Default is 1000.
         invert_locule : bool, optional
             If True, invert the locule binary mask before fusion. Useful when
             locules are brighter than the surrounding pericarp. Default is
@@ -2450,8 +2450,8 @@ class FruitInternalAnalyzer:
         scale_factor: Optional[float] = None,
         # generate_fruit_mask
         stamp: Optional[bool] = None,
-        lower_hsv: Optional[List[int]] = None,
-        upper_hsv: Optional[List[int]] = None,
+        lower_hsv: Optional[Tuple[int,int,int]] = None,
+        upper_hsv: Optional[Tuple[int,int,int]] = None,
         n_iteration: Optional[int] = None,
         kernel_blur: Optional[int] = None,
         kernel_open: Optional[int] = None,
@@ -2463,6 +2463,7 @@ class FruitInternalAnalyzer:
         background_color: Optional[str] = None,
         fill_holes: Optional[bool] = None,
         apply_convex_hull: Optional[bool] = None,
+        erosion_px: Optional[int] = None,
         # enhance_locule_contrast
         contrast_method: Optional[str] = None,
         gamma: Optional[float] = None,
@@ -2670,6 +2671,12 @@ class FruitInternalAnalyzer:
                 "Pass a folder to FruitInternalAnalyzer(), not a single file."
             )
 
+        if not analyze_color and not analyze_morphology:
+            raise ValueError(
+                "analyze_color=False and analyze_morphology=False.\n"
+                "analyze_folder() requires that at least one of them is True."
+            )
+
         folder_path = self.input_path
 
         # Validate number of cores (num_cores)
@@ -2750,6 +2757,7 @@ class FruitInternalAnalyzer:
                 background_color=background_color,
                 fill_holes=fill_holes,
                 apply_convex_hull=apply_convex_hull,
+                erosion_px = erosion_px
             ),
         )
         _apply(
@@ -2773,7 +2781,7 @@ class FruitInternalAnalyzer:
                 min_fruit_area=min_fruit_area_locule,
                 kernel_close=kernel_close_locule,
                 kernel_open=kernel_open_locule,
-                invert_locule=invert_locule,
+                invert_locule=invert_locule
             ),
         )
         _apply(
@@ -2995,6 +3003,11 @@ class FruitInternalAnalyzer:
         total_time = (session_end - session_start).total_seconds()
         avg_time = total_time / len(img_paths) if img_paths else 0
 
+        if total_time < 60:
+            time_str = f"{total_time:.1f}s"
+        else:
+            time_str = f"{total_time / 60:.1f}min"
+
         def _filter_params(p: Dict) -> Dict:
             return {
                 k: v
@@ -3023,7 +3036,7 @@ class FruitInternalAnalyzer:
             f"analyze_color        : {analyze_color}",
             f"JSON path            : {json_report}",
             f"num_cores            : {num_cores}",
-            f"total time           : {total_time:.1f}s",
+            f"total time           : {time_str}",
             f"avg per image        : {avg_time:.1f}s",
             "",
             "=" * 70,
@@ -3117,7 +3130,7 @@ class FruitInternalAnalyzer:
                     print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
                 print(f"        - Total fruits: {total_fruits}")
                 print(
-                    f"        - Total time: {total_time:.1f}s  (avg {avg_time:.1f}s/img)"
+                    f"        - Total time: {time_str}  (avg {avg_time:.1f}s/img)"
                 )
                 print("    > Files saved:")
                 print(f"        - {total_img_processed} annotated image(s)")
