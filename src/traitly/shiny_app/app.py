@@ -3913,14 +3913,14 @@ def server(input: Inputs, output: Outputs, session: Session):
         if not files:
             return ui.p("Upload a PDF file first.", class_="text-info")
         try:
-            from traitly.utils.convert_pdf import pdf_to_img
+            from traitly.pdf import pdf_to_img
         except ImportError:
             return ui.div(
                 ui.p(
                     '<i class="fa-solid fa-triangle-exclamation"></i> PyMuPDF is not installed.',
                     class_="text-danger",
                 ),
-                ui.pre("Install it with:  pip install traitly[pdf]"),
+                ui.pre('Install it with:  pip install "traitly[pdf]"'),
             )
 
         all_saved = []
