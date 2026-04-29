@@ -13,7 +13,7 @@ import pytest
 # ============================================================================
 # INTERNAL IMPORTS
 # ============================================================================
-from traitly.utils.convert_pdf import pdf_to_img
+from traitly.pdf import pdf_to_img
 
 pdf = Path(__file__).parent / "data/internal/cranberry_slices.pdf"
 
