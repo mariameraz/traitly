@@ -23,8 +23,8 @@ try:
 
 except ImportError:
     raise RuntimeError(
-        "pdf_to_img function requires PyMuPDF. To install, run:\n"
-        "pip install traitly[pdf]"
+        'pdf_to_img function requires PyMuPDF. To install, run:\n'
+        'pip install "traitly[pdf]"'
     )
 
 # ============================================================================

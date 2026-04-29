@@ -29,8 +29,8 @@ try:
     from shiny import App, Inputs, Outputs, Session, reactive, render, ui
 except ImportError:
     raise RuntimeError(
-        f"Traitly App requires shiny installed. To install, run:\n"
-        "pip install traitly[all]"
+        f'Traitly App requires shiny installed. To install, run:\n'
+        'pip install "traitly[all]"'
     )
 #########################################################################################
 # INTERNAL IMPORTS
