@@ -26,7 +26,7 @@ Primero, cargamos la clase `FruitExternalAnalyzer` desde Traitly y la imagen a a
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 
-input_path_img = '~/ext_analysis_sample1.jpg'
+path_img = '~/ext_analysis_sample1.jpg'
 
 pic_test = FruitExternalAnalyzer(path_img)
 

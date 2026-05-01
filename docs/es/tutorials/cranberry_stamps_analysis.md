@@ -29,7 +29,7 @@ from traitly.fruit_phenotyping import FruitInternalAnalyzer
 ```python
 # Crear el objeto `cranberry`
 input_path = "./cranberry_stamps.jpg"
-cranberry = FruitInternalAnalyzer(path)
+cranberry = FruitInternalAnalyzer(input_path)
 
 # Cargar nuestra imagen
 cranberry.load_image()
