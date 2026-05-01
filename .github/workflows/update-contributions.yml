@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Update contributors table
-        run: python .github/contributors.py
+        run: python .github/update-contributors.py
 
       - name: Create Contributors PR
         uses: peter-evans/create-pull-request@v7
