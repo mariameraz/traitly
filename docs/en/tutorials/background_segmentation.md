@@ -36,7 +36,7 @@ from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 ```python
 input_path = './Test_10.png'
-blue_example = FruitExternalAnalyzer(path)
+blue_example = FruitExternalAnalyzer(input_path)
 blue_example.load_image()
 blue_example.setup_measurements(verbose = False)
 ```

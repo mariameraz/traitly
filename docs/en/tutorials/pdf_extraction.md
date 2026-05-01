@@ -41,7 +41,7 @@ Note that the function returns the path of each generated image. If you do not w
 ```python
 input_path = "./cranberry_slices.pdf"  # Path to the PDF file
 
-temp = pdf_to_img(pdf_path = path,
+temp = pdf_to_img(pdf_path = input_path,
                   dpi = 150, 
                   detect_qr = True, 
                   output_format = 'png')

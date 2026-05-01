@@ -31,7 +31,7 @@ from traitly.fruit_phenotyping import FruitInternalAnalyzer
 
 ```python
 input_path = "./cranberry_slices.jpg"
-cranberry = FruitInternalAnalyzer(path = path)
+cranberry = FruitInternalAnalyzer(path = input_path)
 ```
 
 Primero, cargamos la imagen en el objeto mediante `load_image()`. Por defecto, la imagen se mostrará en pantalla (`plot=True`). Una vez cargada, puede accederse a ella a través de `cranberry.img`. Para más detalles sobre los datos almacenados en el objeto, consulta el apartado de [atributos de la clase].
