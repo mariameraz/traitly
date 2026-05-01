@@ -1,5 +1,8 @@
 # Contributions
 
+> [!NOTE]
+> This repository uses an automated contributor system inspired by the [All Contributors][(allcontributors.org)](https://allcontributors.org/) specification to recognize all forms of contribution, including code, documentation, ideas, testing, and feedback.
+
 To keep the contributors table organized across README files, this repository uses GitHub Actions to automate the process.
 
 To add a new contributor to the table, refer to `.github/contributors.yml`.
@@ -7,7 +10,7 @@ To add a new contributor to the table, refer to `.github/contributors.yml`.
 Under the `contributors` section, add:
 - Contributor name (`name`)
 - GitHub username (`github`)
-- Contribution role(s) (emoji key based on allcontributors.org) (`roles`)
+- Contribution role(s) (`roles`)
 
 Once changes to the `.yml` file are saved and pushed, a `chore: update contributors table` commit will be made automatically by our `contributions-bot` across all available `README*.md` files.
 
