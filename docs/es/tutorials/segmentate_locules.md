@@ -43,7 +43,7 @@ Como primer ejemplo usaremos una imagen de tomate. Dado que la imagen contiene u
 
 ```python
 input_path = "./tomato_2.tif"
-tomato = FruitInternalAnalyzer(path)
+tomato = FruitInternalAnalyzer(input_path)
 tomato.load_image()
 ```
 

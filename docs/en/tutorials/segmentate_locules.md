@@ -47,7 +47,7 @@ For our first example we'll use a tomato image. Since the image contains a singl
 
 ```python
 input_path = "./tomato_2.tif"
-tomato = FruitInternalAnalyzer(path)
+tomato = FruitInternalAnalyzer(input_path)
 tomato.load_image()
 ```
 
@@ -258,7 +258,7 @@ Just like before, we start by generating the fruit mask with `generate_fruit_mas
 
 ```python
 input_path = "./tomato_1.tif"
-tomato = FruitInternalAnalyzer(path)
+tomato = FruitInternalAnalyzer(input_path)
 tomato.load_image(show_axis = True, x = 400, y = 500, w = 1200, h = 1200)
 tomato.generate_fruit_mask()
 ```
