@@ -153,13 +153,12 @@ We are open to collaborations, including adding new traits, and creating tutoria
 
 ## Contributions
 
-> [!NOTE]
-> Inspired by [All Contributors](https://allcontributors.org/), we recognize all kinds of contributions, not just code.
+Inspired by [All Contributors](https://allcontributors.org/), we recognize all kinds of contributions, not just code:
 
 <!-- CONTRIBUTORS-START -->
 | Contributor | Role |
 |-------------|------|
-| [<img src="https://github.com/mariameraz.png" width="44" height="44" valign="middle">&nbsp;María Meraz](https://github.com/mariameraz) | 💻 📆 💬 🚧 🚇 📓 ✅ 🐛 📖 ⚠️ 🤔 🌍 🎨 |
+| [<img src="https://github.com/mariameraz.png" width="44" height="44" valign="middle">&nbsp;María Meraz](https://github.com/mariameraz) | 💻 📆 🚧 📓 ✅ 🐛 📖 ⚠️ 🤔 🌍 |
 | [<img src="https://github.com/hector-LM.png" width="44" height="44" valign="middle">&nbsp;Héctor López](https://github.com/hector-LM) | 📖 📓 ✅ 🤔 🐛 🔣 🌍 |
 | Juan Zalapa | 🔣 |
 <!-- CONTRIBUTORS-END -->
