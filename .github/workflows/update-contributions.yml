@@ -4,7 +4,8 @@ on:
   push:
     branches: [traitly-dev]
     paths:
-      - ".github/contributors.yml"
+      - ".github/workflows/update-contributions.yml"
+
   workflow_dispatch:
 
 permissions:
@@ -16,16 +17,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-
       - name: Update contributors table
-        run: python .github/workflows/update-contributors.py
+        run: python .github/contributors.py
 
       - name: Create Contributors PR
-      uses: peter-evans/create-pull-request@v7
-              with:
-                token: ${{ secrets.GITHUB_TOKEN }}
-                commit-message: "chore: update contributors table"
-                branch: bot/update-contributors
-                title: "chore: update contributors table"
-                body: "Update contributors table."
-                delete-branch: true
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update contributors table"
+          branch: bot/update-contributors
+          title: "chore: update contributors table"
+          body: "Update contributors table."
+          delete-branch: true
