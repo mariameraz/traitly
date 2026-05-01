@@ -23,3 +23,7 @@ dist/
 requirements.txt
 requirements-dev.txt
 __pycache__/
+
+
+# test: result files 
+tests/data/external/blue_bg/Results
