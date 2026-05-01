@@ -153,8 +153,7 @@ We are open to collaborations, including adding new traits, and creating tutoria
 
 ## Contributions
 
-> [!NOTE]
-> Inspired by [All Contributors](https://allcontributors.org/), we recognize all kinds of contributions, not just code.
+Inspired by [All Contributors](https://allcontributors.org/), we recognize all kinds of contributions, not just code:
 
 <!-- CONTRIBUTORS-START -->
 | Contributor | Role |
