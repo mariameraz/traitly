@@ -2,14 +2,14 @@ name: Update Contributors
 
 on:
   push:
-    branches: [main]
+    branches: [traitly-dev]
     paths:
       - ".github/contributors.yml"
   workflow_dispatch:
 
-
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   update:
@@ -20,10 +20,12 @@ jobs:
       - name: Update contributors table
         run: python .github/update-contributors.py
 
-      - name: Commit changes
-        run: |
-          git config user.name "contributors-bot"
-          git config user.email "contributors-bot@users.noreply.github.com"
-          git add README*.md
-          git diff --cached --quiet || (git commit -m "chore: update contributors table" && git push)
-          
+      - name: Create Contributors PR
+      uses: peter-evans/create-pull-request@v7
+              with:
+                token: ${{ secrets.GITHUB_TOKEN }}
+                commit-message: "chore: update contributors table"
+                branch: bot/update-contributors
+                title: "chore: update contributors table"
+                body: "Update contributors table."
+                delete-branch: true
