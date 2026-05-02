@@ -1805,7 +1805,6 @@ tab_batch = ui.nav_panel(
     ui.layout_columns(
         ui.div(
             ui.HTML('<p class="panel-title">Batch Analysis</p>'),
-            ui.HTML('<div class="sb-label">Images</div>'),
             ui.input_file(
                 "batch_files",
                 "Select images",
@@ -1870,7 +1869,6 @@ tab_pdf = ui.nav_panel(
     ui.layout_columns(
         ui.div(
             ui.HTML('<p class="panel-title">PDF Extractor</p>'),
-            ui.HTML('<div class="sb-label">PDF File</div>'),
             ui.input_file("pdf_file", "Upload PDF", accept=[".pdf"], multiple=True),
             # ui.output_ui("pdf_file_info"),
             ui.hr(),
@@ -2075,6 +2073,16 @@ def server(input: Inputs, output: Outputs, session: Session):
         steps = _steps(mode)
         items = []
 
+        if mode == "internal":
+            mode_badge = ('<div class="sb-mode-badge internal" style="margin: 0.5rem 0 1rem 0; padding: 0.3rem 0.7rem; background: #eff6ff; '
+                        'color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 20px; font-size: 1.4rem; '
+                        'font-weight: 600; text-align: center;">Internal Analysis</div>')
+        else:
+            mode_badge = ('<div class="sb-mode-badge external" style="margin: 0.5rem 0 1rem 0; padding: 0.3rem 0.7rem; '
+                            'background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; border-radius: 20px; font-size: 1.4rem; '
+                            'font-weight: 600; text-align: center;">External Analysis</div>')
+
+
         for i, (sid, icon, label) in enumerate(steps):
             is_done = i in done
             is_active = sid == cur
@@ -2096,6 +2104,7 @@ def server(input: Inputs, output: Outputs, session: Session):
 
         return ui.div(
             ui.HTML('<div class="sb-label">Pipeline Steps</div>'),
+            ui.HTML(mode_badge),
             *items,
             ui.hr(),
             ui.input_action_button("reset_btn", "↻ Reset", class_="btn btn-reset"),
