@@ -29,8 +29,8 @@ try:
     from shiny import App, Inputs, Outputs, Session, reactive, render, ui
 except ImportError:
     raise RuntimeError(
-        f'Traitly App requires shiny installed. To install, run:\n'
-        'pip install "traitly[all]"'
+        f"Traitly App requires shiny installed. To install, run:\n"
+        "pip install traitly[all]"
     )
 #########################################################################################
 # INTERNAL IMPORTS
@@ -39,11 +39,11 @@ try:
     from traitly import __version__
     from traitly.fruit_phenotyping import FruitExternalAnalyzer, FruitInternalAnalyzer
 
+    traitly_available = True
 except ImportError:
-    raise RuntimeError(
-        f'Traitly App requires traitly installed. To install, run:\n'
-        'pip install "traitly[all]"'
-    )
+    __version__ = "dev"
+    traitly_available = False
+
 
 _CSS = """
 /* for HF */
@@ -238,7 +238,7 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
 
 .sb-label {
     font-size:1.9rem; font-weight:700; text-transform:uppercase;
-    letter-spacing:.09em; color:#94a3b8; margin: 5.9rem 6.9 5.3rem 0.8rem;
+    letter-spacing:.09rem; color:#94a3b8; margin: 5.9rem 6.9rem 5.3rem 0.8rem;
     gap: 5rem;
 }
 .sb-mode-badge {
@@ -863,6 +863,20 @@ function showToast(msg) {{
     t.classList.add('show');
     setTimeout(function() {{ t.classList.remove('show'); }}, 2000);
 }}
+
+Shiny.addCustomMessageHandler('get_current_mode', function() {{
+    // Determinar qué botón está activo (por la clase 'active')
+    var internalBtn = document.getElementById('hn-1');
+    var externalBtn = document.getElementById('hn-2');
+    var mode = 'internal';  // por defecto
+    if (externalBtn && externalBtn.classList.contains('active')) {{
+        mode = 'external';
+    }} else if (internalBtn && internalBtn.classList.contains('active')) {{
+        mode = 'internal';
+    }}
+    Shiny.setInputValue('js_mode', mode, {{priority: 'event'}});
+}}
+
 </script>
 """
 
@@ -1938,20 +1952,12 @@ app_ui = ui.page_sidebar(
 # servers
 def server(input: Inputs, output: Outputs, session: Session):
 
-    ## for debugging:
-    # print temp files path
-    _orig_mkdtemp = tempfile.mkdtemp
-    def _tracked_mkdtemp(*args, **kwargs):
-        d = _orig_mkdtemp(*args, **kwargs)
-        print(f"[tmp created] {d}", flush=True)
-        return d
-    tempfile.mkdtemp = _tracked_mkdtemp
-
     r_analyzer = reactive.value(None)
     r_completed = reactive.value([])
-    r_mode = reactive.value("home")
+    r_mode = reactive.value(None)
     r_cur_step = reactive.value("step_setup")
     r_bg_analyzer = reactive.value(None)
+    # r_output_folder = reactive.value("")
     r_batch_zip = reactive.value(None)
     r_pdf_zip = reactive.value(None)
     r_morph_zip = reactive.value(None)
@@ -1978,7 +1984,6 @@ def server(input: Inputs, output: Outputs, session: Session):
     r_mask_points = reactive.value([])
     r_mask_mode = reactive.value("white")
     r_mask_history = reactive.value([])
-
 
     def _steps(mode):
         if mode == "internal":
@@ -2018,14 +2023,15 @@ def server(input: Inputs, output: Outputs, session: Session):
     def _on_main_tab():
         tab = input.js_main_tab()
         ui.update_navs("main_tab", selected=tab, session=session)
-        if tab not in ("tab_analysis",):
-            r_mode.set(tab.replace("tab_", ""))
+
+        if tab == "tab_analysis" and r_mode.get() is None:
+            session.send_custom_message("get_current_mode", {})
 
     @reactive.effect
     @reactive.event(input.js_mode)
     def _on_mode():
         new_mode = input.js_mode()
-        if new_mode != r_mode.get():
+        if new_mode in ("internal", "external"):
             r_mode.set(new_mode)
             r_completed.set([])
             r_cur_step.set("step_setup")
@@ -2057,17 +2063,15 @@ def server(input: Inputs, output: Outputs, session: Session):
     @render.ui
     def sidebar_content():
         mode = r_mode.get()
+
+        if mode is None:
+            return ui.div(
+                ui.HTML('<div class="sb-label">Pipeline Steps</div>'),
+                ui.p("Click Internal or External to start.",
+                    style="font-size:1.4rem; color:#64748b; padding: 1rem;")
+            )
         done = r_completed.get()
         cur = r_cur_step.get()
-
-        if mode not in ("internal", "external"):
-            return ui.div(
-                ui.HTML('<div class="sb-label">Navigation</div>'),
-                ui.HTML(
-                    '<p style="font-size:1.0rem;color:#64748b;padding:.3rem .5rem">'
-                    "Select Internal or External from the top bar to start the pipeline.</p>"
-                ),
-            )
 
         steps = _steps(mode)
         items = []
@@ -2181,6 +2185,16 @@ def server(input: Inputs, output: Outputs, session: Session):
         return dest_path
 
     def _do_load_image():
+        if not traitly_available:
+            r_step1_result.set(
+                ui.p(
+                    '<i class="fa-solid fa-triangle-exclamation"></i> traitly is not installed. Run: `pip install traitly` first.',
+                    class_="text-danger",
+                    style="font-size:2rem;",
+                )
+            )
+            return
+
         f = input.upload_img()
         if not f:
             return
@@ -3330,23 +3344,26 @@ def server(input: Inputs, output: Outputs, session: Session):
                 async def dl_morph():
                     yield csv_b
 
+            tmp_dir = tempfile.mkdtemp()
             base = (
                 r_original_img_name.get()
                 or os.path.splitext(os.path.basename(az.input_path))[0]
             )
+            ann_path = os.path.join(tmp_dir, f"{base}_processed.png")
+            if az.results is not None and az.results.morphology_image is not None:
+                cv2.imwrite(ann_path, az.results.morphology_image)
+            if df is not None and not df.empty:
+                df.to_csv(
+                    os.path.join(tmp_dir, f"{base}_morphology_results.csv"), index=False
+                )
             params_saved = False
+            if input.save_params_morph():
+                params_saved = True
+                az.save_parameters(output_path=tmp_dir)
             zip_buf = io.BytesIO()
             with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
-                if az.results is not None and az.results.morphology_image is not None:
-                    success, encoded = cv2.imencode(".jpg", az.results.morphology_image, [cv2.IMWRITE_JPEG_QUALITY, 95])
-                    if success:
-                        zf.writestr(f"{base}_processed.png", encoded.tobytes())
-                if df is not None and not df.empty:
-                    zf.writestr(f"{base}_morphology_results.csv", df.to_csv(index=False))
-                if input.save_params_morph():
-                    params_saved = True
-                    zf.writestr(f"{base}_parameters.txt", az.parameters.to_formatted_string())
-                    zf.writestr(f"{base}_parameters.json", json.dumps(az.parameters.to_dict(), indent=2))
+                for fname in os.listdir(tmp_dir):
+                    zf.write(os.path.join(tmp_dir, fname), arcname=fname)
             r_morph_zip.set(zip_buf.getvalue())
             r_morph_base.set(base)
             parts.append(
@@ -3528,10 +3545,12 @@ def server(input: Inputs, output: Outputs, session: Session):
                 async def dl_color_csv():
                     yield csv_b
 
+            tmp_dir = tempfile.mkdtemp()
             base = (
                 r_original_img_name.get()
                 or os.path.splitext(os.path.basename(az.input_path))[0]
             )
+
             ann_img = getattr(az.results, "morphology_image", None)
             col_img = getattr(az.results, "color_image", None)
             if ann_img is not None:
@@ -3540,19 +3559,23 @@ def server(input: Inputs, output: Outputs, session: Session):
                 img_to_save, img_filename = col_img, f"{base}_color.png"
             else:
                 img_to_save = img_filename = None
+
+            if img_to_save is not None:
+                cv2.imwrite(os.path.join(tmp_dir, img_filename), img_to_save)
+            if df is not None and not df.empty:
+                df.to_csv(
+                    os.path.join(tmp_dir, f"{base}_color_results.csv"), index=False
+                )
+
             params_saved = False
+            if input.save_params_color():
+                params_saved = True
+                az.save_parameters(output_path=tmp_dir)
+
             zip_buf = io.BytesIO()
             with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
-                if img_to_save is not None:
-                    success, encoded = cv2.imencode(".jpg", img_to_save, [cv2.IMWRITE_JPEG_QUALITY, 95])
-                    if success:
-                        zf.writestr(img_filename, encoded.tobytes())
-                if df is not None and not df.empty:
-                    zf.writestr(f"{base}_color_results.csv", df.to_csv(index=False))
-                if input.save_params_color():
-                    params_saved = True
-                    zf.writestr(f"{base}_parameters.txt", az.parameters.to_formatted_string())
-                    zf.writestr(f"{base}_parameters.json", json.dumps(az.parameters.to_dict(), indent=2))
+                for fname in os.listdir(tmp_dir):
+                    zf.write(os.path.join(tmp_dir, fname), arcname=fname)
             r_color_zip.set(zip_buf.getvalue())
             r_color_base.set(base)
 
@@ -3725,8 +3748,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         is_int = input.batch_mode() == "internal"
         num_cores = max(1, int(input.batch_num_cores()))
 
-        _batch_tmp = tempfile.TemporaryDirectory()
-        tmp_root = _batch_tmp.name
+        tmp_root = tempfile.mkdtemp()
         img_dir = os.path.join(tmp_root, "images")
         output_path = os.path.join(tmp_root, "Results")
         os.makedirs(img_dir, exist_ok=True)
@@ -3797,16 +3819,13 @@ def server(input: Inputs, output: Outputs, session: Session):
             except Exception:
                 pass
 
-
-        zip_path = os.path.join(tmp_root, "batch_results.zip")
-        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
             for fname in out_files:
                 full = os.path.join(output_path, fname)
                 if os.path.isfile(full):
                     zf.write(full, arcname=fname)
-        with open(zip_path, "rb") as fh:
-            r_batch_zip.set(fh.read())
-        _batch_tmp.cleanup()  # Detele tmp files
+        r_batch_zip.set(zip_buf.getvalue())
 
         status_color = (
             "#dc2626"
@@ -3907,19 +3926,18 @@ def server(input: Inputs, output: Outputs, session: Session):
         if not files:
             return ui.p("Upload a PDF file first.", class_="text-info")
         try:
-            from traitly.pdf import pdf_to_img
+            from traitly.utils.convert_pdf import pdf_to_img
         except ImportError:
             return ui.div(
                 ui.p(
                     '<i class="fa-solid fa-triangle-exclamation"></i> PyMuPDF is not installed.',
                     class_="text-danger",
                 ),
-                ui.pre('Install it with:  pip install "traitly[pdf]"'),
+                ui.pre("Install it with:  pip install traitly[pdf]"),
             )
 
         all_saved = []
         all_errors = []
-        _tmps = []
 
         with ui.Progress(min=0, max=len(files), session=session) as p:
             for idx, f in enumerate(files):
@@ -3929,13 +3947,8 @@ def server(input: Inputs, output: Outputs, session: Session):
                     message=f"Extracting {idx + 1}/{len(files)}…",
                     detail=pdf_name,
                 )
-                _pdf_tmp = tempfile.TemporaryDirectory()
-                _tmps.append(_pdf_tmp) # save the extracted images
-
-                tmp_in = os.path.join(_pdf_tmp.name, "in")
-                tmp_out = os.path.join(_pdf_tmp.name, "out")
-                os.makedirs(tmp_in, exist_ok=True)
-                os.makedirs(tmp_out, exist_ok=True)
+                tmp_in = tempfile.mkdtemp()
+                tmp_out = tempfile.mkdtemp()
                 pdf_path = os.path.join(tmp_in, pdf_name)
                 shutil.copy2(f["datapath"], pdf_path)
                 try:
@@ -3950,7 +3963,6 @@ def server(input: Inputs, output: Outputs, session: Session):
                     all_saved.extend(saved)
                 except Exception as e:
                     all_errors.append(f"{pdf_name}: {e}")
-
             p.set(value=len(files), message="Done!", detail="")
 
         n_pages = len(all_saved)
@@ -3966,60 +3978,39 @@ def server(input: Inputs, output: Outputs, session: Session):
                 zf.write(fpath, arcname=os.path.basename(fpath))
         r_pdf_zip.set(zip_buf.getvalue())
 
-        # create mini visualizations
-        thumb_b64_list = []
+        thumb_html = ""
         for fpath in all_saved[:6]:
             try:
                 img = cv2.imread(fpath)
                 if img is None:
                     continue
                 h, w = img.shape[:2]
-
-                # versión pequeña para la cuadrícula
-                scale_thumb = min(300 / w, 300 / h)
-                if scale_thumb < 1.0:
-                    img_thumb = cv2.resize(img, (int(w * scale_thumb), int(h * scale_thumb)), interpolation=cv2.INTER_AREA)
-                else:
-                    img_thumb = img
-
-                # versión grande para el zoom (máximo 1500px, sin pérdida de calidad)
-                scale_zoom = min(1500 / w, 1500 / h, 1.0)
-                if scale_zoom < 1.0:
-                    img_zoom = cv2.resize(img, (int(w * scale_zoom), int(h * scale_zoom)), interpolation=cv2.INTER_AREA)
-                else:
-                    img_zoom = img
-
-                success_t, enc_t = cv2.imencode(".jpg", img_thumb, [cv2.IMWRITE_JPEG_QUALITY, 85])
-                success_z, enc_z = cv2.imencode(".jpg", img_zoom,  [cv2.IMWRITE_JPEG_QUALITY, 95])
-
-                if success_t and success_z:
-                    thumb_b64_list.append((
-                        base64.b64encode(enc_t.tobytes()).decode(),  # para la cuadrícula
-                        base64.b64encode(enc_z.tobytes()).decode(),  # para el zoom
-                        os.path.basename(fpath)
-                    ))
+                scale = min(300 / w, 300 / h)
+                if scale < 1.0:
+                    img = cv2.resize(
+                        img,
+                        (int(w * scale), int(h * scale)),
+                        interpolation=cv2.INTER_AREA,
+                    )
+                success, encoded = cv2.imencode(".png", img)
+                if not success:
+                    continue
+                b64 = base64.b64encode(encoded.tobytes()).decode()
+                fname = os.path.basename(fpath)
+                thumb_html += f"""
+                <div style="border:1px solid #e2e8f0;border-radius:8px;padding:.5rem;
+                            background:#f8fafc;overflow:hidden;">
+                    <img src="data:image/png;base64,{b64}" class="img-zoomable"
+                        style="width:100%;height:200px;object-fit:contain;
+                                border-radius:6px;display:block;">
+                    <p style="font-size:1.3rem;color:#64748b;text-align:center;
+                            margin-top:.4rem;word-break:break-all;
+                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                    title="{fname}">{fname}</p>
+                </div>
+                """
             except Exception:
                 pass
-
-        # Delete tmp images
-        for t in _tmps:
-            t.cleanup()
-
-        # for the html
-        thumb_html = ""
-        for b64_thumb, b64_zoom, fname in thumb_b64_list:
-            thumb_html += f"""
-            <div style="border:1px solid #e2e8f0;border-radius:8px;padding:.5rem;
-                        background:#f8fafc;overflow:hidden;">
-                <img src="data:image/jpeg;base64,{b64_zoom}" class="img-zoomable"
-                    style="width:100%;height:200px;object-fit:contain;
-                            border-radius:6px;display:block;">
-                <p style="font-size:1.3rem;color:#64748b;text-align:center;
-                        margin-top:.4rem;word-break:break-all;
-                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
-                title="{fname}">{fname}</p>
-            </div>
-            """
 
         n_pdfs = len(files)
         msg = (
@@ -4094,6 +4085,7 @@ app = App(app_ui, server)
 # Run the app with CLI
 def run():
     import argparse
+    import os
     import subprocess
 
     parser = argparse.ArgumentParser(description="Run Traitly Shiny app")
