@@ -238,7 +238,7 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
 
 .sb-label {
     font-size:1.9rem; font-weight:700; text-transform:uppercase;
-    letter-spacing:.09rem; color:#94a3b8; margin: 5.9rem 6.9rem 5.3rem 0.8rem;
+    letter-spacing:.09rem; color:#94a3b8; margin: 1rem 6.9rem 1rem 0.8rem;
     gap: 5rem;
 }
 .sb-mode-badge {
@@ -865,17 +865,16 @@ function showToast(msg) {{
 }}
 
 Shiny.addCustomMessageHandler('get_current_mode', function() {{
-    // Determinar qué botón está activo (por la clase 'active')
     var internalBtn = document.getElementById('hn-1');
     var externalBtn = document.getElementById('hn-2');
-    var mode = 'internal';  // por defecto
+    var mode = 'internal';
     if (externalBtn && externalBtn.classList.contains('active')) {{
         mode = 'external';
     }} else if (internalBtn && internalBtn.classList.contains('active')) {{
         mode = 'internal';
     }}
     Shiny.setInputValue('js_mode', mode, {{priority: 'event'}});
-}}
+}});
 
 </script>
 """
