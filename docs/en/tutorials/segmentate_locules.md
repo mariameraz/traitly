@@ -402,7 +402,7 @@ We'll follow the same steps as before: loading the image and generating the frui
 ```python
 input_path = './dragon_fruit.tif'
 
-dragon_fruit = FruitInternalAnalyzer(path)
+dragon_fruit = FruitInternalAnalyzer(input_path)
 dragon_fruit.load_image(show_axis = True, 
                         x = 400, y = 400, h = 1300, w = 1400)
 dragon_fruit.generate_fruit_mask()

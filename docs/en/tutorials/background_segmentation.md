@@ -76,7 +76,7 @@ In this second example we have an image with a gray background. Since gray is no
 
 ```python
 input_path = './Test_27.png'
-gray_example = FruitExternalAnalyzer(path)
+gray_example = FruitExternalAnalyzer(input_path)
 gray_example.load_image()
 gray_example.setup_measurements(verbose = False)
 ```
