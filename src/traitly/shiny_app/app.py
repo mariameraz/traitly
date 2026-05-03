@@ -272,7 +272,7 @@ body { font-family: 'Inter','Segoe UI',sans-serif; background: var(--body-bg); c
     font-size: 1.5rem; font-weight: 800;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
-.step-check { color:#059669; font-size:.72rem; margin-left:auto; }
+.step-check { color:#059669; font-size:1.6rem; margin-left:auto; }
 
 /* reset button in sidebar */
 .btn-reset {
@@ -691,15 +691,6 @@ body.dark-theme .irs--shiny .irs-bar {
     background: #3b82f6 !important;
 }
 
-#toast-msg {
-    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
-    background: rgba(5,150,105,0.92); color: #fff;
-    font-size: 1.6rem; font-weight: 600;
-    padding: .6rem 1.5rem; border-radius: 30px;
-    z-index: 9998; opacity: 0; pointer-events: none;
-    transition: opacity .3s;
-}
-#toast-msg.show { opacity: 1; }
 
 .bslib-value-box { border-radius:10px !important; border:1px solid #e2e8f0 !important; }
 ::-webkit-scrollbar { width:5px; }
@@ -905,7 +896,7 @@ def img_tag(arr, style="width:100%;border-radius:8px;margin-top:.5rem"):
 
 
 def _df_to_datatable(
-    df: "pd.DataFrame", table_id: str, page_length: int = 10, cols_per_page: int = 7
+    df: "pd.DataFrame", table_id: str, page_length: int = 5, cols_per_page: int = 7
 ) -> str:
     """
     Convert pd.DataFrame to an interactive HTML table
@@ -1665,22 +1656,52 @@ tab_home = ui.nav_panel(
                     <li style="margin-bottom:.4rem"><strong>Session reports</strong>: automatically saves parameters, dependency versions, and metadata for every run.</li>
                 </ul>
             </div>
+            <br><br>
+
+            <h2 class="home-h2">Citation</h2>
+            <div class="home-body">
+                <p style="margin-bottom:1.2rem">
+                    If you use Traitly in your research, please cite it as:
+                </p>
+
+                <p style="margin-bottom:1.2rem; margin-left:2.8rem; font-style: italic;">
+                    Torres-Meraz, M. A., Lopez-Moreno, H., & Zalapa, J. (2026). Traitly: A Python Toolkit for High-Throughput Fruit Phenotyping. Zenodo.
+                    <a href="https://doi.org/10.5281/zenodo.18738366" target="_blank" rel="noopener noreferrer"
+                    style="color: var(--home-link-color, #2d63bc); text-decoration: none; border-bottom: 1px dotted var(--home-link-color, #2d63bc);">
+                        https://doi.org/10.5281/zenodo.18738366
+                    </a>
+                </p>
+            </div>
 
             <br><br>
 
-            <h2 class="home-h2">Built on solid foundations</h2>
+            <h2 class="home-h2">Acknowledgements</h2>
             <div class="home-body">
                 <p style="margin-bottom:1.2rem">
-                    Traitly relies on well-established libraries from the Python scientific ecosystem. Core processing
-                    uses <strong>OpenCV (contrib)</strong>, <strong>NumPy</strong>, <strong>SciPy</strong>,
-                    <strong>pandas</strong>, and <strong>matplotlib</strong>, all with C/C++ backends that guarantee
-                    high performance even in large-scale batch analyses.
-                </p>
-                <p>
-                    This makes Traitly particularly well-suited for <strong>high-throughput phenotyping experiments</strong>
-                    in plant breeding and genetics, where analyzing large populations is common.
+                    We thank the developers of
+                    <a href="https://opencv.org/" target="_blank" rel="noopener noreferrer">OpenCV</a>,
+                    <a href="https://github.com/ultralytics/ultralytics" target="_blank" rel="noopener noreferrer">Ultralytics</a>,
+                    <a href="https://github.com/JaidedAI/EasyOCR" target="_blank" rel="noopener noreferrer">EasyOCR</a>,
+                    <a href="https://numpy.org/" target="_blank" rel="noopener noreferrer">NumPy</a>,
+                    <a href="https://pandas.pydata.org/" target="_blank" rel="noopener noreferrer">Pandas</a>,
+                    <a href="https://matplotlib.org/" target="_blank" rel="noopener noreferrer">Matplotlib</a>, and
+                    <a href="https://shiny.posit.co/py/" target="_blank" rel="noopener noreferrer">Shiny</a>, as well as all open-source libraries that
+                    made this project possible.
                 </p>
             </div>
+
+        <br><br>
+
+        <h2 class="home-h2">Contributors</h2>
+            <p style="margin-bottom: 1.5rem;">
+                <a href="https://github.com/mariameraz" target="_blank" style="text-decoration: none; margin-right: 1rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <img src="https://github.com/mariameraz.png" width="74" height="74" style="border-radius: 80%;">
+                </a>
+                <a href="https://github.com/hector-LM" target="_blank" style="text-decoration: none; margin-right: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                    <img src="https://github.com/hector-LM.png" width="74" height="74" style="border-radius: 80%;">
+                </a>
+            </p>
+
         </div>
         """),
     ),
@@ -2074,12 +2095,12 @@ def server(input: Inputs, output: Outputs, session: Session):
         items = []
 
         if mode == "internal":
-            mode_badge = ('<div class="sb-mode-badge internal" style="margin: 0.5rem 0 1rem 0; padding: 0.3rem 0.7rem; background: #eff6ff; '
-                        'color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 20px; font-size: 1.4rem; '
+            mode_badge = ('<div class="sb-mode-badge internal" style="margin: 0.5rem 0 1rem 0; padding: 0.3rem 0.7rem; background: #ffeffd; '
+                        'color: #c91f91; border: 1px solid #febfe7; border-radius: 20px; font-size: 1.4rem; '
                         'font-weight: 600; text-align: center;">Internal Analysis</div>')
         else:
             mode_badge = ('<div class="sb-mode-badge external" style="margin: 0.5rem 0 1rem 0; padding: 0.3rem 0.7rem; '
-                            'background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; border-radius: 20px; font-size: 1.4rem; '
+                            'background: #f0f7fd; color: #156b80; border: 1px solid #bbc9f7; border-radius: 20px; font-size: 1.4rem; '
                             'font-weight: 600; text-align: center;">External Analysis</div>')
 
 
@@ -3202,7 +3223,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 kw["pericarp_int_color"] = _parse_color(input.pericarp_int_color_det())
                 kw["pericarp_int_thickness"] = input.pericarp_int_thickness_det()
             az.detect_fruits(**kw)
-            idx = 4 if is_int else 2
+            idx = 5 if is_int else 3
             mark_done(idx)
             buf = io.BytesIO()
             plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
@@ -3313,7 +3334,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                     )
                 )
             df = az.analyze_morphology(**kw)
-            idx = 5 if is_int else 3
+            idx = 6 if is_int else 4
             mark_done(idx)
             buf = io.BytesIO()
             plt.gcf().savefig(buf, format="png", bbox_inches="tight", dpi=100)
@@ -3335,8 +3356,8 @@ def server(input: Inputs, output: Outputs, session: Session):
                         ui.HTML(
                             '<i class="fa-solid fa-file-arrow-down"></i> Download CSV'
                         ),
-                        class_="btn btn-primary mt-2",
-                        style="margin-right: 1.5rem !important",
+                        class_="btn btn-primary",
+                        style="font-size:1.8rem;padding:.7rem 1.2rem;"
                     ),
                 ]
 
@@ -3344,7 +3365,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 def morph_table_dt():
                     return ui.HTML(
                         _df_to_datatable(
-                            df, "morph_dt_tbl", page_length=10, cols_per_page=7
+                            df, "morph_dt_tbl", page_length=5, cols_per_page=7
                         )
                     )
 
@@ -3378,9 +3399,10 @@ def server(input: Inputs, output: Outputs, session: Session):
                 ui.download_button(
                     "dl_morph_zip",
                     ui.HTML(
-                        '<i class="fa-solid fa-file-arrow-down"></i> Download image + csv (.zip)'
+                        '<i class="fa-solid fa-file-arrow-down"></i> Download CSV + Image (.zip)'
                     ),
-                    class_="btn btn-primary mt-2",
+                    class_="btn btn-primary",
+                    style="margin-left: 1.5rem; font-size:1.8rem;padding:.7rem 1.2rem;"
                 )
             )
             if params_saved:
@@ -3511,7 +3533,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 kw["locule_thickness"] = input.locule_thick_color()
 
             df = az.analyze_color(**kw)
-            idx = 6 if is_int else 4
+            idx = 7 if is_int else 5
             mark_done(idx)
 
             buf = io.BytesIO()
@@ -3536,8 +3558,8 @@ def server(input: Inputs, output: Outputs, session: Session):
                         ui.HTML(
                             '<i class="fa-solid fa-file-arrow-down"></i> Download CSV'
                         ),
-                        class_="btn btn-primary mt-2",
-                        style="margin-right: 1.5rem !important",
+                        class_="btn btn-primary",
+                        style="font-size:1.8rem;padding:.7rem 1.2rem;"
                     ),
                 ]
 
@@ -3545,7 +3567,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 def color_table_dt():
                     return ui.HTML(
                         _df_to_datatable(
-                            df, "color_dt_tbl", page_length=10, cols_per_page=7
+                            df, "color_dt_tbl", page_length=5, cols_per_page=7
                         )
                     )
 
@@ -3591,9 +3613,10 @@ def server(input: Inputs, output: Outputs, session: Session):
                 ui.download_button(
                     "dl_color_zip",
                     ui.HTML(
-                        '<i class="fa-solid fa-file-arrow-down"></i> Download image + csv (.zip)'
+                        '<i class="fa-solid fa-file-arrow-down"></i> Download CSV + Image (.zip)'
                     ),
-                    class_="btn btn-primary mt-2",
+                    class_="btn btn-primary",
+                    style="margin-left: 1.5rem; font-size:1.8rem;padding:.7rem 1.2rem;"
                 )
             )
             if params_saved:
@@ -3734,7 +3757,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         code = f"lower_hsv = {lo}\nupper_hsv  = {hi}"
         return ui.div(
             ui.p(
-                "Use these values in Individual Analysis in Generate Mask Section:",
+                'Use these color threshold values in "Generate Fruit Mask" Section:',
                 style="font-size:1.7rem;color:#059669;margin-bottom:.4rem;",
             ),
             ui.pre(
@@ -3934,14 +3957,14 @@ def server(input: Inputs, output: Outputs, session: Session):
         if not files:
             return ui.p("Upload a PDF file first.", class_="text-info")
         try:
-            from traitly.utils.convert_pdf import pdf_to_img
+            from traitly.pdf import pdf_to_img
         except ImportError:
             return ui.div(
                 ui.p(
                     '<i class="fa-solid fa-triangle-exclamation"></i> PyMuPDF is not installed.',
                     class_="text-danger",
                 ),
-                ui.pre("Install it with:  pip install traitly[pdf]"),
+                ui.pre('Install it with:  pip install "traitly[pdf]"'),
             )
 
         all_saved = []
