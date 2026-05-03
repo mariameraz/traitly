@@ -422,7 +422,7 @@ Al igual que antes, comenzamos generando la máscara del fruto con `generate_fru
 
 ```python
 input_path = "./tomato_1.tif"
-tomato = FruitInternalAnalyzer(path)
+tomato = FruitInternalAnalyzer(input_path)
 tomato.load_image(show_axis = True, x = 400, y = 500, w = 1200, h = 1200)
 tomato.generate_fruit_mask()
 
@@ -567,7 +567,7 @@ Procederemos de la misma forma que en los ejemplos anteriores: cargando la image
 ```python
 input_path = './dragon_fruit.tif'
 
-dragon_fruit = FruitInternalAnalyzer(path)
+dragon_fruit = FruitInternalAnalyzer(input_path)
 dragon_fruit.load_image(show_axis = True, 
                         x = 400, y = 400, h = 1300, w = 1400)
 dragon_fruit.generate_fruit_mask()
