@@ -20,10 +20,17 @@ dist/
 # Jupyter files
 **/.ipynb_checkpoints/
 
+# Requirements
 requirements.txt
 requirements-dev.txt
-__pycache__/
 
-
-# test: result files 
+# test
 tests/data/external/blue_bg/Results
+tests/data/Internal/Images_from_PDF/Results
+.coverage
+
+# notebooks
+Untitled*
+
+# HF files
+traitly/
