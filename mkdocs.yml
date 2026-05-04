@@ -210,6 +210,8 @@ plugins:
             Individual Analysis: Análisis Individual
             Batch Analysis: Análisis por Lotes
 
+  - include-markdown
+
   - mkdocstrings:
       handlers:
         python:
