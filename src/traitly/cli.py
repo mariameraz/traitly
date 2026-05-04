@@ -27,6 +27,7 @@ import sys
 import os
 from pathlib import Path
 from rich_argparse import RawDescriptionRichHelpFormatter
+from traitly import __version__
 
 # ============================================================================
 # Parser
@@ -140,7 +141,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '--version',
         action='version',
-        version='%(prog)s 0.1.0'
+        version=f'%(prog)s {__version__}'
     )
 
     return parser
