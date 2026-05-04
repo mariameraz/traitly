@@ -28,18 +28,7 @@ contributors:
   - name: "María Meraz"
     github: "mariameraz"
     roles:
-      [
-        code,
-        projectManagement,
-        maintenance,
-        userTesting,
-        tutorials,
-        bug,
-        docs,
-        tests,
-        ideas,
-        translation,
-      ]
+      [code, projectManagement, maintenance, userTesting, tutorials, bug,docs, tests, ideas, translation]
 
   - name: "Héctor López"
     github: "hector-LM"
