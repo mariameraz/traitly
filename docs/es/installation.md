@@ -143,10 +143,10 @@ Por defecto, Traitly instalará únicamente el **paquete base**. Dependiendo de 
 | Extra | Incluye                             | Comando                           |
 |-------|-------------------------------------|-----------------------------------|
 | `pdf` | Convertir archivos PDF a imágenes   | `pip install "traitly[pdf]"` |
-| `all` | Convertir PDF + Shiny app           | `pip install "traitly[all]"` |
+| `app` | Convertir PDF + Shiny app           | `pip install "traitly[app]"` |
 
 !!! tip "¿No sabes cuál elegir?"
-    Si tienes dudas, te recomendamos instalar todas las dependencias con `all`, con las cuales puedes hacer uso de todas las funcionalidades de Traitly.
+    Si tienes dudas, te recomendamos instalar todas las dependencias con `app`, con las cuales puedes hacer uso de todas las funcionalidades de Traitly.
     
 !!! warning "Importante"
     Las comillas alrededor de la URL de Git son necesarias en MacOS y Linux para evitar que la terminal interprete incorrectamente los caracteres `[` y `]`. En Windows son opcionales, pero se recomiendan por consistencia.

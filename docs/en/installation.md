@@ -136,10 +136,10 @@ Depending on your use case, you might need to install additional dependencies:
 | Extra | Includes                   | Command                           |
 |-------|----------------------------|-----------------------------------|
 | `pdf` | PDF to image conversion    | `pip install "traitly[pdf]"` |
-| `all` | PDF conversion + Shiny app | `pip install "traitly[all]"` |
+| `app` | PDF conversion + Shiny app | `pip install "traitly[app]"` |
 
 !!! tip "Not sure which to choose?"
-    If you're unsure, we recommend installing `all`, since it includes everything you need to use Traitly's full functionality, including the interactive app.
+    If you're unsure, we recommend installing `app`, since it includes everything you need to use Traitly's full functionality, including the interactive app.
 
 !!! warning "Important"
     The quotes around the URL are necessary on macOS and Linux to prevent 
