@@ -68,7 +68,7 @@ packages = ["src/traitly"]
 
 [tool.hatch.build]
 include = [
-  "src/traitly/**",
-  "README.md",
-  "LICENSE*"
+    "src/traitly/**",
+    "README.md",
+    "LICENSE*"
 ]
