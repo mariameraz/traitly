@@ -1,5 +1,7 @@
 # Changelog
 
+*All notable changes to Traitly are documented here:*
+
 ## v0.1.1 – 2026-05-04
 
 ### Fixed
