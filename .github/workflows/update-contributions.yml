@@ -2,7 +2,7 @@ name: Update Contributors
 
 on:
   push:
-    branches: [traitly-dev]
+    branches: [main]
     paths:
       - ".github/workflows/update-contributions.yml"
 
