@@ -5,7 +5,7 @@
 ### Fixed
 - Rename `fast_calibration` to `skip_yolo` in JSON example files to match code parameters
 - Shiny App:
-	- Fix broken image example paths in GitHub documentation for the Shiny app main page
+	- Fix broken image example path in main page
 	- Fix sidebar pipeline steps resetting after returning from another tab
 
 ### Changed
