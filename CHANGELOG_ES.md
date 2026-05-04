@@ -1,4 +1,4 @@
-# Changelog
+# Registro de Cambios
 
 ## v0.1.1 – 2026-05-04
 
