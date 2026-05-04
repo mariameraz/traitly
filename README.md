@@ -28,13 +28,6 @@ It supports both single-image analysis and batch processing workflows, making it
 
 </br>
 
-> [!IMPORTANT]
-> We are working on a manuscript describing this software and its applications, expected to be submitted in **Spring–Summer 2026**. In the meantime, if you use Traitly in your research, please cite it as:
->
-> Torres-Meraz, M. A., Lopez-Moreno, H., & Zalapa, J. (2026). Traitly: A Python Toolkit for High-Throughput Fruit Phenotyping. Zenodo. https://doi.org/10.5281/zenodo.18738366
-
-</br>
-
 ### What can Traitly do?
 
 Traitly processes fruit images to measure:
@@ -142,6 +135,15 @@ For more detailed examples, [check our tutorials](https://traitly.readthedocs.io
 
 </br>
 
+## Citation
+
+We are working on a manuscript describing this software and its applications, expected to be submitted in **Spring–Summer 2026**. In the meantime, if you use Traitly in your research, please cite it as:
+
+> Torres-Meraz, M. A., Lopez-Moreno, H., & Zalapa, J. (2026). Traitly: A Python Toolkit for High-Throughput Fruit Phenotyping. Zenodo. https://doi.org/10.5281/zenodo.18738366
+
+</br>
+
+
 ## Contact
 
 For questions or comments about the project, feel free to reach out to:
@@ -151,6 +153,8 @@ For questions or comments about the project, feel free to reach out to:
 
 We are open to collaborations, including adding new traits, and creating tutorials or workflows for specific crops or plant tissues.
 
+<br>
+    
 ## Contributions
 
 Inspired by [All Contributors](https://allcontributors.org/), we recognize all kinds of contributions, not just code:
@@ -163,6 +167,8 @@ Inspired by [All Contributors](https://allcontributors.org/), we recognize all k
 | Juan Zalapa | 🔣 |
 <!-- CONTRIBUTORS-END -->
 
+<br> 
+    
 ## Acknowledgements ♡
 
 We thank the developers of [OpenCV](https://opencv.org/), [Ultralytics](https://github.com/ultralytics/ultralytics), [EasyOCR](https://github.com/JaidedAI/EasyOCR), [NumPy](https://numpy.org/), [Pandas](https://pandas.pydata.org/), [Matplotlib](https://matplotlib.org/), and [Shiny](https://shiny.posit.co/py/), as well as all  open-source libraries that made this project possible.

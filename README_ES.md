@@ -27,12 +27,6 @@ Available in: [![English](https://img.shields.io/badge/Language-English-purple)]
 Admite tanto el análisis de imágenes individuales como el procesamiento por lotes, lo que facilita el análisis de grandes conjuntos de datos con pocas líneas de código, lo cual es especialmente util en el contexto de programas de mejoramiento de plantas e investigación.
 </br>
 
-> [!IMPORTANT]
-> Estamos trabajando en un manuscrito que describe este trabajo y su uso, y se espera que esté listo en **primavera–verano de 2026**. Mientras tanto, si utilizas Traitly, puedes cítarlo como:
->
-> Torres-Meraz, M. A., Lopez-Moreno, H. & Zalapa, J. (2026). Traitly: A Python Toolkit for High-Throughput Fruit Phenotyping. Zenodo. 10.5281/zenodo.18738366
-</br>
-
 ### ¿Qué puede hacer Traitly?
 
 Traitly procesa imágenes de frutos para medir:
@@ -140,6 +134,14 @@ Para ejemplos más detallados, [consulta nuestros tutoriales](https://traitly.re
 
 </br>
 
+# Cómo citar
+
+Estamos trabajando en un manuscrito que describe este trabajo y su uso, y se espera que esté listo en **primavera–verano de 2026**. Mientras tanto, si utilizas Traitly, puedes cítarlo como:
+
+> Torres-Meraz, M. A., Lopez-Moreno, H. & Zalapa, J. (2026). Traitly: A Python Toolkit for High-Throughput Fruit Phenotyping. Zenodo. 10.5281/zenodo.18738366
+
+</br>
+
 ## Contacto
 
 Para preguntas o comentarios sobre el proyecto, puedes escribirnos a:
@@ -148,6 +150,8 @@ Para preguntas o comentarios sobre el proyecto, puedes escribirnos a:
 * [torresmeraz@wisc.edu](mailto:torresmeraz@wisc.edu)
 
 Estamos abiertos a colaboraciones, incluyendo la incorporación de nuevos rasgos, y la creación de tutoriales o flujos de trabajo para cultivos o tejidos vegetales específicos.
+
+</br>
 
 ## Contribuciones 
 
@@ -158,6 +162,8 @@ Estamos abiertos a colaboraciones, incluyendo la incorporación de nuevos rasgos
 | [<img src="https://github.com/hector-LM.png" width="44" height="44" valign="middle">&nbsp;Héctor López](https://github.com/hector-LM) | 📖 📓 ✅ 🤔 🐛 🔣 🌍 |
 | Juan Zalapa | 🔣 |
 <!-- CONTRIBUTORS-END -->
+
+</br>
 
 ## Agradecimientos ♡
 
