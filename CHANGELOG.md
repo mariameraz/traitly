@@ -3,13 +3,13 @@
 ## v0.1.1 – 2026-05-04
 
 ### Fixed
-- Rename `fast_calibration` to `skip_yolo` in JSON example files to match code parameters
+- Rename `fast_calibration` to `skip_yolo` in JSON example files to match code parameters (reported by @Hector-LM)
 - Shiny App:
 	- Fix broken image example path in main page
 	- Fix sidebar pipeline steps resetting after returning from another tab
 
 ### Changed
-- Standarize `min_fruit_area` default value to 1000 $px^2$across all classes
+- Standardize `min_fruit_area` default value to 1000 $px^2$across all classes (reported by @Hector-LM)
 - Show total session time in seconds or minutes depending on duration in batch analysis reports.
 - Move `convert_pdf` from `utils` to a dedicated `pdf` module:
   - Old import: `from traitly.utils.convert_pdf import pdf_to_img`
