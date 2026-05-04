@@ -134,7 +134,7 @@ Para ejemplos más detallados, [consulta nuestros tutoriales](https://traitly.re
 
 </br>
 
-# Cómo citar
+## Cómo citar
 
 Estamos trabajando en un manuscrito que describe este trabajo y su uso, y se espera que esté listo en **primavera–verano de 2026**. Mientras tanto, si utilizas Traitly, puedes cítarlo como:
 
