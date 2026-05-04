@@ -4116,7 +4116,6 @@ app = App(app_ui, server)
 # Run the app with CLI
 def run():
     import argparse
-    import os
     import subprocess
 
     parser = argparse.ArgumentParser(description="Run Traitly Shiny app")
