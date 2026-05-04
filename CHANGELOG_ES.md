@@ -1,15 +1,17 @@
 # Registro de Cambios
 
+*Todos los cambios notables de Traitly están documentados aquí:*
+
 ## v0.1.1 – 2026-05-04
 
 ### Correcciones
-- Renombrar `fast_calibration` a `skip_yolo` en los archivos de ejemplo JSON para que coincida con los parámetros del código
+- Renombrar `fast_calibration` a `skip_yolo` en los archivos de ejemplo JSON para que coincida con los parámetros del código (reportado por @Hector-LM)
 - Shiny App:
 	- Corregir ruta de imágenes de ejemplo rota en la documentación de la página principal
 	- Corregir el reinicio de los pasos del pipeline en la barra lateral al regresar desde otra pestaña
 
 ### Cambios
-- Estandarizar el valor predeterminado de `min_fruit_area` a 1000 $px^2$ en todas las clases
+- Estandarizar el valor predeterminado de `min_fruit_area` a 1000 $px^2$ en todas las clases (reportado por @Hector-LM)
 - Mostrar el tiempo total de sesión en segundos o minutos según la duración en los reportes de análisis por lote
 - Mover `convert_pdf` de `utils` a un módulo dedicado `pdf`:
   - Importación anterior: `from traitly.utils.convert_pdf import pdf_to_img`
