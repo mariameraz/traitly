@@ -6,7 +6,7 @@
 [![MultiOS](https://github.com/mariameraz/traitly/actions/workflows/pytest_multi_os.yml/badge.svg)](https://github.com/mariameraz/traitly/actions/workflows/pytest_multi_os.yml)
 [![Testing](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml)
 [![Coverage](https://codecov.io/gh/mariameraz/traitly/branch/main/graph/badge.svg)](https://codecov.io/gh/mariameraz/traitly)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19447593.svg)](https://doi.org/10.5281/zenodo.19447593)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20020292.svg)](https://doi.org/10.5281/zenodo.20020292)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green?logo=gnu&logoColor=white)](https://github.com/mariameraz/traitly/blob/main/LICENSE)
 
 
