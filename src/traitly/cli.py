@@ -1,4 +1,5 @@
 # traitly/cli.py
+
 """
 Command-line interface for Traitly fruit phenotyping.
 
@@ -25,19 +26,14 @@ import argparse
 import sys
 import os
 from pathlib import Path
-
-try:
-    from tabulate import tabulate as _tabulate
-    def _fmt_examples(rows):
-        return _tabulate(rows, tablefmt='plain')
-except ImportError:
-    def _fmt_examples(rows):
-        return "\n".join(f"  {r[0]}" for r in rows)
-
+from rich_argparse import RawDescriptionRichHelpFormatter
 
 # ============================================================================
 # Parser
 # ============================================================================
+
+def _fmt_examples(rows):
+    return "\n".join(f"  {r[0]}" for r in rows)
 
 def create_parser() -> argparse.ArgumentParser:
     """
@@ -54,8 +50,11 @@ def create_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         prog='traitly',
-        description='Traitly - Fruit Phenotyping Tool',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=(
+            "              . ݁₊ ⊹ . ݁ ⟡ ݁ Traitly ⟡ ݁. ⊹ ₊ .  ݁\n"
+            " Computer vision toolkit for high-throughput fruit phenotyping"
+        ),
+        formatter_class=RawDescriptionRichHelpFormatter,
         epilog="\n".join([
             "",
             "Examples:",
@@ -70,7 +69,11 @@ def create_parser() -> argparse.ArgumentParser:
                 ("  traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --num_cores 4",),
             ]),
             "",
-            "For more info: https://github.com/mariameraz/traitly",
+            "="*70,
+            "For more details ->",
+            "   - GitHub Repository: https://github.com/mariameraz/traitly \n"
+            "   - Documentation: https://traitly.readthedocs.io/ ",
+            "="*70,
             "",
         ])
     )
