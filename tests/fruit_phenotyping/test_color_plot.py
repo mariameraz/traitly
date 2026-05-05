@@ -1,4 +1,4 @@
-# tests/test_color_plot.py
+# tests/fruit_phenotyping/test_color_plot.py
 #
 # ============================================================================
 # STANDARD LIBRARY
@@ -14,18 +14,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # ============================================================================
-# INTERNAL IMPORTS
+# INTERNAL
 # ============================================================================
 from traitly.fruit_phenotyping import plot_color_histogram
 
 @pytest.fixture
 def df_hist():
-    path = Path(__file__).parent / "data/external/blue_bg/hist_color_results.csv"
+    path = Path(__file__).parent.parent / "data" / "external" / "blue_bg" / "hist_color_results.csv"
     return pd.read_csv(path)
 
 @pytest.fixture
 def df_means():
-    path = Path(__file__).parent / "data/external/white_bg/Results/color_results.csv"
+    path = Path(__file__).parent.parent / "data" / "external" / "white_bg" /"Results" / "color_results.csv"
     return pd.read_csv(path)
 
 @pytest.fixture(autouse=True)

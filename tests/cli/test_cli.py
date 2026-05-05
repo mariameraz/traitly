@@ -1,7 +1,20 @@
-# tests/test_cli.py
-import pytest
-from traitly.cli import create_parser, _validate_input, _validate_json
+# tests/cli.py
+# ============================================================================
+# STANDARD LIBRARY
+# ============================================================================
 from pathlib import Path
+
+# ============================================================================
+# THIRD-PARTY
+# ============================================================================
+import pytest
+
+# ============================================================================
+# INTERNAL
+# ============================================================================
+
+from traitly.cli import create_parser, _validate_input, _validate_json
+
 
 
 def test_fruit_internal():

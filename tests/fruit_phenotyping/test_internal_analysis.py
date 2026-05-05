@@ -1,4 +1,4 @@
-# tests/test_internal_analysis.py
+# tests/fruit_phenotyping/test_internal_analysis.py
 
 # ============================================================================
 # STANDARD LIBRARY
@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 # ============================================================================
-# INTERNAL IMPORTS
+# INTERNAL
 # ============================================================================
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
 
@@ -19,7 +19,7 @@ from traitly.fruit_phenotyping import FruitInternalAnalyzer
 # Valid cranberry image
 ##########################################################################
 
-valid_img = Path(__file__).parent / "data/internal/img_test_1.jpg"
+valid_img = Path(__file__).parent.parent / "data" / "internal" / "img_test_1.jpg"
 
 @pytest.fixture
 def cranberry_valid():
@@ -69,7 +69,7 @@ def test_skip_yolo():
 # Invalid image path
 ##########################################################################
 
-invalid_path = Path(__file__).parent / "data/internal/img_test_5.jpg"
+invalid_path = Path(__file__).parent.parent / "data" / "internal" / "img_test_5.jpg"
 
 
 def test_invalid_path():
@@ -82,8 +82,7 @@ def test_invalid_path():
 # Slices with not empty locules
 ##########################################################################
 
-invalid_img = Path(__file__).parent / "data/internal/img_test_4.jpg"
-
+invalid_img = Path(__file__).parent.parent / "data" / "internal" / "img_test_4.jpg"
 
 def test_invalid_locule_segmentation():
     cranberry = FruitInternalAnalyzer(path=invalid_img)
@@ -95,7 +94,6 @@ def test_invalid_locule_segmentation():
 
 def test_fruits_detected(cranberry_valid):
     assert len(cranberry_valid.fruit_locule_map) > 0
-
 
 def test_color_columns(cranberry_valid):
     df = cranberry_valid.results.color_results
