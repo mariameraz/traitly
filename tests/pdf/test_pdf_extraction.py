@@ -1,4 +1,4 @@
-# tests/test_pdf_extraction.py
+# tests/pdf/test_pdf_extraction.py
 
 # ============================================================================
 # STANDARD LIBRARY
@@ -11,11 +11,13 @@ from pathlib import Path
 import pytest
 
 # ============================================================================
-# INTERNAL IMPORTS
+# INTERNAL
 # ============================================================================
 from traitly.pdf import pdf_to_img
 
-pdf = Path(__file__).parent / "data/internal/cranberry_slices.pdf"
+path_folder = Path(__file__).parent.parent / "data" / "internal"
+
+pdf = path_folder / "cranberry_slices.pdf"
 
 
 def test_pdf_extraction():
@@ -39,9 +41,6 @@ jpg, jpeg, png, tiff, tif, ppm, pnm, pgm, pbm, pam"
 def test_invalid_ext():
     with pytest.raises(ValueError, match=valid_ext_msg):
         temp = pdf_to_img(pdf_path=pdf, dpi=70, detect_qr=False, output_format="gif")
-
-
-path_folder = Path(__file__).parent / "data/internal"
 
 
 def test_folder_path():

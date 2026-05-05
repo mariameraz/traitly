@@ -1,5 +1,5 @@
-# tests/test_batch.py
-
+# tests/fruit_phenotyping/test_batch_analysis.py
+#
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
@@ -11,21 +11,25 @@ from pathlib import Path
 # ============================================================================
 import pytest
 import pandas as pd
+
 # ============================================================================
-# INTERNAL IMPORTS
+# INTERNAL
 # ============================================================================
+
+# Paths ############################################################################
 from traitly.fruit_phenotyping import FruitExternalAnalyzer, FruitInternalAnalyzer
+data_dir = Path(__file__).parent.parent / "data"
 
-external_folder_blue = Path(__file__).parent / "data/external/blue_bg"
-external_folder_white = Path(__file__).parent / "data/external/white_bg"
-internal_folder = Path(__file__).parent / "data/internal"
-
-
+external_folder_blue = data_dir / "external" / "blue_bg"
+external_folder_white =  data_dir / "external" / "white_bg"
+internal_folder = data_dir / "internal"
+####################################################################################
+#
 def test_internal_analyzer():
     test = FruitInternalAnalyzer(path = internal_folder)
     test.analyze_folder()
 
-    error_report = Path(internal_folder) / "Results" / "error_report.txt"
+    error_report = data_dir / "internal" / "Results" / "error_report.txt"
     session_report = Path(internal_folder) / "Results" / "session_report.txt"
     color_res = Path(internal_folder) / "Results" / "color_results.csv"
     morpho_res = Path(internal_folder) / "Results" / "morphology_results.csv"
