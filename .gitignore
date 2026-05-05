@@ -24,9 +24,12 @@ dist/
 requirements.txt
 requirements-dev.txt
 
-# test
-tests/data/external/blue_bg/Results
-tests/data/Internal/Images_from_PDF/Results
+# test results
+tests/**/Results
+tests/**/Images_from_PDF/
+tests/**/*.csv
+tests/**/*.txt
+
 .coverage
 
 # notebooks
