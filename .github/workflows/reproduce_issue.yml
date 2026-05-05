@@ -1,0 +1,25 @@
+# .github/workflows/reproduce_issue.yml
+name: Reproduce Ultralytics Issue
+
+on: workflow_dispatch
+
+jobs:
+  reproduce:
+    runs-on: windows-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install ultralytics opencv-python
+
+      - name: Reproduce issue
+        run: |
+          python -c "
+          import cv2
+          from ultralytics import YOLO
+          img = cv2.imread('nonexistent.jpg')
+          print(img)
+          "
