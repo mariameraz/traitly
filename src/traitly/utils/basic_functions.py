@@ -57,11 +57,17 @@ def _load_img_cached(path: str) -> np.ndarray:
     path_obj = Path(path)
     if path_obj.suffix.lower() not in valid_extensions:
         raise ValueError(f"Unsupported image format: '{path_obj.suffix.lower()}'")
-    
-    img = cv2.imread(str(path_obj), cv2.IMREAD_COLOR)
+
+    # Try/except included for problem with ultralytics and cv2.imread on windows:
+    # ultralytics raises FileNotFoundError instead of None when the file does not exist
+    try:
+        img = cv2.imread(str(path_obj), cv2.IMREAD_COLOR)
+    except (FileNotFoundError, OSError):
+        img = None
+
     if img is None:
         raise ValueError(f"Cannot load image: {path_obj.name}")
-    
+
     return img
 
 
@@ -156,7 +162,7 @@ def detect_img_name(path_image: str) -> Optional[str]:
     try:
         if not isinstance(path_image, str):
             raise TypeError('Path input should be of type str')
-        
+
         filename = os.path.basename(path_image)
         return filename if filename else None
 
@@ -216,7 +222,7 @@ def plot_img(
         _PLOT_CACHE.clear()
         plt.close('all')
         return
-    
+
     if cache_key and cache_key in _PLOT_CACHE:
         fig, ax = _PLOT_CACHE[cache_key]
         ax.clear()
@@ -224,7 +230,7 @@ def plot_img(
         fig, ax = plt.subplots(figsize=plot_size, num=cache_key if cache_key else None)
         if cache_key:
             _PLOT_CACHE[cache_key] = (fig, ax)
-    
+
     if binary:
         ax.imshow(img, cmap='gray', interpolation='nearest')
     else:
@@ -233,18 +239,18 @@ def plot_img(
                       interpolation='bilinear')
         else:
             ax.imshow(img, interpolation='bilinear')
-    
+
     if not fig_axis:
         ax.axis('off')
-    
+
     plt.tight_layout(pad=0.1)
     plt.draw()
-    
+
     if not plt.isinteractive():
         plt.show(block=False)
-    
+
     fig.canvas.flush_events()
-    
+
     return fig, ax
 
 
@@ -270,10 +276,10 @@ def validate_dir(path: str) -> str:
     """
     abs_path = os.path.abspath(os.path.expanduser(path))
     dir_path = os.path.dirname(abs_path)
-    
+
     if dir_path and not os.path.exists(dir_path):
         os.makedirs(dir_path, exist_ok=True)
-    
+
     return abs_path
 
 
@@ -355,5 +361,3 @@ def save_img(
         print(f"Image saved to: {output_path}")
 
     return output_path
-
-
