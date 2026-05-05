@@ -1,4 +1,4 @@
-# tests/test_external_analysis.py
+# tests/fruit_phenotyping/test_external_analysis.py
 
 # ============================================================================
 # STANDARD LIBRARY
@@ -11,13 +11,12 @@ from pathlib import Path
 import pytest
 
 # ============================================================================
-# INTERNAL IMPORTS
+# INTERNAL
 # ============================================================================
 from traitly.fruit_phenotyping import FruitExternalAnalyzer
 
 
-white_bg = Path(__file__).parent / "data/external/white_bg/cranberry_white_bg.jpg"
-
+white_bg = Path(__file__).parent.parent / "data" / "external" / "white_bg" / "cranberry_white_bg.jpg"
 
 @pytest.fixture
 def cranberry_white():
@@ -58,7 +57,7 @@ def test_skip_setup_measurements(cranberry_white):
     cranberry_white.analyze_color(plot=False, display_table=False)
 
 
-blue_bg = Path(__file__).parent / "data/external/blue_bg/cranberry_blue_bg.jpg"
+blue_bg = Path(__file__).parent.parent / "data" / "external" / "blue_bg" / "cranberry_blue_bg.jpg"
 
 
 @pytest.fixture
