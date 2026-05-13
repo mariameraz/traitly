@@ -63,7 +63,7 @@ def pdf_to_img(
         Directory to save output images. If ``None``, a subdirectory
         ``Images_from_PDF/`` is created next to the input PDF (or inside
         the input folder for batch mode). Default is ``None``.
-    n_cores : int or None, optional
+    num_cores : int or None, optional
         Reserved for future parallel processing. Currently unused.
         Default is ``None``.
     verbose : bool, optional

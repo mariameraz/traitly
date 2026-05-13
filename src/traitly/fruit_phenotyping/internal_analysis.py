@@ -1138,6 +1138,7 @@ class FruitInternalAnalyzer:
     def generate_locule_mask(
         self,
         thresh_min: int = 120,
+        thresh_max: Optional[int] = None,
         kernel_close: Optional[int] = None,
         kernel_open: Optional[int] = None,
         kernel_blur: Optional[int] = None,
@@ -1222,6 +1223,7 @@ class FruitInternalAnalyzer:
             l_transformed=self.l_transformed,
             fruit_mask=self.mask_fruit,
             thresh_min=thresh_min,
+            thresh_max=thresh_max,
             kernel_close=kernel_close,
             kernel_open=kernel_open,
             kernel_blur=kernel_blur,
