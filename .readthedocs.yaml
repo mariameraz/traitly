@@ -6,10 +6,8 @@ mkdocs:
 build:
   os: ubuntu-22.04
   tools:
-    python: "3.11"
-  jobs:
-      pre_build:
-        - python docs/docstrings/generate_api_json.py
+    python: "3.12"
+
 
 python:
   install:
