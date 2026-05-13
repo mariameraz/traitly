@@ -1,0 +1,440 @@
+[
+  {
+    "type": "Function",
+    "name": "create_parser",
+    "module": "traitly.cli",
+    "description": "Build and return the CLI argument parser for Traitly."
+  },
+  {
+    "type": "Function",
+    "name": "run_internal",
+    "module": "traitly.cli",
+    "description": "Run the internal fruit analysis pipeline from the CLI."
+  },
+  {
+    "type": "Function",
+    "name": "run_external",
+    "module": "traitly.cli",
+    "description": "Run the external fruit analysis pipeline from the CLI."
+  },
+  {
+    "type": "Function",
+    "name": "main",
+    "module": "traitly.cli",
+    "description": "Entry point for the ``traitly`` CLI command."
+  },
+  {
+    "type": "Class",
+    "name": "AnalysisParameters",
+    "module": "traitly.fruit_phenotyping.analysis_parameters",
+    "description": "Save and report processing parameters for each analysis step."
+  },
+  {
+    "type": "Function",
+    "name": "normalize_lab_values",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Normalize raw OpenCV Lab channel values to standard ranges."
+  },
+  {
+    "type": "Function",
+    "name": "normalize_hsv_values",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Normalize raw OpenCV HSV channel values to standard ranges."
+  },
+  {
+    "type": "Function",
+    "name": "circular_mean_and_std_hue",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Calculate the circular mean and standard deviation of hue values."
+  },
+  {
+    "type": "Function",
+    "name": "extract_color_features",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Extract summary color statistics from masked pixels of an image."
+  },
+  {
+    "type": "Function",
+    "name": "renumber_fruit_locule_map",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Renumber fruit IDs sequentially from 1 to n."
+  },
+  {
+    "type": "Function",
+    "name": "analyze_all_fruits_color",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Analyze color features for all fruits in the fruit-locule map."
+  },
+  {
+    "type": "Function",
+    "name": "get_single_fruit_masks",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Generate tissue masks for a single fruit cropped to its bounding box."
+  },
+  {
+    "type": "Function",
+    "name": "visualize_single_fruit_masks",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Display individual binary masks for each tissue of a single fruit."
+  },
+  {
+    "type": "Function",
+    "name": "visualize_single_fruit_overlay",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Display a color overlay of tissue masks on the cropped fruit image."
+  },
+  {
+    "type": "Function",
+    "name": "annotate_fruits_on_image",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Annotate an image with fruit IDs and bounding boxes."
+  },
+  {
+    "type": "Function",
+    "name": "get_fruit_color_histograms",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Create pixel-level color histograms for all fruits."
+  },
+  {
+    "type": "Function",
+    "name": "calculate_hue_index",
+    "module": "traitly.fruit_phenotyping.color_analysis",
+    "description": "Calculate a red/yellow/orange color index per fruit from hue histograms."
+  },
+  {
+    "type": "Function",
+    "name": "plot_color_histogram",
+    "module": "traitly.fruit_phenotyping.color_plot",
+    "description": "Plot pixel-value histograms for each color channel."
+  },
+  {
+    "type": "Function",
+    "name": "get_fruit_color_samples",
+    "module": "traitly.fruit_phenotyping.color_plot",
+    "description": "Extract raw pixel values from the total pericarp region (or total fruit"
+  },
+  {
+    "type": "Function",
+    "name": "plot_color_scatter",
+    "module": "traitly.fruit_phenotyping.color_plot",
+    "description": "Plot pairwise scatter plots of color channels colored by actual fruit RGB."
+  },
+  {
+    "type": "Function",
+    "name": "plot_color_correlation",
+    "module": "traitly.fruit_phenotyping.color_plot",
+    "description": "Calculate and optionally plot a correlation matrix between color channels."
+  },
+  {
+    "type": "Function",
+    "name": "plot_dark_threshold",
+    "module": "traitly.fruit_phenotyping.color_plot",
+    "description": "Plot the grayscale intensity distribution of masked pixels to help"
+  },
+  {
+    "type": "Function",
+    "name": "plot_tissue_colors",
+    "module": "traitly.fruit_phenotyping.color_plot",
+    "description": "Display the mean RGB color per tissue as color swatches."
+  },
+  {
+    "type": "Class",
+    "name": "FruitExternalAnalyzer",
+    "module": "traitly.fruit_phenotyping.external_analysis",
+    "description": "Fruit analyzer for external (whole-fruit) morphology and color analysis."
+  },
+  {
+    "type": "Class",
+    "name": "FruitConfig",
+    "module": "traitly.fruit_phenotyping.fruit_config",
+    "description": "Configuration parameters for fruit morphological analysis."
+  },
+  {
+    "type": "Function",
+    "name": "analyze_fruits_morphology",
+    "module": "traitly.fruit_phenotyping.fruit_config",
+    "description": "Analyze fruit contours and extract morphological features."
+  },
+  {
+    "type": "Function",
+    "name": "calculate_axes",
+    "module": "traitly.fruit_phenotyping.geometry",
+    "description": "Calculate the major and minor axes of a fruit contour."
+  },
+  {
+    "type": "Function",
+    "name": "rotate_box",
+    "module": "traitly.fruit_phenotyping.geometry",
+    "description": "Calculate the minimum-area rotated bounding box of a contour."
+  },
+  {
+    "type": "Function",
+    "name": "get_fruit_morphology",
+    "module": "traitly.fruit_phenotyping.geometry",
+    "description": "Calculate comprehensive morphological metrics for a fruit contour."
+  },
+  {
+    "type": "Class",
+    "name": "FruitInternalAnalyzer",
+    "module": "traitly.fruit_phenotyping.internal_analysis",
+    "description": "Core analyzer for fruit morphology and color from segmented images."
+  },
+  {
+    "type": "Function",
+    "name": "create_mask",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Generate a binary mask segmenting foreground objects from an HSV image."
+  },
+  {
+    "type": "Function",
+    "name": "fill_holes_to_mask",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Fill enclosed holes in a binary mask using flood fill."
+  },
+  {
+    "type": "Function",
+    "name": "apply_convex_hull_to_mask",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Replace each contour in a binary mask with its convex hull."
+  },
+  {
+    "type": "Function",
+    "name": "find_fruits",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Detect fruit contours and map each fruit to its internal locules."
+  },
+  {
+    "type": "Function",
+    "name": "merge_locules_func",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Merge spatially close locule contours into single contours."
+  },
+  {
+    "type": "Function",
+    "name": "gamma_contrast",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Apply gamma correction to a luminance channel."
+  },
+  {
+    "type": "Function",
+    "name": "sigmoid_contrast",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Apply sigmoidal contrast enhancement to a luminance channel."
+  },
+  {
+    "type": "Function",
+    "name": "exp_transform",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Apply an exponential transformation to a luminance channel."
+  },
+  {
+    "type": "Function",
+    "name": "apply_contrast",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Apply contrast enhancement to the L channel of a BGR image."
+  },
+  {
+    "type": "Function",
+    "name": "generate_l_channel_histogram",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "-"
+  },
+  {
+    "type": "Function",
+    "name": "create_mask_locules",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Generate a fused binary mask containing fruits with their internal locules."
+  },
+  {
+    "type": "Function",
+    "name": "generate_scatter_plot",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Display a scatterplot of pixel colors in HSV channel pairs."
+  },
+  {
+    "type": "Function",
+    "name": "interactive_mask_editor",
+    "module": "traitly.fruit_phenotyping.mask",
+    "description": "Interactive mask editor. Draw polygons to add (white) or remove (black) regions."
+  },
+  {
+    "type": "Function",
+    "name": "calculate_fruit_centroids",
+    "module": "traitly.fruit_phenotyping.processing",
+    "description": "Calculate the centroid of each contour in a list."
+  },
+  {
+    "type": "Function",
+    "name": "precalculate_locules_data",
+    "module": "traitly.fruit_phenotyping.processing",
+    "description": "Precalculate geometric properties for a set of locule contours."
+  },
+  {
+    "type": "Function",
+    "name": "get_fruit_contour",
+    "module": "traitly.fruit_phenotyping.processing",
+    "description": "Extract and optionally transform a fruit contour."
+  },
+  {
+    "type": "Function",
+    "name": "calculate_pericarp_thickness_radial",
+    "module": "traitly.fruit_phenotyping.processing",
+    "description": "Estimate pericarp thickness and fruit lobedness using radial ray sampling."
+  },
+  {
+    "type": "Function",
+    "name": "get_internal_pericarp_contour",
+    "module": "traitly.fruit_phenotyping.processing",
+    "description": "-"
+  },
+  {
+    "type": "Function",
+    "name": "get_internal_pericarp_area",
+    "module": "traitly.fruit_phenotyping.processing",
+    "description": "-"
+  },
+  {
+    "type": "Function",
+    "name": "annotate_all_fruits",
+    "module": "traitly.fruit_phenotyping.processing",
+    "description": "Draw contours and text annotations for all fruits in a single pass."
+  },
+  {
+    "type": "Class",
+    "name": "ResultsImage",
+    "module": "traitly.fruit_phenotyping.results_image",
+    "description": "Container for annotated images and analysis results."
+  },
+  {
+    "type": "Function",
+    "name": "get_unique_locule_counts",
+    "module": "traitly.fruit_phenotyping.symmetry",
+    "description": "Extract the sorted unique locule counts across all fruits."
+  },
+  {
+    "type": "Function",
+    "name": "precompute_ideal_angles",
+    "module": "traitly.fruit_phenotyping.symmetry",
+    "description": "Precompute shifted ideal angle matrices for each unique locule count."
+  },
+  {
+    "type": "Function",
+    "name": "angular_symmetry",
+    "module": "traitly.fruit_phenotyping.symmetry",
+    "description": "Calculate angular symmetry of locule arrangement around the fruit centroid."
+  },
+  {
+    "type": "Function",
+    "name": "radial_symmetry",
+    "module": "traitly.fruit_phenotyping.symmetry",
+    "description": "Calculate radial symmetry of locule arrangement using the CV of distances."
+  },
+  {
+    "type": "Function",
+    "name": "pdf_to_img",
+    "module": "traitly.pdf.convert_pdf",
+    "description": "Convert a PDF file (or all PDFs in a folder) to images, one per page."
+  },
+  {
+    "type": "Function",
+    "name": "load_img",
+    "module": "traitly.utils.basic_functions",
+    "description": "Load an image via :func:`_load_img_cached` and optionally display it."
+  },
+  {
+    "type": "Function",
+    "name": "detect_img_name",
+    "module": "traitly.utils.basic_functions",
+    "description": "Extract the filename (with extension) from an image path."
+  },
+  {
+    "type": "Function",
+    "name": "plot_img",
+    "module": "traitly.utils.basic_functions",
+    "description": "Display an image, optionally reusing a cached figure for performance."
+  },
+  {
+    "type": "Function",
+    "name": "validate_dir",
+    "module": "traitly.utils.basic_functions",
+    "description": "Ensure the parent directory of ``path`` exists and return the absolute path."
+  },
+  {
+    "type": "Function",
+    "name": "save_img",
+    "module": "traitly.utils.basic_functions",
+    "description": "Save the annotated image to disk."
+  },
+  {
+    "type": "Function",
+    "name": "img_px_per_cm",
+    "module": "traitly.utils.calibration",
+    "description": "Calculate pixel density from an image and known physical dimensions."
+  },
+  {
+    "type": "Function",
+    "name": "diameter_px_per_cm",
+    "module": "traitly.utils.calibration",
+    "description": "Estimate pixel-to-centimetre density from detected circle diameters."
+  },
+  {
+    "type": "Function",
+    "name": "px_cm_density",
+    "module": "traitly.utils.calibration",
+    "description": "Calculate pixel-to-centimetre density using the best available method."
+  },
+  {
+    "type": "Function",
+    "name": "detect_label_box",
+    "module": "traitly.utils.calibration",
+    "description": "Detect rectangular label regions using grayscale thresholding and contour filtering."
+  },
+  {
+    "type": "Function",
+    "name": "find_size_ref_circles",
+    "module": "traitly.utils.calibration",
+    "description": "Detect dark circular objects in a grayscale ROI."
+  },
+  {
+    "type": "Function",
+    "name": "detect_size_ref_yolo",
+    "module": "traitly.utils.calibration",
+    "description": "Detect size reference circles in an image using a YOLOv8 model."
+  },
+  {
+    "type": "Function",
+    "name": "get_easyocr_reader",
+    "module": "traitly.utils.label",
+    "description": "Initialize an EasyOCR reader with optional GPU support."
+  },
+  {
+    "type": "Function",
+    "name": "get_cached_reader",
+    "module": "traitly.utils.label",
+    "description": "Return a cached EasyOCR reader, initializing it on first call."
+  },
+  {
+    "type": "Function",
+    "name": "detect_label_text",
+    "module": "traitly.utils.label",
+    "description": "Extract text from the first valid label ROI using EasyOCR."
+  },
+  {
+    "type": "Function",
+    "name": "detect_qr",
+    "module": "traitly.utils.label",
+    "description": "Detect a QR code in an image and return its decoded text."
+  },
+  {
+    "type": "Function",
+    "name": "detect_label_box",
+    "module": "traitly.utils.label",
+    "description": "Detect rectangular label regions using grayscale thresholding and contour filtering."
+  },
+  {
+    "type": "Function",
+    "name": "detect_label_box_yolo",
+    "module": "traitly.utils.label",
+    "description": "Detect label ROIs using a YOLOv8 model."
+  }
+]

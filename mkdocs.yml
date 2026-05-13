@@ -70,6 +70,7 @@ markdown_extensions:
   - tables
   - attr_list # for markdowon atributes
   - md_in_html # for html
+  - pymdownx.snippets
 
   - pymdownx.highlight:
       anchor_linenums: true
@@ -123,17 +124,23 @@ plugins:
             - Tutorials:
                 - Overview: en/tutorials/overview.md
 
-                # - API Reference:
-                #     - Classes:
-                #         - FruitInternalAnalyzer: en/api/internal_analysis.md
-                #         - FruitExternalAnalyzer: en/api/external_analysis.md
-                # - Modules:
-                #     - mask: en/api/mask.md
-                #     - processing: en/api/processing.md
-                #     - color_analysis: en/api/color_analysis.md
-                #     - symmetry: en/api/symmetry.md
-                #     - color_plot: en/api/color_plot.md
-                #     - analysis_parameters: en/api/analysis_parameters.md
+            - API:
+                - Index: en/api/index.md
+                - Modules:
+                    - mask: docstrings/modules/mask.md
+                    - processing: docstrings/modules/processing.md
+                    - color_analysis: docstrings/modules/color_analysis.md
+                    - symmetry: docstrings/modules/symmetry.md
+                    - color_plot: docstrings/modules/color_plot.md
+                    - analysis_parameters: docstrings/modules/analysis_parameters.md
+                    - basic_functions: docstrings/modules/basic_functions.md
+                    - geometry: docstrings/modules/geometry.md
+                    - fruit_config: docstrings/modules/fruit_config.md
+                    - calibration: docstrings/modules/calibration.md
+                    - label: docstrings/modules/label.md
+                    - convert_pdf: docstrings/modules/convert_pdf.md
+                    - cli: docstrings/modules/cli.md
+
 
             #- About: en/about.md
             - Changelog: en/changelog.md
@@ -163,17 +170,22 @@ plugins:
             - Tutorials:
                 - Overview: es/tutorials/overview.md
 
-                # - API Reference:
-                #     - Classes:
-                #         - FruitInternalAnalyzer: es/api/internal_analysis.md
-                #         - FruitExternalAnalyzer: es/api/external_analysis.md
-                #       - Modules:
-                #           - mask: es/api/mask.md
-                #           - processing: es/api/processing.md
-                #           - color_analysis: es/api/color_analysis.md
-                #           - symmetry: es/api/symmetry.md
-                #           - color_plot: es/api/color_plot.md
-                #           - analysis_parameters: es/api/analysis_parameters.md
+            - API:
+              - Index: es/api/index.md
+              - Modules:
+                  - mask: docstrings/modules/mask.md
+                  - processing: docstrings/modules/processing.md
+                  - color_analysis: docstrings/modules/color_analysis.md
+                  - symmetry: docstrings/modules/symmetry.md
+                  - color_plot: docstrings/modules/color_plot.md
+                  - analysis_parameters: docstrings/modules/analysis_parameters.md
+                  - basic_functions: docstrings/modules/basic_functions.md
+                  - geometry: docstrings/modules/geometry.md
+                  - fruit_config: docstrings/modules/fruit_config.md
+                  - calibration: docstrings/modules/calibration.md
+                  - label: docstrings/modules/label.md
+                  - convert_pdf: docstrings/modules/convert_pdf.md
+                  - cli: docstrings/modules/cli.md
 
             #- About: es/about.md
             - Changelog: es/changelog.md
@@ -198,7 +210,7 @@ plugins:
 
             # API Reference: Referencia API
 
-            Changelog: Historial de Cambios
+            Changelog: Registro de Cambios
 
             Traitly Architecture: Arquitectura de Traitly
             Classes: Clases
