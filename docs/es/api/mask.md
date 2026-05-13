@@ -1,1 +1,0 @@
-::: traitly.fruit_phenotyping.mask
