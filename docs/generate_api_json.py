@@ -8,15 +8,19 @@ Usage:
     python3 generate_api_json.py
 
 Output:
-    docs/en/api/api_data.json
+    docs/en/api/docstrings/api_data.json
+    docs/es/api/docstrings/api_data.json
 """
 
 import ast
 import json
 from pathlib import Path
 
-SRC_DIR = Path("src/traitly")
-JSON_FILE = Path("docs/en/api/api_data.json")
+SRC_DIR = Path("../src/traitly")
+OUTPUT_PATHS = [
+    Path("en/api/docstrings/api_data.json"),
+    Path("es/api/docstrings/api_data.json"),
+]
 
 EXCLUDE_DIRS = {"shiny_app"}
 
@@ -81,9 +85,13 @@ def main():
         entries = extract_entries(filepath)
         all_entries.extend(entries)
 
-    JSON_FILE.parent.mkdir(parents=True, exist_ok=True)
-    JSON_FILE.write_text(json.dumps(all_entries, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"Done. {len(all_entries)} entries written to {JSON_FILE}")
+    # Write to all output paths
+    for out_path in OUTPUT_PATHS:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(all_entries, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"Written {len(all_entries)} entries to {out_path}")
+
+    print("Done.")
 
 
 if __name__ == "__main__":
