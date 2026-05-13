@@ -202,9 +202,6 @@ def analyze_fruits_morphology(
     path : str or None, optional
         Filesystem path to the original image, stored in the returned
         :class:`ResultsImage`. Default is ``None``.
-    original_img_clean : np.ndarray or None, optional
-        Clean copy of the original image used for annotation. If ``None``,
-        ``img`` is used. Default is ``None``.
     is_locule : bool, optional
         Whether to analyze internal locule structure. If ``False``, locule,
         pericarp, and symmetry metrics are set to ``NaN``. Default is ``True``.
