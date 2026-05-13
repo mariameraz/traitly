@@ -140,6 +140,8 @@ plugins:
                     - label: docstrings/modules/label.md
                     - convert_pdf: docstrings/modules/convert_pdf.md
                     - cli: docstrings/modules/cli.md
+                    - external: docstrings/modules/external_analysis.md
+                    - internal: docstrings/modules/internal_analysis.md
 
 
             #- About: en/about.md
@@ -186,6 +188,8 @@ plugins:
                   - label: docstrings/modules/label.md
                   - convert_pdf: docstrings/modules/convert_pdf.md
                   - cli: docstrings/modules/cli.md
+                  - external: docstrings/modules/external_analysis.md
+                  - internal: docstrings/modules/internal_analysis.md
 
             #- About: es/about.md
             - Changelog: es/changelog.md
