@@ -385,12 +385,6 @@
   },
   {
     "type": "Function",
-    "name": "detect_label_box",
-    "module": "traitly.utils.calibration",
-    "description": "Detect rectangular label regions using grayscale thresholding and contour filtering."
-  },
-  {
-    "type": "Function",
     "name": "find_size_ref_circles",
     "module": "traitly.utils.calibration",
     "description": "Detect dark circular objects in a grayscale ROI."
