@@ -112,22 +112,22 @@ List of functions and classes in the Traitly package:
 
 <script>
 const modulePageMap = {
-  "traitly.fruit_phenotyping.mask": "/docstrings/modules/mask",
-  "traitly.fruit_phenotyping.geometry": "/docstrings/modules/geometry",
-  "traitly.fruit_phenotyping.fruit_config": "/docstrings/modules/fruit_config",
-  "traitly.fruit_phenotyping.processing": "/docstrings/modules/processing",
-  "traitly.fruit_phenotyping.color_analysis": "/docstrings/modules/color_analysis",
-  "traitly.fruit_phenotyping.symmetry": "/docstrings/modules/symmetry",
-  "traitly.fruit_phenotyping.color_plot": "/docstrings/modules/color_plot",
-  "traitly.fruit_phenotyping.analysis_parameters": "/docstrings/modules/analysis_parameters",
-  "traitly.utils.basic_functions": "/docstrings/modules/basic_functions",
-  "traitly.utils.calibration": "/docstrings/modules/calibration",
-  "traitly.utils.label": "/docstrings/modules/label",
-  "traitly.pdf.convert_pdf": "/docstrings/modules/convert_pdf",
-  "traitly.cli": "/docstrings/modules/cli",
+  "traitly.fruit_phenotyping.mask": "../../docstrings/modules/mask",
+  "traitly.fruit_phenotyping.geometry": "../../docstrings/modules/geometry",
+  "traitly.fruit_phenotyping.fruit_config": "../../docstrings/modules/fruit_config",
+  "traitly.fruit_phenotyping.processing": "../../docstrings/modules/processing",
+  "traitly.fruit_phenotyping.color_analysis": "../../docstrings/modules/color_analysis",
+  "traitly.fruit_phenotyping.symmetry": "../../docstrings/modules/symmetry",
+  "traitly.fruit_phenotyping.color_plot": "../../docstrings/modules/color_plot",
+  "traitly.fruit_phenotyping.analysis_parameters": "../../docstrings/modules/analysis_parameters",
+  "traitly.utils.basic_functions": "../../docstrings/modules/basic_functions",
+  "traitly.utils.calibration": "../../docstrings/modules/calibration",
+  "traitly.utils.label": "../../docstrings/modules/label",
+  "traitly.pdf.convert_pdf": "../../docstrings/modules/convert_pdf",
+  "traitly.cli": "../../docstrings/modules/cli",
 };
 
-fetch("/docstrings/api_data.json")
+fetch("../../docstrings/api_data.json")
   .then(r => r.json())
   .then(function(data) {
     const tbody = document.getElementById("api-tbody");
