@@ -123,6 +123,8 @@ const modulePageMap = {
   "traitly.fruit_phenotyping.symmetry": "docstrings/modules/symmetry",
   "traitly.fruit_phenotyping.color_plot": "docstrings/modules/color_plot",
   "traitly.fruit_phenotyping.analysis_parameters": "docstrings/modules/analysis_parameters",
+  "traitly.fruit_phenotyping.internal_analysis": "docstrings/modules/internal_analysis",
+  "traitly.fruit_phenotyping.external_analysis": "docstrings/modules/external_analysis",
   "traitly.utils.basic_functions": "docstrings/modules/basic_functions",
   "traitly.utils.calibration": "docstrings/modules/calibration",
   "traitly.utils.label": "docstrings/modules/label",
