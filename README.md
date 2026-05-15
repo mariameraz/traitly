@@ -165,6 +165,7 @@ Inspired by [All Contributors](https://allcontributors.org/), we recognize all k
 | [<img src="https://github.com/mariameraz.png" width="44" height="44" valign="middle">&nbsp;María Meraz](https://github.com/mariameraz) | 💻 📆 🚧 📓 ✅ 🐛 📖 ⚠️ 🤔 🌍 |
 | [<img src="https://github.com/hector-LM.png" width="44" height="44" valign="middle">&nbsp;Héctor López](https://github.com/hector-LM) | 📖 📓 ✅ 🤔 🐛 🔣 🌍 |
 | Juan Zalapa | 🔣 |
+| [<img src="https://github.com/AlvaroGuerrero.png" width="44" height="44" valign="middle">&nbsp;Álvaro Guerrero](https://github.com/AlvaroGuerrero) | 🐛 |
 <!-- CONTRIBUTORS-END -->
 
 <br> 
