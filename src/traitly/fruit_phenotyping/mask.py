@@ -126,51 +126,51 @@ def create_mask(
         If the initial mask creation fails or an OpenCV error occurs.
     """
     try:
-       
+
         # Validation img
         if not isinstance(img_hsv, np.ndarray):
             raise TypeError("Input image must be a numpy array")
-            
+
         if img_hsv.ndim != 3 or img_hsv.shape[2] != 3:
             raise ValueError("Image must be in HSV format (3 channels)")
-        
+
         if img_hsv.dtype != np.uint8:
             raise ValueError("HSV image must be uint8 type (0-180 for H, 0-255 for S/V)")
-        
-        # Validate kernels: 
+
+        # Validate kernels:
         if not isinstance(n_iteration, int) or n_iteration < 1:
             raise ValueError("n_iteration must be a positive integer")
-        
+
         if kernel_open is not None:
             if not isinstance(kernel_open, int) or kernel_open < 1 or kernel_open % 2 == 0:
                 raise ValueError("kernel_open must be a positive odd integer")
-        
+
         if kernel_close is not None:
             if not isinstance(kernel_close, int) or kernel_close < 1 or kernel_close % 2 == 0:
                 raise ValueError("kernel_close must be a positive odd integer")
-        
+
         if kernel_blur is not None:
             if not isinstance(kernel_blur, int) or kernel_blur < 1 or kernel_blur % 2 == 0:
                 raise ValueError("blur_kernel must be a positive odd integer")
-        
+
         # Validate canny:
         if (canny_min is None) != (canny_max is None):
             raise ValueError("Both canny_min and canny_max must be provided together or both None")
-        
+
         if canny_min is not None and canny_max is not None:
             if not isinstance(canny_min, int) or not isinstance(canny_max, int):
                 raise ValueError("canny_min and canny_max must be integers")
             if canny_min >= canny_max:
                 raise ValueError("canny_min must be < canny_max")
-        
+
         # Set default HSV values for black/dark backgrounds if not provided
-        
+
         if background_color is not None:
             if background_color == 'blue':
                 lower_hsv = np.array([90, 100, 80], dtype=np.uint8)
                 upper_hsv = np.array([130, 255, 255], dtype=np.uint8)
             elif background_color == 'white':
-                lower_hsv = np.array([0, 0, 80], dtype=np.uint8)   
+                lower_hsv = np.array([0, 0, 80], dtype=np.uint8)
                 upper_hsv = np.array([130, 67, 255], dtype=np.uint8)
             elif background_color == 'black':
                 lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
@@ -180,9 +180,9 @@ def create_mask(
 
         if lower_hsv is None:
             lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
-        elif isinstance(lower_hsv, (list, tuple)): 
+        elif isinstance(lower_hsv, (list, tuple)):
             lower_hsv = np.array(lower_hsv, dtype=np.uint8)
-            
+
         if upper_hsv is None:
             upper_hsv = np.array([180, 250, 50], dtype=np.uint8)
         elif isinstance(upper_hsv, (list, tuple)):
@@ -193,34 +193,34 @@ def create_mask(
             raise ValueError("lower_hsv must be a numpy array with shape (3,)")
         if not isinstance(upper_hsv, np.ndarray) or upper_hsv.shape != (3,):
             raise ValueError("upper_hsv must be a numpy array with shape (3,)")
-            
+
         if (lower_hsv > upper_hsv).any():
             raise ValueError("All values in lower_hsv must be <= corresponding values in upper_hsv")
 
-        
-        # Create binary mask where [lower_hsv, upper_hsv] are white (255) (background) 
+
+        # Create binary mask where [lower_hsv, upper_hsv] are white (255) (background)
         # and others black (0) (fruits/label)
-        mask_background = cv2.inRange(img_hsv, lower_hsv, upper_hsv) 
+        mask_background = cv2.inRange(img_hsv, lower_hsv, upper_hsv)
         if mask_background is None:
             raise RuntimeError("Failed to create initial mask")
 
         # Invert the binary mask to focus on foreground objects (fruits/label)
-        mask = cv2.bitwise_not(mask_background) 
+        mask = cv2.bitwise_not(mask_background)
 
         # Creates an elliptical kernel for morphological operations:
-        if kernel_open is not None:        
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_open, kernel_open)) 
+        if kernel_open is not None:
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_open, kernel_open))
             mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=n_iteration)
 
         if kernel_close is not None:
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_close, kernel_close))
             mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=n_iteration)
-        
+
         if kernel_blur is not None:
             mask = cv2.GaussianBlur(mask, (kernel_blur, kernel_blur), 0)
-        
+
         edges = None
-        if canny_min is not None and canny_max is not None: 
+        if canny_min is not None and canny_max is not None:
             mask_canny = mask if kernel_blur is not None else cv2.GaussianBlur(mask, (5,5), 0)
             edges = cv2.Canny(mask_canny, canny_min, canny_max)
 
@@ -231,22 +231,22 @@ def create_mask(
 
         if fill_holes:
             final_mask = fill_holes_to_mask(final_mask)
-        
+
         if apply_convex_hull:
             final_mask = apply_convex_hull_to_mask(final_mask)
 
         if plot:
-            plot_img(final_mask, 
-                     fig_axis=False, 
+            plot_img(final_mask,
+                     fig_axis=False,
                      plot_size=plot_size)
 
         return final_mask
-        
+
     except cv2.error as e:
         raise RuntimeError(f"OpenCV error: {str(e)}")
     except Exception as e:
         raise RuntimeError(f"Unexpected error: {str(e)}")
-    
+
 
 #################################################################################################
 # Fill contour holes with floodfill
@@ -292,7 +292,7 @@ def fill_holes_to_mask(mask: np.ndarray) -> np.ndarray:
     return filled
 
 #################################################################################################
-# Close contours slit with convex hull 
+# Close contours slit with convex hull
 #################################################################################################
 
 def apply_convex_hull_to_mask(
@@ -409,52 +409,52 @@ def find_fruits(
 
     min_aspect_ratio = 0.3
     max_aspect_ratio = 3
-    
+
     # Validation
     if not isinstance(binary_mask, np.ndarray) or binary_mask.dtype != np.uint8:
         raise ValueError("binary_mask must be uint8 numpy array")
-    
+
     if len(binary_mask.shape) != 2:
         raise ValueError("binary_mask must be 2D array")
-    
+
     if rescale_factor is not None and not (0 < rescale_factor <= 1):
         raise ValueError('rescale_factor must be in range (0, 1]')
-    
+
     if min_locule_area <= 0 or min_locules_per_fruit < 0:
         raise ValueError("Area and locule count must be positive")
-    
+
     if min_fruit_area is not None and min_fruit_area <= 0:
         raise ValueError("min_fruit_area must be positive")
-    
+
     if max_fruit_area is not None and max_fruit_area <= 0:
         raise ValueError("max_fruit_area must be positive")
-    
+
     if min_fruit_area is not None and max_fruit_area is not None:
         if min_fruit_area > max_fruit_area:
             raise ValueError("min_fruit_area cannot be greater than max_fruit_area")
-    
+
     if not (0 <= min_circularity <= max_circularity <= 1):
         raise ValueError("Circularity: 0 ≤ min ≤ max ≤ 1")
-    
+
     if not (0 < min_aspect_ratio <= max_aspect_ratio):
         raise ValueError("Aspect ratio: 0 < min ≤ max")
 
     # rescale image (if requested)
     should_rescale = rescale_factor is not None and rescale_factor < 1
-    
+
     if should_rescale:
         original_h, original_w = binary_mask.shape
         new_w = int(original_w * rescale_factor)
         new_h = int(original_h * rescale_factor)
-        resized_mask = cv2.resize(binary_mask, (new_w, new_h), 
+        resized_mask = cv2.resize(binary_mask, (new_w, new_h),
                                   interpolation=cv2.INTER_NEAREST)
-        
+
         adjusted_min_locule_area = int(min_locule_area * (rescale_factor ** 2))
-        adjusted_min_fruit_area = (int(min_fruit_area * (rescale_factor ** 2)) 
+        adjusted_min_fruit_area = (int(min_fruit_area * (rescale_factor ** 2))
                                   if min_fruit_area is not None else None)
-        adjusted_max_fruit_area = (int(max_fruit_area * (rescale_factor ** 2)) 
+        adjusted_max_fruit_area = (int(max_fruit_area * (rescale_factor ** 2))
                                   if max_fruit_area is not None else None)
-        
+
         scale_x = original_w / new_w
         scale_y = original_h / new_h
     else:
@@ -465,43 +465,43 @@ def find_fruits(
 
     # Contours detected (hierarchy)
     needs_locules = min_locules_per_fruit > 0
-    
+
     if needs_locules:
         contours, hierarchy = cv2.findContours(
             resized_mask,
             cv2.RETR_TREE,
-            cv2.CHAIN_APPROX_SIMPLE 
+            cv2.CHAIN_APPROX_SIMPLE
         )
-        
+
         if not contours or hierarchy is None:
             return [], {}
-        
+
         hierarchy = hierarchy[0]
         is_top_level = hierarchy[:, 3] == -1
-        
+
     else:
         contours, _ = cv2.findContours(
             resized_mask,
             cv2.RETR_EXTERNAL,
             cv2.CHAIN_APPROX_SIMPLE
         )
-        
+
         if not contours:
             return [], {}
-        
+
         n_contours = len(contours)
-        
+
         hierarchy = np.full((n_contours, 4), -1, dtype=np.int32)
-        
+
         if n_contours > 1:
             hierarchy[:-1, 0] = np.arange(1, n_contours)  # next
             hierarchy[1:, 1] = np.arange(n_contours - 1)   # prev
-        
+
         is_top_level = np.ones(n_contours, dtype=bool)
 
     # Calculate shape/size metrics
     n_contours = len(contours)
-    
+
     areas = np.zeros(n_contours, dtype=np.float64)
     perimeters = np.zeros(n_contours, dtype=np.float64)
     aspect_ratios = np.zeros(n_contours, dtype=np.float64)
@@ -509,7 +509,7 @@ def find_fruits(
     for i, contour in enumerate(contours):
         areas[i] = cv2.contourArea(contour)
         perimeters[i] = cv2.arcLength(contour, True)
-    
+
         rect = cv2.minAreaRect(contour)
         w, h = rect[1]
         if min(w, h) > 0:
@@ -521,51 +521,51 @@ def find_fruits(
 
     # Create a mask for only filtered fruits
     filters = np.ones(n_contours, dtype=bool)
-    
+
     # Apply filters
     filters &= is_top_level
-    
+
     if adjusted_min_fruit_area is not None:
         filters &= (areas >= adjusted_min_fruit_area)
     if adjusted_max_fruit_area is not None:
         filters &= (areas <= adjusted_max_fruit_area)
-    
+
     filters &= (circularities >= min_circularity) & (circularities <= max_circularity)
     filters &= (aspect_ratios >= min_aspect_ratio) & (aspect_ratios <= max_aspect_ratio)
-    
+
     valid_fruit_indices = np.where(filters)[0]
 
     # Build fruit-locule map
     if needs_locules:
-        
+
         parents = hierarchy[:, 3]
-        
-        # For each fruit, find their child 
+
+        # For each fruit, find their child
         fruit_locules_map = {}
-        
+
         if len(valid_fruit_indices) > 0:
             for fruit_idx in valid_fruit_indices:
-             
+
                 child_mask = (parents == fruit_idx)
-                
+
                 valid_locules_mask = child_mask & (areas >= adjusted_min_locule_area)
                 locule_indices = np.where(valid_locules_mask)[0]
-                
+
                 if len(locule_indices) >= min_locules_per_fruit:
                     fruit_locules_map[int(fruit_idx)] = locule_indices.tolist()
     else:
-        
+
         fruit_locules_map = dict.fromkeys(valid_fruit_indices.astype(int), [])
 
-    # Rescale image 
+    # Rescale image
     if should_rescale:
         scale_factors = np.array([[scale_x, scale_y]], dtype=np.float32)
-        
+
         contours = [
             (contour.astype(np.float32) * scale_factors).astype(np.int32)
             for contour in contours
         ]
-    
+
     return contours, fruit_locules_map
 
 
@@ -617,17 +617,17 @@ def merge_locules_func(
 
     if not locules_indices:
         return []
-    
+
     # Filter valid contours and compute centroids
     valid_locules = []
     valid_contours = []
     centroids = []
-    
+
     for i in locules_indices:
         if len(contours[i]) > 0 and cv2.contourArea(contours[i]) > min_area:
             valid_locules.append(i)
             valid_contours.append(contours[i])
-            
+
             # Compute centroid
             M = cv2.moments(contours[i])
             if M["m00"] > 0:
@@ -636,49 +636,49 @@ def merge_locules_func(
                 centroids.append((cx, cy))
             else:
                 centroids.append(None)
-    
+
     if not valid_locules:
         return []
-    
+
     # Build centroid distance matrix
     centroids_valid = [(i, c) for i, c in enumerate(centroids) if c is not None]
-    
+
     if len(centroids_valid) < 2:
         # Not enough valid centroids, return original contours
         return valid_contours
-    
+
     # Extract valid centroid coordinates
     centroid_indices = [idx for idx, _ in centroids_valid]
     centroid_coords = np.array([c for _, c in centroids_valid])
-    
+
     # Compute pairwise centroid distances
     from scipy.spatial.distance import pdist, squareform
     centroid_distances = squareform(pdist(centroid_coords))
-    
+
     # Merge locules based on distance thresholds
     merged = [False] * len(valid_locules)
     result_locules = []
-    
+
     for i in range(len(valid_locules)):
         if not merged[i]:
             current_contour = valid_contours[i]
-            
+
             # Skip empty contours
             if len(current_contour) == 0:
                 continue
-            
+
             merged[i] = True
             to_merge = [current_contour]
-            
+
             # Pre filter candidates using centroid distances
             if centroids[i] is not None:
                 try:
                     centroid_idx = centroid_indices.index(i)
-                    
+
                     close_mask = centroid_distances[centroid_idx] <= (max_distance * 3)
                     close_indices = np.where(close_mask)[0]
 
-                    candidates = [centroid_indices[idx] for idx in close_indices 
+                    candidates = [centroid_indices[idx] for idx in close_indices
                                  if idx != centroid_idx]
                 except ValueError:
                     # Centroid not in valid list, check all
@@ -686,23 +686,23 @@ def merge_locules_func(
             else:
                 # No valid centroid, check all remaining locules
                 candidates = range(i+1, len(valid_locules))
-            
+
             # Check each candidate for actual merge eligibility
             for j in candidates:
                 if j <= i or merged[j]:
                     continue
-                
+
                 other_contour = valid_contours[j]
-                
+
                 # Skip empty contours
                 if len(other_contour) == 0:
                     continue
-                
+
                 min_dist = float('inf')
                 for point in other_contour[::2, 0, :]:
                     dist = cv2.pointPolygonTest(
-                        current_contour, 
-                        (float(point[0]), float(point[1])), 
+                        current_contour,
+                        (float(point[0]), float(point[1])),
                         True
                     )
                     if dist < min_dist:
@@ -710,18 +710,18 @@ def merge_locules_func(
                         # Early exit if distance is already too close
                         if min_dist <= 0:
                             break
-                
+
                 if min_distance < abs(min_dist) < max_distance:
                     to_merge.append(other_contour)
                     merged[j] = True
-            
+
             # Merge contours if multiple were found
             if len(to_merge) > 1:
                 try:
                     merged_contour = np.vstack(to_merge)
                     epsilon = 0.001 * cv2.arcLength(merged_contour, True)
                     merged_loculus = cv2.approxPolyDP(merged_contour, epsilon, True)
-                    
+
                     # Verify merged contour is valid
                     if len(merged_loculus) > 0:
                         result_locules.append(merged_loculus)
@@ -731,7 +731,7 @@ def merge_locules_func(
             else:
                 # No merge needed, keep original
                 result_locules.append(current_contour)
-    
+
     return result_locules
 
 
@@ -794,13 +794,13 @@ def gamma_contrast(
     # Normalize to [0, 1]
     L = _ensure_uint8(L)
     L_norm = L / 255.0
-    
+
     # Apply gamma correction
     L_corrected = np.power(L_norm, gamma)
 
     # Convert back to [0, 255]
     l_gamma_corrected = (L_corrected * 255).astype(np.uint8)
-    
+
     if plot:
         plot_img(l_gamma_corrected)
 
@@ -838,13 +838,13 @@ def sigmoid_contrast(
 
     L = _ensure_uint8(L)
     L_norm = L / 255.0
-    
+
     # Apply sigmoid transformation
     L_sigmoid = 1 / (1 + np.exp(-gain * (L_norm - cutoff)))
-    
+
     # Renormalize to [0, 1]
     L_sigmoid = (L_sigmoid - L_sigmoid.min()) / (L_sigmoid.max() - L_sigmoid.min())
-    
+
     return (L_sigmoid * 255).astype(np.uint8)
 
 def exp_transform(
@@ -875,11 +875,11 @@ def exp_transform(
 
     L = _ensure_uint8(L)
     L_norm = L / 255.0
-    
+
     # Apply exponential transformation
     L_exp = np.expm1(c * L_norm)
     L_exp = (L_exp / L_exp.max() * 255)
-    
+
     return L_exp.astype(np.uint8)
 
 def apply_contrast(
@@ -965,10 +965,10 @@ def apply_contrast(
     # Validate method early (avoid extra work if wrong)
     if contrast_method not in ('gamma', 'sigmoid', 'exp', 'none'):
         raise ValueError("contrast_method must be one of ['gamma', 'sigmoid', 'exp', 'none']")
-    
+
     # Convert to LAB color space
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-    
+
     # Extract L channel
     l_channel = lab[:, :, 0]
 
@@ -980,27 +980,27 @@ def apply_contrast(
         l_exp = exp_transform(l_channel, c=c)
 
         plt.figure(figsize=plot_size)
-        
+
         plt.subplot(2, 2, 1)
         plt.imshow(l_channel, cmap='gray')
         plt.title("Original")
         plt.axis('off')
-        
+
         plt.subplot(2, 2, 2)
         plt.imshow(l_gamma, cmap='gray')
         plt.title(f"Gamma (γ={gamma})")
         plt.axis('off')
-        
+
         plt.subplot(2, 2, 3)
         plt.imshow(l_sigmoid, cmap='gray')
         plt.title(f"Sigmoid (gain={gain}, cutoff={cutoff})")
         plt.axis('off')
-        
+
         plt.subplot(2, 2, 4)
         plt.imshow(l_exp, cmap='gray')
         plt.title(f"Exponential (c={c})")
         plt.axis('off')
-        
+
         plt.tight_layout()
         plt.show()
 
@@ -1017,40 +1017,40 @@ def apply_contrast(
     # Apply median blur (if kernel 1 skip to save time)
     if kernel_blur is not None and kernel_blur > 1:
         l_transformed = cv2.medianBlur(l_transformed, kernel_blur)
-    
+
     # Apply CLAHE only if clip_limit is specified
     if clip_limit is not None:
-        clahe = cv2.createCLAHE(clipLimit=clip_limit, 
+        clahe = cv2.createCLAHE(clipLimit=clip_limit,
                                tileGridSize=(tile_grid_size, tile_grid_size))
         l_transformed = clahe.apply(l_transformed)
-    
+
     # If plot=True and compare=False, display only the selected method
     if plot and not compare:
         plt.figure(figsize=plot_size)
-        
+
         plt.subplot(1, 2, 1)
         plt.imshow(l_channel, cmap='gray')
         plt.title("Original L Channel")
         plt.axis('off')
-        
+
         plt.subplot(1, 2, 2)
         plt.imshow(l_transformed, cmap='gray')
-        
+
         # Build title with processing info
         if contrast_method == 'none':
             title = "L Channel (no contrast)"
         else:
             title = f"L Channel ({contrast_method})"
-        
+
         if clip_limit is not None:
             title += f" + CLAHE({clip_limit})"
-        
+
         plt.title(title)
         plt.axis('off')
-        
+
         plt.tight_layout()
         plt.show()
-    
+
     return l_transformed
 
 ##########################################
@@ -1115,7 +1115,7 @@ def generate_l_channel_histogram(
 
     # Pixel intensity bars
     x1, y1 = plot_size
-    bar_h = 0.03 
+    bar_h = 0.03
     bar_y = 0.025 * plot_size[1]
 
     for ax in axes:
@@ -1359,12 +1359,12 @@ def generate_scatter_plot(
     -------
     None
     """
-    
+
     # Reuse HSV image
     h, s, v = cv2.split(img_hsv)
-    
+
     # Sample a random number of pixels
-    indices = np.random.choice(h.size, min(sample_size, h.size), replace=False) 
+    indices = np.random.choice(h.size, min(sample_size, h.size), replace=False)
 
     h_sample = h.ravel()[indices]
     s_sample = s.ravel()[indices]
@@ -1372,13 +1372,13 @@ def generate_scatter_plot(
 
     # Reuse RGB image
     rgb_sample = img_rgb.reshape(-1, 3)[indices] / 255.0
-    
+
     # Create subplot canvas
     fig, axes = plt.subplots(1, 3, figsize=plot_size)
 
     # Precalculate font size based on plot width size
     width = plot_size[0]
-    title_fontsize = int(np.clip(8 + width * 0.6, 10, 24)) 
+    title_fontsize = int(np.clip(8 + width * 0.6, 10, 24))
     label_fontsize = int(np.clip(6 + width * 0.4, 8, 18))
     tick_fontsize = int(np.clip( 5 + width * 0.3, 7, 14))
 
@@ -1412,24 +1412,41 @@ def generate_scatter_plot(
 
 ## Interactive editor
 
-def interactive_mask_editor(mask: np.ndarray, original_img: Optional[np.ndarray] = None) -> np.ndarray:
-    """
-    Interactive mask editor. Draw polygons to add (white) or remove (black) regions.
+def interactive_mask_editor(mask: np.ndarray, original_img: Optional[np.ndarray] = None, verbose: bool = True) -> np.ndarray:
+    """..."""
+    if verbose:
+        controls = [
+            ("Left click", "add polygon point (both panels)"),
+            ("Right click drag", "pan"),
+            ("W", "fill polygon WHITE (add region)"),
+            ("B", "fill polygon BLACK (remove region)"),
+            ("Enter", "apply current polygon"),
+            ("Z", "undo last edit"),
+            ("C", "clear current polygon points"),
+            ("+ / =", "zoom in"),
+            ("- / _", "zoom out"),
+            ("T", "toggle overlay opacity (10% steps)"),
+            ("Q", "quit and SAVE changes"),
+            ("ESC", "quit and DISCARD all changes"),
+        ]
 
-    Controls:
-        Left click          : add polygon point (both panels)
-        Right click drag    : pan
-        W                   : fill polygon WHITE (add region)
-        B                   : fill polygon BLACK (remove region)
-        Enter               : apply current polygon
-        Z                   : undo last edit
-        C                   : clear current polygon points
-        + / =               : zoom in
-        - / _               : zoom out
-        T                   : toggle original image overlay opacity (10% steps)
-        Q                   : quit and SAVE changes
-        ESC                 : quit and DISCARD all changes
-    """
+        col_w = max(len(k) for k, _ in controls) + 2
+        lines = [
+            "=" * 60,
+            " .✦ ݁˖ Interactive mask editor .✦ ݁˖",
+            "=" * 60,
+            "> Draw polygons to add or remove regions.\n",
+        ]
+        for key, desc in controls:
+            lines.append(f"  {key:<{col_w}}: {desc}")
+
+        try:
+            get_ipython()
+            from IPython.display import HTML, display
+            display(HTML(f"<pre style='font-family:monospace'>{'<br>'.join(lines)}</pre>"))
+        except NameError:
+            print("\n".join(lines))
+
     edited = mask.copy()
     history = [mask.copy()]
     points = []
@@ -1585,7 +1602,7 @@ def interactive_mask_editor(mask: np.ndarray, original_img: Optional[np.ndarray]
             pan_origin = (pan_x, pan_y)
 
         elif event == cv2.EVENT_MOUSEMOVE and is_panning:
-            
+
             dx = (x - pan_start[0]) / PANEL_W * (img_w / zoom)
             dy = (y - pan_start[1]) / PANEL_H * (img_h / zoom)
             pan_x = pan_origin[0] - dx
@@ -1641,7 +1658,7 @@ def interactive_mask_editor(mask: np.ndarray, original_img: Optional[np.ndarray]
             cv2.fillPoly(edited, [poly], 255 if mode == 'white' else 0)
             points.clear()
 
-        elif key == ord('q'): 
+        elif key == ord('q'):
             result = edited.copy()
             break
 
@@ -1650,5 +1667,5 @@ def interactive_mask_editor(mask: np.ndarray, original_img: Optional[np.ndarray]
             break
 
     cv2.destroyAllWindows()
-    cv2.waitKey(1) 
+    cv2.waitKey(1)
     return result
