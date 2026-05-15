@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/update-contributions.yml"
+      - ".github/update-contributors.py"
 
   workflow_dispatch:
 
