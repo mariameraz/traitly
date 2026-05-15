@@ -798,56 +798,22 @@ class FruitInternalAnalyzer:
         """Manually edit the locule mask if available, otherwise the fruit mask."""
 
         if self.mask_locules is not None:
-            mask = "mask_locules"
+            self.mask_locules = interactive_mask_editor(
+                self.mask_locules,
+                original_img=self.img,
+                verbose = verbose
+            )
         elif self.mask_fruit is not None:
-            mask = "mask_fruit"
+            self.mask_fruit = interactive_mask_editor(
+                self.mask_fruit,
+                original_img=self.img,
+                verbose = verbose
+            )
         else:
             raise ValueError(
                 "No mask found. Run generate_fruit_mask() and optionally, generate_locule_mask() first."
             )
 
-        if verbose:
-            controls = [
-                ("Left click", "add polygon point (both panels)"),
-                ("Right click drag", "pan"),
-                ("W", "fill polygon WHITE (add region)"),
-                ("B", "fill polygon BLACK (remove region)"),
-                ("Enter", "apply current polygon"),
-                ("Z", "undo last edit"),
-                ("C", "clear current polygon points"),
-                ("+ / =", "zoom in"),
-                ("- / _", "zoom out"),
-                ("T", "toggle overlay opacity (10% steps)"),
-                ("Q", "quit and SAVE changes"),
-                ("ESC", "quit and DISCARD all changes"),
-            ]
-
-            from IPython.display import HTML, display
-
-            col_w = max(len(k) for k, _ in controls) + 2
-
-            lines = [
-                "=" * 60,
-                " .✦ ݁˖ Interactive mask editor .✦ ݁˖",
-                "=" * 60,
-                "> Draw polygons to add or remove regions.",
-                f"> Editing: {mask}\n",
-            ]
-            for key, desc in controls:
-                lines.append(f"  {key:<{col_w}}: {desc}")
-
-            display(
-                HTML(f"<pre style='font-family:monospace'>{'<br>'.join(lines)}</pre>")
-            )
-
-        if mask == "mask_locules":
-            self.mask_locules = interactive_mask_editor(
-                self.mask_locules, original_img=self.img
-            )
-        else:
-            self.mask_fruit = interactive_mask_editor(
-                self.mask_fruit, original_img=self.img
-            )
 
     ##########################################################################################
     # OPTIONAL : Create a scatterplot to visualize pixel colors (HSV space)
