@@ -24,6 +24,9 @@ from functools import lru_cache
 # THIRD-PARTY LIBRARIES
 # ===========================================================================
 os.environ["OPENCV_LOG_LEVEL"] = "OFF"
+import ssl, certifi
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -87,24 +90,21 @@ def get_easyocr_reader(
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            reader = easyocr.Reader(languages, quantize=gpu, verbose=True)
+            reader = easyocr.Reader(languages, quantize=gpu, verbose=False,
+                download_enabled=True)
 
     finally:
         sys.stdout, sys.stderr = old_stdout, old_stderr
 
     return reader
 
-
+@lru_cache
 def get_cached_reader(
     languages: Tuple[str, ...] = ('en', 'es'),
     gpu: bool = False,
 ) -> 'easyocr.Reader':
     """
     Return a cached EasyOCR reader, initializing it on first call.
-
-    Uses a module-level ``_READER_CACHE`` dict keyed by
-    ``(languages, gpu)`` to avoid reloading the model across repeated
-    calls in the same session.
 
     Parameters
     ----------
@@ -119,12 +119,12 @@ def get_cached_reader(
     easyocr.Reader
         Cached or newly initialized EasyOCR reader.
     """
-    key = (tuple(languages), gpu)
+    key = (languages, gpu)
 
     if key not in _READER_CACHE:
         _READER_CACHE[key] = get_easyocr_reader(list(languages), gpu=gpu)
-
     return _READER_CACHE[key]
+
 
 
 ##############################################################################
