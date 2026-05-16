@@ -121,11 +121,19 @@ Para iniciar la aplicación interactiva de Traitly desde la terminal, ejecuta:
 ```bash
 traitly-app
 ```
+Una vez iniciada, aparecerá una dirección en la terminal similar a:
+
+```
+http://127.0.0.1:8000
+```
+Cópiala y pégala en tu navegador para abrir la aplicación.
+
 Opcionalmente, puedes especificar el host y el puerto:
+
 ```bash
 traitly-app --host 127.0.0.1 --port 8000
 ```
 !!! warning ""
-    Requiere tener instaladas las dependencias de la app. Consulta la sección de [Instalación](../installation.md#dependencias-opcionales) para mas detalles.
-    
+    Requiere tener instaladas las dependencias de la app. Consulta la sección de [Instalación](../installation.md#dependencias-opcionales) para más detalles.
+
 </div>
