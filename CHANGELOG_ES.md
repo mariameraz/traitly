@@ -1,50 +1,52 @@
 # Registro de Cambios
 
-*Todos los cambios notables de Traitly están documentados aquí:*
+*Todos los cambios significativos de Traitly están documentados aquí.*
 
 ## v0.1.2 – En desarrollo
 
 ### Correcciones
-- Corregir el mensaje de salida de `edit_mask` en la terminal (anteriormente solo funcionaba en Jupyter) (reportado por @AlvaroGuerrero)
+- Se corrigió la salida de `edit_mask` en la terminal (antes solo funcionaba en Jupyter) (reportado por @AlvaroGuerrero)
+- Se corrigió un crash en `annotate_all_fruits` cuando los frutos no tienen lóculos detectados
+- Se corrigió un crash en `detect_color_checker` cuando `cv2.mcc.CCheckerDetector` no está disponible
+- Se corrigió un error de certificado SSL cuando easyocr intenta descargar modelos por primera vez
 
 ## v0.1.1 – 2026-05-04
 
 ### Correcciones
-- Renombrar `fast_calibration` a `skip_yolo` en los archivos de ejemplo JSON para que coincida con los parámetros del código (reportado por @Hector-LM)
+- Se renombró `fast_calibration` a `skip_yolo` en los archivos de ejemplo JSON para que coincida con los parámetros del código (reportado por @Hector-LM)
 - Shiny App:
-	- Corregir ruta de imágenes de ejemplo rota en la documentación de la página principal
-	- Corregir el reinicio de los pasos del pipeline en la barra lateral al regresar desde otra pestaña
+	- Se corrigió la ruta de imágenes de ejemplo en la documentación de la página principal
+	- Se corrigió el reinicio de los pasos del pipeline en la barra lateral al regresar desde otra pestaña
 
 ### Cambios
-- Estandarizar el valor predeterminado de `min_fruit_area` a 1000 $px^2$ en todas las clases (reportado por @Hector-LM)
-- Mostrar el tiempo total de sesión en segundos o minutos según la duración en los reportes de análisis por lote
-- Mover `convert_pdf` de `utils` a un módulo dedicado `pdf`:
+- Se estandarizó el valor predeterminado de `min_fruit_area` a 1000 $px^2$ en todas las clases (reportado por @Hector-LM)
+- El tiempo total de sesión ahora se muestra en segundos o minutos según la duración en los reportes de análisis por lote
+- Se movió `convert_pdf` de `utils` a un nuevo módulo `pdf`:
   - Importación anterior: `from traitly.utils.convert_pdf import pdf_to_img`
   - Importación actual: `from traitly.pdf import pdf_to_img`
-- Renombrar la dependencia opcional `traitly[all]` a `traitly[app]`
+- Se renombró la dependencia opcional `traitly[all]` a `traitly[app]`
 - Shiny App:
-	- Optimizar las exportaciones de morfología y color eliminando escrituras temporales en el disco y usando procesamiento en la memoria
-	- Mejorar el uso de memoria en exportaciones por lote escribiendo archivos ZIP en disco en lugar de mantenerlos en RAM
-	- Usar directorios temporales administrados para el procesamiento por lote y PDF con limpieza adecuada de datos temporales
+	- Se optimizaron las exportaciones de morfología y color eliminando escrituras temporales en disco
+	- Se mejoró el uso de memoria en exportaciones por lote escribiendo archivos ZIP en disco en lugar de mantenerlos en RAM
+	- Se adoptaron directorios temporales para manejar el procesamiento por lote y PDF con limpieza automática
 
-### Agregado
-- Agregar el parámetro `erosion_px` en `analyze_folder()` para las clases `FruitInternalAnalyzer` y `FruitExternalAnalyzer`
+### Nuevo
+- Se agregó el parámetro `erosion_px` en `analyze_folder()` para las clases `FruitInternalAnalyzer` y `FruitExternalAnalyzer`
 
 ### Documentación
-- Fijar versiones de dependencias
+- Se fijaron las versiones de las dependencias
 
-----
+---
 
-## v0.1.0 — 2026-04-07
-
+## v0.1.0 – 2026-04-07
 Lanzamiento inicial.
 
 ### Funcionalidades
-- Análisis interno de fruto, lóculo y estampa con `FruitInternalAnalyzer`
-- Análisis de morfología y color del fruto completo con `FruitExternalAnalyzer`
+- Análisis interno de frutos, lóculos y estampas con `FruitInternalAnalyzer`
+- Análisis de morfología y color de frutos enteros con `FruitExternalAnalyzer`
 - Procesamiento por lote con multiprocesamiento opcional (`analyze_folder`)
 - Conversión de píxeles a centímetros usando referencias de tamaño
-- Detección de códigos QR, etiquetas de texto y verificadores de color
+- Detección de códigos QR, etiquetas de texto y tarjeta de color
 - Interfaz de línea de comandos (`traitly`)
 - Aplicación web interactiva (`traitly-app`)
 
