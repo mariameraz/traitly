@@ -7,6 +7,9 @@
 ### Fixed
 
 - Fix verbose output for `edit_mask` in terminal (previously only worked in Jupyter) (reported by @AlvaroGuerrero)
+- Fix crash in `annotate_all_fruits` when fruits have no detected locules — `get_internal_pericarp_contour` returned `None` and was passed directly to `cv2.drawContours`
+- Fix crash in `detect_color_checker` when `cv2.mcc.CCheckerDetector` is not available
+- Fix SSL certificate error when easyocr tries to download models on first use
 
 ## v0.1.1 – 2026-05-04
 
@@ -17,7 +20,7 @@
 	- Fix sidebar pipeline steps resetting after returning from another tab
 
 ### Changed
-- Standardize `min_fruit_area` default value to 1000 $px^2$across all classes (reported by @Hector-LM)
+- Standardize `min_fruit_area` default value to 1000 $px^2$ across all classes (reported by @Hector-LM)
 - Show total session time in seconds or minutes depending on duration in batch analysis reports.
 - Move `convert_pdf` from `utils` to a dedicated `pdf` module:
   - Old import: `from traitly.utils.convert_pdf import pdf_to_img`
