@@ -30,7 +30,7 @@ try:
 except ImportError:
     raise RuntimeError(
         f"Traitly App requires shiny installed. To install, run:\n"
-        "pip install traitly[app]"
+        'pip install "traitly[app]"'
     )
 #########################################################################################
 # INTERNAL IMPORTS
