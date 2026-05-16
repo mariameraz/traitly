@@ -347,6 +347,7 @@ class FruitInternalAnalyzer:
         skip_qr: bool = False,
         skip_label_roi: bool = False,
     ) -> None:
+
         """
         Detect QR code, label ROI, and label text for the loaded image.
 
@@ -390,48 +391,39 @@ class FruitInternalAnalyzer:
             print("★ LABEL DETECTION:")
             print("=" * 55)
 
+        # 1. early return if no label detection required
         if not detect_label:
-            # Try to detect label roi
             self.label_roi = None
             self.label_text = "No label detected"
             if verbose:
                 print("> Label detection: SKIPPED (detect_label=False)")
-
             return None
 
-        # QR (optional)
-        qr_text = None
+        # 2. If there is detected text, reuse it
+        if self.label_text is not None and self.label_text != "No label detected":
+            if verbose:
+                print(f"> Label text: {self.label_text}")
+            return None
+
+        # 3. QR
         if not skip_qr:
             qr_start = time.time()
-            qr_text = detect_qr(img=self.img)
-            if verbose and qr_text is not None and "No QR" not in str(qr_text):
-                print(f"> QR Code detected: {qr_text} ({time.time() - qr_start:.2f}s)")
+            self.label_text = detect_qr(img=self.img)
+            if verbose and self.label_text:
+                print(f"> QR Code detected: {self.label_text} ({time.time() - qr_start:.2f}s)")
         else:
             if verbose:
                 print("> QR detection: SKIPPED")
 
-        # ROI + OCR (optional)
-        if not skip_label_roi:
-            # label_start = time.time()
-
-            # 1. YOLO
+        # 4. ROI + OCR (only if the qr did not detect the text)
+        if not skip_label_roi and not self.label_text:
             self.label_roi = detect_label_box_yolo(img=self.img, plot=False, conf=0.4)
 
-            # 2. Detect with ROI + OCR
-            if self.label_roi is None or len(self.label_roi) == 0:
-                self.label_roi = detect_label_box(
-                    img=self.img, verbose=False, plot=False
-                )
+            if not self.label_roi:
+                self.label_roi = detect_label_box(img=self.img, verbose=False, plot=False)
 
-            # Keeping for debugging and testing running time only
-            # if verbose:
-            #    print(f"> Label text ROI detection: {time.time()-label_start:.2f}s")
-
-            # OCR if only ROI detected but no QR
-            if self.label_roi and len(self.label_roi) > 0 and qr_text is None:
+            if self.label_roi:
                 ocr_start = time.time()
-
-                # silent qr output
                 old_stdout = sys.stdout
                 sys.stdout = StringIO()
                 try:
@@ -447,29 +439,17 @@ class FruitInternalAnalyzer:
                     sys.stdout = old_stdout
 
                 if verbose and self.label_text:
-                    print(
-                        f"> Label text detected: {self.label_text}   (OCR: {time.time() - ocr_start:.2f}s)"
-                    )
-            else:
-                # If qr detected, use this as label_text
-                if qr_text is not None:
-                    self.label_text = qr_text
-                else:
-                    self.label_text = "No label detected"
+                    print(f"> Label text detected: {self.label_text}   (OCR: {time.time() - ocr_start:.2f}s)")
 
-        else:
+        elif skip_label_roi:
             self.label_roi = None
-            self.label_text = qr_text if qr_text is not None else "No label detected"
 
-        if self.label_text is None:
+        # 5. final result
+        if not self.label_text:
             self.label_text = "No label detected"
 
-        if self.label_text == "No label detected":
-            if verbose:
-                print("> No label detected.")
-                print(f"    - Use detect_label=False to disable label detection.")
-
-        return None
+        if verbose and self.label_text == "No label detected":
+            print("> No label detected.")
 
     ##########################################################################################
     ## Detect size reference
@@ -2095,7 +2075,18 @@ class FruitInternalAnalyzer:
             interpolation=cv2.INTER_AREA,
         )
 
-        detector = cv2.mcc.CCheckerDetector.create()
+        try:
+            detector = cv2.mcc.CCheckerDetector.create()
+        except AttributeError:
+            warnings.warn(
+                "Color checker detection is not available with this version of OpenCV. "
+                "Install opencv-contrib-python>=4.9 to enable this feature.",
+                UserWarning
+            )
+            self.checker_roi = None
+            self.checker_coords = None
+            return
+
         detector.process(img_small, cv2.mcc.MCC24)
         checkers = detector.getListColorChecker()
 
