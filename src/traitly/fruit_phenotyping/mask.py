@@ -1413,7 +1413,48 @@ def generate_scatter_plot(
 ## Interactive editor
 
 def interactive_mask_editor(mask: np.ndarray, original_img: Optional[np.ndarray] = None, verbose: bool = True) -> np.ndarray:
-    """..."""
+    """
+    Open an interactive window to manually edit a binary mask by drawing polygons.
+
+    Displays a two-panel window (mask + original image overlay) where the user
+    can add or remove regions by drawing polygons with the mouse. Changes are
+    applied in real time and saved on exit.
+
+    Parameters
+    ----------
+    mask : np.ndarray
+        Binary mask to edit (grayscale, uint8).
+    original_img : np.ndarray, optional
+        Original image to display as reference in the right panel.
+        If None, only the mask panel is shown. Default is None.
+    verbose : bool, optional
+        If True, print the keyboard controls before opening the window.
+        Default is True.
+
+    Returns
+    -------
+    np.ndarray
+        Edited mask if the user saves (Q), or the original mask if discarded (ESC).
+
+    Notes
+    -----
+    This function requires a display and will not work in headless environments
+    such as Google Colab or remote servers without GUI support.
+
+    Controls
+    --------
+    - Left click : add polygon point
+    - Right click drag : pan
+    - W / B : switch between add (white) and remove (black) mode
+    - Enter : apply current polygon
+    - Z : undo last edit
+    - C : clear current polygon points
+    - \+ / - : zoom in / out
+    - T : toggle overlay opacity
+    - Q : quit and save changes
+    - ESC : quit and discard all changes
+    """
+
     if verbose:
         controls = [
             ("Left click", "add polygon point (both panels)"),
