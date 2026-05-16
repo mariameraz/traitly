@@ -249,7 +249,7 @@ def _process_single(
             pix.save(img_path)
 
             if detect_qr:
-                qr_text, _ = det_qr(img_path=img_path)
+                qr_text = det_qr(img_path=img_path)
                 if qr_text and qr_text != "No QR code detected":
                     cleaned_name = _clean_filename(qr_text)
 
