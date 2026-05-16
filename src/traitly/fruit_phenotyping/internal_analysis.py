@@ -403,7 +403,7 @@ class FruitInternalAnalyzer:
         qr_text = None
         if not skip_qr:
             qr_start = time.time()
-            qr_text, self.img = detect_qr(img=self.img)
+            qr_text = detect_qr(img=self.img)
             if verbose and qr_text is not None and "No QR" not in str(qr_text):
                 print(f"> QR Code detected: {qr_text} ({time.time() - qr_start:.2f}s)")
         else:

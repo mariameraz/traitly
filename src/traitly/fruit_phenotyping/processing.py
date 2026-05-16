@@ -116,16 +116,16 @@ def precalculate_locules_data(
         contour = contours[locule]
         M = cv2.moments(contour)
 
-    
+
         if M["m00"] == 0:
             continue
-        
+
         cx = int(M["m10"] / M["m00"])
         cy = int(M["m01"] / M["m00"])
-        
-        area = M['m00'] 
+
+        area = M['m00']
         perimeter = cv2.arcLength(contour, True)
-        
+
         dx, dy = cx - cx_ref, cy - cy_ref
         angle = math.atan2(dy, dx) % (2 * np.pi)
         radius = math.hypot(dx, dy)
@@ -147,7 +147,7 @@ def precalculate_locules_data(
 
     return locules_data
 
-    
+
 #################################################################################################
 # Extract and transform fruit contour
 #################################################################################################
@@ -207,20 +207,20 @@ def get_fruit_contour(
     valid_modes = ['raw', 'hull', 'approx', 'ellipse', 'circle']
     if contour_mode not in valid_modes:
         raise ValueError(f"contour_mode must be one of {valid_modes}, got '{contour_mode}'")
-    
+
     if not 0 <= fruit_id < len(contours):
         raise IndexError(f"fruit_id {fruit_id} out of range [0, {len(contours)-1}]")
-    
+
     fruit_contour = contours[fruit_id]
-    
+
     if contour_mode == 'hull':
         fruit_contour = cv2.convexHull(fruit_contour)
-        
+
     elif contour_mode == 'approx':
         peri = cv2.arcLength(fruit_contour, True)
         epsilon = epsilon * peri
         fruit_contour = cv2.approxPolyDP(fruit_contour, epsilon, True)
-        
+
     elif contour_mode == 'ellipse':
         if len(fruit_contour) < 5:
             raise ValueError("Ellipse fitting requires at least 5 contour points")
@@ -229,20 +229,20 @@ def get_fruit_contour(
         axes = (int(ellipse[1][0] / 2), int(ellipse[1][1] / 2))
         angle = int(ellipse[2])
         fruit_contour = cv2.ellipse2Poly(center, axes, angle, 0, 360, 2).reshape(-1, 1, 2)
-    
+
     elif contour_mode == 'circle':
         (x, y), radius = cv2.minEnclosingCircle(fruit_contour)
         center = (int(x), int(y))
         radius = int(radius)
-        
+
         angles = np.linspace(0, 2 * np.pi, 36, endpoint=False)
         circle_points = np.column_stack([
             center[0] + radius * np.cos(angles),
             center[1] + radius * np.sin(angles)
         ]).astype(np.int32)
-        
+
         fruit_contour = circle_points.reshape(-1, 1, 2)
-    
+
     return fruit_contour
 
 
@@ -306,7 +306,7 @@ def calculate_pericarp_thickness_radial(
 
         All values are ``NaN`` if no valid rays could be measured.
     """
-    
+
     # ROI computation for each fruit
     x, y, w, h = cv2.boundingRect(outer_contour)
 
@@ -327,7 +327,7 @@ def calculate_pericarp_thickness_radial(
     # Create masks more efficiently
     mask_outer = np.zeros((roi_height, roi_width), dtype=np.uint8)
     mask_inner = np.zeros((roi_height, roi_width), dtype=np.uint8)
-    
+
     # Direct contour drawing without copying if contours are read only
     cv2.drawContours(mask_outer, [outer_contour - [x0, y0]], -1, 255, -1)
     cv2.drawContours(mask_inner, [inner_contour - [x0, y0]], -1, 255, -1)
@@ -336,39 +336,39 @@ def calculate_pericarp_thickness_radial(
     angles = np.linspace(0, 2 * np.pi, num_rays, endpoint=False)
     cos_angles = np.cos(angles)
     sin_angles = np.sin(angles)
-    
+
     max_search = int(np.ceil(np.sqrt(roi_width**2 + roi_height**2)))
     r_grid = np.arange(1, max_search)
 
     # Pre allocate arrays
     thicknesses_px = []
     outer_distances_px = []
-    
+
     # Vectorized computation for all rays
     xs_all = (cx_roi + cos_angles[:, None] * r_grid).astype(int)
     ys_all = (cy_roi + sin_angles[:, None] * r_grid).astype(int)
-    
+
     # Create validity mask for all points
     valid_mask = (xs_all >= 0) & (xs_all < roi_width) & (ys_all >= 0) & (ys_all < roi_height)
-    
+
     for i in range(num_rays):
         # Get valid indices for this ray
         valid = valid_mask[i]
         if not np.any(valid):
             continue
-            
+
         xs_valid = xs_all[i, valid]
         ys_valid = ys_all[i, valid]
         r_valid = r_grid[valid]
-        
+
         # Get values along ray
         outer_vals = mask_outer[ys_valid, xs_valid]
         inner_vals = mask_inner[ys_valid, xs_valid]
-        
+
         # Find outer boundary (transition from 255 to 0)
         # Using argmax to find first 0 (faster than where)
         outer_zero_idx = np.argmax(outer_vals == 0)
-        
+
         if outer_vals[outer_zero_idx] == 0 and outer_zero_idx > 0:
             outer_r = r_valid[outer_zero_idx - 1]
         elif outer_vals[0] == 0:
@@ -376,17 +376,17 @@ def calculate_pericarp_thickness_radial(
         else:
             # All pixels are inside, take the last valid
             outer_r = r_valid[-1]
-            
+
         outer_distances_px.append(outer_r)
-        
+
         # Find internal boundary (first 255 in internal mask)
         inner_white_idx = np.argmax(inner_vals == 255)
-        
+
         if inner_vals[inner_white_idx] == 255:
             inner_r = r_valid[inner_white_idx]
             if outer_r > inner_r:
                 thicknesses_px.append(outer_r - inner_r)
-    
+
     if not thicknesses_px:
         return {
             'outer_pericarp_mean_thickness_cm': np.nan,
@@ -394,13 +394,13 @@ def calculate_pericarp_thickness_radial(
             'outer_pericarp_cv_thickness': np.nan,
             'fruit_lobedness_cm': np.nan
         }
-    
+
     thicknesses_px = np.array(thicknesses_px)
     lobedness_px = float(np.std(outer_distances_px)) if outer_distances_px else np.nan
-    
+
     # Convert to cm if needed
     convert_cm = px_per_cm and isinstance(px_per_cm, (int, float)) and px_per_cm > 0
-    
+
     if convert_cm:
         inv = 1.0 / px_per_cm
         thicknesses = thicknesses_px * inv
@@ -410,9 +410,9 @@ def calculate_pericarp_thickness_radial(
         thicknesses = thicknesses_px
         lobedness = lobedness_px
         prefix = 'px'
-    
+
     mean_val = np.mean(thicknesses)
-    
+
     return {
         f'outer_pericarp_mean_thickness_{prefix}': float(mean_val),
         f'outer_pericarp_std_thickness_{prefix}': float(np.std(thicknesses)),
@@ -438,7 +438,7 @@ def get_internal_pericarp_contour(
 
     all_points = np.vstack([contours[i] for i in locules])
 
-    if dilation_factor: # option 1, dilated mask 
+    if dilation_factor: # option 1, dilated mask
         if img_shape is None:
             raise ValueError("img_shape is required when dilation_factor is provided")
 
@@ -475,7 +475,7 @@ def get_internal_pericarp_contour(
         best = max(cnts, key=cv2.contourArea)
         return (best + np.array([[[x1, y1]]], dtype=np.int32)).astype(np.int32)
 
-    else: # option 2, convex hull 
+    else: # option 2, convex hull
         return cv2.convexHull(all_points)
 
 #################################################################################################
@@ -546,7 +546,7 @@ def annotate_all_fruits(
     text_color: Tuple[int, int, int] = (0, 0, 0),
     label_background_color: Tuple[int, int, int] = (255, 255, 255),
     label_opacity: float = 0.7,
-    verbose: bool = True, 
+    verbose: bool = True,
     dilation_factor: Optional[float] = None
 ) -> None:
     """
@@ -657,7 +657,11 @@ def annotate_all_fruits(
                 fruit_id = fruit_id,
                 dilation_factor = dilation_factor)
 
-        cv2.drawContours(annotated_img, [internal_per_contour], -1, pericarp_int_color, pericarp_int_thickness)
+        if internal_per_contour is not None and len(internal_per_contour) > 0:
+            cv2.drawContours(
+                annotated_img, [internal_per_contour], -1,
+                pericarp_int_color, pericarp_int_thickness
+            )
 
         # Build label text
         x, y, w, h = cv2.boundingRect(fruit_contour)
