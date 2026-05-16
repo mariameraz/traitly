@@ -255,7 +255,7 @@
     "type": "Function",
     "name": "interactive_mask_editor",
     "module": "traitly.fruit_phenotyping.mask",
-    "description": "Interactive mask editor. Draw polygons to add (white) or remove (black) regions."
+    "description": "Open an interactive window to manually edit a binary mask by drawing polygons."
   },
   {
     "type": "Function",
