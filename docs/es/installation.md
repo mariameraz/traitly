@@ -77,6 +77,50 @@ mi-proyecto/
 
 === ":fontawesome-solid-terminal: MacOS y Linux"
 
+    ??? warning "Usuarios con Mac Intel (anteriores a 2020)"
+              
+        PyTorch (requerido por EasyOCR) ya no publica paquetes precompilados para 
+        Macs con procesador Intel, y las versiones recientes de OpenCV requieren 
+        macOS 14 o superior. Por esta razón, la instalación estándar no funcionará en Macs con Intel más antiguos.
+    
+        ??? tip "¿No sabes si tienes Intel?"
+            *Para verificar si tienes una Mac con procesador Intel, ejecuta en la terminal:*
+
+            ```bash
+            uname -m 
+            ```
+            o haz click en  -> **Acerca de esta Mac**. Si imprime `x86_64` o dice **Intel** en Procesador, sigue estos pasos en lugar de la instalación estándar.
+            
+        **1. Crea el ambiente con Python 3.11**
+    
+        Asegúrate de tener Python 3.11 instalado ([descárgalo aquí](https://www.python.org/downloads/release/python-3111/)). Luego ejecuta:
+        
+        ```bash
+        python3.11 -m venv traitly-env
+        source traitly-env/bin/activate
+        ```
+              
+        **2. Instala las dependencias en orden:**
+    
+        ```bash
+        pip install torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cpu
+        pip install opencv-contrib-python==4.8.1.78
+        pip install opencv-python==4.8.1.78
+        pip install opencv-python-headless==4.8.1.78
+        pip install "numpy<2"
+        ```
+        **3. Instala traitly**
+    
+        Obtén la última versión:
+        ```bash
+        pip install traitly
+        ```
+    
+        O una versión específica:
+        ```bash
+        pip install traitly==0.1.1
+        ```
+
     **1. Crear un nuevo entorno de Python:**
 
     Puedes reemplazar `traitly-env` con el nombre que prefieras.
@@ -92,8 +136,15 @@ mi-proyecto/
     Si la activación fue exitosa, aparecerá `(traitly-env)` al inicio de tu terminal.
 
     **3. Instalar Traitly:**
+  
+    Obtén la última versión:
     ```bash
     pip install traitly
+    ```
+
+    O una versión específica:
+    ```bash
+    pip install traitly==0.1.1
     ```
 
 === ":fontawesome-brands-windows:{.icon-blue} Windows"
@@ -113,8 +164,15 @@ mi-proyecto/
     Si la activación fue exitosa, aparecerá `(traitly-env)` al inicio de tu terminal.
 
     **3. Instalar Traitly:**
+
+    Obtén la última versión:
     ```bash
     pip install traitly
+    ```
+
+    O una versión específica:
+    ```bash
+    pip install traitly==0.1.1
     ```
 
 === ":simple-googlecolab:{.icon-orange} Google Colab"
@@ -130,8 +188,15 @@ mi-proyecto/
 
     **3. Instalar Traitly:**
     En la primera celda, copia y ejecuta el siguiente comando:
-    ```python
+
+    Obtén la última versión:
+    ```bash
     !pip install traitly
+    ```
+
+    O una versión específica:
+    ```bash
+    !pip install traitly==0.1.1
     ```
 
 ---
