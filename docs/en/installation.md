@@ -69,6 +69,48 @@ my-project/
 
 === ":fontawesome-solid-terminal: macOS and Linux"
 
+    ??? warning "Intel-based Mac (pre-2020) users"
+          
+        PyTorch (required by EasyOCR) no longer publishes pre-built packages for 
+        Intel-based Macs, and recent OpenCV versions require macOS 14 or later. 
+        As a result, the standard installation won't work on older Intel-based Macs.
+
+        ??? tip "Not sure if you have Intel?"
+            *To check if you have an Intel-based Mac, run in the terminal:*
+            ```
+            uname -m
+            ```
+            or click  -> **About This Mac**. If it prints `x86_64`, or it says **Intel** under Processor, follow these steps instead of the default installation.
+    
+        **1. Create the environment with Python 3.11**
+
+        Make sure Python 3.11 is installed ([download here](https://www.python.org/downloads/release/python-3111/)). Then run:
+        ```bash
+        python3.11 -m venv traitly-env
+        source traitly-env/bin/activate
+        ```
+        
+        **2. Install dependencies in order:**
+        ```bash
+        pip install torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cpu
+        pip install opencv-contrib-python==4.8.1.78
+        pip install opencv-python==4.8.1.78
+        pip install opencv-python-headless==4.8.1.78
+        pip install "numpy<2"
+        ```
+
+        **3. Install traitly**
+
+        Get the latest version:
+        ```bash
+        pip install traitly
+        ```
+
+        Or a specific one:
+        ```bash
+        pip install traitly==0.1.1
+        ```
+
     **1. Create a new Python environment:**
 
     You can replace `traitly-env` with any name you prefer.
@@ -84,10 +126,17 @@ my-project/
 
     If activation was successful, `(traitly-env)` will appear at the beginning of your terminal prompt.
 
-    **3. Install Traitly:**
+    **3. Install Traitly**
+    Get the latest version:
     ```bash
     pip install traitly
     ```
+
+    Or a specific one:
+    ```bash
+    pip install traitly==0.1.1
+    ```
+    
 
 === ":fontawesome-brands-windows:{.icon-blue} Windows"
 
@@ -105,9 +154,16 @@ my-project/
 
     If activation was successful, `(traitly-env)` will appear at the beginning of your terminal prompt.
 
-    **3. Install Traitly:**
+    **3. Install Traitly**
+    
+    Get the latest version:
     ```bash
     pip install traitly
+    ```
+
+    Or a specific one:
+    ```bash
+    pip install traitly==0.1.1
     ```
 
 === ":simple-googlecolab:{.icon-orange} Google Colab"
@@ -122,9 +178,17 @@ my-project/
     Once inside, go to `File -> New notebook in Drive`. This will open a new Jupyter document in your browser.
 
     **3. Install Traitly:**
+    
     In the first cell, copy and run the following command:
-    ```python
+    
+    Get the latest version:
+    ```bash
     !pip install traitly
+    ```
+
+    Or a specific one:
+    ```bash
+    !pip install traitly==0.1.1
     ```
 
 ---
