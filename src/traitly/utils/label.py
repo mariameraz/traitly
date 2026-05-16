@@ -59,7 +59,7 @@ def get_easyocr_reader(
     languages : list of str, optional
         Language codes for OCR. Default is ``['en', 'es']``.
     gpu : bool, optional
-        If True, attempt to use CUDA GPU acceleration if available. 
+        If True, attempt to use CUDA GPU acceleration if available.
         Falls back to CPU if CUDA is not supported. Default is False.
 
     Returns
@@ -219,63 +219,37 @@ def detect_label_text(
 
 def detect_qr(
     img_path: Optional[str] = None,
-    img: Optional[np.ndarray] = None,
-    fast_mode: bool = True,
+    img: Optional[np.ndarray] = None
 ) -> Tuple[Optional[str], Optional[np.ndarray]]:
     """
-    Detect a QR code in an image and return its decoded text.
-
-    Uses ``cv2.QRCodeDetector``. When ``fast_mode=True`` and the image
-    is larger than 2000 px on any side, the image is downscaled by 0.5
-    before detection and detected points are scaled back to original
-    resolution.
+    Detect and decode a QR code from an image.
 
     Parameters
     ----------
     img_path : str or None, optional
         Path to the image file. Used if ``img`` is not provided.
-        Default is ``None``.
     img : np.ndarray or None, optional
-        BGR image array. Takes precedence over ``img_path``. Default is
-        ``None``.
-    fast_mode : bool, optional
-        If True, downscale large images before detection for speed.
-        Default is True.
+        BGR image array. Takes precedence over ``img_path``.
 
     Returns
     -------
     tuple of (str or None, np.ndarray or None)
-        ``(qr_text, img)`` where ``qr_text`` is the first word of the
-        decoded QR payload, or ``None`` if no QR was detected.
-        ``img`` is always returned (original if no QR detected).
+        Decoded QR text and the input image, or ``(None, None)`` if
+        the image cannot be loaded or no QR is detected.
     """
-    if img is None and img_path:
+    if img is None and img_path is None:
+        raise ValueError("Either img or img_path must be provided.")
+
+    if img is None and img_path is not None:
         img = cv2.imread(img_path)
         if img is None:
-            return None, None
+            raise ValueError(f"Could not load image: {img_path}")
 
-    h, w = img.shape[:2]
-
-    gray     = img if len(img.shape) == 2 else cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     detector = cv2.QRCodeDetector()
 
-    if fast_mode and max(h, w) > 2000:
-        scale = 0.5
-        small = cv2.resize(gray, None, fx=scale, fy=scale,
-                           interpolation=cv2.INTER_AREA)
-        data, pts, _ = detector.detectAndDecode(small)
-        if pts is not None:
-            pts = pts * (1 / scale)
-    else:
-        data, pts, _ = detector.detectAndDecode(gray)
+    qr_text, pts, _ = detector.detectAndDecode(img)
 
-    if pts is not None and data:
-        img_color = img.copy()
-        pts       = pts[0].astype(int)
-        qr_text   = data.split()[0] if data.split() else data
-        return qr_text, img_color
-
-    return None, img
+    return qr_text
 
 
 ##############################################################################
@@ -435,7 +409,7 @@ def detect_label_box_yolo(
         boxes = r.boxes
         if not boxes:
             return None
-        
+
         label_boxes = []
 
         for box in boxes:
