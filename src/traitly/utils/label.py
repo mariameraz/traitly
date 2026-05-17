@@ -217,37 +217,82 @@ def detect_label_text(
 # Detect QR and extract text
 ##############################################################################
 
+# Load models only once
+_MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "package_data", "models", "cv2_wechat_qr")
+_MODEL_DIR = os.path.normpath(_MODEL_DIR)
+
+try:
+    _detector = cv2.wechat_qrcode_WeChatQRCode(
+        os.path.join(_MODEL_DIR, "detect.prototxt"),
+        os.path.join(_MODEL_DIR, "detect.caffemodel"),
+        "", ""
+    )
+    _WECHAT_AVAILABLE = True
+except Exception:
+    _WECHAT_AVAILABLE = False
+
+
 def detect_qr(
     img_path: Optional[str] = None,
     img: Optional[np.ndarray] = None
-) -> Tuple[Optional[str], Optional[np.ndarray]]:
+) -> Optional[str]:
     """
     Detect and decode a QR code from an image.
 
+    Accepts either a file path or a numpy array (BGR or grayscale).
+    Internally applies Otsu binarization before detection.
+
+    Uses `cv2.wechat_qrcode_WeChatQRCode` if available, otherwise falls back to `cv2.QRCodeDetector` and
+    `cv2.QRCodeDetectorCurved`.
+
     Parameters
     ----------
-    img_path : str or None, optional
-        Path to the image file. Used if ``img`` is not provided.
-    img : np.ndarray or None, optional
-        BGR image array. Takes precedence over ``img_path``.
+    img_path : str, optional
+        Path to the image file.
+    img : np.ndarray, optional
+        BGR or grayscale image array. If provided, ``img_path`` is ignored.
 
     Returns
     -------
-    tuple of (str or None, np.ndarray or None)
-        Decoded QR text and the input image, or ``(None, None)`` if
-        the image cannot be loaded or no QR is detected.
+    str or None
+        Decoded QR text, or None if no QR is detected.
+
+    Raises
+    ------
+    ValueError
+        If neither argument is provided, or if the image cannot be loaded.
     """
+    # Verify valid input
     if img is None and img_path is None:
         raise ValueError("Either img or img_path must be provided.")
 
     if img is None and img_path is not None:
         img = cv2.imread(img_path)
-        if img is None:
-            raise ValueError(f"Could not load image: {img_path}")
 
-    detector = cv2.QRCodeDetector()
+    if img is None:
+        raise ValueError(f"Could not load image: {img_path}")
 
-    qr_text, pts, _ = detector.detectAndDecode(img)
+    if _WECHAT_AVAILABLE:
+        texts, points = _detector.detectAndDecode(img)
+        qr_text = texts[0] if texts else None # only keep the first detected QR
+    else:
+        # Ensure gray image format
+        dim = img.shape
+        if len(dim) == 3:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = img
+
+        # Apply otsu binarization to enhance QR/background contrast
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # Detect QR
+        detector = cv2.QRCodeDetector()
+        qr_text, bbox, _ = detector.detectAndDecode(binary)
+
+        # if the previous detection fails, try again with a more robust function
+        if not qr_text:
+            qr_text, bbox, _ = detector.detectAndDecodeCurved(binary)
 
     return qr_text
 

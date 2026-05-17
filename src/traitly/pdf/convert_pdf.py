@@ -227,7 +227,7 @@ def _process_single(
 
     if verbose:
         print("=" * 65, flush=True)
-        print("Extracting images may take a few minutes... ⋆✧｡٩(ˊᗜˋ )و✧*｡", flush=True)
+        print("Extracting images may take a few minutes... ⋆✧｡٩(ˊᗜˋ)و✧*｡", flush=True)
         print("=" * 65, flush=True)
         print("> Processing 1 PDF file:", flush=True)
 

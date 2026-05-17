@@ -11,6 +11,11 @@
 - Fix crash in `detect_color_checker` when `cv2.mcc.CCheckerDetector` is not available
 - Fix SSL certificate error when easyocr tries to download models on first use
 
+### Added
+- Improve QR detection with two additions:
+  - Add `cv2.wechat_qrcode_WeChatQRCode` detector as primary method for more robust detection of small QR codes
+  - Add `cv2.detectAndDecodeCurved` as fallback when standard `cv2.detectAndDecode` fails
+
 ## v0.1.1 – 2026-05-04
 
 ### Fixed
