@@ -10,6 +10,11 @@
 - Se corrigió un crash en `detect_color_checker` cuando `cv2.mcc.CCheckerDetector` no está disponible
 - Se corrigió un error de certificado SSL cuando easyocr intenta descargar modelos por primera vez
 
+### Nuevo
+- Se corrigió la detección QR con dos nuevas funciones:
+  - Se añadió `cv2.wechat_qrcode_WeChatQRCode` como método principal para una detección mas robusta de códigos QR pequeños o inclinados.
+  - Se añadió `detectAndDecodeCurved` como alternativa cuando la función estandar `detectAndDecode` falla.
+
 ## v0.1.1 – 2026-05-04
 
 ### Correcciones

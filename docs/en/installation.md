@@ -93,9 +93,9 @@ my-project/
         **2. Install dependencies in order:**
         ```bash
         pip install torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cpu
-        pip install opencv-contrib-python==4.8.1.78
         pip install opencv-python==4.8.1.78
         pip install opencv-python-headless==4.8.1.78
+        pip install opencv-contrib-python==4.9.0.80
         pip install "numpy<2"
         ```
 
