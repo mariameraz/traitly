@@ -19,7 +19,7 @@
 
 <br>
 
-Página disponible en: [![Spanish](https://img.shields.io/badge/Idioma-Espa%C3%B1ol-pink)](README_ES.md)
+Página disponible en: [![Spanish](https://img.shields.io/badge/Idioma-Espa%C3%B1ol-pink)](https://github.com/mariameraz/traitly/blob/main/README_ES.md)
 
 
 **Traitly** is an open-source Python tool for automated, high-throughput fruit phenotyping from digital images. Using computer vision methods, it quantifies morphological, symmetry, and color traits across both internal structures and the external appearance of the fruit.
@@ -51,87 +51,14 @@ These materials provide additional methodological details and results from resea
 
 ## Usage
 
-Traitly can be run in different ways:
+Traitly can be used from Python, the command line (CLI), or as a web application (Shiny App). For more details:
 
-| Environment                | Status         |
-| -------------------------- | -------------- |
-| Jupyter Notebook           | ✔ Available    |
-| Command line (CLI)         | ✔ Available    |
-| Web app (Shiny)            | ✔ Available    |
-
- ⤷ You can also try our [interactive demo](https://huggingface.co/spaces/mariameraz/traitly) onlineˎˊ˗
-
----
-
-Below is a basic example of how to use **Traitly**.
-
-### ⋆ Python usage
-
-#### Internal fruit morphology analysis
-```python
-from traitly.fruit_phenotyping import FruitInternalAnalyzer
-
-# Single image analysis
-path = 'PATH/my_image.jpg'
-analyzer = FruitInternalAnalyzer(path)  # Initialize the FruitInternalAnalyzer class
-analyzer.load_image()                   # Read the image
-analyzer.setup_measurements()           # Obtain label and reference size information
-analyzer.generate_fruit_mask()          # Create a binary mask to segment fruits and locules
-analyzer.detect_fruits()                # Filter detected fruits
-analyzer.analyze_morphology()           # Run the morphology analysis
-analyzer.analyze_color()                # Run the color analysis
-analyzer.results.save_all()             # Save results (color and morphology .csv files and annotated image)
-analyzer.save_parameters()              # Save session parameters as .txt and .json files
-
-# Batch analysis
-path = 'PATH/my_folder'
-json = 'my_parameters.json'
-analyzer = FruitInternalAnalyzer(path)
-analyzer.analyze_folder(json_path = json)
-```
-
-#### External fruit morphology analysis
-```python
-from traitly.fruit_phenotyping import FruitExternalAnalyzer
-
-# Single image analysis
-path = 'PATH/my_image.jpg'
-analyzer = FruitExternalAnalyzer(path)       # Initialize the FruitExternalAnalyzer class
-analyzer.load_image()                        # Read the image
-analyzer.setup_measurements()                # Obtain label and reference size information
-analyzer.generate_fruit_mask()               # Create a binary mask to segment fruits
-analyzer.detect_fruits()                     # Filter detected fruits
-analyzer.analyze_morphology()                # Run the morphology analysis
-analyzer.analyze_color(color_channel='RGB')  # Extract mean RGB channel values for each fruit
-analyzer.results.save_all()                  # Save results (color and morphology .csv files and annotated image)
-analyzer.save_parameters()                   # Save session parameters as .txt and .json files
-
-# Batch analysis
-path = 'PATH/my_folder'
-json = 'my_parameters.json'
-analyzer = FruitExternalAnalyzer(path)
-analyzer.analyze_folder(json_path = json)
-```
-
-### ⋆ Command-line usage
-
-```bash
-# Run the web app
-traitly-app
-
-# Internal morphology analysis (single image or folder)
-traitly --fruit_internal -i tests/sample_data/
-traitly --fruit_internal -i tests/sample_data/ -o results/ --num_cores 4
-traitly --fruit_internal -i tests/sample_data/ --json config.json
-
-# External morphology analysis (single image or folder)
-traitly --fruit_external -i tests/sample_data/
-traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --num_cores 4
-```
-
-</br>
-
-For more detailed examples, [check our tutorials](https://traitly.readthedocs.io/en/latest/tutorials/overview/) ᯓ★
+- [Input image specifications](https://traitly.readthedocs.io/en/latest/user_guide/int_image_requirements/)
+- [Traitly architecture](https://traitly.readthedocs.io/en/latest/user_guide/overview/)
+- [Python quickstart](https://traitly.readthedocs.io/en/latest/tutorials/quickstart/)
+- [CLI and Shiny App](https://traitly.readthedocs.io/en/latest/user_guide/cli/)
+- [Results overview](https://traitly.readthedocs.io/en/latest/user_guide/results/overview/)
+- Try our [interactive demo](https://huggingface.co/spaces/mariameraz/traitly) onlineˎˊ˗
 
 </br>
 

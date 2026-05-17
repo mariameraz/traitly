@@ -3,7 +3,6 @@
 
 [![PyPI](https://img.shields.io/pypi/v/traitly?logo=pypi&logoColor=white)](https://pypi.org/project/traitly)
 [![Python 3.9+](https://github.com/mariameraz/traitly/actions/workflows/python_compatibility.yml/badge.svg)](https://github.com/mariameraz/traitly/actions/workflows/python_compatibility.yml)
-[![MultiOS](https://github.com/mariameraz/traitly/actions/workflows/pytest_multi_os.yml/badge.svg)](https://github.com/mariameraz/traitly/actions/workflows/pytest_multi_os.yml)
 [![Testing](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml)
 [![codecov](https://codecov.io/gh/mariameraz/traitly/graph/badge.svg?token=ZDT6RBAGZJ)](https://codecov.io/gh/mariameraz/traitly)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20020292.svg)](https://doi.org/10.5281/zenodo.20020292)
@@ -19,7 +18,7 @@
 
 <br>
 
-Available in: [![English](https://img.shields.io/badge/Language-English-purple)](README.md)
+Available in: [![English](https://img.shields.io/badge/Language-English-purple)](https://github.com/mariameraz/traitly/blob/main/README.md)
 
 
 **Traitly** es una herramienta de código abierto en Python que permite el fenotipado automatizado y de alto rendimiento de frutos a partir de imágenes digitales. Mediante métodos de visión por computadora, cuantifica rasgos morfológicos, de simetría y color tanto en estructuras internas como en la apariencia externa del fruto.
@@ -49,88 +48,17 @@ Estos materiales proporcionan detalles metodológicos adicionales y resultados d
 
 </br>
 
-## Uso
+## Guía de uso
 
-Traitly puede ejecutarse de diferentes formas:
+Traitly puede usarse desde Python, línea de comandos (CLI) o como aplicación web (Shiny App). Para más detalles:
 
-| Entorno                    | Estado         |
-| -------------------------- | -------------- |
-| Jupyter Notebook           | ✔ Disponible   |
-| Línea de comandos (CLI)    | ✔ Disponible   |
-| Aplicación web (Shiny)     | ✔ Disponible   |
+- [Especificaciones de las imágenes de entrada](https://traitly.readthedocs.io/en/latest/es/user_guide/int_image_requirements/)
+- [Arquítectura de Traitly](https://traitly.readthedocs.io/en/latest/es/user_guide/overview/)
+- [Inicio rápido en Python](https://traitly.readthedocs.io/en/latest/es/tutorials/quickstart/)
+- [Cómo usar Traitly con Línea de Comandos y acceso a Shiny App](https://traitly.readthedocs.io/en/latest/es/user_guide/cli/)
+- [Descripción de los resultados](https://traitly.readthedocs.io/en/latest/es/user_guide/results/overview/)
+- Prueba nuestro [demo interactivo](https://huggingface.co/spaces/mariameraz/traitly) en líneaˎˊ˗
 
- ⤷ También puedes probar nuestro [demo interactivo](https://huggingface.co/spaces/mariameraz/traitly) en líneaˎˊ˗
-
----
-
-A continuación se muestra un ejemplo básico de cómo utilizar **Traitly**.
-
-### ⋆ Uso con Python
-
-#### Análisis de morfología interna
-```python
-from traitly.fruit_phenotyping import FruitInternalAnalyzer
-
-# Análisis de una imagen
-path = 'PATH/my_image.jpg'
-analyzer = FruitInternalAnalyzer(path)  # Inicializar la clase FruitInternalAnalyzer
-analyzer.load_image()                   # Leer la imagen
-analyzer.setup_measurements()           # Obtener información de etiquetas y referencia de tamaño
-analyzer.generate_fruit_mask()          # Crear una máscara binaria para segmentar frutos y lóculos
-analyzer.detect_fruits()                # Filtrar los frutos detectados
-analyzer.analyze_morphology()           # Ejecutar el análisis morfológico
-analyzer.analyze_color()                # Ejecutar el análisis de color
-analyzer.results.save_all()             # Guardar los resultados (archivos .csv e imagen anotada)
-analyzer.save_parameters()              # Guardar los parámetros de sesión como .txt y .json
-
-# Análisis por lotes
-path = 'PATH/my_folder'
-json = 'my_parameters.json'
-analyzer = FruitInternalAnalyzer(path)
-analyzer.analyze_folder(json_path = json)
-```
-
-#### Análisis de morfología externa
-```python
-from traitly.fruit_phenotyping import FruitExternalAnalyzer
-
-# Análisis de una imagen
-path = 'PATH/my_image.jpg'
-analyzer = FruitExternalAnalyzer(path)       # Inicializar la clase FruitExternalAnalyzer
-analyzer.load_image()                        # Leer la imagen
-analyzer.setup_measurements()                # Obtener información de etiquetas y tamaño de referencia
-analyzer.generate_fruit_mask()               # Crear una máscara binaria para segmentar frutos
-analyzer.detect_fruits()                     # Filtrar los frutos detectados
-analyzer.analyze_morphology()                # Ejecutar el análisis morfológico
-analyzer.analyze_color(color_channel='RGB')  # Extraer valores medios de canales RGB por fruto
-analyzer.results.save_all()                  # Guardar los resultados (archivos .csv e imagen anotada)
-analyzer.save_parameters()                   # Guardar los parámetros de sesión como .txt y .json
-
-# Análisis por lotes
-path = 'PATH/my_folder'
-json = 'my_parameters.json'
-analyzer = FruitExternalAnalyzer(path)
-analyzer.analyze_folder(json_path = json)
-```
-
-### ⋆ Uso desde la línea de comandos
-```bash
-# Iniciar la aplicación web
-traitly-app
-
-# Análisis de morfología interna (imagen individual o carpeta)
-traitly --fruit_internal -i tests/sample_data/
-traitly --fruit_internal -i tests/sample_data/ -o results/ --num_cores 4
-traitly --fruit_internal -i tests/sample_data/ --json config.json
-
-# Análisis de morfología externa (imagen individual o carpeta)
-traitly --fruit_external -i tests/sample_data/
-traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --num_cores 4
-```
-
-</br>
-
-Para ejemplos más detallados, [consulta nuestros tutoriales](https://traitly.readthedocs.io/en/latest/es/tutorials/overview/) ᯓ★
 
 </br>
 
@@ -149,7 +77,7 @@ Para preguntas o comentarios sobre el proyecto, puedes escribirnos a:
 * [ma.meraz@proton.me](mailto:ma.meraz@proton.me)
 * [torresmeraz@wisc.edu](mailto:torresmeraz@wisc.edu)
 
-Estamos abiertos a colaboraciones, incluyendo la incorporación de nuevos rasgos, y la creación de tutoriales o flujos de trabajo para cultivos o tejidos vegetales específicos.
+Estamos abiertos a colaboraciones, incluyendo la incorporación de nuevos rasgos creación de tutoriales o flujos de trabajo para cultivos o tejidos vegetales específicos.
 
 </br>
 
