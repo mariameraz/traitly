@@ -417,7 +417,7 @@
     "type": "Function",
     "name": "detect_qr",
     "module": "traitly.utils.label",
-    "description": "Detect a QR code in an image and return its decoded text."
+    "description": "Detect and decode a QR code from an image."
   },
   {
     "type": "Function",
