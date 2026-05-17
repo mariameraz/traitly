@@ -38,16 +38,6 @@ Traitly procesa imágenes de frutos para medir:
 
 <br>
 
-## Publicaciones y presentaciones
-
-Los pósters relacionados con Traitly pueden encontrarse en esta carpeta:
-
-- [Pósters](https://drive.google.com/drive/folders/1AvlHWKcDvoE9m9QcmCJ5o-ma9W-LNQMe?usp=share_link) ★ˎˊ˗
-
-Estos materiales proporcionan detalles metodológicos adicionales y resultados de investigaciones derivadas de nuestro paquete.
-
-</br>
-
 ## Guía de uso
 
 Traitly puede usarse desde Python, línea de comandos (CLI) o como aplicación web (Shiny App). Para más detalles:
@@ -59,6 +49,16 @@ Traitly puede usarse desde Python, línea de comandos (CLI) o como aplicación w
 - [Descripción de los resultados](https://traitly.readthedocs.io/en/latest/es/user_guide/results/overview/)
 - Prueba nuestro [demo interactivo](https://huggingface.co/spaces/mariameraz/traitly) en líneaˎˊ˗
 
+
+</br>
+
+## Publicaciones y presentaciones
+
+Los pósters relacionados con Traitly pueden encontrarse en esta carpeta:
+
+- [Pósters](https://drive.google.com/drive/folders/1AvlHWKcDvoE9m9QcmCJ5o-ma9W-LNQMe?usp=share_link) ★ˎˊ˗
+
+Estos materiales proporcionan detalles metodológicos adicionales y resultados de investigaciones derivadas de nuestro paquete.
 
 </br>
 
