@@ -19,7 +19,9 @@ from typing import Optional, List, Tuple, Union, Dict
 import os
 from pathlib import Path
 from functools import lru_cache
-
+import sys
+from io import StringIO
+import warnings
 # ===========================================================================
 # THIRD-PARTY LIBRARIES
 # ===========================================================================
@@ -42,8 +44,18 @@ from .calibration import _get_package_model_path, _get_yolo_model
 # Detect label text with OCR
 ##############################################################################
 
-# Module-level cache to avoid reloading the OCR model across calls
-_READER_CACHE = {}
+# Verify torch is installed and the hardware have cuda
+try:
+    import torch
+    _GPU_AVAILABLE = torch.cuda.is_available()
+    if not _GPU_AVAILABLE:
+        torch.backends.mps.enabled = False
+except ImportError: # In case torch is not installed
+    torch = None
+    _GPU_AVAILABLE = False
+except Exception: # Or torch is installed but there is something wrong with the import
+    _GPU_AVAILABLE = False
+    torch.backends.mps.enabled = False
 
 
 def get_easyocr_reader(
@@ -53,40 +65,28 @@ def get_easyocr_reader(
     """
     Initialize an EasyOCR reader with optional GPU support.
 
-    Suppresses all stdout and stderr output during initialization.
-    Falls back silently to CPU if CUDA is not available when
-    ``gpu=True``.
+    Suppresses stdout and stderr during initialization. If ``gpu=True``
+    but CUDA is not available, silently falls back to CPU.
 
     Parameters
     ----------
     languages : list of str, optional
         Language codes for OCR. Default is ``['en', 'es']``.
     gpu : bool, optional
-        If True, attempt to use CUDA GPU acceleration if available.
-        Falls back to CPU if CUDA is not supported. Default is False.
+        Whether to use GPU acceleration. Falls back to CPU if CUDA is
+        unavailable. Default is False.
 
     Returns
     -------
     easyocr.Reader
         Initialized EasyOCR reader instance.
     """
-    import sys
-    from io import StringIO
-    import warnings
-
     old_stdout, old_stderr = sys.stdout, sys.stderr
     sys.stdout = sys.stderr = StringIO()
 
     try:
-        import easyocr
-
-        if gpu:
-            import torch
-            if not torch.cuda.is_available():
-                print("GPU not available")
-                gpu = False
-            else:
-                print('GPU available')
+        if gpu and not _GPU_AVAILABLE:
+            gpu = False
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
@@ -112,18 +112,14 @@ def get_cached_reader(
         Language codes. Must be a tuple (hashable) for caching.
         Default is ``('en', 'es')``.
     gpu : bool, optional
-        If True, use GPU-accelerated reader. Default is False.
+        Whether to use GPU acceleration. Default is False.
 
     Returns
     -------
     easyocr.Reader
         Cached or newly initialized EasyOCR reader.
     """
-    key = (languages, gpu)
-
-    if key not in _READER_CACHE:
-        _READER_CACHE[key] = get_easyocr_reader(list(languages), gpu=gpu)
-    return _READER_CACHE[key]
+    return get_easyocr_reader(list(languages), gpu=gpu)
 
 
 
