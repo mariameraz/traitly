@@ -2,19 +2,27 @@
 
 *All notable changes to Traitly are documented here:*
 
-## v0.1.2 – Unreleased
+## v0.1.2 – 2026-06-18
 
 ### Fixed
 
 - Fix verbose output for `edit_mask` in terminal (previously only worked in Jupyter) (reported by @AlvaroGuerrero)
+- Add `IPython` dependency required to open interactive windows with `edit_mask` on CLI (reported by @AlvaroGuerrero)
 - Fix crash in `annotate_all_fruits` when fruits have no detected locules — `get_internal_pericarp_contour` returned `None` and was passed directly to `cv2.drawContours`
 - Fix crash in `detect_color_checker` when `cv2.mcc.CCheckerDetector` is not available
 - Fix SSL certificate error when easyocr tries to download models on first use
+- Fix hardcoded version on `cli.py`
+- Patch in `_load_img_cached` which raises `FileNotFoundError` instead of returning `None` on Windows (ref. upstream bug: [ultralytics#24405](https://github.com/ultralytics/ultralytics/issues/24405))
+- Fix rename duplicate image names issue with `pdf_to_img` when multiple PDF pages share the same QR code:
+  - Only the first image was renamed 
+  - Files are now named `<qr_text>.jpg`, `<qr_text>_1.jpg`, `<qr_text>_2.jpg`, etc.
 
 ### Added
 - Improve QR detection with two additions:
   - Add `cv2.wechat_qrcode_WeChatQRCode` detector as primary method for more robust detection of small QR codes
   - Add `cv2.detectAndDecodeCurved` as fallback when standard `cv2.detectAndDecode` fails
+
+----
 
 ## v0.1.1 – 2026-05-04
 
