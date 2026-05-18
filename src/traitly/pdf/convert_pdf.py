@@ -140,8 +140,6 @@ def pdf_to_img(
 ##############################################################################
 # Determine single or batch analysis
 ##############################################################################
-
-
 def _process_folder(
     folder_path: str,
     dpi: int,
@@ -253,16 +251,8 @@ def _process_single(
                 if qr_text and qr_text != "No QR code detected":
                     cleaned_name = _clean_filename(qr_text)
 
-                    if cleaned_name in used_names:
-                        used_names[cleaned_name] += 1
-                        final_name = (
-                            f"{cleaned_name}_{used_names[cleaned_name]}.{output_format}"
-                        )
-                    else:
-                        used_names[cleaned_name] = 0
-                        final_name = f"{cleaned_name}.{output_format}"
+                    new_path = _unique_path(out_dir, cleaned_name, output_format)
 
-                    new_path = os.path.join(out_dir, final_name)
                     Path(img_path).replace(new_path)
                     img_path = new_path
                     qr_detected += 1
@@ -289,10 +279,9 @@ def _process_single(
 # Filename cleaner helper
 ##############################################################################
 
-
 def _clean_filename(text: str, max_length: int = 100) -> str:
     """
-    clean arbitrary text so it is safe to use as a filename.
+    clean arbitrary QR text so it is safe to use as a filename.
     """
     cleaned = re.sub(r"[^\w\s-]", "_", text)
     cleaned = re.sub(r"[\s_]+", "_", cleaned)
@@ -302,3 +291,19 @@ def _clean_filename(text: str, max_length: int = 100) -> str:
         cleaned = cleaned[:max_length]
 
     return cleaned if cleaned else "unnamed"
+
+################################
+# Return unique image names`
+################################
+
+def _unique_path(output_path: str, base_name: str, output_format: str) -> str:
+
+    path = Path(output_path) / f"{base_name}.{output_format}"
+
+    # Check if an image named as base_name already exist in the disk
+    # If it exist, add a sequential number to avoid duplicated names
+    counter = 1
+    while path.exists():
+        path = Path(output_path) / f"{base_name}_{counter}.{output_format}"
+        counter += 1
+    return path
