@@ -5,7 +5,6 @@
 [![Python 3.9+](https://github.com/mariameraz/traitly/actions/workflows/python_compatibility.yml/badge.svg)](https://github.com/mariameraz/traitly/actions/workflows/python_compatibility.yml)
 [![Testing](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/mariameraz/traitly/actions/workflows/pytest.yml)
 [![codecov](https://codecov.io/gh/mariameraz/traitly/graph/badge.svg?token=ZDT6RBAGZJ)](https://codecov.io/gh/mariameraz/traitly)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20020292.svg)](https://doi.org/10.5281/zenodo.20020292)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-green?logo=gnu&logoColor=white)](https://github.com/mariameraz/traitly/blob/main/LICENSE)
 
 
