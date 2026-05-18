@@ -16,8 +16,8 @@ from pathlib import Path
 
 
 # Define input image
-img_path = Path(__file__).parent.parent / "data" / "internal" / "Images_from_PDF" / "cranberry_slices_page1.jpg"
-qr_text = "SW-1073"
+img_path = Path(__file__).parent.parent / "data" / "internal" / "img_test_1.jpg"
+qr_text = "DP14-106"
 
 @pytest.fixture(scope="session")
 def qr_bgr():
