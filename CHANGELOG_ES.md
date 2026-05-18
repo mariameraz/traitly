@@ -2,18 +2,27 @@
 
 *Todos los cambios significativos de Traitly están documentados aquí.*
 
-## v0.1.2 – En desarrollo
+## v0.1.2 – 2026-06-18
 
 ### Correcciones
 - Se corrigió la salida de `edit_mask` en la terminal (antes solo funcionaba en Jupyter) (reportado por @AlvaroGuerrero)
+- Se añadió la dependencia `IPython` para poder abrir ventanas interactivas con `edit_mask` en CLI (reportado por @AlvaroGuerrero)
 - Se corrigió un crash en `annotate_all_fruits` cuando los frutos no tienen lóculos detectados
 - Se corrigió un crash en `detect_color_checker` cuando `cv2.mcc.CCheckerDetector` no está disponible
 - Se corrigió un error de certificado SSL cuando easyocr intenta descargar modelos por primera vez
+- Se corrigió versión hardcodeada en cli.py
+- Se parchó `_load_img_cached`, el cual lanza `FileNotFoundError` en lugar de `None` en Windows (Ref. upstream error: [ultralytics#24405](https://github.com/ultralytics/ultralytics/issues/24405))
+- Se corrigió el problema al renombrar imágenes con nombres duplicados cuando mas de una imagen tiene el mismo QR en el PDF cuando se utiliza `pdf_to_img`. 
+  - Solo la primer imagen se renombraba con el QR.
+  - Las imagenes ahora se renombran como `<texto_qr>.jpg`, `<texto_qr>_1.jpg`, `<texto_qr>_2.jpg`, etcétera.
+
 
 ### Nuevo
-- Se corrigió la detección QR con dos nuevas funciones:
-  - Se añadió `cv2.wechat_qrcode_WeChatQRCode` como método principal para una detección mas robusta de códigos QR pequeños o inclinados.
-  - Se añadió `detectAndDecodeCurved` como alternativa cuando la función estandar `detectAndDecode` falla.
+- Se mejoró la detección de QR con dos nuevas funciones:
+  - Se añadió `cv2.wechat_qrcode_WeChatQRCode` como método principal para una detección mas robusta de códigos QR pequeños o inclinados
+  - Se añadió `detectAndDecodeCurved` como alternativa cuando la función estandar `detectAndDecode` falla
+
+---
 
 ## v0.1.1 – 2026-05-04
 
