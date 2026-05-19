@@ -17,7 +17,7 @@
 
 <br>
 
-Página disponible en: [![Spanish](https://img.shields.io/badge/Idioma-Espa%C3%B1ol-pink)](https://github.com/mariameraz/traitly/blob/main/README_ES.md)
+ Disponible en: [![Spanish](https://img.shields.io/badge/Idioma-Espa%C3%B1ol-pink)](https://github.com/mariameraz/traitly/blob/main/README_ES.md)
 
 
 **Traitly** is an open-source Python tool for automated, high-throughput fruit phenotyping from digital images. Using computer vision methods, it quantifies morphological, symmetry, and color traits across both internal structures and the external appearance of the fruit.
