@@ -2,7 +2,7 @@
 
 *Todos los cambios significativos de Traitly están documentados aquí.*
 
-## v0.1.2 – 2026-06-18
+## v0.1.2 – 2026-05-18
 
 ### Correcciones
 - Se corrigió la salida de `edit_mask` en la terminal (antes solo funcionaba en Jupyter) (reportado por @AlvaroGuerrero)
