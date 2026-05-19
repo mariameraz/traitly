@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/update-contributions.yml"
       - ".github/update-contributors.py"
+      - ".github/contributors.yml"
 
   workflow_dispatch:
 
@@ -26,7 +27,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: update contributors table"
-          branch: bot/update-contributors
+          branch: contributions/update-contributors
           title: "chore: update contributors table"
           body: "Update contributors table."
           delete-branch: true
