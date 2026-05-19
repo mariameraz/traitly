@@ -8,21 +8,21 @@ translations:
 
 # Roles are defined based on allcontributors emoji-key: https://allcontributors.org/
 roles_map:
-  code: "💻"
-  docs: "📖"
-  bug: "🐛"
-  design: "🎨"
+  code: "💻" # Commits and PR
+  docs: "📖" # Apport to Docs
+  bug: "🐛" # Report bugs
+  design: "🎨" # ui/ux
   translation: "🌍"
-  data: "🔣"
-  tutorials: "✅"
-  ideas: "🤔"
-  projectManagement: "📆"
-  questions: "💬"
-  maintenance: "🚧"
-  tests: "⚠️"
-  userTesting: "📓"
-  infra: "🚇"
-  review: "👀"
+  data: "🔣" # contribuite data
+  tutorials: "✅" # contribuite tutorials (add, update, suggestions..)
+  ideas: "🤔" # feature proposals
+  projectManagement: "📆" # plan and coordinate
+  questions: "💬" # community support
+  maintenance: "🚧" # refactoring
+  tests: "⚠️" # create tests
+  userTesting: "📓" # testing code
+  infra: "🚇" # CI and hosting
+  review: "👀" # reviewing PR
 
 contributors:
   - name: "María Meraz"
@@ -30,14 +30,14 @@ contributors:
     roles:
       [
         code,
-        projectManagement,
         maintenance,
         userTesting,
         tutorials,
         bug,
         docs,
         tests,
-        ideas,
+        questions,
+        review,
         translation,
       ]
 
