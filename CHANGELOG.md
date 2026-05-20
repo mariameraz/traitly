@@ -2,6 +2,20 @@
 
 *All notable changes to Traitly are documented here:*
 
+## v.0.1.3 – Unrelease
+
+### Fixed
+
+- In `setup_label`:
+    - If a QR code was detected, the ROI detection step was skipped, and `label_roi = None`
+    - Now, label ROI detection now runs independently of QR detection
+
+### Changed
+
+- Encapsulate attributes only relevant for internal processing in  `FruitExternalAnalyzer` and `FruitInternalAnalyzer` for cleaner user interface. 
+
+---
+
 ## v0.1.2 – 2026-05-18
 
 ### Fixed
