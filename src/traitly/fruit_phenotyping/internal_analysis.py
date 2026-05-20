@@ -416,27 +416,26 @@ class FruitInternalAnalyzer:
                 print("> QR detection: SKIPPED")
 
         # 4. ROI + OCR (only if the qr did not detect the text)
-        if not skip_label_roi and not self.label_text:
+        if not skip_label_roi:
             self.label_roi = detect_label_box_yolo(img=self.img, plot=False, conf=0.4)
-
             if not self.label_roi:
                 self.label_roi = detect_label_box(img=self.img, verbose=False, plot=False)
 
-            if self.label_roi:
-                ocr_start = time.time()
-                old_stdout = sys.stdout
-                sys.stdout = StringIO()
-                try:
-                    self.label_text = detect_label_text(
-                        img=self.img,
-                        label_roi=self.label_roi,
-                        language=language_label,
-                        blur_label=blur_label,
-                        verbose=False,
-                        gpu=gpu,
-                    )
-                finally:
-                    sys.stdout = old_stdout
+        if self.label_roi and not self.label_text:
+            ocr_start = time.time()
+            old_stdout = sys.stdout
+            sys.stdout = StringIO()
+            try:
+                self.label_text = detect_label_text(
+                    img=self.img,
+                    label_roi=self.label_roi,
+                    language=language_label,
+                    blur_label=blur_label,
+                    verbose=False,
+                    gpu=gpu,
+                )
+            finally:
+                sys.stdout = old_stdout
 
                 if verbose and self.label_text:
                     print(f"> Label text detected: {self.label_text}   (OCR: {time.time() - ocr_start:.2f}s)")
