@@ -2,6 +2,19 @@
 
 *Todos los cambios significativos de Traitly están documentados aquí.*
 
+## v.0.1.3 – En desarrollo
+
+### Correcciones
+
+- En `setup_label`:
+    - Si el código QR era detectado, la dtection de la región de interés (ROI) de la etiqueta era saltada, y `label_roi = None`
+    - Ahora, la detecctión del ROI de la etiqueta y la detección del código QR son dos pasos independientes
+
+### Cambios
+
+- Se encapsularon atributos que solo son relevantes para procesos internos en `FruitExternalAnalyzer` y `FruitInternalAnalyzer` para mantener más limpia la interfáz del usuario.
+
+
 ## v0.1.2 – 2026-05-18
 
 ### Correcciones
