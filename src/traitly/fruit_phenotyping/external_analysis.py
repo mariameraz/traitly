@@ -896,7 +896,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             no valid images are found in the folder.
         """
 
-        if not self.is_directory:
+        if not self._is_directory:
             raise ValueError(
                 "analyze_folder() requires a directory path. "
                 "Pass a folder to FruitExternalAnalyzer(), not a single file."
@@ -1018,7 +1018,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             ),
         )
 
-        # Sync to self.parameters for session report
+        # Sync to self._parameters for session report
         for key in (
             "setup_measurements_params",
             "generate_fruit_mask_params",
@@ -1028,7 +1028,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         ):
             value = cfg.get(key)
             if isinstance(value, dict) and value:
-                setattr(self.parameters, key, value)
+                setattr(self._parameters, key, value)
 
         # clean before distributing to workers
         cfg = self._sanitize_config(cfg)
@@ -1206,7 +1206,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             ("ANALYZE_MORPHOLOGY", "analyze_morphology_params"),
             ("ANALYZE_COLOR", "analyze_color_params"),
         ):
-            raw = getattr(self.parameters, attr, {}) or {}
+            raw = getattr(self._parameters, attr, {}) or {}
             filtered = _filter_params(raw)
             if filtered:
                 session_lines.append(f"\n{title}:")
@@ -1220,7 +1220,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             "=" * 70,
         ] + [
             f"   - {pkg:<30} {ver}"
-            for pkg, ver in self.parameters.get_package_versions().items()
+            for pkg, ver in self._parameters.get_package_versions().items()
         ]
 
         session_txt = os.path.join(output_path, "session_report.txt")
