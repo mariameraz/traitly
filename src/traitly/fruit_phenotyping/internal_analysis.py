@@ -216,19 +216,19 @@ class FruitInternalAnalyzer:
 
         ## Class attributes:
         # load_img
-        self.is_directory = os.path.isdir(os.path.dirname(path))
+        self._is_directory = os.path.isdir(os.path.dirname(path))
         self.img = None
         self.img_name = None
-        self.img_copy = None
+        self._img_copy = None
         self.img_shape = None
-        self.img_rgb = None
-        self.img_hsv = None
+        self._img_rgb = None
+        self._img_hsv = None
 
         # setup_measurements
-        self.ref_roi = None
+        self._ref_roi = None
         self.px_per_cm = None
-        self.label_roi = None
-        self.checker_coords = None
+        self._label_roi = None
+        self._checker_coords = None
         self.label_text = None
 
         # create_mask
@@ -242,12 +242,12 @@ class FruitInternalAnalyzer:
 
         # analyze fruits
         self.results = None
-        self.dilation_factor = None
+        self._dilation_factor = None
 
         # save metadata
-        self.parameters = AnalysisParameters()
-        self.is_metadata_saved = True
-        self.is_morphology_results = None
+        self._parameters = AnalysisParameters()
+        self._is_metadata_saved = True
+        self._is_morphology_results = None
 
     ##########################################################################################
     ## Load and display an image
@@ -326,11 +326,11 @@ class FruitInternalAnalyzer:
 
         # Save some image attributes
         self.img_shape = self.img.shape[:2] # Image shape
-        self.img_hsv = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV) # HSV Image
-        self.img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB) # RGB Image
+        self._img_hsv = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV) # HSV Image
+        self._img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB) # RGB Image
         self.img_name = detect_img_name(self.input_path) # Image name
 
-        self.parameters.img_params = {"img_path": self.input_path} # Save used parameters
+        self._parameters.img_params = {"img_path": self.input_path} # Save used parameters
 
         return None
 
@@ -393,7 +393,7 @@ class FruitInternalAnalyzer:
 
         # 1. early return if no label detection required
         if not detect_label:
-            self.label_roi = None
+            self._label_roi = None
             self.label_text = "No label detected"
             if verbose:
                 print("> Label detection: SKIPPED (detect_label=False)")
@@ -417,18 +417,18 @@ class FruitInternalAnalyzer:
 
         # 4. ROI + OCR (only if the qr did not detect the text)
         if not skip_label_roi:
-            self.label_roi = detect_label_box_yolo(img=self.img, plot=False, conf=0.4)
-            if not self.label_roi:
-                self.label_roi = detect_label_box(img=self.img, verbose=False, plot=False)
+            self._label_roi = detect_label_box_yolo(img=self.img, plot=False, conf=0.4)
+            if not self._label_roi:
+                self._label_roi = detect_label_box(img=self.img, verbose=False, plot=False)
 
-        if self.label_roi and not self.label_text:
+        if self._label_roi and not self.label_text:
             ocr_start = time.time()
             old_stdout = sys.stdout
             sys.stdout = StringIO()
             try:
                 self.label_text = detect_label_text(
                     img=self.img,
-                    label_roi=self.label_roi,
+                    label_roi=self._label_roi,
                     language=language_label,
                     blur_label=blur_label,
                     verbose=False,
@@ -441,7 +441,7 @@ class FruitInternalAnalyzer:
                     print(f"> Label text detected: {self.label_text}   (OCR: {time.time() - ocr_start:.2f}s)")
 
         elif skip_label_roi:
-            self.label_roi = None
+            self._label_roi = None
 
         # 5. final result
         if not self.label_text:
@@ -516,26 +516,26 @@ class FruitInternalAnalyzer:
             using_default_diameter = True
 
         # create an image copy to work with
-        self.img_copy = self.img.copy()
+        self._img_copy = self.img.copy()
 
         if (width_cm is not None) != (length_cm is not None):
             raise ValueError("Error: both width_cm and length_cm are required")
 
         if width_cm and length_cm:
             self.px_per_cm = np.sqrt((w * h) / (width_cm * length_cm))
-            self.ref_roi = None
+            self._ref_roi = None
             if verbose:
                 print("> Size reference detection: SKIPPED (skip_yolo=True).")
         else:
             # No calibration available: measurements will be in pixels
             self.px_per_cm = None
-            self.ref_roi = None
+            self._ref_roi = None
             if skip_yolo:
                 if verbose:
                     print("> Size reference detection: SKIPPED (skip_yolo=True).")
             else:
-                self.px_per_cm, self.img_copy, self.ref_roi = px_cm_density(
-                    self.img_copy,
+                self.px_per_cm, self._img_copy, self._ref_roi = px_cm_density(
+                    self._img_copy,
                     confidence_threshold=confidence,
                     plot=False,
                     font_size=font_size,
@@ -546,7 +546,7 @@ class FruitInternalAnalyzer:
                     return_coordinates=True,
                 )
 
-        if self.ref_roi is not None:
+        if self._ref_roi is not None:
             if verbose and using_default_diameter:
                 print("\nNote: Default reference diameter (2.5 cm) applied.")
                 print("        Specify diameter_cm to override this value.")
@@ -658,10 +658,10 @@ class FruitInternalAnalyzer:
             raise ValueError("No image loaded. Run load_img() first.")
         if scale_factor > 1 or scale_factor < 0.1:
             raise ValueError(f"scale_factor: {scale_factor} must be > 0.1 and ≤ 1.")
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
 
         if metadata:
-            self.parameters.setup_measurements_params = {
+            self._parameters.setup_measurements_params = {
                 "width_cm": width_cm,
                 "length_cm": length_cm,
                 "diameter_cm": diameter_cm,
@@ -702,13 +702,13 @@ class FruitInternalAnalyzer:
             )
 
         # Plot
-        if plot_reference and self.ref_roi:
+        if plot_reference and self._ref_roi:
             h_img, w_img = self.img.shape[:2]
             margin = 5  # px
 
             # Determine orientation and plot size
             is_portrait = h_img > w_img
-            n = len(self.ref_roi)
+            n = len(self._ref_roi)
 
             if is_portrait:
                 nrows, ncols = n, 1
@@ -720,7 +720,7 @@ class FruitInternalAnalyzer:
             plt.figure(figsize=figsize)
 
             # Plot all the reference boxes detected
-            for i, ref_contour in enumerate(self.ref_roi, 1):
+            for i, ref_contour in enumerate(self._ref_roi, 1):
                 x, y, w, h = cv2.boundingRect(ref_contour)
                 # Add the margin
                 x1 = max(0, x - margin)
@@ -728,7 +728,7 @@ class FruitInternalAnalyzer:
                 x2 = min(w_img, x + w + margin)
                 y2 = min(h_img, y + h + margin)
 
-                roi_ref_img = self.img_copy[y1:y2, x1:x2]
+                roi_ref_img = self._img_copy[y1:y2, x1:x2]
 
                 plt.subplot(nrows, ncols, i)
                 plt.imshow(cv2.cvtColor(roi_ref_img, cv2.COLOR_BGR2RGB))
@@ -833,8 +833,8 @@ class FruitInternalAnalyzer:
             )
 
         generate_scatter_plot(
-            img_hsv=self.img_hsv,
-            img_rgb=self.img_rgb,
+            img_hsv=self._img_hsv,
+            img_rgb=self._img_rgb,
             sample_size=sample_size,
             plot_size=plot_size,
         )
@@ -865,12 +865,12 @@ class FruitInternalAnalyzer:
         erosion_px: int = 0,
     ) -> None:
 
-        if self.img_rgb is None:
+        if self._img_rgb is None:
             raise ValueError("No image loaded. Run load_image() first.")
 
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
         if metadata:
-            self.parameters.generate_fruit_mask_params = {
+            self._parameters.generate_fruit_mask_params = {
                 "stamp": stamp,
                 "lower_hsv": lower_hsv,
                 "upper_hsv": upper_hsv,
@@ -888,10 +888,10 @@ class FruitInternalAnalyzer:
                 "erosion_px": erosion_px,
             }
         if stamp:
-            img = 255 - self.img_rgb
+            img = 255 - self._img_rgb
 
         else:
-            img = cv2.cvtColor(self.img_rgb, cv2.COLOR_RGB2HSV)
+            img = cv2.cvtColor(self._img_rgb, cv2.COLOR_RGB2HSV)
 
         # Create base mask
         self.mask_fruit = create_mask(
@@ -916,8 +916,8 @@ class FruitInternalAnalyzer:
             mask_rois = np.zeros_like(self.mask_fruit)
 
             # Label ROI
-            if hasattr(self, "label_roi") and self.label_roi:
-                for box in self.label_roi:
+            if hasattr(self, "_label_roi") and self._label_roi:
+                for box in self._label_roi:
                     x, y = box["x"], box["y"]
                     w, h = box["width"], box["height"]
                     x_expanded = max(0, x - roi_expansion)
@@ -933,8 +933,8 @@ class FruitInternalAnalyzer:
                     )
 
             # Reference ROI
-            if hasattr(self, "ref_roi") and self.ref_roi:
-                for roi in self.ref_roi:
+            if hasattr(self, "_ref_roi") and self._ref_roi:
+                for roi in self._ref_roi:
                     x, y, w, h = cv2.boundingRect(roi)
                     x_expanded = max(0, x - roi_expansion)
                     y_expanded = max(0, y - roi_expansion)
@@ -949,9 +949,9 @@ class FruitInternalAnalyzer:
                     )
 
             # Color checker ROI
-            if hasattr(self, "checker_coords") and self.checker_coords is not None:
-                if len(self.checker_coords) == 4:
-                    x, y, w, h = self.checker_coords
+            if hasattr(self, "_checker_coords") and self._checker_coords is not None:
+                if len(self._checker_coords) == 4:
+                    x, y, w, h = self._checker_coords
                     x_expanded = max(0, x - roi_expansion)
                     y_expanded = max(0, y - roi_expansion)
                     w_expanded = w + 2 * roi_expansion
@@ -1047,10 +1047,10 @@ class FruitInternalAnalyzer:
             CLAHE tile grid size. Used only when ``clip_limit`` is set.
             Default is 12.
         """
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
 
         if metadata:
-            self.parameters.enhance_locule_contrast_params = {
+            self._parameters.enhance_locule_contrast_params = {
                 "contrast_method": contrast_method,
                 "gamma": gamma if contrast_method == "gamma" else None,
                 "gain": gain if contrast_method == "sigmoid" else None,
@@ -1145,9 +1145,9 @@ class FruitInternalAnalyzer:
                 "(use contrast_method = 'none' if no transformation is requiered)"
             )
 
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
         if metadata:
-            self.parameters.generate_locule_mask_params = {
+            self._parameters.generate_locule_mask_params = {
                 "thresh_min": thresh_min,
                 "min_fruit_area": min_fruit_area,
                 "min_locule_area": min_locule_area,
@@ -1255,9 +1255,9 @@ class FruitInternalAnalyzer:
         if self.mask_fruit is None:
             raise ValueError("No mask available. Run generate_fruit_mask() first.")
 
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
         if metadata:
-            self.parameters.detect_fruits_params = {
+            self._parameters.detect_fruits_params = {
                 "min_fruit_area": min_fruit_area,
                 "max_fruit_area": max_fruit_area,
                 "min_fruit_circularity": min_fruit_circularity,
@@ -1309,9 +1309,9 @@ class FruitInternalAnalyzer:
 
         if plot:
             if dilation_factor is not None:
-                self.dilation_factor = dilation_factor
+                self._dilation_factor = dilation_factor
 
-            img_copy = self.img_rgb.copy()
+            img_copy = self._img_rgb.copy()
             for fruit_id, locule_ids in self.fruit_locule_map.items():
                 # Fruits
                 cv2.drawContours(
@@ -1431,7 +1431,7 @@ class FruitInternalAnalyzer:
             mask = self.mask_fruit
 
         if dilation_factor is not None:
-            self.dilation_factor = dilation_factor
+            self._dilation_factor = dilation_factor
 
         get_single_fruit_masks(
             img=self.img,
@@ -1446,7 +1446,7 @@ class FruitInternalAnalyzer:
             overlay_legend=overlay_legend,
             plot=True,
             only_fruit=only_fruit,
-            dilation_factor=self.dilation_factor,
+            dilation_factor=self._dilation_factor,
         )
 
     ##########################################################################################
@@ -1592,21 +1592,21 @@ class FruitInternalAnalyzer:
         if self.label_text is None:
             self.label_text = "No label detected"
 
-        if self.img_copy is None:
-            self.img_copy = self.img.copy()
+        if self._img_copy is None:
+            self._img_copy = self.img.copy()
 
         saved_color_results = getattr(self.results, "color_results", None)
         saved_color_image = getattr(self.results, "color_image", None)
 
         if dilation_factor is not None:
-            self.dilation_factor = dilation_factor
+            self._dilation_factor = dilation_factor
 
         # For color results
-        self.is_morphology_results = True
+        self._is_morphology_results = True
 
         self.results = analyze_fruits_morphology(
             # Image
-            img=self.img_copy,
+            img=self._img_copy,
             path=self.input_path,
             contours=self.contours,
             fruit_locule_map=self.fruit_locule_map,
@@ -1625,7 +1625,7 @@ class FruitInternalAnalyzer:
             # Pericarp thickness
             num_rays=num_rays,
             # Internal pericarp contour
-            dilation_factor=self.dilation_factor,
+            dilation_factor=self._dilation_factor,
             img_shape=self.img_shape,
             # Plot annotated image
             plot=plot,
@@ -1657,9 +1657,9 @@ class FruitInternalAnalyzer:
         if saved_color_image is not None:
             self.results.color_image = saved_color_image
 
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
         if metadata:
-            self.parameters.analyze_morphology_params = {
+            self._parameters.analyze_morphology_params = {
                 "contour_mode": contour_mode,
                 "epsilon": epsilon if contour_mode == "approx" else None,
                 "min_locule_area": min_locule_area,
@@ -1682,7 +1682,7 @@ class FruitInternalAnalyzer:
                 "centroid_locule_color": centroid_locule_color,
                 "centroid_locule_thickness": centroid_locule_thickness,
                 "is_locule": is_locule,
-                "dilation_factor": self.dilation_factor,
+                "dilation_factor": self._dilation_factor,
             }
 
         self.results.morphology_results = pd.DataFrame(self.results.morphology_results)
@@ -1781,11 +1781,11 @@ class FruitInternalAnalyzer:
 
         # Save as .txt
         txt_path = os.path.join(output_path, f"{base_name}_parameters.txt")
-        self.parameters.save_to_file(txt_path)
+        self._parameters.save_to_file(txt_path)
 
         # Save as .json
         json_path = os.path.join(output_path, f"{base_name}_parameters.json")
-        self.parameters.save_to_json(json_path)
+        self._parameters.save_to_json(json_path)
 
         print("\n> Parameters saved at:")
         print(f"  - TXT:  {txt_path}")
@@ -1913,14 +1913,14 @@ class FruitInternalAnalyzer:
             self.label_text = "No label detected"
 
         if dilation_factor is not None:
-            self.dilation_factor = dilation_factor
+            self._dilation_factor = dilation_factor
 
-        if self.img_copy is None:
-            self.img_copy = self.img_rgb.copy()
+        if self._img_copy is None:
+            self._img_copy = self._img_rgb.copy()
 
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
         if metadata:
-            self.parameters.analyze_color_params = {
+            self._parameters.analyze_color_params = {
                 "stat": stat,
                 "tissue": tissue,
                 "color_space": color_space,
@@ -1937,16 +1937,16 @@ class FruitInternalAnalyzer:
                 "label_color": label_color,
                 "label_opacity": label_opacity,
                 "get_color_histogram": get_color_histogram,
-                "dilation_factor": self.dilation_factor,
+                "dilation_factor": self._dilation_factor,
                 "dark_thresh": dark_thresh,
             }
 
-        if self.is_morphology_results is None:
+        if self._is_morphology_results is None:
             self.results = ResultsImage(
-                bgr_img=self.img_copy, morphology_results=[], path=self.input_path
+                bgr_img=self._img_copy, morphology_results=[], path=self.input_path
             )
 
-        self.results.color_image = self.img_copy.copy()
+        self.results.color_image = self._img_copy.copy()
 
         # Annotate independent image for color results
         annotate_all_fruits(
@@ -1966,7 +1966,7 @@ class FruitInternalAnalyzer:
             text_color=font_color,
             label_background_color=label_color,
             label_opacity=label_opacity,
-            dilation_factor=self.dilation_factor,
+            dilation_factor=self._dilation_factor,
         )
 
         if plot:
@@ -1984,7 +1984,7 @@ class FruitInternalAnalyzer:
         if get_color_histogram:
             color_results = get_fruit_color_histograms(
                 img=self.img,
-                hsv_img=self.img_hsv,
+                hsv_img=self._img_hsv,
                 label=self.label_text,
                 contours=self.contours,
                 mask=mask,
@@ -2008,7 +2008,7 @@ class FruitInternalAnalyzer:
                 tissue=tissue,
                 renumber=True,
                 color_space=color_space,
-                dilation_factor=self.dilation_factor,
+                dilation_factor=self._dilation_factor,
                 dark_threshold=dark_thresh,
             )
 
@@ -2067,9 +2067,9 @@ class FruitInternalAnalyzer:
         issued. This does not raise an exception so the pipeline can continue.
         """
         # Reduce the image size for faster detection
-        h_orig, w_orig = self.img_rgb.shape[:2]
+        h_orig, w_orig = self._img_rgb.shape[:2]
         img_small = cv2.resize(
-            self.img_rgb,
+            self._img_rgb,
             (int(w_orig * scale_factor), int(h_orig * scale_factor)),
             interpolation=cv2.INTER_AREA,
         )
@@ -2082,8 +2082,8 @@ class FruitInternalAnalyzer:
                 "Install opencv-contrib-python>=4.9 to enable this feature.",
                 UserWarning
             )
-            self.checker_roi = None
-            self.checker_coords = None
+            #self._checker_roi = None
+            self._checker_coords = None
             return
 
         detector.process(img_small, cv2.mcc.MCC24)
@@ -2130,11 +2130,11 @@ class FruitInternalAnalyzer:
             patch_small, (x_f2 - x_f1, y_f2 - y_f1), interpolation=cv2.INTER_LINEAR
         )
 
-        # Convert RGB patch to BGR to match self.img_copy
+        # Convert RGB patch to BGR to match self._img_copy
         patch_full_bgr = cv2.cvtColor(patch_full, cv2.COLOR_RGB2BGR)
 
         # Paste the drawn grid patch into img_copy at the correct location
-        self.img_copy[y_f1:y_f2, x_f1:x_f2] = patch_full_bgr
+        self._img_copy[y_f1:y_f2, x_f1:x_f2] = patch_full_bgr
 
         # Scale box_points to fullres for bounding rect / ROI extraction
         box_points = (box_points_small / scale_factor).astype(np.int32)
@@ -2147,20 +2147,20 @@ class FruitInternalAnalyzer:
         margin_y = int(h * 0.1)
         x_expanded = max(0, x - margin_x)
         y_expanded = max(0, y - margin_y)
-        w_expanded = min(self.img_rgb.shape[1] - x_expanded, w + 2 * margin_x)
-        h_expanded = min(self.img_rgb.shape[0] - y_expanded, h + 2 * margin_y)
+        w_expanded = min(self._img_rgb.shape[1] - x_expanded, w + 2 * margin_x)
+        h_expanded = min(self._img_rgb.shape[0] - y_expanded, h + 2 * margin_y)
 
         # Store coordinates as tuple (x, y, w, h) for mask removal
-        self.checker_coords = (x_expanded, y_expanded, w_expanded, h_expanded)
+        self._checker_coords = (x_expanded, y_expanded, w_expanded, h_expanded)
 
         # Extract ROI image
-        checker_img = self.img_copy[
+        checker_img = self._img_copy[
             y_expanded : y_expanded + h_expanded, x_expanded : x_expanded + w_expanded
         ]
 
         # Draw rectangle on image copy for visualization
         cv2.rectangle(
-            self.img_copy,
+            self._img_copy,
             (x_expanded, y_expanded),
             (x_expanded + w_expanded, y_expanded + h_expanded),
             (0, 255, 0),
@@ -2169,7 +2169,7 @@ class FruitInternalAnalyzer:
 
         # Add label
         cv2.putText(
-            self.img_copy,
+            self._img_copy,
             "Color Checker",
             (x_expanded, y_expanded - 10),
             cv2.FONT_HERSHEY_SIMPLEX,
@@ -2623,7 +2623,7 @@ class FruitInternalAnalyzer:
         """
 
         # Validate output directory
-        if not self.is_directory:
+        if not self._is_directory:
             raise ValueError(
                 "analyze_folder() requires a directory path. "
                 "Pass a folder to FruitInternalAnalyzer(), not a single file."
@@ -2794,7 +2794,7 @@ class FruitInternalAnalyzer:
             ),
         )
 
-        # Sync to self.parameters for session report
+        # Sync to self._parameters for session report
         _param_keys = [
             "setup_measurements_params",
             "generate_fruit_mask_params",
@@ -2806,7 +2806,7 @@ class FruitInternalAnalyzer:
         ]
         for key in _param_keys:
             if key in config and config[key]:
-                setattr(self.parameters, key, config[key])
+                setattr(self._parameters, key, config[key])
 
         # Print header message:
         session_start = datetime.now()
@@ -3013,7 +3013,7 @@ class FruitInternalAnalyzer:
         }
 
         for title, attr in param_sections.items():
-            raw = getattr(self.parameters, attr, {}) or {}
+            raw = getattr(self._parameters, attr, {}) or {}
             filtered = _filter_params(raw)
             if filtered:
                 session_lines.append(f"\n{title}:")
@@ -3027,7 +3027,7 @@ class FruitInternalAnalyzer:
             "=" * 70,
         ] + [
             f"   - {pkg:<30} {ver}"
-            for pkg, ver in self.parameters.get_package_versions().items()
+            for pkg, ver in self._parameters.get_package_versions().items()
         ]
 
         # Create session report
@@ -3133,11 +3133,11 @@ class FruitInternalAnalyzer:
                 print(
                     "Warning: No annotated image, showing original image instead. Run analyze_color() or analyze_morphology() first."
                 )
-                img = self.img_rgb
+                img = self._img_rgb
             else:
                 img = self.results.morphology_image
         else:
-            img = self.img_rgb
+            img = self._img_rgb
 
         plt.figure(figsize=plot_size)
         plt.imshow(img)
