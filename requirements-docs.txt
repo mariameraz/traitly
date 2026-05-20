@@ -13,5 +13,5 @@ mkdocstrings==1.0.3
 mkdocstrings-python==2.0.3
 mkdocstrings==1.0.3
 mkdocstrings-python==2.0.3
-pymdown-extensions==10.7
+pymdown-extensions>=10.21.3
 mkdocs-include-markdown-plugin==7.2.2
