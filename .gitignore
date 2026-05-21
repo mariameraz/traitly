@@ -7,7 +7,7 @@ __pycache__/
 .Python
 
 # python environments
-.traitly_test/*
+traitly_test/*
 
 # Cache
 .cache/
@@ -35,4 +35,7 @@ tests/**/*.txt
 Untitled*
 
 # HF files
-./traitly/
+traitly/
+
+# Notes
+scripts/

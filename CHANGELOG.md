@@ -8,7 +8,7 @@
 
 - In `setup_label`:
     - If a QR code was detected, the ROI detection step was skipped, and `label_roi = None`
-    - Now, label ROI detection now runs independently of QR detection
+    - Now, label ROI detection runs independently of QR detection
 
 ### Changed
 
