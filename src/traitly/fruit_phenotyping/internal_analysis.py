@@ -49,7 +49,23 @@ import pandas as pd
 # import psutil
 from tqdm import tqdm
 
+
+# ============================================================================
+# INTERNAL IMPORTS
+# ============================================================================
 from traitly import __version__
+
+from .mask import (
+    apply_contrast,
+    create_mask,
+    create_mask_locules,
+    find_fruits,
+    generate_l_channel_histogram,
+    generate_scatter_plot,
+    interactive_mask_editor,
+)
+
+from .processing import annotate_all_fruits, get_internal_pericarp_contour
 
 from ..utils.basic_functions import detect_img_name, load_img
 from ..utils.calibration import px_cm_density
@@ -61,6 +77,8 @@ from ..utils.label import (
     detect_qr,
 )
 from .analysis_parameters import AnalysisParameters
+from .results_image import ResultsImage
+
 from .color_analysis import (
     analyze_all_fruits_color,
     get_fruit_color_histograms,
@@ -68,20 +86,7 @@ from .color_analysis import (
 )
 from .fruit_config import analyze_fruits_morphology
 
-# ============================================================================
-# INTERNAL IMPORTS
-# ============================================================================
-from .mask import (
-    apply_contrast,
-    create_mask,
-    create_mask_locules,
-    find_fruits,
-    generate_l_channel_histogram,
-    generate_scatter_plot,
-    interactive_mask_editor,
-)
-from .processing import annotate_all_fruits, get_internal_pericarp_contour
-from .results_image import ResultsImage
+from ..color_correction.color_checker import _detect_color_checker
 
 ##########################################################################################
 # Ignore warnings from torch
@@ -228,7 +233,6 @@ class FruitInternalAnalyzer:
         self._ref_roi = None
         self.px_per_cm = None
         self._label_roi = None
-        self._checker_coords = None
         self.label_text = None
 
         # create_mask
@@ -243,6 +247,10 @@ class FruitInternalAnalyzer:
         # analyze fruits
         self.results = None
         self._dilation_factor = None
+
+        # detect_color_checker
+        self._color_charts = None
+        self._checker_coords = None
 
         # save metadata
         self._parameters = AnalysisParameters()
@@ -576,8 +584,7 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     def setup_measurements(
         self,
-        plot_reference: bool = False,
-        plot_color_checker: bool = False,
+        plot: bool = False,
         font_size: int = 3,
         confidence: float = 0.6,
         detect_label: bool = False,
@@ -590,25 +597,19 @@ class FruitInternalAnalyzer:
         gpu: bool = False,
         skip_qr: bool = False,
         skip_yolo: bool = False,
-        detect_color_checker: bool = False,
-        scale_factor: float = 0.5,
     ) -> None:
         """
         Detect label text and calculate the pixel-to-centimetre scale factor.
 
         Orchestrates :meth:`setup_label` and :meth:`setup_calibration` in
-        order, and optionally runs :meth:`detect_color_checker`. Populates
-        :attr:`label_text`, :attr:`label_roi`, :attr:`ref_roi`, and
+        order. Populates :attr:`label_text`, :attr:`label_roi`, :attr:`ref_roi`, and
         :attr:`px_per_cm`.
 
         Parameters
         ----------
-        plot_reference : bool, optional
+        plot: bool, optional
             If True, display a cropped view of each detected reference ROI.
             Default is False.
-        plot_color_checker : bool, optional
-            If True, display the detected color checker region. Default is
-            False.
         font_size : int, optional
             Font size forwarded to :meth:`setup_calibration`. Default is 3.
         confidence : float, optional
@@ -641,23 +642,10 @@ class FruitInternalAnalyzer:
         skip_yolo : bool, optional
             If True and ``width_cm`` and ``length_cm`` are set, skip YOLO
             detection in :meth:`setup_calibration`. Default is False.
-        detect_color_checker : bool, optional
-            If True, run :meth:`detect_color_checker` after calibration.
-            Default is False.
-        scale_factor : float, optional
-            Downscaling factor for color checker detection in
-            :meth:`detect_color_checker`. Must be in [0.1, 1.0]. Default is
-            0.5.
 
-        Raises
-        ------
-        ValueError
-            If no image is loaded or ``scale_factor`` is outside [0.1, 1.0].
         """
         if self.img is None:
             raise ValueError("No image loaded. Run load_img() first.")
-        if scale_factor > 1 or scale_factor < 0.1:
-            raise ValueError(f"scale_factor: {scale_factor} must be > 0.1 and ≤ 1.")
         metadata = self._is_metadata_saved
 
         if metadata:
@@ -672,8 +660,6 @@ class FruitInternalAnalyzer:
                 "confidence": confidence,
                 "gpu": gpu,
                 "font_size": font_size,
-                "detect_color_checker": detect_color_checker,
-                "scale_factor": scale_factor,
             }
 
         # 1) label
@@ -696,13 +682,9 @@ class FruitInternalAnalyzer:
             skip_yolo=skip_yolo,
         )
 
-        if detect_color_checker:
-            self.detect_color_checker(
-                verbose=verbose, plot=plot_color_checker, scale_factor=scale_factor
-            )
 
         # Plot
-        if plot_reference and self._ref_roi:
+        if plot and self._ref_roi:
             h_img, w_img = self.img.shape[:2]
             margin = 5  # px
 
@@ -950,24 +932,21 @@ class FruitInternalAnalyzer:
 
             # Color checker ROI
             if hasattr(self, "_checker_coords") and self._checker_coords is not None:
-                if len(self._checker_coords) == 4:
-                    x, y, w, h = self._checker_coords
-                    x_expanded = max(0, x - roi_expansion)
-                    y_expanded = max(0, y - roi_expansion)
-                    w_expanded = w + 2 * roi_expansion
-                    h_expanded = h + 2 * roi_expansion
-                    img_h, img_w = self.mask_fruit.shape[:2]
-                    x_expanded = max(0, min(x_expanded, img_w))
-                    y_expanded = max(0, min(y_expanded, img_h))
-                    w_expanded = min(w_expanded, img_w - x_expanded)
-                    h_expanded = min(h_expanded, img_h - y_expanded)
-                    cv2.rectangle(
-                        mask_rois,
-                        (x_expanded, y_expanded),
-                        (x_expanded + w_expanded, y_expanded + h_expanded),
-                        255,
-                        -1,
-                    )
+                x = self._checker_coords['x1']
+                y = self._checker_coords['y1']
+                w = self._checker_coords['x2'] - self._checker_coords['x1']
+                h = self._checker_coords['y2'] - self._checker_coords['y1']
+                x_expanded = max(0, x - roi_expansion)
+                y_expanded = max(0, y - roi_expansion)
+                w_expanded = w + 2 * roi_expansion
+                h_expanded = h + 2 * roi_expansion
+                cv2.rectangle(
+                    mask_rois,
+                    (x_expanded, y_expanded),
+                    (x_expanded + w_expanded, y_expanded + h_expanded),
+                    255,
+                    -1,
+                )
 
             self.mask_fruit = cv2.bitwise_and(
                 self.mask_fruit, cv2.bitwise_not(mask_rois)
@@ -1196,7 +1175,6 @@ class FruitInternalAnalyzer:
         min_locule_per_fruit: int = 1,
         min_fruit_area: int = 5000,
         max_fruit_area: Optional[int] = None,
-        rescale_factor: Optional[float] = None,
         plot: bool = False,
         plot_size: Tuple[int, int] = (5, 5),
         contour_color: Tuple[int, int, int] = (0, 255, 0),
@@ -1233,8 +1211,6 @@ class FruitInternalAnalyzer:
         max_fruit_area : int or None, optional
             Maximum contour area in pixels to accept a fruit. If None, no
             upper bound is applied. Default is None.
-        rescale_factor : float or None, optional
-            Factor to rescale contours before detection. Default is None.
         plot : bool, optional
             If True, display detected fruit contours on the image. Default is
             False.
@@ -1263,7 +1239,6 @@ class FruitInternalAnalyzer:
                 "min_fruit_circularity": min_fruit_circularity,
                 "min_locule_area": min_locule_area,
                 "min_locule_per_fruit": min_locule_per_fruit,
-                "rescale_factor": rescale_factor,
             }
 
         if self.mask_locules is not None:
@@ -1278,7 +1253,6 @@ class FruitInternalAnalyzer:
             min_circularity=min_fruit_circularity,
             min_locule_area=min_locule_area,
             min_locules_per_fruit=min_locule_per_fruit,
-            rescale_factor=rescale_factor,
         )
 
         if self.fruit_locule_map is not None:
@@ -1290,7 +1264,6 @@ class FruitInternalAnalyzer:
             optional_config = {
                 "min_fruit_area": min_fruit_area,
                 "max_fruit_area": max_fruit_area,
-                "rescale_factor": rescale_factor,
             }
             print("\n" + "=" * 37)
             print(
@@ -2036,7 +2009,6 @@ class FruitInternalAnalyzer:
         plot: bool = False,
         plot_size: Tuple[int, int] = (5, 5),
         verbose: bool = True,
-        scale_factor: float = 0.5,
     ) -> None:
         """
         Detect a Macbeth color checker card and store its bounding coordinates.
@@ -2056,9 +2028,6 @@ class FruitInternalAnalyzer:
             Figure size for the color checker plot. Default is (5, 5).
         verbose : bool, optional
             If True, print detection results and coordinates. Default is True.
-        scale_factor : float, optional
-            Downscaling factor applied before detection for speed. Recommended
-            range is [0.2, 0.5]. Default is 0.5.
 
         Notes
         -----
@@ -2066,132 +2035,14 @@ class FruitInternalAnalyzer:
         :attr:`checker_coords` are set to ``None`` and a ``UserWarning`` is
         issued. This does not raise an exception so the pipeline can continue.
         """
-        # Reduce the image size for faster detection
-        h_orig, w_orig = self._img_rgb.shape[:2]
-        img_small = cv2.resize(
-            self._img_rgb,
-            (int(w_orig * scale_factor), int(h_orig * scale_factor)),
-            interpolation=cv2.INTER_AREA,
-        )
 
-        try:
-            detector = cv2.mcc.CCheckerDetector.create()
-        except AttributeError:
-            warnings.warn(
-                "Color checker detection is not available with this version of OpenCV. "
-                "Install opencv-contrib-python>=4.9 to enable this feature.",
-                UserWarning
-            )
-            #self._checker_roi = None
-            self._checker_coords = None
-            return
+        self._checker_coords, self._color_charts = _detect_color_checker(
+                                                            self._img_copy,
+                                                            plot = plot,
+                                                            plot_size = plot_size,
+                                                            verbose = verbose,
+                                                        )
 
-        detector.process(img_small, cv2.mcc.MCC24)
-        checkers = detector.getListColorChecker()
-
-        if not checkers:
-            if verbose:
-                warnings.warn(
-                    "No color checker detected in the image. "
-                    "Check that the color checker is visible and try adjusting scale_factor.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-            return None
-
-        checker = checkers[0]
-
-        # Draw color checker grid on the small image (coordinates are in small image space),
-        # then resize that drawn region back to full resolution and paste into img_copy.
-        # NOTE: img_small must be RGB since CCheckerDraw works in RGB space.
-        img_small_drawn = cv2.mcc.CCheckerDraw_create(checker).draw(img_small.copy())
-
-        # Get box points in small image space before scaling
-        box = checker.getBox()
-        box_points_small = np.int32(box)
-
-        # Compute tight bounding rect in small image space with a safety margin
-        x_s, y_s, w_s, h_s = cv2.boundingRect(box_points_small)
-        pad_s = 15  # px padding in small-image space
-        x_s1 = max(0, x_s - pad_s)
-        y_s1 = max(0, y_s - pad_s)
-        x_s2 = min(img_small.shape[1], x_s + w_s + pad_s)
-        y_s2 = min(img_small.shape[0], y_s + h_s + pad_s)
-
-        # Corresponding region in full resolution image
-        x_f1 = int(x_s1 / scale_factor)
-        y_f1 = int(y_s1 / scale_factor)
-        x_f2 = min(w_orig, int(x_s2 / scale_factor))
-        y_f2 = min(h_orig, int(y_s2 / scale_factor))
-
-        # Crop the drawn checker region from small image, resize to full res patch size
-        patch_small = img_small_drawn[y_s1:y_s2, x_s1:x_s2]
-        patch_full = cv2.resize(
-            patch_small, (x_f2 - x_f1, y_f2 - y_f1), interpolation=cv2.INTER_LINEAR
-        )
-
-        # Convert RGB patch to BGR to match self._img_copy
-        patch_full_bgr = cv2.cvtColor(patch_full, cv2.COLOR_RGB2BGR)
-
-        # Paste the drawn grid patch into img_copy at the correct location
-        self._img_copy[y_f1:y_f2, x_f1:x_f2] = patch_full_bgr
-
-        # Scale box_points to fullres for bounding rect / ROI extraction
-        box_points = (box_points_small / scale_factor).astype(np.int32)
-
-        # Get bounding rectangle
-        x, y, w, h = cv2.boundingRect(box_points)
-
-        # Add margin (0.1 = 10%)
-        margin_x = int(w * 0.1)
-        margin_y = int(h * 0.1)
-        x_expanded = max(0, x - margin_x)
-        y_expanded = max(0, y - margin_y)
-        w_expanded = min(self._img_rgb.shape[1] - x_expanded, w + 2 * margin_x)
-        h_expanded = min(self._img_rgb.shape[0] - y_expanded, h + 2 * margin_y)
-
-        # Store coordinates as tuple (x, y, w, h) for mask removal
-        self._checker_coords = (x_expanded, y_expanded, w_expanded, h_expanded)
-
-        # Extract ROI image
-        checker_img = self._img_copy[
-            y_expanded : y_expanded + h_expanded, x_expanded : x_expanded + w_expanded
-        ]
-
-        # Draw rectangle on image copy for visualization
-        cv2.rectangle(
-            self._img_copy,
-            (x_expanded, y_expanded),
-            (x_expanded + w_expanded, y_expanded + h_expanded),
-            (0, 255, 0),
-            3,
-        )
-
-        # Add label
-        cv2.putText(
-            self._img_copy,
-            "Color Checker",
-            (x_expanded, y_expanded - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1.5,
-            (0, 255, 0),
-            2,
-        )
-
-        if verbose:
-            print("\n" + "=" * 55)
-            print("★ COLOR CARD:")
-            print("=" * 55)
-            print("> Color checker detected: ")
-            print(
-                f"    - Coordinates: x={x_expanded}, y={y_expanded}, w={w_expanded}, h={h_expanded}"
-            )
-
-        if plot:
-            plt.figure(figsize=plot_size)
-            plt.imshow(cv2.cvtColor(checker_img, cv2.COLOR_BGR2RGB))
-            plt.axis("off")
-            plt.show()
 
         return None
 
@@ -2405,7 +2256,6 @@ class FruitInternalAnalyzer:
         detect_label: Optional[bool] = None,
         confidence: Optional[float] = None,
         detect_color_checker: Optional[bool] = None,
-        scale_factor: Optional[float] = None,
         # generate_fruit_mask
         stamp: Optional[bool] = None,
         lower_hsv: Optional[Tuple[int,int,int]] = None,
@@ -2444,7 +2294,6 @@ class FruitInternalAnalyzer:
         min_fruit_circularity: Optional[float] = None,
         min_locule_area: Optional[int] = None,
         min_locule_per_fruit: Optional[int] = None,
-        rescale_factor: Optional[float] = None,
         # analyze_morphology
         contour_mode: Optional[str] = None,
         epsilon: Optional[float] = None,
@@ -2522,8 +2371,6 @@ class FruitInternalAnalyzer:
             Minimum detection confidence for reference objects.
         detect_color_checker : bool or None, optional
             If True, detect and remove a color checker from the mask.
-        scale_factor : float or None, optional
-            Downscaling factor for color checker detection.
         lower_hsv : list of int or None, optional
             Lower HSV threshold for fruit segmentation.
         upper_hsv : list of int or None, optional
@@ -2590,8 +2437,6 @@ class FruitInternalAnalyzer:
             Minimum locule area for fruit detection.
         min_locule_per_fruit : int or None, optional
             Minimum locules required per fruit.
-        rescale_factor : float or None, optional
-            Contour rescaling factor before detection.
         contour_mode : str or None, optional
             Contour mode for morphology analysis.
         epsilon : float or None, optional
@@ -2694,8 +2539,6 @@ class FruitInternalAnalyzer:
                 skip_qr=skip_qr,
                 detect_label=detect_label,
                 confidence=confidence,
-                detect_color_checker=detect_color_checker,
-                scale_factor=scale_factor,
             ),
         )
         _apply(
@@ -2750,7 +2593,6 @@ class FruitInternalAnalyzer:
                 min_fruit_circularity=min_fruit_circularity,
                 min_locule_area=min_locule_area,
                 min_locule_per_fruit=min_locule_per_fruit,
-                rescale_factor=rescale_factor,
             ),
         )
         _apply(
