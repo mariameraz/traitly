@@ -1184,6 +1184,7 @@ class FruitInternalAnalyzer:
         pericarp_int_color: Tuple[int, int, int] = (93, 238, 255),
         pericarp_int_thickness: int = 2,
         dilation_factor: Optional[float] = None,
+        rescale_factor: Optional[float] = None,
     ) -> None:
         """
         Detect individual fruits and their locules from the binary mask.
@@ -1220,6 +1221,10 @@ class FruitInternalAnalyzer:
             BGR color for drawing fruit contours. Default is ``(0, 255, 0)``.
         contour_thickness : int, optional
             Line thickness for contour drawing. Default is 2.
+        rescale_factor : float or None, optional
+            Factor in (0, 1] to downscale the mask before detection. Area
+            thresholds are adjusted automatically. If ``None`` or 1, no
+            rescaling is applied. Default is ``None``.
 
         Raises
         ------
@@ -1239,6 +1244,7 @@ class FruitInternalAnalyzer:
                 "min_fruit_circularity": min_fruit_circularity,
                 "min_locule_area": min_locule_area,
                 "min_locule_per_fruit": min_locule_per_fruit,
+                "rescale_factor":rescale_factor
             }
 
         if self.mask_locules is not None:
@@ -1253,6 +1259,7 @@ class FruitInternalAnalyzer:
             min_circularity=min_fruit_circularity,
             min_locule_area=min_locule_area,
             min_locules_per_fruit=min_locule_per_fruit,
+            rescale_factor=rescale_factor
         )
 
         if self.fruit_locule_map is not None:
