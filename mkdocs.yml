@@ -279,6 +279,9 @@ extra:
     - icon: fontawesome/solid/envelope
       link: mailto:<ma.torresmeraz@gmail.com>
 
+  version:
+    provider: readthedocs
+
 extra_css:
   - stylesheets/extra.css
 
