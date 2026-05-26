@@ -13,6 +13,8 @@
 ### Cambios
 
 - Se encapsularon atributos que solo son relevantes para procesos internos en `FruitExternalAnalyzer` y `FruitInternalAnalyzer` para mantener más limpia la interfáz del usuario.
+- Se movió `detect_color_checker` de `FruitInternalAnalyzer` al nuevo módulo `color_correction`
+- `setup_measurements` ya no acepta los argumentos `detect_color_checker` and `scale_factor`. Usar el método `detect_color_checker()` en su lugar.
 
 
 ## v0.1.2 – 2026-05-18
