@@ -122,16 +122,11 @@ def test_analyze_color_channels(cranberry_blue):
 
 def test_setup_measurements_attributes(cranberry_blue):
     cranberry_blue.setup_measurements(detect_label = True,
-                                       detect_color_checker = True,
                                        skip_yolo = False)
     assert cranberry_blue.label_text
     assert cranberry_blue._label_roi
     assert cranberry_blue._ref_roi
     assert cranberry_blue.px_per_cm
-    if hasattr(cv2.mcc, 'CCheckerDetector'):
-        assert cranberry_blue._checker_coords
-    else:
-        pytest.skip("CCheckerDetector not available in this OpenCV version")
 
 
 def test_create_mask_attributes(cranberry_blue):

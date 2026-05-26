@@ -148,8 +148,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
 
     def setup_measurements(
         self,
-        plot_reference: bool = False,
-        plot_color_checker: bool = False,
+        plot: bool = False,
         font_size: int = 3,
         confidence: float = 0.6,
         detect_label: bool = False,
@@ -162,8 +161,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         gpu: bool = False,
         skip_qr: bool = False,
         skip_yolo: bool = False,
-        detect_color_checker: bool = False,
-        scale_factor: float = 0.5,
     ):
         """
         Set up scale calibration and [reference size, label text, color checker] detection.
@@ -173,8 +170,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         for full parameter documentation.
         """
         super().setup_measurements(
-            plot_reference=plot_reference,
-            plot_color_checker=plot_color_checker,
+            plot=plot,
             font_size=font_size,
             confidence=confidence,
             detect_label=detect_label,
@@ -187,8 +183,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             gpu=gpu,
             skip_qr=skip_qr,
             skip_yolo=skip_yolo,
-            detect_color_checker=detect_color_checker,
-            scale_factor=scale_factor,
         )
 
     def generate_fruit_mask(
@@ -250,7 +244,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         min_fruit_area: int = 1000,
         max_fruit_area: Optional[int] = None,
         min_fruit_circularity: float = 0.5,
-        rescale_factor: Optional[float] = None,
         verbose: bool = True,
         plot: bool = False,
         plot_size: Tuple[int, int] = (5, 5),
@@ -273,9 +266,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         min_fruit_circularity : float, optional
             Minimum circularity score in [0, 1] to filter non-fruit contours.
             Default is 0.5.
-        rescale_factor : float or None, optional
-            Factor to rescale contours before detection. If None, no rescaling
-            is applied.
         verbose : bool, optional
             If True, print a summary of detected fruits and parameters used.
             Default is True.
@@ -294,7 +284,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             max_fruit_area=max_fruit_area,
             min_fruit_circularity=min_fruit_circularity,
             min_locule_per_fruit=0,
-            rescale_factor=rescale_factor,
             verbose=False,
             plot=plot,
             plot_size=plot_size,
@@ -310,7 +299,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         if verbose:
             optional_config = {
                 "max_fruit_area": max_fruit_area,
-                "rescale_factor": rescale_factor,
             }
             print("\n" + "=" * 37)
             print(
@@ -746,8 +734,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         skip_qr: Optional[bool] = None,
         detect_label: Optional[bool] = None,
         confidence: Optional[float] = None,
-        detect_color_checker: Optional[bool] = None,
-        scale_factor: Optional[float] = None,
         # generate_fruit_mask
         lower_hsv: Optional[Tuple[int, int, int]] = None,
         upper_hsv: Optional[Tuple[int, int, int]] = None,
@@ -768,7 +754,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         min_fruit_area: Optional[int] = None,
         max_fruit_area: Optional[int]=None,
         min_fruit_circularity: Optional[float]=None,
-        rescale_factor: Optional[float]=None,
         # analyze_morphology
         contour_mode: Optional[str]=None,
         epsilon: Optional[float]=None,
@@ -831,10 +816,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             If True, attempt to detect and read sample labels.
         confidence : float or None, optional
             Minimum detection confidence for reference objects.
-        detect_color_checker : bool or None, optional
-            If True, detect a color checker for color correction.
-        scale_factor : float or None, optional
-            Downscaling factor applied during reference detection.
         lower_hsv : Tuple[int,int,int] or None, optional
             Lower HSV threshold for fruit segmentation.
         upper_hsv : Tuple[int,int,int] or None, optional
@@ -869,8 +850,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             Maximum contour area in pixels for fruit filtering.
         min_fruit_circularity : float or None, optional
             Minimum circularity score in [0, 1] to filter non-fruit contours.
-        rescale_factor : float or None, optional
-            Factor to rescale contours before detection.
         contour_mode : str or None, optional
             Contour representation mode for morphology analysis.
         epsilon : float or None, optional
@@ -959,8 +938,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                 skip_qr=skip_qr,
                 detect_label=detect_label,
                 confidence=confidence,
-                detect_color_checker=detect_color_checker,
-                scale_factor=scale_factor,
             ),
         )
         _apply(
@@ -989,7 +966,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                 min_fruit_area=min_fruit_area,
                 max_fruit_area=max_fruit_area,
                 min_fruit_circularity=min_fruit_circularity,
-                rescale_factor=rescale_factor,
             ),
         )
         _apply(
