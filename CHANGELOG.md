@@ -13,6 +13,9 @@
 ### Changed
 
 - Encapsulate attributes only relevant for internal processing in  `FruitExternalAnalyzer` and `FruitInternalAnalyzer` for cleaner user interface. 
+- Move `detect_color_checker` from `FruitInternalAnalyzer` to dedicated `color_correction` module
+- `setup_measurements` no longer accepts `detect_color_checker` and `scale_factor` arguments.
+  Use `detect_color_checker()` method instead.
 
 ---
 
@@ -35,6 +38,8 @@
 - Improve QR detection with two additions:
   - Add `cv2.wechat_qrcode_WeChatQRCode` detector as primary method for more robust detection of small QR codes
   - Add `cv2.detectAndDecodeCurved` as fallback when standard `cv2.detectAndDecode` fails
+
+Documentation: https://traitly.readthedocs.io/en/v0.1.2/
 
 ----
 
@@ -64,6 +69,8 @@
 ### Docs
 - Pin dependency versions
 
+Documentation: https://traitly.readthedocs.io/en/v0.1.1/
+
 ----
 
 ## v0.1.0 — 2026-04-07
@@ -85,3 +92,5 @@ Initial release.
 
 ### Outputs
 - Annotated images, CSV results, session and error reports, and parameter files
+
+Documentation: https://traitly.readthedocs.io/en/v0.1.0/
