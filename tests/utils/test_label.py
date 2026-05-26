@@ -80,3 +80,58 @@ def test_fallback_uses_curved_when_first_fails(qr_bgr):
          patch("cv2.QRCodeDetector", return_value=det_mock):
         assert detect_qr(img=qr_bgr) == qr_text
     det_mock.detectAndDecodeCurved.assert_called_once()
+
+def test_axis_orientation(cranberry_valid):
+    """Major axis/length should always be greater than minor axis/width"""
+    df = cranberry_valid.results.morphology_results
+
+    required_cols = [
+        "fruit_major_axis_cm",
+        "fruit_minor_axis_cm",
+        "fruit_box_length_cm",
+        "fruit_box_width_cm"
+    ]
+    for col in required_cols:
+        assert col in df.columns, f"Missing column: {col}"
+
+    assert (df["fruit_major_axis_cm"] >= df["fruit_minor_axis_cm"]).all(), \
+        "Found rows where major_axis < minor_axis"
+
+    assert (df["fruit_box_length_cm"] >= df["fruit_box_width_cm"]).all(), \
+        "Found rows where box_length < box_width"
+
+
+def test_no_negative_std(cranberry_valid):
+    """Standard deviation columns must be postive"""
+    df = cranberry_valid.results.morphology_results
+
+    std_cols = [
+        "outer_pericarp_std_thickness_cm",
+        "locules_std_area_cm2",
+        "locules_std_circularity",
+    ]
+
+    for col in std_cols:
+        assert col in df.columns, f"Missing column: {col}"
+        bad = df[df[col] < 0][col]
+        assert bad.empty, (
+            f"Column '{col}' has {len(bad)} negative std value(s):\n{bad.to_string()}"
+        )
+
+def test_no_negative_measurements(cranberry_valid):
+    """All pixel and cm measurements must be positive"""
+    df = cranberry_valid.results.morphology_results
+
+    measurement_cols = [col for col in df.columns
+                        if col.endswith("_cm")
+                        or col.endswith("_cm2")
+                        or col.endswith("_px")
+                        or col.endswith("_px2")]
+
+    assert measurement_cols, "No measurement columns found"
+
+    for col in measurement_cols:
+        bad = df[df[col] < 0][col]
+        assert bad.empty, (
+            f"Column '{col}' has {len(bad)} negative value(s):\n{bad.to_string()}"
+        )
