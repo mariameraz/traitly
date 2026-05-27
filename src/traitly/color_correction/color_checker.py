@@ -3,7 +3,7 @@
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
-from typing import Tuple, Optional, TypedDict
+from typing import Tuple, Optional, TypedDict, List
 import warnings
 # ============================================================================
 # THIRD-PARTY LIBRARIES
@@ -11,12 +11,22 @@ import warnings
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import (
+    StandardScaler,
+    RobustScaler,
+    MinMaxScaler,
+    MaxAbsScaler,
+    PolynomialFeatures
+)
+
+from sklearn.cross_decomposition import PLSRegression
 
 # ============================================================================
 # INTERNAL
 # ============================================================================
-from .color_charts import CHECKER_LAB_D65
-
+from traitly.color_correction.color_charts import CHECKER_LAB_D50, CHECKER_PATCH_NAMES
+from traitly.utils.validation import _validate_bgr_image
 
 #############################################################
 ## Detect color checker
@@ -46,7 +56,7 @@ class CheckerCoords(TypedDict):
     x2: int
     y2: int
 
-def _detect_color_checker(
+def detect_color_checker(
     img: np.ndarray,
     plot: bool = False,
     plot_size: Tuple[int, int] = (5, 5),
@@ -74,8 +84,8 @@ def _detect_color_checker(
     Tuple[dict, np.ndarray] or None
         - checker_coords : dict with keys 'x1', 'y1', 'x2', 'y2' in original
           image coordinates.
-        - chart : np.ndarray of shape (72, 5) with color data for each patch
-          (24 patches x 3 channels). Columns are [n_pixels, mean, std, min, max].
+        - chart : np.ndarray of shape (72, 5) with color data for each patch (24 patches).
+          Columns are [n_pixels, mean, std, min, max].
         Returns None if the checker is not detected or MCC is not available.
 
     Warns
@@ -90,16 +100,7 @@ def _detect_color_checker(
         return None
 
     # Verify image input
-    if img is None:
-        raise ValueError("Image cannot be None")
-    if not isinstance(img, np.ndarray):
-        raise TypeError(f"Expected a NumPy image array (np.ndarray), but got {type(img).__name__}. "
-                "Make sure to load the image first.")
-    if img.ndim != 3 or img.shape[2] != 3:
-        raise ValueError(
-            f"Expected a 3-channel BGR image with shape (H, W, 3), but got shape {img.shape}. "
-            "Make sure the image is not grayscale or RGBA."
-        )
+    _validate_bgr_image(img)
 
     # Working only for MCC 24 patches card for now
     # Important: detector expects a BGR image according with cv2 docs
@@ -111,16 +112,9 @@ def _detect_color_checker(
         return None
 
     checker = checkers[0]
-    # Draw color patches detected
-    cdrawer = cv2.mcc.CCheckerDraw.create(checkers[0])
-    cdrawer.draw(img)
-
-    # Save the color mean value for each color patch
-    chart = checker.getChartsRGB()
 
     # Save the coords of the checker box
     box = checker.getBox()
-
 
     # Get a rotated bounding box around the checker card and save checker coords
     coords = cv2.boundingRect(np.int32(box))
@@ -154,21 +148,214 @@ def _detect_color_checker(
         plt.title("Color checker detected")
         plt.show()
 
-    return checker_coords, chart
+    # Save the LAB mean value for each color patch
+    chart = checker.getChartsRGB()
 
-## Convert color charts from BGR to LAB
-def charts_rgb_to_lab(
-    rgb_chart: np.ndarray,
+    #Draw color patches detected
+    img_copy = img.copy()
+    cdrawer = cv2.mcc.CCheckerDraw.create(checkers[0])
+    cdrawer.draw(img_copy)
+
+    return checker_coords, chart, img_copy
+
+########################################################################
+## Extract patch colors from charts and convert them from BGR to LAB   #
+########################################################################
+def _get_lab_patches(
+    detected_chart: np.ndarray,
 ) -> np.ndarray:
 
     # Obtain mean colors from the chart array
-    means = rgb_chart[:, 1]
+    means = detected_chart[:, 1]
 
     # reshape from (72, ) to (1, 24, 3)
     rgb_patches = means.reshape(24, 3).astype(np.float32) / 255
-    rgb_patches = rgb_patches[np.newaxis, :, :]
+
+    # reorder rgb to bgr
+    bgr_patches = rgb_patches[:, ::-1]
 
     # Convert RGB to LAB
-    lab_patches = cv2.cvtColor(rgb_patches, cv2.COLOR_RGB2Lab)
+    lab_patches = cv2.cvtColor(bgr_patches[np.newaxis], cv2.COLOR_BGR2Lab)[0]
+    return lab_patches.astype(np.float32)
 
-    return rgb_patches, lab_patches
+
+##############################
+## Convert BGR image to LAB  #
+##############################
+
+def _img_bgr_to_lab(img: np.ndarray) -> np.ndarray:
+    if img.dtype == np.uint8:
+        img = img.astype(np.float32) / 255.0
+    return cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
+
+###########################
+# Color correction (PLSR) #
+###########################
+
+def _fit_plsr_models(
+    detected_lab: np.ndarray,
+    reference_lab: np.ndarray = CHECKER_LAB_D50,
+    degree: int = 3,
+    num_components: int = 11,
+    max_iterations: int = 1000,
+    scaler = StandardScaler(),
+) -> list:
+    """
+    Adjust 3 PLSR models, each for every LAB channel (L, a, b).
+
+    Parameters
+    ----------
+    detected_lab : np.ndarray
+        Lab values for patches detected from the color checker of shape (24, 3)
+    reference_lab : np.ndarray
+        Default CHECKER_LAB_D50 of shape (24, 3)
+    degree : int
+        Polynomial degree (default 3)
+    num_components : int
+        PLS components (default 11)
+    max_iterations : int
+        Max iterations for PLSRegression (default 1000)
+    scaler : sklearn scaler, optional
+        Scaler to use before polynomial expansion. Default is StandardScaler().
+        Options are: RobustScaler(), StandardScaler(), MaxAbsScaler(), MinMaxScaler().
+        Usage details are in the official documentation of sklearn.preprocessing
+
+    Examples
+        --------
+        >>> from sklearn.preprocessing import RobustScaler, StandardScaler
+        >>> # default
+        >>> models = color_correction(detected_lab)
+        >>> # with RobustScaler
+        >>> models = color_correction(detected_lab, scaler=RobustScaler())
+        >>> # with custom parameters
+        >>> models = color_correction(detected_lab, scaler=RobustScaler(quantile_range=(25, 75)))
+        >>> models = color_correction(detected_lab, scaler=StandardScaler(with_mean=False))
+    """
+
+    models = []
+
+    # fit a model for each LAB channel:
+    for i in range(3):
+        model = make_pipeline(
+            scaler, # RobustScaler(), StandardScaler(), MaxAbsScaler(), MinMaxScaler()
+            PolynomialFeatures(degree=degree),
+            PLSRegression(n_components=num_components, max_iter=max_iterations)
+        )
+        model.fit(detected_lab, reference_lab[:, i])
+        models.append(model)
+
+    return models
+
+##################################
+# Convert LAB image to BGR again #
+##################################
+def _lab_to_bgr(img_lab: np.ndarray) -> np.ndarray:
+    lab_clipped = img_lab.copy()
+    lab_clipped[..., 0] = np.clip(lab_clipped[..., 0], 0, 100)
+    lab_clipped[..., 1] = np.clip(lab_clipped[..., 1], -127, 127)
+    lab_clipped[..., 2] = np.clip(lab_clipped[..., 2], -127, 127)
+
+    img_bgr = cv2.cvtColor(lab_clipped, cv2.COLOR_Lab2BGR)
+
+    # use clip to avoid out of range values due conversion
+    img_bgr = np.clip(img_bgr * 255, 0, 255).astype(np.uint8)
+
+    return img_bgr
+
+
+############################################
+# Adjust color correction using the models #
+############################################
+
+def _apply_color_correction(
+    img_lab: np.ndarray,
+    models: List
+) -> np.ndarray:
+
+    h, w = img_lab.shape[:2]
+    flat = img_lab.reshape(-1, 3)
+
+    corrected_lab = np.zeros_like(flat)
+
+    for i in range(3):
+        corrected_lab[:, i] = models[i].predict(flat)
+
+    corrected_bgr = _lab_to_bgr(corrected_lab.reshape(h,w, 3))
+
+    return corrected_bgr
+
+##########################################################################
+## Calculate delta e value between detected colors and the lab reference
+##########################################################################
+def _delta_e(
+    detected_lab: np.ndarray,
+    reference_lab: np.ndarray = CHECKER_LAB_D50,
+) -> np.ndarray:
+    """
+    Get Delta E  for each patch between the detected and the reference LAB values.
+
+    Parameters
+    ----------
+    detected_lab : np.ndarray
+        LAB values of shape (24, 3).
+    reference_lab : np.ndarray
+        Reference LAB values of shape (24, 3). Default is CHECKER_LAB_D50.
+
+    Returns
+    -------
+    np.ndarray of shape (24,) with Delta E per patch.
+    """
+    diff = detected_lab - reference_lab
+    return np.sqrt((diff ** 2).sum(axis=1))
+
+def _delta_e_stats(
+    corrected_img: np.ndarray,
+    detected_lab: Optional[np.ndarray] = None,
+    original_img: Optional[np.ndarray] = None,
+    reference_lab: np.ndarray = CHECKER_LAB_D50,
+) -> None:
+    if detected_lab is not None:
+        # Get delta E before correction (original image)
+        delta_e_before = _delta_e(detected_lab)
+    else:
+        if original_img is not None:
+            _, chart_before, _ = detect_color_checker(original_img.copy(), verbose=False)
+            detected_lab_before = _get_lab_patches(chart_before)
+            delta_e_before = _delta_e(detected_lab_before)
+
+    # Get delta E after correction
+    _, chart_after, _ = detect_color_checker(corrected_img.copy(), verbose=False)
+    detected_lab_after = _get_lab_patches(chart_after)
+    delta_e_after = _delta_e(detected_lab_after)
+
+    print(f"{'Patch':<20} | ΔE before | ΔE after | Diff")
+    print("-" * 55)
+    for i, name in enumerate(CHECKER_PATCH_NAMES):
+        diff = delta_e_before[i] - delta_e_after[i]
+        print(f"{name:<20} | {delta_e_before[i]:8.2f} | {delta_e_after[i]:10.2f} | {diff:6.2f}")
+
+    return None
+
+
+# ## testing
+
+# path = "/Users/alejandra/Documents/traitly/tests/color_correction/18-26.jpg"
+# img = cv2.imread(path)
+
+# # 1. Detect color checker
+# coords, chart, img_copy = detect_color_checker(img, verbose=False)
+# # 2. Extract lab patches
+# detected_lab = _get_lab_patches(chart)
+
+# # 3. Convert image from BGR to RGB
+# img_lab = _img_bgr_to_lab(img)
+
+# # 4. Fit models
+# models = _fit_plsr_models(detected_lab,
+#     scaler = StandardScaler(), degree = 3, num_components = 11)
+
+# # 5. Apply correction
+# corrected_img = _apply_color_correction(img_lab, models)
+
+# # 6. Calculate Delta E
+# _delta_e_stats(corrected_img, detected_lab=detected_lab)
