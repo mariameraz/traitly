@@ -3,10 +3,10 @@
 # ============================================================================
 import numpy as np
 
-# Reference Lab D65 values for the X-Rite ColorChecker Classic 24 patches.
+# Reference Lab D65 and D50 values for the X-Rite ColorChecker Classic 24 patches.
 # Original X-Rite D50 data (after November 2014):
 # https://www.xrite.com/service-support/new_color_specifications_for_colorchecker_sg_and_classic_charts
-# Conversion from Lab D50 -> XYZ -> Lab D65 (Brandford adaptation using `colours-science` Python library)
+# D65 obtained converting from Lab D50 -> XYZ -> Lab D65 (Brandford adaptation using `colours-science` Python library)
 
 # Cols order: L, a, b
 CHECKER_LAB_D65 = np.array([
@@ -36,7 +36,6 @@ CHECKER_LAB_D65 = np.array([
  [ 20.64, 0.8332, 5.1631], # F4: black
 ], dtype=np.float32)
 
-
 CHECKER_LAB_D50 = np.array([
  [ 37.54, 14.37, 14.92],
  [ 64.66, 19.27, 17.50],
@@ -63,3 +62,10 @@ CHECKER_LAB_D50 = np.array([
  [ 35.63, -0.46, -0.48],
  [ 20.64, 0.07, -0.46],
 ], dtype=np.float32)
+
+CHECKER_PATCH_NAMES = [
+    "A1: dark skin", "B1: light skin", "C1: blue sky", "D1: foliage", "E1: blue flower", "F1: bluish green",
+    "A2: orange", "B2: purplish blue", "C2: moderate red", "D2: purple", "E2: yellow green", "F2: orange yellow",
+    "A3: blue", "B3: green", "C3: red", "D3: yellow", "E3: magenta", "F3: cyan",
+    "A4: white", "B4: neutral 80", "C4: neutral 65", "D4: neutral 50", "E4: neutral 35", "F4: black"
+]
