@@ -27,7 +27,8 @@ dependencies = [
   "easyocr",
   "ultralytics",
   "rich-argparse",
-  "ipython"
+  "ipython",
+  "scikit-learn",
 ]
 
 
