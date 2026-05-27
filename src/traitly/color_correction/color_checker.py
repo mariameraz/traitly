@@ -12,10 +12,16 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
+# ============================================================================
+# INTERNAL
+# ============================================================================
+from .color_charts import CHECKER_LAB_D65
+
+
 #############################################################
 ## Detect color checker
 #############################################################
-## Verify cv2 mcc detector is available
+## First, verify cv2 mcc detector is available
 try:
     detector = cv2.mcc.CCheckerDetector.create()
     _MCC_AVAILABLE = True
@@ -68,7 +74,7 @@ def _detect_color_checker(
     Tuple[dict, np.ndarray] or None
         - checker_coords : dict with keys 'x1', 'y1', 'x2', 'y2' in original
           image coordinates.
-        - charts : np.ndarray of shape (72, 5) with color data for each patch
+        - chart : np.ndarray of shape (72, 5) with color data for each patch
           (24 patches x 3 channels). Columns are [n_pixels, mean, std, min, max].
         Returns None if the checker is not detected or MCC is not available.
 
@@ -110,7 +116,7 @@ def _detect_color_checker(
     cdrawer.draw(img)
 
     # Save the color mean value for each color patch
-    charts = checker.getChartsRGB()
+    chart = checker.getChartsRGB()
 
     # Save the coords of the checker box
     box = checker.getBox()
@@ -148,4 +154,21 @@ def _detect_color_checker(
         plt.title("Color checker detected")
         plt.show()
 
-    return checker_coords, charts
+    return checker_coords, chart
+
+## Convert color charts from BGR to LAB
+def charts_rgb_to_lab(
+    rgb_chart: np.ndarray,
+) -> np.ndarray:
+
+    # Obtain mean colors from the chart array
+    means = rgb_chart[:, 1]
+
+    # reshape from (72, ) to (1, 24, 3)
+    rgb_patches = means.reshape(24, 3).astype(np.float32) / 255
+    rgb_patches = rgb_patches[np.newaxis, :, :]
+
+    # Convert RGB to LAB
+    lab_patches = cv2.cvtColor(rgb_patches, cv2.COLOR_RGB2Lab)
+
+    return rgb_patches, lab_patches
