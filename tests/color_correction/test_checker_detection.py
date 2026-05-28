@@ -17,7 +17,7 @@ import cv2
 # ============================================================================
 # INTERNAL
 # ============================================================================
-from traitly.color_correction.color_checker import _detect_color_checker
+from traitly.color_correction.color_analysis import _detect_color_checker
 
 ### Paths
 img_with_checker = Path(__file__).parent / "18-26.jpg"
@@ -62,10 +62,10 @@ def test_checker_detected_returns_tuple(bgr_with_checker):
     result = _detect_color_checker(bgr_with_checker, plot=False, verbose=False)
     assert result is not None
     assert isinstance(result, tuple)
-    assert len(result) == 2 # checker_coords, charts
+    assert len(result) == 3 # checker_coords, charts, annotated_img
 
 def test_checker_coords_format(bgr_with_checker):
-    checker_coords, _ = _detect_color_checker(bgr_with_checker, plot=False, verbose=False)
+    checker_coords, _, _ = _detect_color_checker(bgr_with_checker, plot=False, verbose=False)
     assert isinstance(checker_coords, dict)
     assert set(checker_coords.keys()) == {"x1", "y1", "x2", "y2"}
     assert checker_coords["x1"] >= 0
@@ -75,17 +75,17 @@ def test_checker_coords_format(bgr_with_checker):
 
 def test_checker_coords_within_image(bgr_with_checker):
     h, w = bgr_with_checker.shape[:2]
-    checker_coords, _ = _detect_color_checker(bgr_with_checker, plot=False, verbose=False)
+    checker_coords, _, _ = _detect_color_checker(bgr_with_checker, plot=False, verbose=False)
     assert checker_coords["x2"] <= w
     assert checker_coords["y2"] <= h
 
 def test_charts_format(bgr_with_checker):
-    _, charts = _detect_color_checker(bgr_with_checker, plot=False, verbose=False)
+    _, charts, _ = _detect_color_checker(bgr_with_checker, plot=False, verbose=False)
     assert charts is not None
     assert charts.shape == (72, 5)  # for the mcc24 with cv2.mcc: 24 patches x 3 channels, 5 stats
 
 def test_mcc_not_available_returns_none(bgr_with_checker):
-    with patch("traitly.color_correction.color_checker._MCC_AVAILABLE", False):
+    with patch("traitly.color_correction.color_analysis._MCC_AVAILABLE", False):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             result = _detect_color_checker(bgr_with_checker, plot=False, verbose=False)
