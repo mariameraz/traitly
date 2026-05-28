@@ -21,6 +21,8 @@ import cv2
 import numpy as np
 import pandas as pd
 
+from traitly.utils.save_results import (
+    _save_df, _ensure_dir_exists, _save_img)
 
 class ResultsImage:
     """
@@ -71,39 +73,6 @@ class ResultsImage:
         # Save metadata for reports
         self.processing_metadata = processing_metadata or {}
 
-    def _ensure_dir_exists(self, path: str) -> str:
-        """
-        Ensure the parent directory of ``path`` exists and return its absolute path.
-
-        Uses an internal cache (``_dir_cache``) to avoid redundant filesystem
-        checks across repeated calls with the same directory.
-
-        Parameters
-        ----------
-        path : str
-            File path whose parent directory should be created if absent.
-            Supports ``~`` expansion.
-
-        Returns
-        -------
-        str
-            Absolute version of ``path`` with its parent directory guaranteed
-            to exist.
-        """
-        abs_path = os.path.abspath(os.path.expanduser(path))
-        dir_path = os.path.dirname(abs_path)
-
-        # Check cache first
-        if dir_path in self._dir_cache:
-            return abs_path
-
-        if dir_path and not os.path.exists(dir_path):
-            os.makedirs(dir_path, exist_ok=True)
-
-        # Cache the result
-        self._dir_cache[dir_path] = True
-
-        return abs_path
 
     def save_img(
         self,
@@ -146,43 +115,14 @@ class ResultsImage:
         RuntimeError
             If the image cannot be saved due to an unexpected error.
         """
-        try:
-            if output_path is None or os.path.isdir(str(output_path)):
-                if not self.path:
-                    raise ValueError(
-                        "No path provided and no original image reference available"
-                    )
-                if base_name is None:
-                    base_name = os.path.splitext(os.path.basename(self.path))[0]
-
-                ext = format.lower() if format else "jpg"
-                out_dir = (
-                    output_path
-                    if output_path is not None
-                    else os.path.dirname(self.path)
-                )
-                output_path = os.path.join(out_dir, f"{base_name}_processed.{ext}")
-
-            full_path = self._ensure_dir_exists(output_path)
-            format = format or os.path.splitext(full_path)[1][1:].lower()
-
-            bgr_image = self.morphology_image
-            # Use cv2.imwrite
-            if format.lower() in ["jpg", "jpeg"]:
-                # JPEG with quality setting
-                cv2.imwrite(full_path, bgr_image, [cv2.IMWRITE_JPEG_QUALITY, quality])
-            elif format.lower() == "png":
-                # PNG with compression
-                cv2.imwrite(full_path, bgr_image, [cv2.IMWRITE_PNG_COMPRESSION, 3])
-            else:
-                # Other formats - default
-                cv2.imwrite(full_path, bgr_image)
-
-            if output_message:
-                print(f"– Image saved at: {full_path}")
-
-        except Exception as e:
-            raise RuntimeError(f"– Error saving image: {str(e)}")
+        _save_img(
+            path = self.path,
+            output_path = output_path,
+            format = format,
+            verbose = output_message,
+            quality = quality,
+            base_name = base_name
+        )
 
     def save_all(
         self,
@@ -403,7 +343,7 @@ class ResultsImage:
 
             else:
                 # Treat as a file path (must end with .csv)
-                full_path = self._ensure_dir_exists(expanded)
+                full_path = _ensure_dir_exists(expanded)
                 stem, ext = os.path.splitext(full_path)
                 if ext and ext.lower() != ".csv":
                     raise ValueError(
@@ -411,36 +351,24 @@ class ResultsImage:
                     )
                 base_path = stem  # remove .csv so we can add suffixes consistently
 
-        def save_df(df: pd.DataFrame, out_path: str, label: str) -> bool:
-            """Save df if not empty. Returns True if saved."""
-            if df is None or df.empty:
-                return False
-            if not out_path.lower().endswith(".csv"):
-                out_path += ".csv"
-            out_path = self._ensure_dir_exists(out_path)
-            df.to_csv(out_path, sep=sep, index=False, encoding="utf-8", na_rep="NaN")
-            if output_message:
-                print(f"– {label} CSV saved at: {out_path}")
-            return True
-
         mode = (data or "auto").strip().lower()
 
         if mode == "morphology":
             if morph_df.empty:
                 raise ValueError("No morphology results available to save")
-            save_df(morph_df, f"{base_path}_morphology_results.csv", "Morphology")
+            _save_df(morph_df, f"{base_path}_morphology_results.csv", "Morphology")
 
         elif mode == "color":
             if color_df.empty:
                 raise ValueError("No color results available to save")
-            save_df(color_df, f"{base_path}_color_results.csv", "Color")
+            _save_df(color_df, f"{base_path}_color_results.csv", "Color")
 
         elif mode == "both":
             saved_any = False
-            saved_any |= save_df(
+            saved_any |= _save_df(
                 morph_df, f"{base_path}_morphology_results.csv", "Morphology"
             )
-            saved_any |= save_df(color_df, f"{base_path}_color_results.csv", "Color")
+            saved_any |= _save_df(color_df, f"{base_path}_color_results.csv", "Color")
             if not saved_any:
                 raise ValueError("No morphology or color results available to save")
 
@@ -448,12 +376,12 @@ class ResultsImage:
             saved_any = False
 
             if not morph_df.empty:
-                saved_any |= save_df(
+                saved_any |= _save_df(
                     morph_df, f"{base_path}_morphology_results.csv", "Morphology"
                 )
 
             if not color_df.empty:
-                saved_any |= save_df(
+                saved_any |= _save_df(
                     color_df, f"{base_path}_color_results.csv", "Color"
                 )
 
