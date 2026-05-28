@@ -2,7 +2,7 @@
 
 from pathlib import Path
 import pytest
-from traitly.fruit_phenotyping.internal import FruitInternalAnalyzer
+from traitly.fruit_phenotyping import FruitInternalAnalyzer
 
 valid_img = Path(__file__).parent / "data" / "internal" / "img_test_1.jpg"
 
