@@ -27,7 +27,7 @@ from sklearn.cross_decomposition import PLSRegression
 # INTERNAL
 # ============================================================================
 from traitly.color_correction.color_charts import CHECKER_LAB_D50, CHECKER_PATCH_NAMES
-from traitly.utils.validation import _validate_bgr_image
+from traitly.utils.validation import _validate_color_image
 
 #############################################################
 ## Detect color checker
@@ -57,7 +57,7 @@ class CheckerCoords(TypedDict):
     x2: int
     y2: int
 
-def detect_color_checker(
+def _detect_color_checker(
     img: np.ndarray,
     plot: bool = False,
     plot_size: Tuple[int, int] = (5, 5),
@@ -101,7 +101,7 @@ def detect_color_checker(
         return None
 
     # Verify image input
-    _validate_bgr_image(img)
+    _validate_color_image(img)
 
     # Working only for MCC 24 patches card for now
     # Important: detector expects a BGR image according with cv2 docs
@@ -353,26 +353,26 @@ def _delta_e_stats(
     return df
 
 
-## testing
+# ## testing
 
-path = "/Users/alejandra/Documents/traitly/tests/color_correction/18-26.jpg"
-img = cv2.imread(path)
+# path = "/Users/alejandra/Documents/traitly/tests/color_correction/18-26.jpg"
+# img = cv2.imread(path)
 
-# 1. Detect color checker
-coords, chart, img_copy = detect_color_checker(img, verbose=False)
-# 2. Extract lab patches
-detected_lab = _get_lab_patches(chart)
+# # 1. Detect color checker
+# coords, chart, img_copy = detect_color_checker(img, verbose=False)
+# # 2. Extract lab patches
+# detected_lab = _get_lab_patches(chart)
 
-# 3. Convert image from BGR to RGB
-img_lab = _img_bgr_to_lab(img)
+# # 3. Convert image from BGR to RGB
+# img_lab = _img_bgr_to_lab(img)
 
-# 4. Fit models
-models = _fit_plsr_models(detected_lab,
-    scaler = StandardScaler(), degree = 3, num_components = 11)
+# # 4. Fit models
+# models = _fit_plsr_models(detected_lab,
+#     scaler = StandardScaler(), degree = 3, num_components = 11)
 
-# 5. Apply correction
-corrected_img = _apply_color_correction(img_lab, models)
+# # 5. Apply correction
+# corrected_img = _apply_color_correction(img_lab, models)
 
-# 6. Calculate Delta E
-stats = _delta_e_stats(corrected_img, detected_lab=detected_lab)
-print(stats)
+# # 6. Calculate Delta E
+# stats = _delta_e_stats(corrected_img, detected_lab=detected_lab)
+# print(stats)

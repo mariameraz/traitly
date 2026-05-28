@@ -45,17 +45,14 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-# import psutil
 from tqdm import tqdm
-
 
 # ============================================================================
 # INTERNAL IMPORTS
 # ============================================================================
 from traitly import __version__
 
-from .mask import (
+from traitly.fruit_phenotyping.mask import (
     apply_contrast,
     create_mask,
     create_mask_locules,
@@ -65,33 +62,34 @@ from .mask import (
     interactive_mask_editor,
 )
 
-from .processing import annotate_all_fruits, get_internal_pericarp_contour
+from traitly.fruit_phenotyping.processing import annotate_all_fruits, get_internal_pericarp_contour
 
-from ..utils.basic_functions import detect_img_name, load_img
-from ..utils.calibration import px_cm_density
-from ..utils.constants import valid_extensions
-from ..utils.label import (
+from traitly.utils.basic_functions import detect_img_name, load_img
+from traitly.utils.calibration import px_cm_density
+from traitly.utils.constants import valid_extensions
+from traitly.utils.label import (
     detect_label_box,
     detect_label_box_yolo,
     detect_label_text,
     detect_qr,
 )
-from .analysis_parameters import AnalysisParameters
-from .results_image import ResultsImage
+from traitly.utils.validation import _validate_path_exists
 
-from .color_analysis import (
+
+from traitly.fruit_phenotyping.analysis_parameters import AnalysisParameters
+from traitly.fruit_phenotyping.results_image import ResultsImage
+from traitly.fruit_phenotyping.color_analysis import (
     analyze_all_fruits_color,
     get_fruit_color_histograms,
     get_single_fruit_masks,
 )
-from .fruit_config import analyze_fruits_morphology
+from traitly.fruit_phenotyping.fruit_config import analyze_fruits_morphology
 
-from ..color_correction.color_checker import _detect_color_checker
+from traitly.color_correction.color_analysis import _detect_color_checker
 
 ##########################################################################################
 # Ignore warnings from torch
 ##########################################################################################
-
 warnings.filterwarnings("ignore", category=UserWarning, module="torch")
 warnings.filterwarnings("ignore", message="Using CPU")
 
@@ -207,17 +205,10 @@ class FruitInternalAnalyzer:
             :exc:`FileNotFoundError` if the path does not exist.
         """
 
-        ## Verify image path exists
-        # Assign the path first
+        # Get absolute path
         self.input_path = os.path.abspath(path)
-
-        # Then verify if it was provided and exists
-        if self.input_path is not None:
-            if not os.path.exists(self.input_path):
-                raise FileNotFoundError(
-                    f"The path does not exist: {self.input_path}\n"
-                    f"Verify that the file exists and the path is correct."
-                )
+        ## Verify path exists
+        _validate_path_exists(self.input_path)
 
         ## Class attributes:
         # load_img
@@ -2043,12 +2034,12 @@ class FruitInternalAnalyzer:
         issued. This does not raise an exception so the pipeline can continue.
         """
 
-        self._checker_coords, self._color_charts = _detect_color_checker(
-                                                            self._img_copy,
-                                                            plot = plot,
-                                                            plot_size = plot_size,
-                                                            verbose = verbose,
-                                                        )
+        self._checker_coords, self._color_charts, self.img_copy = _detect_color_checker(
+                                                                    self.img,
+                                                                    plot = plot,
+                                                                    plot_size = plot_size,
+                                                                    verbose = verbose,
+                                                                )
 
 
         return None
@@ -2262,7 +2253,7 @@ class FruitInternalAnalyzer:
         skip_qr: Optional[bool] = None,
         detect_label: Optional[bool] = None,
         confidence: Optional[float] = None,
-        detect_color_checker: Optional[bool] = None,
+        #detect_color_checker: Optional[bool] = None,
         # generate_fruit_mask
         stamp: Optional[bool] = None,
         lower_hsv: Optional[Tuple[int,int,int]] = None,
