@@ -1,8 +1,20 @@
 # tests/conftest.py
 
 from pathlib import Path
+import warnings
+
 import pytest
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
+
+
+# Ignore PyTorch MPS warning on apple silicon
+@pytest.fixture(autouse=True)
+def ignore_pin_memory_warning():
+    warnings.filterwarnings(
+        "ignore",
+        message="'pin_memory' argument is set as true but not supported on MPS",
+        category=UserWarning
+    )
 
 valid_img = Path(__file__).parent / "data" / "internal" / "img_test_1.jpg"
 
