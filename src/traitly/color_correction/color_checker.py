@@ -5,6 +5,7 @@
 # ============================================================================
 from typing import Tuple, Optional, TypedDict, List
 import warnings
+import re
 # ============================================================================
 # THIRD-PARTY LIBRARIES
 # ============================================================================
@@ -312,6 +313,7 @@ def _delta_e_stats(
     corrected_img: np.ndarray,
     detected_lab: Optional[np.ndarray] = None,
     original_img: Optional[np.ndarray] = None,
+    verbose: bool = True,
     reference_lab: np.ndarray = CHECKER_LAB_D50,
 ) -> None:
     if detected_lab is not None:
@@ -328,34 +330,49 @@ def _delta_e_stats(
     detected_lab_after = _get_lab_patches(chart_after)
     delta_e_after = _delta_e(detected_lab_after)
 
-    print(f"{'Patch':<20} | ΔE before | ΔE after | Diff")
-    print("-" * 55)
-    for i, name in enumerate(CHECKER_PATCH_NAMES):
-        diff = delta_e_before[i] - delta_e_after[i]
-        print(f"{name:<20} | {delta_e_before[i]:8.2f} | {delta_e_after[i]:10.2f} | {diff:6.2f}")
+    if verbose:
+        print("-" * 55)
+        print(f"Mean ΔE before: {delta_e_before.mean():.2f}")
+        print(f"Mean ΔE after: {delta_e_after.mean():.2f}")
+        print("-" * 55)
+        print(f"{'Patch':<17} | ΔE before | ΔE after | Diff")
+        print("-" * 55)
+        for i, name in enumerate(CHECKER_PATCH_NAMES):
+            diff = delta_e_before[i] - delta_e_after[i]
+            print(f"{name:<17} | {delta_e_before[i]:9.2f} | {delta_e_after[i]:8.2f} | {diff:6.2f}")
 
-    return None
+    # Get only patch code
+    patch_codes = [re.search(r"[A-F][1-4]", name).group() for name in CHECKER_PATCH_NAMES]
+
+    df = np.column_stack([
+            patch_codes,
+            delta_e_before,
+            delta_e_after,
+            delta_e_before - delta_e_after
+        ])
+    return df
 
 
-# ## testing
+## testing
 
-# path = "/Users/alejandra/Documents/traitly/tests/color_correction/18-26.jpg"
-# img = cv2.imread(path)
+path = "/Users/alejandra/Documents/traitly/tests/color_correction/18-26.jpg"
+img = cv2.imread(path)
 
-# # 1. Detect color checker
-# coords, chart, img_copy = detect_color_checker(img, verbose=False)
-# # 2. Extract lab patches
-# detected_lab = _get_lab_patches(chart)
+# 1. Detect color checker
+coords, chart, img_copy = detect_color_checker(img, verbose=False)
+# 2. Extract lab patches
+detected_lab = _get_lab_patches(chart)
 
-# # 3. Convert image from BGR to RGB
-# img_lab = _img_bgr_to_lab(img)
+# 3. Convert image from BGR to RGB
+img_lab = _img_bgr_to_lab(img)
 
-# # 4. Fit models
-# models = _fit_plsr_models(detected_lab,
-#     scaler = StandardScaler(), degree = 3, num_components = 11)
+# 4. Fit models
+models = _fit_plsr_models(detected_lab,
+    scaler = StandardScaler(), degree = 3, num_components = 11)
 
-# # 5. Apply correction
-# corrected_img = _apply_color_correction(img_lab, models)
+# 5. Apply correction
+corrected_img = _apply_color_correction(img_lab, models)
 
-# # 6. Calculate Delta E
-# _delta_e_stats(corrected_img, detected_lab=detected_lab)
+# 6. Calculate Delta E
+stats = _delta_e_stats(corrected_img, detected_lab=detected_lab)
+print(stats)
