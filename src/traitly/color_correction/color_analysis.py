@@ -108,6 +108,11 @@ def _detect_color_checker(
     detector.process(img, cv2.mcc.MCC24)
     checkers = detector.getListColorChecker()
 
+    #Draw color patches detected
+    img_copy = img.copy()
+    cdrawer = cv2.mcc.CCheckerDraw.create(checkers[0])
+    cdrawer.draw(img_copy)
+
     if not checkers:
         warnings.warn("Color checker not detected.", UserWarning)
         return None
@@ -140,7 +145,7 @@ def _detect_color_checker(
 
     if plot:
         # Crop the checker region from image (it returns as BGR)
-        patch = img[checker_coords['y1']:checker_coords['y2'],
+        patch = img_copy[checker_coords['y1']:checker_coords['y2'],
             checker_coords['x1']:checker_coords['x2']]
 
         plt.figure(figsize = plot_size)
@@ -152,10 +157,7 @@ def _detect_color_checker(
     # Save the LAB mean value for each color patch
     chart = checker.getChartsRGB()
 
-    #Draw color patches detected
-    img_copy = img.copy()
-    cdrawer = cv2.mcc.CCheckerDraw.create(checkers[0])
-    cdrawer.draw(img_copy)
+
 
     return checker_coords, chart, img_copy
 
@@ -321,12 +323,12 @@ def _delta_e_stats(
         delta_e_before = _delta_e(detected_lab)
     else:
         if original_img is not None:
-            _, chart_before, _ = detect_color_checker(original_img.copy(), verbose=False)
+            _, chart_before, _ = _detect_color_checker(original_img.copy(), verbose=False)
             detected_lab_before = _get_lab_patches(chart_before)
             delta_e_before = _delta_e(detected_lab_before)
 
     # Get delta E after correction
-    _, chart_after, _ = detect_color_checker(corrected_img.copy(), verbose=False)
+    _, chart_after, _ = _detect_color_checker(corrected_img.copy(), verbose=False)
     detected_lab_after = _get_lab_patches(chart_after)
     delta_e_after = _delta_e(detected_lab_after)
 
@@ -351,28 +353,3 @@ def _delta_e_stats(
             delta_e_before - delta_e_after
         ])
     return df
-
-
-# ## testing
-
-# path = "/Users/alejandra/Documents/traitly/tests/color_correction/18-26.jpg"
-# img = cv2.imread(path)
-
-# # 1. Detect color checker
-# coords, chart, img_copy = detect_color_checker(img, verbose=False)
-# # 2. Extract lab patches
-# detected_lab = _get_lab_patches(chart)
-
-# # 3. Convert image from BGR to RGB
-# img_lab = _img_bgr_to_lab(img)
-
-# # 4. Fit models
-# models = _fit_plsr_models(detected_lab,
-#     scaler = StandardScaler(), degree = 3, num_components = 11)
-
-# # 5. Apply correction
-# corrected_img = _apply_color_correction(img_lab, models)
-
-# # 6. Calculate Delta E
-# stats = _delta_e_stats(corrected_img, detected_lab=detected_lab)
-# print(stats)
