@@ -1,8 +1,25 @@
 # traitly/utils/validators.py
-import numpy as np
-import os
 
-def _validate_color_image(img):
+# ============================================================================
+# STANDARD LIBRARY
+# ============================================================================
+from typing import Optional
+import os
+from pathlib import Path
+
+# ============================================================================
+# THIRD-PARTY
+# ============================================================================
+import numpy as np
+
+# ============================================================================
+# INTERNAL
+# ============================================================================
+from traitly.utils.constants import valid_extensions
+
+def _validate_color_image(
+    img: np.ndarray,
+    img_path: Optional[np.ndarray] = None):
     """
     Validate that an image is a non-null 3-channel NumPy array of shape (H, W, 3).
 
@@ -13,14 +30,15 @@ def _validate_color_image(img):
 
     Raises
     ------
-        ValueError
-            If img is None or does not have shape (H, W, 3).
-        TypeError
-            If img is not a NumPy array.
+    ValueError
+        If img is None or does not have shape (H, W, 3).
+    TypeError
+        If img is not a NumPy array.
     """
 
     if img is None:
-        raise ValueError("Image cannot be None")
+        msg = f"Failed to load image: {img_path}." if img_path is not None else "Image cannot be None."
+        raise ValueError(msg)
 
     if not isinstance(img, np.ndarray):
         raise TypeError(f"Expected a NumPy image array (np.ndarray), but got {type(img).__name__}. "
@@ -37,4 +55,12 @@ def _validate_path_exists(path):
         raise FileNotFoundError(
             f"The path does not exist: {path}\n"
             f"Verify that the file exists and the path is correct."
+        )
+
+def _validate_img_suffix(path):
+    abs_path = Path(path)
+    if abs_path.suffix.lower() not in valid_extensions:
+        raise ValueError(
+            f"No valid image format: '{abs_path.suffix.lower()}' -> "
+            f"Supported formats are: {valid_extensions}"
         )
