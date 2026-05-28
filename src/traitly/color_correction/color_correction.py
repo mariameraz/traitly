@@ -227,9 +227,9 @@ class ColorCorrection:
         if base_name is None:
             name = detect_img_name(self.input_path)
             name = os.path.splitext(name)[0]
-            _base_name = name + "_delta_e_stats"
+            _base_name = name + "_corrected"
         else:
-            _base_name = base_name + "_delta_e_stats"
+            _base_name = base_name + "_corrected"
 
         _save_img(
             img=self.corrected_img,
