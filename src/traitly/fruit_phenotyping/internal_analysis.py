@@ -73,7 +73,7 @@ from traitly.utils.label import (
     detect_label_text,
     detect_qr,
 )
-from traitly.utils.validation import _validate_path_exists
+from traitly.utils.validation import _validate_path_exists, _validate_color_image
 
 
 from traitly.fruit_phenotyping.analysis_parameters import AnalysisParameters
@@ -318,10 +318,7 @@ class FruitInternalAnalyzer:
         )
 
         # Check image loaded successfully
-        if self.img is None:
-            raise ValueError(
-                f"Failed to load image: {self.input_path}."
-            )
+        _validate_color_image(self.img)
 
         # Save some image attributes
         self.img_shape = self.img.shape[:2] # Image shape
