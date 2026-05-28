@@ -1,7 +1,8 @@
 # traitly/utils/validators.py
 import numpy as np
+import os
 
-def _validate_bgr_image(img):
+def _validate_color_image(img):
     """
     Validate that an image is a non-null 3-channel NumPy array of shape (H, W, 3).
 
@@ -29,4 +30,11 @@ def _validate_bgr_image(img):
         raise ValueError(
             f"Expected a 3-channel image with shape (H, W, 3), but got shape {img.shape}. "
             "Make sure the image is not grayscale or RGBA."
+        )
+
+def _validate_path_exists(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"The path does not exist: {path}\n"
+            f"Verify that the file exists and the path is correct."
         )
