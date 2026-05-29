@@ -37,6 +37,7 @@ from datetime import datetime
 from io import StringIO
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+import copy
 
 # ============================================================================
 # THIRD-PARTY LIBRARIES
@@ -64,6 +65,7 @@ from traitly.fruit_phenotyping.mask import (
 
 from traitly.fruit_phenotyping.processing import annotate_all_fruits, get_internal_pericarp_contour
 
+from traitly.utils.metadata import get_package_versions
 from traitly.utils.basic_functions import detect_img_name, load_img
 from traitly.utils.calibration import px_cm_density
 from traitly.utils.constants import valid_extensions
@@ -2508,7 +2510,6 @@ class FruitInternalAnalyzer:
         os.makedirs(output_path, exist_ok=True)
 
         # Build config: json/dict base → override with individual params ─
-        import copy
 
         config = copy.deepcopy(config) if config else {}
 
@@ -2864,7 +2865,7 @@ class FruitInternalAnalyzer:
             "=" * 70,
         ] + [
             f"   - {pkg:<30} {ver}"
-            for pkg, ver in self._parameters.get_package_versions().items()
+            for pkg, ver in get_package_versions().items()
         ]
 
         # Create session report

@@ -50,7 +50,7 @@ from traitly import __version__
 # ============================================================================
 from traitly.fruit_phenotyping.internal_analysis import FruitInternalAnalyzer
 from traitly.utils.constants import valid_extensions as _valid_ext
-
+from traitly.utils.metadata import get_package_versions
 ##########################################################################################
 # Global worker for parallel processing
 ##########################################################################################
@@ -1196,7 +1196,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             "=" * 70,
         ] + [
             f"   - {pkg:<30} {ver}"
-            for pkg, ver in self._parameters.get_package_versions().items()
+            for pkg, ver in get_package_versions().items()
         ]
 
         session_txt = os.path.join(output_path, "session_report.txt")
