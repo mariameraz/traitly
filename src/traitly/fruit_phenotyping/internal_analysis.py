@@ -65,7 +65,7 @@ from traitly.fruit_phenotyping.mask import (
 
 from traitly.fruit_phenotyping.processing import annotate_all_fruits, get_internal_pericarp_contour
 
-from traitly.utils.metadata import get_package_versions
+from traitly.utils.environment import get_package_versions
 from traitly.utils.basic_functions import detect_img_name, load_img
 from traitly.utils.calibration import px_cm_density
 from traitly.utils.constants import valid_extensions
@@ -78,7 +78,7 @@ from traitly.utils.label import (
 from traitly.utils.validation import _validate_path_exists, _validate_color_image
 
 
-from traitly.fruit_phenotyping.analysis_parameters import AnalysisParameters
+from traitly.fruit_phenotyping.analysis_parameters import FruitAnalyzerParameters
 from traitly.fruit_phenotyping.results_image import ResultsImage
 from traitly.fruit_phenotyping.color_analysis import (
     analyze_all_fruits_color,
@@ -246,7 +246,7 @@ class FruitInternalAnalyzer:
         self._checker_coords = None
 
         # save metadata
-        self._parameters = AnalysisParameters()
+        self._parameters = FruitAnalyzerParameters()
         self._is_metadata_saved = True
         self._is_morphology_results = None
 
@@ -328,7 +328,7 @@ class FruitInternalAnalyzer:
         self._img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB) # RGB Image
         self.img_name = detect_img_name(self.input_path) # Image name
 
-        self._parameters.img_params = {"img_path": self.input_path} # Save used parameters
+        self._parameters.input_params = {"input_path": self.input_path} # Save used parameters
 
         return None
 
@@ -1734,8 +1734,8 @@ class FruitInternalAnalyzer:
         Save the analysis parameters used in the current session to disk.
 
         Writes both a ``.txt`` and a ``.json`` file named after the loaded
-        image, via :meth:`~traitly.fruit_phenotyping.analysis_parameters.AnalysisParameters.save_to_file`
-        and :meth:`~traitly.fruit_phenotyping.analysis_parameters.AnalysisParameters.save_to_json`.
+        image, via :meth:`~traitly.fruit_phenotyping.analysis_parameters.FruitAnalyzerParameters.save_to_file`
+        and :meth:`~traitly.fruit_phenotyping.analysis_parameters.FruitAnalyzerParameters.save_to_json`.
 
         Parameters
         ----------

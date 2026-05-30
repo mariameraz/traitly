@@ -50,7 +50,7 @@ from traitly import __version__
 # ============================================================================
 from traitly.fruit_phenotyping.internal_analysis import FruitInternalAnalyzer
 from traitly.utils.constants import valid_extensions as _valid_ext
-from traitly.utils.metadata import get_package_versions
+from traitly.utils.environment import get_package_versions
 ##########################################################################################
 # Global worker for parallel processing
 ##########################################################################################
