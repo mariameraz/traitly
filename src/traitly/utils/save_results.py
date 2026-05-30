@@ -5,7 +5,6 @@ import cv2
 import pandas as pd
 import numpy as np
 
-
 def _ensure_dir_exists(path: str) -> str:
     """
     Ensure the parent directory of ``path`` exists and return its absolute path.
@@ -63,7 +62,7 @@ def _save_img(
     path: Optional[str],
     output_path: Optional[str] = None,
     format: Optional[str] = None,
-    output_message: bool = True,
+    verbose: bool = True,
     quality: int = 95,
     base_name: Optional[str] = None,
 ) -> None:
