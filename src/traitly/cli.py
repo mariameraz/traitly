@@ -13,6 +13,8 @@ Usage
 
     traitly --fruit_internal -i PATH [-o PATH] [--json PATH] [--num_cores N]
     traitly --fruit_external -i PATH [-o PATH] [--json PATH] [--num_cores N]
+    traitly --info
+    traitly --version
 
 For folder inputs, delegates to
 :meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.analyze_folder`
@@ -20,18 +22,32 @@ or
 :meth:`~traitly.fruit_phenotyping.external_analysis.FruitExternalAnalyzer.analyze_folder`.
 For single images, delegates to
 :meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.process_single_file`.
+or
+:meth:`~traitly.fruit_phenotyping.external_analysis.FruitExternalAnalyzer.process_single_file`.
 """
 
+# ============================================================================
+# STANDARD LIBRARY
+# ============================================================================
 import argparse
 import sys
 import os
 from pathlib import Path
+import importlib.metadata
 from rich_argparse import RawDescriptionRichHelpFormatter
-from traitly import __version__
 
 # ============================================================================
-# Parser
+# INTERNAL
 # ============================================================================
+from traitly.utils.metadata import (
+    get_session_metadata,
+    get_package_versions,
+    get_system_metadata
+)
+
+###########
+# Parser ##
+###########
 
 def _fmt_examples(rows):
     return "\n".join(f"  {r[0]}" for r in rows)
@@ -68,12 +84,20 @@ def create_parser() -> argparse.ArgumentParser:
                 ("  # External analysis (single image or folder)",),
                 ("  traitly --fruit_external -i tests/sample_data/",),
                 ("  traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --num_cores 4",),
+                ("",),
+                ("  # Get traitly and system metadata",),
+                ("  traitly --info",),
+                ("",),
+                ("  # Get traitly version",),
+                ("  traitly --version",),
+
             ]),
             "",
             "="*70,
             "For more details ->",
             "   - GitHub Repository: https://github.com/mariameraz/traitly \n"
             "   - Documentation: https://traitly.readthedocs.io/ ",
+            "   - Contact: ma.torresmeraz@gmail.com",
             "="*70,
             "",
         ])
@@ -96,7 +120,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-i', '--input',
         type=str,
-        required=True,
+        required=False,
         metavar='PATH',
         help='Path to image file or folder'
     )
@@ -141,9 +165,14 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '--version',
         action='version',
-        version=f'%(prog)s {__version__}'
+        version=f'%(prog)s {importlib.metadata.version("traitly")}'
     )
 
+    mode_group.add_argument(
+        '--info',
+        action='store_true',
+        help='Print traitly and system metadata'
+    )
     return parser
 
 
@@ -375,10 +404,18 @@ def main() -> None:
         run_internal(args)
     elif args.fruit_external:
         run_external(args)
+    elif args.info:
+        for line in get_session_metadata():
+            print(line)
+        print("\nsystem:")
+        for line in get_system_metadata():
+            print(f"    {line}")
+        print("\ndependencies:")
+        for pkg, version in get_package_versions().items():
+            print(f"    {pkg}: v{version}")
     else:
         parser.print_help()
         sys.exit(0)
-
 
 if __name__ == '__main__':
     main()
