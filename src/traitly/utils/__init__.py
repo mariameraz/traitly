@@ -1,5 +1,14 @@
 # traitly/utils/__init__.py
 
 from . import basic_functions
+from .environment import (
+    get_system_metadata,
+    get_session_metadata,
+    get_package_versions,
+    _GPU_AVAILABLE)
 
-__all__ = ['basic_functions']
+__all__ = [
+    'basic_functions',
+    'get_session_metadata',
+    'get_package_versions',
+    _GPU_AVAILABLE]

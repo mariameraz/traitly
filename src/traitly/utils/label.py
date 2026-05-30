@@ -38,24 +38,14 @@ import easyocr
 # INTERNAL
 # ===========================================================================
 from .calibration import _get_package_model_path, _get_yolo_model
-
+from traitly.utils import _GPU_AVAILABLE
 
 ##############################################################################
 # Detect label text with OCR
 ##############################################################################
 
 # Verify torch is installed and the hardware have cuda
-try:
-    import torch
-    _GPU_AVAILABLE = torch.cuda.is_available()
-    if not _GPU_AVAILABLE:
-        torch.backends.mps.enabled = False
-except ImportError: # In case torch is not installed
-    torch = None
-    _GPU_AVAILABLE = False
-except Exception: # Or torch is installed but there is something wrong with the import
-    _GPU_AVAILABLE = False
-    torch.backends.mps.enabled = False
+
 
 
 def get_easyocr_reader(
