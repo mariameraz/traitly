@@ -1,9 +1,11 @@
 import os
-from typing import Optional
+from typing import Optional, Tuple
 
 import cv2
 import pandas as pd
 import numpy as np
+
+from traitly.utils.basic_functions import detect_img_name
 
 def _ensure_dir_exists(path: str) -> str:
     """
@@ -93,3 +95,23 @@ def _save_img(
 
     except Exception as e:
         raise RuntimeError(f"– Error saving image: {str(e)}")
+
+
+def _format_output_path(
+    input_path: str,
+    base_name: str,
+    suffix: str,
+    output_path: Optional[str] = None,
+) -> Tuple[str, str]:
+
+    if output_path is None:
+        output_path = os.path.dirname(input_path)
+
+    if base_name is None:
+        name = detect_img_name(input_path)
+        name = os.path.splitext(name)[0]
+        base_name = name + suffix
+    else:
+        base_name = base_name + suffix
+
+    return output_path, base_name
