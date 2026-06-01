@@ -345,9 +345,11 @@ def _delta_e_stats(
 
     # Get only patch code
     patch_codes = [re.search(r"[A-F][1-4]", name).group() for name in CHECKER_PATCH_NAMES]
+    patch_names = [name.split(": ", 1)[1] for name in CHECKER_PATCH_NAMES]
 
     df = np.column_stack([
             patch_codes,
+            patch_names,
             delta_e_before,
             delta_e_after,
             delta_e_before - delta_e_after

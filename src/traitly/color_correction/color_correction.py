@@ -24,7 +24,7 @@ from sklearn.preprocessing import (
 # ============================================================================
 # INTERNAL
 # ============================================================================
-from traitly.utils import _save_parameters
+from traitly.utils.session_report import _save_parameters
 
 from traitly.utils.validation import (
     _validate_path_exists,
@@ -32,7 +32,7 @@ from traitly.utils.validation import (
     _validate_img_suffix,
 )
 
-from traitly.utils.save_results import _save_df, _save_img
+from traitly.utils.save_results import _save_df, _save_img, _format_output_path
 from traitly.utils.basic_functions import load_img, detect_img_name
 
 from traitly.color_correction.color_analysis import (
@@ -79,6 +79,7 @@ class ColorCorrection:
         # save parameters
         self._parameters = ColorCorrectionParameters()
         self._is_metadata_saved = True
+
 
     def load_image(
         self,
@@ -206,24 +207,21 @@ class ColorCorrection:
         verbose: bool = True,
     ) -> None:
 
-        if output_path is None:
-            output_path = os.path.dirname(self.input_path)
-
-        if base_name is None:
-            name = detect_img_name(self.input_path)
-            name = os.path.splitext(name)[0]
-            _base_name = name + "_delta_e_stats"
-        else:
-            _base_name = base_name + "_delta_e_stats"
+        _output_path, _base_name = _format_output_path(
+                self.input_path,
+                base_name=base_name,
+                suffix="_delta_e_stats",
+                output_path=output_path
+            )
 
         # Convert np.ndarray into pd.DF before save it
         df = pd.DataFrame(
                 self._delta_e_stats,
-                columns=["Patch", "DeltaE_Before", "DeltaE_After", "DeltaE_Improvement"]
+                columns=["Patch", "Color", "DeltaE_Before", "DeltaE_After", "DeltaE_Improvement"]
             )
         DF_AVAILABLE = _save_df(
             df,
-            output_path=os.path.join(output_path, _base_name),  # pass full path
+            output_path=os.path.join(_output_path, _base_name),  # pass full path
             base_name=_base_name, # base_name arg being ignored, I will fix this soon
             sep=sep
         )
@@ -242,20 +240,17 @@ class ColorCorrection:
         verbose: bool = True,
     ):
 
-        if output_path is None:
-            output_path = os.path.dirname(self.input_path)
-
-        if base_name is None:
-            name = detect_img_name(self.input_path)
-            name = os.path.splitext(name)[0]
-            _base_name = name + "_corrected"
-        else:
-            _base_name = base_name + "_corrected"
+        _output_path, _base_name,=  _format_output_path(
+            self.input_path,
+            base_name = base_name,
+            suffix = "_corrected",
+            output_path = output_path
+        )
 
         _save_img(
             img=self.corrected_img,
             path=self.input_path,
-            output_path = output_path,
+            output_path = _output_path,
             format = format,
             verbose = verbose,
             quality = quality,
