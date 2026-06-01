@@ -6,7 +6,6 @@
 import os
 from typing import Tuple, Optional
 
-
 # ============================================================================
 # THIRD-PARTY
 # ============================================================================
@@ -25,6 +24,8 @@ from sklearn.preprocessing import (
 # ============================================================================
 # INTERNAL
 # ============================================================================
+from traitly.utils import _save_parameters
+
 from traitly.utils.validation import (
     _validate_path_exists,
     _validate_color_image,
@@ -43,6 +44,8 @@ from traitly.color_correction.color_analysis import (
     _delta_e_stats,
 
 )
+
+from .correction_parameters import ColorCorrectionParameters
 
 ## Color correction class ##
 class ColorCorrection:
@@ -72,6 +75,10 @@ class ColorCorrection:
 
         # save_csv
         self._img_name = None
+
+        # save parameters
+        self._parameters = ColorCorrectionParameters()
+        self._is_metadata_saved = True
 
     def load_image(
         self,
@@ -123,6 +130,17 @@ class ColorCorrection:
         plot_size: Tuple = (8,5),
         verbose: bool = True
     ) -> None:
+
+        # Save the parameters used
+        metadata = self._is_metadata_saved
+        if metadata:
+            self._parameters.apply_color_correction_params = {
+                "degree": degree,
+                "num_components": num_components,
+                "max_iterations": max_iterations,
+                "scaler": scaler,
+            }
+
         # Fit a PLSR model per LAB channel
         self._models = _fit_plsr_models(
             self._detected_lab,
@@ -170,6 +188,7 @@ class ColorCorrection:
         self,
         verbose: bool = False
     )-> None:
+        self._include_delta_e_stats = True
 
         self._delta_e_stats = _delta_e_stats(
             self.corrected_img,
@@ -212,12 +231,14 @@ class ColorCorrection:
         if not DF_AVAILABLE and verbose:
             print("Results are None")
 
+        return None
+
     def save_img(
         self,
         output_path: Optional[str] = None,
         base_name: Optional[str] = None,
         format: str = 'png',
-        quality: int = 95,
+        quality: int = 100,
         verbose: bool = True,
     ):
 
@@ -236,7 +257,17 @@ class ColorCorrection:
             path=self.input_path,
             output_path = output_path,
             format = format,
-            output_message = verbose,
+            verbose = verbose,
             quality = quality,
             base_name = _base_name,
         )
+
+        return None
+
+    def save_parameters(self, output_path=None):
+        _save_parameters(self.input_path, self._parameters, output_path)
+
+    # def process_single_file(
+    #     self,
+
+    # ):

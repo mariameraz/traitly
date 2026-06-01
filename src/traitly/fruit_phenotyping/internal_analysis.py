@@ -65,7 +65,7 @@ from traitly.fruit_phenotyping.mask import (
 
 from traitly.fruit_phenotyping.processing import annotate_all_fruits, get_internal_pericarp_contour
 
-from traitly.utils.environment import get_package_versions
+
 from traitly.utils.basic_functions import detect_img_name, load_img
 from traitly.utils.calibration import px_cm_density
 from traitly.utils.constants import valid_extensions
@@ -76,7 +76,7 @@ from traitly.utils.label import (
     detect_qr,
 )
 from traitly.utils.validation import _validate_path_exists, _validate_color_image
-
+from traitly.utils import get_package_versions, _save_parameters
 
 from traitly.fruit_phenotyping.analysis_parameters import FruitAnalyzerParameters
 from traitly.fruit_phenotyping.results_image import ResultsImage
@@ -1729,39 +1729,8 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     # OPTIONAL: Save all the parameters used in the session
     ##########################################################################################
-    def save_parameters(self, output_path: Optional[str] = None) -> None:
-        """
-        Save the analysis parameters used in the current session to disk.
-
-        Writes both a ``.txt`` and a ``.json`` file named after the loaded
-        image, via :meth:`~traitly.fruit_phenotyping.analysis_parameters.FruitAnalyzerParameters.save_to_file`
-        and :meth:`~traitly.fruit_phenotyping.analysis_parameters.FruitAnalyzerParameters.save_to_json`.
-
-        Parameters
-        ----------
-        output_path : str or None, optional
-            Directory where parameter files are saved. If None, files are
-            saved in the same directory as :attr:`img_path`. Default is None.
-        """
-        if output_path is None:
-            output_path = os.path.dirname(self.input_path)
-
-        output_path = os.path.abspath(output_path)
-        base_name = os.path.splitext(os.path.basename(self.input_path))[0]
-
-        # Save as .txt
-        txt_path = os.path.join(output_path, f"{base_name}_parameters.txt")
-        self._parameters.save_to_file(txt_path)
-
-        # Save as .json
-        json_path = os.path.join(output_path, f"{base_name}_parameters.json")
-        self._parameters.save_to_json(json_path)
-
-        print("\n> Parameters saved at:")
-        print(f"  - TXT:  {txt_path}")
-        print(f"  - JSON: {json_path}")
-
-        return None
+    def save_parameters(self, output_path=None):
+        _save_parameters(self.input_path, self._parameters, output_path)
 
     ##########################################################################################
     #                                     COLOR ANALYSIS
