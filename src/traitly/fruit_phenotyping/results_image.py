@@ -73,6 +73,36 @@ class ResultsImage:
         self.morphology_results = morphology_results if morphology_results else []
         self.path = path
         self.color_results = color_results if color_results else []
+        self._img_to_save = None
+
+    def _resolve_img_to_save(
+        self,
+        image_type: str = 'auto'
+    ):
+        # First, check there is an image to save
+        if self.morphology_image is None and self.color_image is None:
+            raise RuntimeError("No image available to save.")
+
+        if image_type == 'morphology':
+            self._img_to_save = self.morphology_image
+        elif image_type == 'color':
+            self._img_to_save = self.color_image
+        elif image_type == 'auto':
+            # Check for no empty results (could be list or df)
+            has_morph = (self.morphology_results is not None and
+                         len(self.morphology_results) > 0)
+            has_color = (self.color_results is not None and
+                         len(self.color_results) > 0)
+
+            if has_morph and self.morphology_image is not None:
+                self._img_to_save = self.morphology_image
+            elif has_color and self.color_image is not None:
+                self._img_to_save = self.color_image
+            else:
+                # Fallback to whichever image exists
+                self._img_to_save = self.morphology_image if self.morphology_image is not None else self.color_image
+        else:
+            raise ValueError("image_type must be 'morphology', 'color', or 'auto'")
 
     def save_img(
         self,
@@ -85,38 +115,23 @@ class ResultsImage:
         **kwargs,
     ) -> None:
         # Decide which image to save
-        if image_type == 'morphology':
-            img = self.morphology_image
-        elif image_type == 'color':
-            img = self.color_image
-        elif image_type == 'auto':
-            # Check for no empty results (could be list or df)
-            has_morph = (self.morphology_results is not None and
-                         len(self.morphology_results) > 0)
-            has_color = (self.color_results is not None and
-                         len(self.color_results) > 0)
+        self._resolve_img_to_save(image_type = image_type)
 
-            if has_morph and self.morphology_image is not None:
-                img = self.morphology_image
-            elif has_color and self.color_image is not None:
-                img = self.color_image
-            else:
-                # Fallback to whichever image exists
-                img = self.morphology_image if self.morphology_image is not None else self.color_image
-        else:
-            raise ValueError("image_type must be 'morphology', 'color', or 'auto'")
-
-        if img is None:
-            raise RuntimeError("No image available to save.")
+        _output_path, _base_name = _format_output_path(
+                                self.path,
+                                base_name = base_name,
+                                suffix = "_processed",
+                                output_path = output_path
+                            )
 
         _save_img(
-            img=img,
+            img=self._img_to_save,
             path=self.path,
-            output_path=output_path,
+            output_path=_output_path,
             format=format,
             verbose=output_message,
             quality=quality,
-            base_name=base_name,
+            base_name=_base_name,
         )
 
     def save_all(
@@ -127,6 +142,7 @@ class ResultsImage:
         sep: str = ",",
         output_message: bool = True,
         quality: int = 95,
+        image_type: str = 'auto',
     ) -> None:
         """
         Save the annotated image, morphology CSV, and color CSV in one call.
@@ -165,7 +181,9 @@ class ResultsImage:
             # ensure result is always in lower characters
             fmt = format.lower()
 
-            # For the morphology results: ##############################################
+            ## 1. Save only one annotated image ##################################
+            # Decide which image to save
+            self._resolve_img_to_save(image_type = image_type)
             ## annotated image
             out_dir, name = _format_output_path(
                 input_path=self.path,
@@ -173,14 +191,17 @@ class ResultsImage:
                 suffix=f"_processed.{fmt}",
                 output_path=output_dir,
             )
+
             _save_img(
-                img=self.morphology_image,
+                img=self._img_to_save,
                 path=self.path,
                 output_path=os.path.join(out_dir, name),
                 format=fmt,
                 verbose=output_message,
                 quality=quality,
             )
+
+            # 2. For the morphology results: ##############################################
 
             ## CSV
             out_dir, name = _format_output_path(
@@ -198,8 +219,7 @@ class ResultsImage:
                 sep=sep,
                 verbose=output_message)
 
-            # For the color results: ##############################################
-            ## Image
+            # 3. For the color results: ##############################################
             out_dir, name = _format_output_path(
                 input_path=self.path,
                 base_name=base_name,
