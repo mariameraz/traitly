@@ -15,11 +15,18 @@ import json
 from dataclasses import asdict, dataclass, field
 from abc import abstractmethod
 from typing import Any, Dict
+import os
 
 # ============================================================================
 # INTERNAL IMPORTS
 # ============================================================================
-from traitly.utils.environment import get_package_versions, get_system_metadata, get_session_metadata
+from traitly.utils.environment import (
+    get_package_versions,
+    get_system_metadata,
+    get_session_metadata
+)
+
+
 
 @dataclass
 class AnalysisParameters:
@@ -100,6 +107,7 @@ class AnalysisParameters:
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(self.to_formatted_string())
 
+
     def save_to_json(self, filepath: str) -> None:
         """
         Save parameters to a JSON file.
@@ -114,6 +122,34 @@ class AnalysisParameters:
         OSError
             If the file cannot be created or written to ``filepath``.
         """
+        class _SafeEncoder(json.JSONEncoder):
+            """
+            Convert any object into a string
+            """
+            def default(self, obj):
+                try:
+                    return super().default(obj)
+                except TypeError:
+                    return str(obj)
+
         data = self.to_dict()
         with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+            json.dump(data, f, indent=2, ensure_ascii=False, cls = _SafeEncoder)
+
+
+def _save_parameters(input_path, parameters, output_path=None):
+    if output_path is None:
+        output_path = os.path.dirname(input_path)
+
+    output_path = os.path.abspath(output_path)
+    base_name = os.path.splitext(os.path.basename(input_path))[0]
+
+    txt_path = os.path.join(output_path, f"{base_name}_parameters.txt")
+    parameters.save_to_file(txt_path)
+
+    json_path = os.path.join(output_path, f"{base_name}_parameters.json")
+    parameters.save_to_json(json_path)
+
+    print("\n> Parameters saved at:")
+    print(f"  - TXT:  {txt_path}")
+    print(f"  - JSON: {json_path}")
