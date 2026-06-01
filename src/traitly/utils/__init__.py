@@ -7,8 +7,11 @@ from .environment import (
     get_package_versions,
     _GPU_AVAILABLE)
 
+from .session_report import _save_parameters
+
 __all__ = [
     'basic_functions',
     'get_session_metadata',
     'get_package_versions',
-    _GPU_AVAILABLE]
+    _GPU_AVAILABLE,
+    "_save_parameters"]

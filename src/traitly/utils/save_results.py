@@ -88,7 +88,7 @@ def _save_img(
         else:
             cv2.imwrite(full_path, img)
 
-        if output_message:
+        if verbose:
             print(f"– Image saved at: {full_path}")
 
     except Exception as e:
