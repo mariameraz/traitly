@@ -65,7 +65,6 @@ from traitly.fruit_phenotyping.mask import (
 
 from traitly.fruit_phenotyping.processing import annotate_all_fruits, get_internal_pericarp_contour
 
-
 from traitly.utils.basic_functions import detect_img_name, load_img
 from traitly.utils.calibration import px_cm_density
 from traitly.utils.constants import valid_extensions
@@ -98,7 +97,6 @@ warnings.filterwarnings("ignore", message="Using CPU")
 ##########################################################################################
 # Worker function for parallel processing
 ##########################################################################################
-
 
 def _process_image_worker(
     img_path: str,
@@ -174,7 +172,6 @@ def _process_image_worker(
 ##########################################################################################
 # Initializig class
 ##########################################################################################
-
 
 class FruitInternalAnalyzer:
     """
@@ -1880,9 +1877,10 @@ class FruitInternalAnalyzer:
                 "dark_thresh": dark_thresh,
             }
 
+        # Initialize ResultsImage if `analyze_morphology` was not run first
         if self._is_morphology_results is None:
             self.results = ResultsImage(
-                bgr_img=self._img_copy, morphology_results=[], path=self.input_path
+                res_img=self._img_copy, morphology_results=[], path=self.input_path
             )
 
         self.results.color_image = self._img_copy.copy()
