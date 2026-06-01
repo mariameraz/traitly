@@ -22,7 +22,14 @@ import numpy as np
 import pandas as pd
 
 from traitly.utils.save_results import (
-    _save_df, _ensure_dir_exists, _save_img)
+    _save_df,
+    _ensure_dir_exists,
+    _save_img,
+    _to_df,
+    _save_results,
+    _format_output_path
+
+)
 
 class ResultsImage:
     """
@@ -55,24 +62,17 @@ class ResultsImage:
 
     def __init__(
         self,
-        bgr_img: np.ndarray,
+        res_img: Optional[np.ndarray],
         morphology_results: list = None,
         color_results: list = None,
         path: Optional[str] = None,
         processing_metadata: Optional[Dict[str, Any]] = None,
     ):
-        # Save both BGR (for cv2) and RGB (for display) to avoid reconversion
-        self.morphology_image = bgr_img
-        self.color_image = bgr_img.copy()
+        self.morphology_image = res_img
+        self.color_image = res_img.copy()
         self.morphology_results = morphology_results if morphology_results else []
-        self.table = self.morphology_results
         self.path = path
-        self._dir_cache = {}  # Cache for directory checks
         self.color_results = color_results if color_results else []
-
-        # Save metadata for reports
-        self.processing_metadata = processing_metadata or {}
-
 
     def save_img(
         self,
@@ -81,47 +81,42 @@ class ResultsImage:
         output_message: bool = True,
         quality: int = 95,
         base_name: Optional[str] = None,
+        image_type: str = 'auto',
         **kwargs,
     ) -> None:
-        """
-        Save the annotated image to disk.
+        # Decide which image to save
+        if image_type == 'morphology':
+            img = self.morphology_image
+        elif image_type == 'color':
+            img = self.color_image
+        elif image_type == 'auto':
+            # Check for no empty results (could be list or df)
+            has_morph = (self.morphology_results is not None and
+                         len(self.morphology_results) > 0)
+            has_color = (self.color_results is not None and
+                         len(self.color_results) > 0)
 
-        Converts :attr:`morphology_image` from RGB back to BGR before writing
-        via ``cv2.imwrite``. JPEG and PNG are written with explicit quality
-        and compression settings; all other formats use ``cv2.imwrite``
-        defaults.
+            if has_morph and self.morphology_image is not None:
+                img = self.morphology_image
+            elif has_color and self.color_image is not None:
+                img = self.color_image
+            else:
+                # Fallback to whichever image exists
+                img = self.morphology_image if self.morphology_image is not None else self.color_image
+        else:
+            raise ValueError("image_type must be 'morphology', 'color', or 'auto'")
 
-        Parameters
-        ----------
-        path : str or None, optional
-            Output file path. If ``None``, the image is saved next to
-            :attr:`path` with ``'_processed'`` appended to the stem.
-            Default is ``None``.
-        format : str or None, optional
-            Image format extension (e.g. ``'jpg'``, ``'png'``). If ``None``,
-            inferred from ``path``. Used to determine the default filename
-            when ``path`` is ``None``. Default is ``None``.
-        output_message : bool, optional
-            If True, print the saved file path. Default is True.
-        quality : int, optional
-            JPEG compression quality in [0, 100]. Default is 95.
-        **kwargs
-            Ignored. Accepted for forward-compatibility.
+        if img is None:
+            raise RuntimeError("No image available to save.")
 
-        Raises
-        ------
-        ValueError
-            If ``path`` is ``None`` and :attr:`path` is not set.
-        RuntimeError
-            If the image cannot be saved due to an unexpected error.
-        """
         _save_img(
-            path = self.path,
-            output_path = output_path,
-            format = format,
-            verbose = output_message,
-            quality = quality,
-            base_name = base_name
+            img=img,
+            path=self.path,
+            output_path=output_path,
+            format=format,
+            verbose=output_message,
+            quality=quality,
+            base_name=base_name,
         )
 
     def save_all(
@@ -167,86 +162,94 @@ class ResultsImage:
             If any file cannot be saved due to an unexpected error.
         """
         try:
-            # Determine base name
-            if base_name is None:
-                if not self.path:
-                    raise ValueError(
-                        "Cannot determine base name: no original image available"
-                    )
-                base_name = os.path.splitext(os.path.basename(self.path))[0]
+            # ensure result is always in lower characters
+            fmt = format.lower()
 
-            # Determine output directory
-            if output_dir is None:
-                if not self.path:
-                    raise ValueError(
-                        "Cannot determine directory: no original image available"
-                    )
-                output_dir = os.path.dirname(self.path)
-
-            # Ensure output directory exists (once)
-            abs_output_dir = os.path.abspath(os.path.expanduser(output_dir))
-            if abs_output_dir not in self._dir_cache:
-                if not os.path.exists(abs_output_dir):
-                    os.makedirs(abs_output_dir, exist_ok=True)
-                self._dir_cache[abs_output_dir] = True
-
-            # Build complete paths
-            img_path = os.path.join(
-                abs_output_dir, f"{base_name}_processed.{format.lower()}"
+            # For the morphology results: ##############################################
+            ## annotated image
+            out_dir, name = _format_output_path(
+                input_path=self.path,
+                base_name=base_name,
+                suffix=f"_processed.{fmt}",
+                output_path=output_dir,
             )
-            morph_csv_path = os.path.join(
-                abs_output_dir, f"{base_name}_morphology_results.csv"
-            )
-            color_csv_path = os.path.join(
-                abs_output_dir, f"{base_name}_color_results.csv"
+            _save_img(
+                img=self.morphology_image,
+                path=self.path,
+                output_path=os.path.join(out_dir, name),
+                format=fmt,
+                verbose=output_message,
+                quality=quality,
             )
 
-            # Save annotated image
-            bgr_image = self.morphology_image
+            ## CSV
+            out_dir, name = _format_output_path(
+                input_path=self.path,
+                base_name=base_name,
+                suffix="_morphology_results.csv",
+                output_path=output_dir,
+            )
 
-            if format.lower() in ["jpg", "jpeg"]:
-                cv2.imwrite(img_path, bgr_image, [cv2.IMWRITE_JPEG_QUALITY, quality])
-            elif format.lower() == "png":
-                cv2.imwrite(img_path, bgr_image, [cv2.IMWRITE_PNG_COMPRESSION, 3])
-            else:
-                cv2.imwrite(img_path, bgr_image)
+            morph_df = self.morphology_results if isinstance(self.morphology_results, pd.DataFrame) else pd.DataFrame(self.morphology_results or {})
+            _save_df(
+                morph_df,
+                os.path.join(out_dir, name),
+                base_name="Morphology",
+                sep=sep,
+                verbose=output_message)
 
-            if output_message:
-                print("> Results saved at:")
-                print(f"    – Image: {img_path}")
+            # For the color results: ##############################################
+            ## Image
+            out_dir, name = _format_output_path(
+                input_path=self.path,
+                base_name=base_name,
+                suffix="_color_results.csv",
+                output_path=output_dir,
+            )
 
-            # Save morphology csv
-            if isinstance(self.morphology_results, pd.DataFrame):
-                morph_df = self.morphology_results
-            else:
-                morph_df = (
-                    pd.DataFrame(self.morphology_results)
-                    if self.morphology_results
-                    else pd.DataFrame()
-                )
-
-            if not morph_df.empty:
-                morph_df.to_csv(morph_csv_path, sep=sep, index=False, encoding="utf-8")
-                if output_message:
-                    print(f"    – Morphology CSV: {morph_csv_path}")
-
-            # Save color csv
-            if isinstance(self.color_results, pd.DataFrame):
-                color_df = self.color_results
-            else:
-                color_df = (
-                    pd.DataFrame(self.color_results)
-                    if self.color_results
-                    else pd.DataFrame()
-                )
-
-            if not color_df.empty:
-                color_df.to_csv(color_csv_path, sep=sep, index=False, encoding="utf-8")
-                if output_message:
-                    print(f"    – Color CSV: {color_csv_path}")
+            # csv
+            color_df = self.color_results if isinstance(self.color_results, pd.DataFrame) else pd.DataFrame(self.color_results or {})
+            _save_df(
+                color_df,
+                os.path.join(out_dir, name),
+                base_name="Color",
+                sep=sep,
+                verbose=output_message)
 
         except Exception as e:
             raise RuntimeError(f"> Error in save_all: {str(e)}")
+
+    def _get_base_path(
+        self,
+        output_path: str,
+        base_name: str
+    ):
+        if output_path is None:
+            if not self.path:
+                raise ValueError(
+                    "No path provided and no original image reference available"
+                )
+            out_dir = os.path.dirname(self.path)
+            base_path = os.path.join(out_dir, base_name)
+        else:
+            expanded = os.path.abspath(os.path.expanduser(output_path))
+
+            # If user passed a directory, save inside it
+            if os.path.isdir(expanded) or expanded.endswith(os.sep):
+                base_path = os.path.join(expanded.rstrip(os.sep), base_name)
+                _ensure_dir_exists(base_path)
+
+            else:
+                # Treat as a file path (must end with .csv)
+                full_path = _ensure_dir_exists(expanded)
+                stem, ext = os.path.splitext(full_path)
+                if ext and ext.lower() != ".csv":
+                    raise ValueError(
+                        "save_csv path must end with .csv (or be a directory)"
+                    )
+                base_path = stem  # remove .csv so we can add suffixes consistently
+
+        return base_path
 
     def save_csv(
         self,
@@ -300,95 +303,27 @@ class ResultsImage:
             :attr:`path` is not set, ``path`` has a non-CSV extension,
             or ``data`` is not one of the supported modes.
         """
-
-        def to_df(obj) -> pd.DataFrame:
-            """Robust conversion to DataFrame."""
-            if obj is None:
-                return pd.DataFrame()
-            if isinstance(obj, pd.DataFrame):
-                return obj
-            # list[dict], dict, list, etc.
-            try:
-                return pd.DataFrame(obj)
-            except Exception:
-                return pd.DataFrame()
-
-        morph_df = to_df(getattr(self, "morphology_results", None))
-        color_df = to_df(getattr(self, "color_results", None))
-
-        # Resolve default base_name
+        # resolve the base name before saving the table
         if base_name is None:
-            if self.path:
-                base_name = os.path.splitext(os.path.basename(self.path))[0]
-            else:
-                base_name = "results"
+                if self.path:
+                    base_name = os.path.splitext(os.path.basename(self.path))[0]
+                else:
+                    base_name = "results"
 
-        if output_path is None:
-            if not self.path:
-                raise ValueError(
-                    "No path provided and no original image reference available"
-                )
-            out_dir = os.path.dirname(self.path)
-            base_path = os.path.join(out_dir, base_name)
+        morph_df = _to_df(getattr(self, "morphology_results", None))
+        color_df = _to_df(getattr(self, "color_results", None))
 
-        else:
-            expanded = os.path.abspath(os.path.expanduser(output_path))
+        # Get the base path (no suffix)
+        base_path = self._get_base_path(output_path, base_name)
 
-            # If user passed a directory, save inside it
-            if os.path.isdir(expanded) or expanded.endswith(os.sep):
-                out_dir = expanded.rstrip(os.sep)
-                # ensure directory exists
-                os.makedirs(out_dir, exist_ok=True)
-                base_path = os.path.join(out_dir, base_name)
-
-            else:
-                # Treat as a file path (must end with .csv)
-                full_path = _ensure_dir_exists(expanded)
-                stem, ext = os.path.splitext(full_path)
-                if ext and ext.lower() != ".csv":
-                    raise ValueError(
-                        "save_csv path must end with .csv (or be a directory)"
-                    )
-                base_path = stem  # remove .csv so we can add suffixes consistently
-
+        # Decide which files are going to be saved
         mode = (data or "auto").strip().lower()
 
         if mode == "morphology":
-            if morph_df.empty:
-                raise ValueError("No morphology results available to save")
-            _save_df(morph_df, f"{base_path}_morphology_results.csv", "Morphology")
-
+            _save_results(morph_df, pd.DataFrame(), base_path, sep, output_message, require_morph=True)
         elif mode == "color":
-            if color_df.empty:
-                raise ValueError("No color results available to save")
-            _save_df(color_df, f"{base_path}_color_results.csv", "Color")
-
-        elif mode == "both":
-            saved_any = False
-            saved_any |= _save_df(
-                morph_df, f"{base_path}_morphology_results.csv", "Morphology"
-            )
-            saved_any |= _save_df(color_df, f"{base_path}_color_results.csv", "Color")
-            if not saved_any:
-                raise ValueError("No morphology or color results available to save")
-
-        elif mode == "auto":
-            saved_any = False
-
-            if not morph_df.empty:
-                saved_any |= _save_df(
-                    morph_df, f"{base_path}_morphology_results.csv", "Morphology"
-                )
-
-            if not color_df.empty:
-                saved_any |= _save_df(
-                    color_df, f"{base_path}_color_results.csv", "Color"
-                )
-
-            if not saved_any:
-                raise ValueError("No morphology or color results available to save")
-
+            _save_results(pd.DataFrame(), color_df, base_path, sep, output_message, require_color=True)
+        elif mode in ("both", "auto"):
+            _save_results(morph_df, color_df, base_path, sep, output_message)
         else:
-            raise ValueError(
-                "data must be one of: 'auto', 'morphology', 'color', 'both'"
-            )
+            raise ValueError("Data must be one of: 'auto', 'morphology', 'color', 'both'.")

@@ -96,7 +96,6 @@ def _save_img(
     except Exception as e:
         raise RuntimeError(f"– Error saving image: {str(e)}")
 
-
 def _format_output_path(
     input_path: str,
     base_name: str,
@@ -115,3 +114,48 @@ def _format_output_path(
         base_name = base_name + suffix
 
     return output_path, base_name
+
+
+def _to_df(obj) -> pd.DataFrame:
+    """Conversion to DataFrame."""
+    if obj is None:
+        return pd.DataFrame()
+    if isinstance(obj, pd.DataFrame):
+        return obj
+    # list[dict], dict, list, etc.
+    try:
+        return pd.DataFrame(obj)
+    except Exception:
+        return pd.DataFrame()
+
+# For fruit_morphology
+def _save_results(
+    morph_df: pd.DataFrame,
+    color_df: pd.DataFrame,
+    base_path: str,
+    sep: str,
+    verbose: bool,
+    require_morph: bool = False,
+    require_color: bool = False,
+) -> None:
+    if require_morph and morph_df.empty:
+        raise ValueError("No morphology results available to save")
+    if require_color and color_df.empty:
+        raise ValueError("No color results available to save")
+
+    saved_any = False
+    saved_any |= _save_df(
+        morph_df,
+        f"{base_path}_morphology_results.csv",
+        "Morphology",
+        sep=sep,
+        verbose=verbose)
+
+    saved_any |= _save_df(
+        color_df,
+        f"{base_path}_color_results.csv",
+        "Color", sep=sep,
+        verbose=verbose)
+
+    if not saved_any:
+        raise ValueError("No morphology or color results available to save")
