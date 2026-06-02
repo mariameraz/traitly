@@ -1880,7 +1880,7 @@ class FruitInternalAnalyzer:
         # Initialize ResultsImage if
         if self._is_morphology_results is None:
             self.results = ResultsImage(
-                bgr_img=self._img_copy, morphology_results=[], path=self.input_path
+                res_img=self._img_copy, morphology_results=[], path=self.input_path
             )
 
         self.results.color_image = self._img_copy.copy()
