@@ -76,21 +76,24 @@ def create_parser() -> argparse.ArgumentParser:
             "",
             "Examples:",
             _fmt_examples([
+                ("  # Get traitly fruit_internal and fruit_external parameters info",),
+                ("  traitly fruit_internal ---help",),
+                ("  traitly fruit_external ---help",),
+                ("",),
                 ("  # Internal structure analysis (single image or folder)",),
-                ("  traitly --fruit_internal -i tests/sample_data/",),
-                ("  traitly --fruit_internal -i tests/sample_data/ -o results/ --num_cores 4",),
-                ("  traitly --fruit_internal -i tests/sample_data/ --json config.json",),
+                ("  traitly fruit_internal -i tests/sample_data/",),
+                ("  traitly fruit_internal -i tests/sample_data/ -o results/ --num_cores 4",),
+                ("  traitly fruit_internal -i tests/sample_data/ --json config.json",),
                 ("",),
                 ("  # External analysis (single image or folder)",),
-                ("  traitly --fruit_external -i tests/sample_data/",),
-                ("  traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --num_cores 4",),
+                ("  traitly fruit_external -i tests/sample_data/",),
+                ("  traitly fruit_external -i tests/sample_data/ -o results/ --json config.json --num_cores 4",),
                 ("",),
                 ("  # Get traitly and system metadata",),
-                ("  traitly --info",),
+                ("  traitly info",),
                 ("",),
                 ("  # Get traitly version",),
                 ("  traitly --version",),
-
             ]),
             "",
             "="*70,
@@ -103,75 +106,66 @@ def create_parser() -> argparse.ArgumentParser:
         ])
     )
 
-    # Mode (mutually exclusive)
-    mode_group = parser.add_mutually_exclusive_group(required=True)
-    mode_group.add_argument(
-        '--fruit_internal',
-        action='store_true',
-        help='Analyze internal fruit structure (locules, pericarp, symmetry)'
-    )
-    mode_group.add_argument(
-        '--fruit_external',
-        action='store_true',
-        help='Analyze external fruit structure (morphology, color)'
-    )
+    subparsers = parser.add_subparsers(dest='command', required=True)
 
-    # Required
-    parser.add_argument(
-        '-i', '--input',
-        type=str,
-        required=False,
-        metavar='PATH',
-        help='Path to image file or folder'
-    )
+    def _add_common_args(subparser):
+        subparser.add_argument(
+            '-i', '--input',
+            type=str,
+            required=True,
+            metavar='PATH',
+            help='Path to image file or folder'
+        )
+        subparser.add_argument(
+            '-o', '--output',
+            type=str,
+            default=None,
+            metavar='PATH',
+            help='Output directory (default: <input>/Results/)'
+        )
+        subparser.add_argument(
+            '--json',
+            type=str,
+            default=None,
+            metavar='PATH',
+            help='Path to JSON config file with analysis parameters'
+        )
+        subparser.add_argument(
+            '--num_cores',
+            type=int,
+            default=1,
+            metavar='N',
+            help='Number of CPU cores for parallel processing (default: 1)'
+        )
+        subparser.add_argument(
+            '--no_morphology',
+            action='store_true',
+            help='Skip morphology analysis'
+        )
+        subparser.add_argument(
+            '--no_color',
+            action='store_true',
+            help='Skip color analysis'
+        )
 
-    # Optional
-    parser.add_argument(
-        '-o', '--output',
-        type=str,
-        default=None,
-        metavar='PATH',
-        help='Output directory (default: <input>/Results/)'
+    fruit_internal = subparsers.add_parser(
+        'fruit_internal',
+        help='Analyze internal fruit structure (locules, pericarp, symmetry)',
+        formatter_class=RawDescriptionRichHelpFormatter,
     )
+    _add_common_args(fruit_internal)
 
-    parser.add_argument(
-        '--json',
-        type=str,
-        default=None,
-        metavar='PATH',
-        help='Path to JSON config file with analysis parameters'
+    fruit_external = subparsers.add_parser(
+        'fruit_external',
+        help='Analyze external fruit structure (morphology, color)',
+        formatter_class=RawDescriptionRichHelpFormatter,
     )
+    _add_common_args(fruit_external)
 
-    parser.add_argument(
-        '--num_cores',
-        type=int,
-        default=1,
-        metavar='N',
-        help='Number of CPU cores for parallel processing (default: 1)'
-    )
-
-    parser.add_argument(
-        '--no_morphology',
-        action='store_true',
-        help='Skip morphology analysis'
-    )
-
-    parser.add_argument(
-        '--no_color',
-        action='store_true',
-        help='Skip color analysis'
-    )
-
-    parser.add_argument(
-        '--version',
-        action='version',
-        version=f'%(prog)s {importlib.metadata.version("traitly")}'
-    )
-
-    mode_group.add_argument(
-        '--info',
-        action='store_true',
-        help='Print traitly and system metadata'
+    subparsers.add_parser(
+        'info',
+        help='Print traitly and system metadata',
+        formatter_class=RawDescriptionRichHelpFormatter,
     )
     return parser
 
@@ -400,15 +394,11 @@ def main() -> None:
     parser = create_parser()
     args   = parser.parse_args()
 
-    if args.fruit_internal or args.fruit_external:
-        if not args.input:
-            parser.error("-i/--input is required")
-
-    if args.fruit_internal:
+    if args.command == 'fruit_internal':
         run_internal(args)
-    elif args.fruit_external:
+    elif args.command == 'fruit_external':
         run_external(args)
-    elif args.info:
+    elif args.command == 'info':
         for line in get_session_metadata():
             print(line)
         print("\nsystem:")
