@@ -108,14 +108,15 @@ def _detect_color_checker(
     detector.process(img, cv2.mcc.MCC24)
     checkers = detector.getListColorChecker()
 
+    # Check if we detected valid checkers
+    if not checkers:
+        warnings.warn("Color checker not detected.", UserWarning)
+        return None
+
     #Draw color patches detected
     img_copy = img.copy()
     cdrawer = cv2.mcc.CCheckerDraw.create(checkers[0])
     cdrawer.draw(img_copy)
-
-    if not checkers:
-        warnings.warn("Color checker not detected.", UserWarning)
-        return None
 
     checker = checkers[0]
 
