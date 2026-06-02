@@ -39,7 +39,7 @@ from rich_argparse import RawDescriptionRichHelpFormatter
 # ============================================================================
 # INTERNAL
 # ============================================================================
-from traitly.utils.metadata import (
+from traitly.utils.environment import (
     get_session_metadata,
     get_package_versions,
     get_system_metadata
