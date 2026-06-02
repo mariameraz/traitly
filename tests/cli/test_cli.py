@@ -19,29 +19,28 @@ from traitly.cli import create_parser, _validate_input, _validate_json
 
 def test_fruit_internal():
     parser = create_parser()
-    args = parser.parse_args(['--fruit_internal', '-i', 'tests/data/internal/'])
-    assert args.fruit_internal is True
-    assert args.fruit_external is False
+    args = parser.parse_args(['fruit_internal', '-i', 'tests/data/internal/'])
+    assert args.command == 'fruit_internal'
 
 def test_fruit_external():
     parser = create_parser()
-    args = parser.parse_args(['--fruit_external', '-i', 'tests/data/external/'])
-    assert args.fruit_external is True
+    args = parser.parse_args(['fruit_external', '-i', 'tests/data/external/'])
+    assert args.command == 'fruit_external'
 
 def test_default_num_cores():
     parser = create_parser()
-    args = parser.parse_args(['--fruit_internal', '-i', 'tests/data/internal/'])
+    args = parser.parse_args(['fruit_internal', '-i', 'tests/data/internal/'])
     assert args.num_cores == 1
 
 def test_mutually_exclusive():
     parser = create_parser()
     with pytest.raises(SystemExit):
-        parser.parse_args(['--fruit_internal', '--fruit_external', '-i', 'tests/'])
+        parser.parse_args(['fruit_internal', 'fruit_external', '-i', 'tests/'])
 
 def test_requires_input():
     parser = create_parser()
     with pytest.raises(SystemExit):
-        parser.parse_args(['--fruit_internal'])
+        parser.parse_args(['fruit_internal'])
 
 def test_validate_input_invalid(tmp_path):
     with pytest.raises(SystemExit):
