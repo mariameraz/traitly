@@ -1877,10 +1877,10 @@ class FruitInternalAnalyzer:
                 "dark_thresh": dark_thresh,
             }
 
-        # Initialize ResultsImage if `analyze_morphology` was not run first
+        # Initialize ResultsImage if
         if self._is_morphology_results is None:
             self.results = ResultsImage(
-                res_img=self._img_copy, morphology_results=[], path=self.input_path
+                bgr_img=self._img_copy, morphology_results=[], path=self.input_path
             )
 
         self.results.color_image = self._img_copy.copy()
