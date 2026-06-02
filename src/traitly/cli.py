@@ -400,6 +400,10 @@ def main() -> None:
     parser = create_parser()
     args   = parser.parse_args()
 
+    if args.fruit_internal or args.fruit_external:
+        if not args.input:
+            parser.error("-i/--input is required")
+
     if args.fruit_internal:
         run_internal(args)
     elif args.fruit_external:
