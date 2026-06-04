@@ -66,6 +66,7 @@ from traitly.fruit_phenotyping.mask import (
 from traitly.fruit_phenotyping.processing import annotate_all_fruits, get_internal_pericarp_contour
 
 from traitly.utils.basic_functions import detect_img_name, load_img
+from traitly.utils.manage_params import _import_params, _get_params, _clean_params
 from traitly.utils.calibration import px_cm_density
 from traitly.utils.constants import valid_extensions
 from traitly.utils.label import (
@@ -2077,20 +2078,10 @@ class FruitInternalAnalyzer:
         """
 
         # Load parameters using json file
-        if json_path is not None and os.path.exists(json_path):
-            with open(json_path, "r", encoding="utf-8") as f:
-                params = json.load(f)
-        elif config is not None:
-            params = config
-        else:
-            params = {}
-
-        def _get(section: str) -> Dict:
-            return params.get(section, {}) or {}
-
-        def _clean(d: Dict) -> Dict:
-            """Remove None values to avoid overriding defaults."""
-            return {k: v for k, v in d.items() if v is not None}
+        params = _import_params(
+                    json_path = json_path,
+                    config = config
+        )
 
         error_dict = None
         n_fruits = 0
@@ -2103,7 +2094,7 @@ class FruitInternalAnalyzer:
             # 1. setup_measurements
             try:
                 self.setup_measurements(
-                    verbose=False, **_clean(_get("setup_measurements_params"))
+                    verbose=False, **_clean_params(_get_params(params, "setup_measurements_params"))
                 )
             except Exception as e:
                 raise RuntimeError(f"[setup_measurements] {e}")
@@ -2111,31 +2102,31 @@ class FruitInternalAnalyzer:
             # 2. generate_fruit_mask
             try:
                 self.generate_fruit_mask(
-                    plot=False, **_clean(_get("generate_fruit_mask_params"))
+                    plot=False, **_clean_params(_get_params(params, "generate_fruit_mask_params"))
                 )
             except Exception as e:
                 raise RuntimeError(f"[generate_fruit_mask] {e}")
 
             # 3. enhance_locule_contrast (optional)
-            elc = _get("enhance_locule_contrast_params")
+            elc = _get_params(params, "enhance_locule_contrast_params")
             if elc:
                 try:
-                    self.enhance_locule_contrast(plot=False, **_clean(elc))
+                    self.enhance_locule_contrast(plot=False, **_clean_params(elc))
                 except Exception as e:
                     raise RuntimeError(f"[enhance_locule_contrast] {e}")
 
                 # 4. generate_locule_mask (only if enhance was run)
-                glm = _get("generate_locule_mask_params")
+                glm = _get_params(params, "generate_locule_mask_params")
                 if glm:
                     try:
-                        self.generate_locule_mask(plot=False, **_clean(glm))
+                        self.generate_locule_mask(params, plot=False, **_clean_params(glm))
                     except Exception as e:
                         raise RuntimeError(f"[generate_locule_mask] {e}")
 
             # 5. detect_fruits
             try:
                 self.detect_fruits(
-                    verbose=False, **_clean(_get("detect_fruits_params"))
+                    verbose=False, **_clean_params(_get_params(params, "detect_fruits_params"))
                 )
             except Exception as e:
                 raise RuntimeError(f"[detect_fruits] {e}")
@@ -2153,7 +2144,7 @@ class FruitInternalAnalyzer:
                     self.analyze_morphology(
                         plot=False,
                         display_table=False,
-                        **_clean(_get("analyze_morphology_params")),
+                        **_clean_params(_get_params(params, "analyze_morphology_params")),
                     )
                     if self.results and self.results.morphology_results is not None:
                         df_morph = (
@@ -2168,7 +2159,7 @@ class FruitInternalAnalyzer:
             if analyze_color:
                 try:
                     self.analyze_color(
-                        display_table=False, **_clean(_get("analyze_color_params"))
+                        display_table=False, **_clean_params(_get_params(params, "analyze_color_params"))
                     )
                     if self.results and self.results.color_results is not None:
                         df_color = (
