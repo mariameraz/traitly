@@ -6,6 +6,7 @@
 from typing import Optional
 import os
 from pathlib import Path
+import multiprocessing as mp
 
 # ============================================================================
 # THIRD-PARTY
@@ -64,3 +65,19 @@ def _validate_img_suffix(path):
             f"No valid image format: '{abs_path.suffix.lower()}' -> "
             f"Supported formats are: {valid_extensions}"
         )
+
+def _validate_num_cores(
+    num_cores: Optional[int] = None
+):
+    max_cores = mp.cpu_count()
+
+    if num_cores <= 0:
+        num_cores_message = f"    > num_cores: {num_cores} must be at least 1. Using num_cores=1 instead."
+        num_cores = 1
+    elif num_cores > max_cores:
+        num_cores_message = f"    > num_cores: {num_cores} exceeds system cores ({max_cores}). Using {max_cores} instead."
+        num_cores = max_cores
+    else:
+        num_cores_message = None
+
+    return num_cores, num_cores_message
