@@ -39,6 +39,7 @@ def test_internal_analyzer():
     assert os.path.exists(color_res), f"color_results.csv not found"
     assert os.path.exists(morpho_res), (f"morphology_results.csv not found")
 
+
 def test_int_json():
     json = Path(internal_folder) / "img_test_1_parameters.json"
     test = FruitInternalAnalyzer(path = internal_folder)
@@ -67,3 +68,13 @@ def test_json():
     json_white = Path(external_folder_white) / "cranberry_white_bg.json"
     test_white = FruitExternalAnalyzer(path = external_folder_white)
     test_white.analyze_folder(json_path = json_white, analyze_morphology = False)
+
+def test_processed_images_created():
+    test = FruitExternalAnalyzer(path=external_folder_blue)
+    test.analyze_folder()
+
+    input_images = list(external_folder_blue.glob("*.jpg")) + list(external_folder_blue.glob("*.png"))
+
+    for img_path in input_images:
+        expected = Path(external_folder_blue) / "Results" / f"{img_path.stem}_processed.jpg"
+        assert expected.exists(), f"Processed image not found for: {img_path.name}"
