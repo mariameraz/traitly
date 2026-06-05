@@ -43,7 +43,7 @@ class ResultsImage:
 
     Parameters
     ----------
-    bgr_img : np.ndarray
+    res_img : np.ndarray
         Annotated image in BGR format. Converted to RGB internally for
         display compatibility.
     morphology_results : list, optional
