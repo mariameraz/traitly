@@ -4,7 +4,7 @@
 # STANDARD LIBRARY
 # ============================================================================
 import os
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 
 # ============================================================================
 # THIRD-PARTY
@@ -30,6 +30,7 @@ from traitly.utils.validation import (
     _validate_path_exists,
     _validate_color_image,
     _validate_img_suffix,
+    _validate_num_cores,
 )
 
 from traitly.utils.save_results import _save_df, _save_img, _format_output_path
@@ -55,6 +56,9 @@ class ColorCorrection:
         self.input_path = os.path.abspath(path)
         ## Verify path exists
         _validate_path_exists(self.input_path)
+
+        # Determine if the path is to an image or a folder
+        self._is_directory = os.path.isdir(os.path.dirname(path))
 
         # load_image
         self.original_img = None
@@ -133,14 +137,13 @@ class ColorCorrection:
     ) -> None:
 
         # Save the parameters used
-        metadata = self._is_metadata_saved
-        if metadata:
-            self._parameters.apply_color_correction_params = {
-                "degree": degree,
-                "num_components": num_components,
-                "max_iterations": max_iterations,
-                "scaler": scaler,
-            }
+
+        self._parameters.apply_color_correction_params = {
+            "degree": degree,
+            "num_components": num_components,
+            "max_iterations": max_iterations,
+            "scaler": scaler,
+        }
 
         # Fit a PLSR model per LAB channel
         self._models = _fit_plsr_models(
@@ -262,7 +265,62 @@ class ColorCorrection:
     def save_parameters(self, output_path=None):
         _save_parameters(self.input_path, self._parameters, output_path)
 
-    # def process_single_file(
-    #     self,
+    def process_single_file(
+        self,
+        config: Optional[Dict] = None,
+        json_path: Optional[str] = None,
+    ):
+        """
+        Run the full color correction pipeline on the already loaded image
+        """
 
-    # ):
+        # 1. Load params from json file if passed
+        params = _import_params(
+            json_path = json_path,
+            config = config
+        )
+
+        # 2. Create empty objs to save Results
+        error_dict = None
+
+        try:
+            # Parameters for apply the color correction model
+            self.apply_color_correction(
+                verbose=False, **_clean_params(_get_params("apply_color_correction_params"))
+            )
+        except Exception as e:
+            error_dict = {"filename": os.path.basename(self.input_path), "status": str(e)}
+            raise RuntimeError(f"[apply_color_correction] {e}")
+
+        return error_dict
+
+    def analyze_folder(
+        self,
+        delta_e: bool = False,
+    ):
+        """
+        Process all images in the folder passed to :class `ColorCorrection`.
+        """
+
+        # 1. Check if path is passing a directory
+        if not self._is_directory:
+            raise ValueError(
+                "analyze_folder() requires a directory path. "
+                "Pass a folder to ColorCorrection(), not a single file."
+            )
+
+        # 2. If so, check if it exists
+        folder_path = self.input_path
+        _validate_path_exists(folder_path, makedir = False)
+
+        # 3. Check if num_cores is a valid number
+        num_cores, num_cores_message = _validate_num_cores(num_cores=num_cores)
+
+        # 4. If output_path is None, create a new results folder
+        if output_path is None:
+            output_path = _validate_path_exists(folder_path, makedir=True)
+        else:
+            output_path = _validate_path_exists(output_path, makedir=True)
+
+        # 5. Obtain the paths for all the valid images in the input folder
+        img_paths = _valid_images_in_folder(folder_path)

@@ -32,7 +32,6 @@ import os
 import sys
 import time
 import warnings
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
@@ -46,12 +45,10 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 
 # ============================================================================
 # INTERNAL IMPORTS
 # ============================================================================
-from traitly import __version__
 
 from traitly.fruit_phenotyping.mask import (
     apply_contrast,
@@ -68,14 +65,26 @@ from traitly.fruit_phenotyping.processing import annotate_all_fruits, get_intern
 from traitly.utils.basic_functions import detect_img_name, load_img
 from traitly.utils.manage_params import _import_params, _get_params, _clean_params
 from traitly.utils.calibration import px_cm_density
-from traitly.utils.constants import valid_extensions
 from traitly.utils.label import (
     detect_label_box,
     detect_label_box_yolo,
     detect_label_text,
     detect_qr,
 )
-from traitly.utils.validation import _validate_path_exists, _validate_color_image
+
+from traitly.utils.batch import (
+    _setup_batch,
+    _print_batch_header,
+    _run_fruit_batch_loop,
+    _save_fruit_batch_results
+)
+
+from traitly.utils.validation import (
+    _validate_path_exists,
+    _validate_color_image,
+    _validate_img_suffix,
+)
+
 from traitly.utils import get_package_versions, _save_parameters
 
 from traitly.fruit_phenotyping.analysis_parameters import FruitAnalyzerParameters
@@ -104,36 +113,8 @@ def _process_image_worker(
     config: Dict,
     analyze_morphology: bool,
     analyze_color: bool,
+    output_path: str = None,
 ) -> Tuple:
-    """
-    Worker function for parallel processing of a single image.
-
-    Instantiates a :class:`FruitInternalAnalyzer`, loads the image, and
-    runs the full pipeline via :meth:`~FruitInternalAnalyzer.process_single_file`.
-    Designed to be called inside a
-    :class:`~concurrent.futures.ProcessPoolExecutor`.
-
-    Parameters
-    ----------
-    img_path : str
-        Absolute path to the image file to process.
-    config : dict
-        Analysis configuration dictionary forwarded to
-        :meth:`~FruitInternalAnalyzer.process_single_file`.
-    analyze_morphology : bool
-        If True, run morphology analysis.
-    analyze_color : bool
-        If True, run color analysis.
-
-    Returns
-    -------
-    tuple
-        ``(df_morphology, df_color, error_dict, n_fruits, annotated_img,
-        filename, elapsed)``. On failure, ``df_morphology`` and
-        ``df_color`` are ``None`` and ``error_dict`` contains the error
-        message.
-    """
-
     t0 = time.time()
     try:
         analyzer = FruitInternalAnalyzer(img_path)
@@ -145,6 +126,7 @@ def _process_image_worker(
                 analyze_morphology=analyze_morphology,
                 analyze_color=analyze_color,
                 save_image=False,
+                output_path=output_path,
             )
         )
         elapsed = time.time() - t0
@@ -168,7 +150,6 @@ def _process_image_worker(
             os.path.basename(img_path),
             time.time() - t0,
         )
-
 
 ##########################################################################################
 # Initializig class
@@ -299,11 +280,7 @@ class FruitInternalAnalyzer:
 
         # Check image format
         path = Path(self.input_path)
-        if path.suffix.lower() not in valid_extensions:
-            raise ValueError(
-                f"No valid image format: '{path.suffix.lower()}' -> "
-                f"Supported formats are: {valid_extensions}"
-            )
+        _validate_img_suffix(path)
 
         # Load image
         self.img = load_img(
@@ -2181,7 +2158,7 @@ class FruitInternalAnalyzer:
             if save_image and annotated_img is not None:
                 out_dir = output_path or os.path.dirname(self.input_path)
                 base = os.path.splitext(os.path.basename(self.input_path))[0]
-                out_img = os.path.join(out_dir, f"{base}_annotated.jpg")
+                out_img = os.path.join(out_dir, f"{base}_processed.jpg")
                 cv2.imwrite(out_img, annotated_img)
 
         except Exception as e:
@@ -2210,7 +2187,6 @@ class FruitInternalAnalyzer:
         skip_qr: Optional[bool] = None,
         detect_label: Optional[bool] = None,
         confidence: Optional[float] = None,
-        #detect_color_checker: Optional[bool] = None,
         # generate_fruit_mask
         stamp: Optional[bool] = None,
         lower_hsv: Optional[Tuple[int,int,int]] = None,
@@ -2278,624 +2254,162 @@ class FruitInternalAnalyzer:
         color_space: Optional[str] = None,
         label_opacity: Optional[float] = None,
         get_color_histogram: Optional[bool] = None,
-    ) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
-        """
-        Process all images in the folder passed to :class:`FruitInternalAnalyzer`.
+    ) -> None:
 
-        Collects valid images from the input folder, builds a unified
-        configuration from ``json_path``, ``config``, and individual parameter
-        arguments (individual params always take priority), and runs the full
-        pipeline on each image via :meth:`process_single_file`. Supports
-        parallel execution via :func:`_process_image_worker` when
-        ``num_cores > 1``. Saves merged CSV results, a session report, and an
-        error report to ``output_path``.
-
-        Parameters
-        ----------
-        analyze_morphology : bool, optional
-            If True, run morphology analysis on each image. Default is True.
-        analyze_color : bool, optional
-            If True, run color analysis on each image. Default is True.
-        json_path : str or None, optional
-            Path to a JSON configuration file. Merged with ``config`` if both
-            are provided. Default is None.
-        config : dict or None, optional
-            Base configuration dictionary. Individual parameter arguments
-            override matching keys. Default is None.
-        output_path : str or None, optional
-            Directory where results are saved. Defaults to a ``Results/``
-            subfolder inside the input folder.
-        num_cores : int, optional
-            Number of parallel worker processes. Clamped to available CPUs.
-            Default is 1 (sequential).
-        verbose : bool, optional
-            If True, print progress and summary information. Default is True.
-        width_cm : float or None, optional
-            Known reference width in centimetres for scale calibration.
-        length_cm : float or None, optional
-            Known reference length in centimetres for scale calibration.
-        diameter_cm : float or None, optional
-            Known reference diameter in centimetres for scale calibration.
-        skip_yolo : bool or None, optional
-            If True, use geometric calibration without YOLO detection.
-        skip_qr : bool or None, optional
-            If True, skip QR code detection.
-        detect_label : bool or None, optional
-            If True, run full label detection including OCR.
-        confidence : float or None, optional
-            Minimum detection confidence for reference objects.
-        detect_color_checker : bool or None, optional
-            If True, detect and remove a color checker from the mask.
-        lower_hsv : list of int or None, optional
-            Lower HSV threshold for fruit segmentation.
-        upper_hsv : list of int or None, optional
-            Upper HSV threshold for fruit segmentation.
-        background_color : str or None, optional
-            Expected background color hint for segmentation.
-        n_iteration : int or None, optional
-            Number of morphological iterations for mask refinement.
-        kernel_blur : int or None, optional
-            Gaussian blur kernel size.
-        kernel_open : int or None, optional
-            Morphological opening kernel size.
-        kernel_close : int or None, optional
-            Morphological closing kernel size.
-        canny_min : int or None, optional
-            Minimum Canny edge threshold.
-        canny_max : int or None, optional
-            Maximum Canny edge threshold.
-        fill_holes : bool or None, optional
-            If True, fill holes in the binary mask.
-        apply_convex_hull : bool or None, optional
-            If True, apply convex hull to each fruit region.
-        remove_roi : bool or None, optional
-            If True, remove reference and label regions from the mask.
-        roi_expansion : int or None, optional
-            Pixel margin around ROIs before removal.
-        stamp : bool or None, optional
-            If True, invert image colors before masking.
-        contrast_method : str or None, optional
-            Contrast enhancement method for locule visibility.
-        gamma : float or None, optional
-            Gamma exponent for ``contrast_method='gamma'``.
-        gain : float or None, optional
-            Sigmoid gain for ``contrast_method='sigmoid'``.
-        cutoff : float or None, optional
-            Sigmoid cutoff for ``contrast_method='sigmoid'``.
-        c : float or None, optional
-            Exponential factor for ``contrast_method='exponential'``.
-        kernel_blur_contrast : int or None, optional
-            Blur kernel applied before contrast enhancement.
-        clip_limit : int or None, optional
-            CLAHE clip limit for contrast enhancement.
-        tile_grid_size : int or None, optional
-            CLAHE tile grid size.
-        thresh_min : int or None, optional
-            Minimum threshold for locule mask binarization.
-        thresh_max : int or None, optional
-            Maximum threshold for locule mask binarization.
-        min_fruit_area_locule : int or None, optional
-            Minimum fruit area used during locule mask fusion.
-        kernel_close_locule : int or None, optional
-            Closing kernel for locule mask.
-        kernel_open_locule : int or None, optional
-            Opening kernel for locule mask.
-        invert_locule : bool or None, optional
-            If True, invert the locule mask before fusion.
-        min_fruit_area : int or None, optional
-            Minimum contour area to accept as a fruit.
-        max_fruit_area : int or None, optional
-            Maximum contour area to accept as a fruit.
-        min_fruit_circularity : float or None, optional
-            Minimum circularity to accept as a fruit.
-        min_locule_area : int or None, optional
-            Minimum locule area for fruit detection.
-        min_locule_per_fruit : int or None, optional
-            Minimum locules required per fruit.
-        contour_mode : str or None, optional
-            Contour mode for morphology analysis.
-        epsilon : float or None, optional
-            Approximation factor for contour simplification.
-        min_locule_area_morph : int or None, optional
-            Minimum locule area for morphology analysis.
-        max_locule_area : int or None, optional
-            Maximum locule area for morphology analysis.
-        angle_shifts : int or None, optional
-            Number of angle steps for symmetry computation.
-        num_rays : int or None, optional
-            Number of rays for pericarp thickness estimation.
-        stat : str or None, optional
-            Color summary statistic: ``'mean'`` or ``'median'``.
-        tissue : str or None, optional
-            Tissue region for color analysis.
-        color_space : str or None, optional
-            Color spaces to extract.
-        label_opacity : float or None, optional
-            Opacity of annotation label backgrounds.
-        get_color_histogram : bool or None, optional
-            If True, compute pixel-level color histograms.
-
-        Raises
-        ------
-        ValueError
-            If the instance was not initialized with a directory path, or if
-            no valid images are found in the folder.
-        """
-
-        # Validate output directory
-        if not self._is_directory:
-            raise ValueError(
-                "analyze_folder() requires a directory path. "
-                "Pass a folder to FruitInternalAnalyzer(), not a single file."
-            )
-
+        # 1. Valdate analyze conditions first
         if not analyze_color and not analyze_morphology:
             raise ValueError(
                 "analyze_color=False and analyze_morphology=False.\n"
                 "analyze_folder() requires that at least one of them is True."
             )
 
-        folder_path = self.input_path
-
-        # Validate number of cores (num_cores)
-        num_cores_message = None
-        if num_cores <= 0:
-            num_cores_message = f"    > num_cores: {num_cores} must be at least 1. Using num_cores=1 instead."
-            num_cores = 1
-
-        max_cores = mp.cpu_count()
-        if num_cores > max_cores:
-            num_cores_message = f"    > num_cores: {num_cores} exceeds system cores ({max_cores}). Using {max_cores} instead."
-            num_cores = max_cores
-
-        # Check valid images in the folder
-        img_paths = sorted(
-            [
-                os.path.join(folder_path, f)
-                for f in os.listdir(folder_path)
-                if Path(f).suffix.lower() in valid_extensions
-            ]
+        folder_path, output_path, num_cores, num_cores_message, img_paths = _setup_batch(
+            is_directory=self._is_directory,
+            input_path=self.input_path,
+            output_path=output_path,
+            num_cores=num_cores,
         )
 
-        if not img_paths:
-            raise ValueError(
-                f"No valid images found in: {folder_path}. Valid image extensions include: {valid_extensions}"
-            )
-
-        # Validate output_path, if doesn't exist, create one
-        if output_path is None:
-            output_path = os.path.join(folder_path, "Results")
-        os.makedirs(output_path, exist_ok=True)
-
-        # Build config: json/dict base → override with individual params ─
-
+        # 2. create config for internal analysis
         config = copy.deepcopy(config) if config else {}
 
         if json_path is not None and os.path.exists(json_path):
             with open(json_path, "r", encoding="utf-8") as f:
-                json_cfg = json.load(f) or {}
-            config.update(json_cfg)
+                config.update(json.load(f) or {})
 
-        # Helper: merge non-None individual params into a config section
         def _apply(section: str, mapping: Dict):
             overrides = {k: v for k, v in mapping.items() if v is not None}
             if overrides:
                 config.setdefault(section, {})
                 config[section].update(overrides)
 
-        _apply(
-            "setup_measurements_params",
-            dict(
-                width_cm=width_cm,
-                length_cm=length_cm,
-                diameter_cm=diameter_cm,
-                skip_yolo=skip_yolo,
-                skip_qr=skip_qr,
-                detect_label=detect_label,
-                confidence=confidence,
-            ),
-        )
-        _apply(
-            "generate_fruit_mask_params",
-            dict(
-                stamp=stamp,
-                lower_hsv=lower_hsv,
-                upper_hsv=upper_hsv,
-                n_iteration=n_iteration,
-                kernel_blur=kernel_blur,
-                kernel_open=kernel_open,
-                kernel_close=kernel_close,
-                canny_min=canny_min,
-                canny_max=canny_max,
-                remove_roi=remove_roi,
-                roi_expansion=roi_expansion,
-                background_color=background_color,
-                fill_holes=fill_holes,
-                apply_convex_hull=apply_convex_hull,
-                erosion_px = erosion_px
-            ),
-        )
-        _apply(
-            "enhance_locule_contrast_params",
-            dict(
-                contrast_method=contrast_method,
-                gamma=gamma,
-                gain=gain,
-                cutoff=cutoff,
-                c=c,
-                kernel_blur=kernel_blur_contrast,
-                clip_limit=clip_limit,
-                tile_grid_size=tile_grid_size,
-            ),
-        )
-        _apply(
-            "generate_locule_mask_params",
-            dict(
-                thresh_min=thresh_min,
-                thresh_max=thresh_max,
-                min_fruit_area=min_fruit_area_locule,
-                kernel_close=kernel_close_locule,
-                kernel_open=kernel_open_locule,
-                invert_locule=invert_locule
-            ),
-        )
-        _apply(
-            "detect_fruits_params",
-            dict(
-                min_fruit_area=min_fruit_area,
-                max_fruit_area=max_fruit_area,
-                min_fruit_circularity=min_fruit_circularity,
-                min_locule_area=min_locule_area,
-                min_locule_per_fruit=min_locule_per_fruit,
-            ),
-        )
-        _apply(
-            "analyze_morphology_params",
-            dict(
-                contour_mode=contour_mode,
-                epsilon=epsilon,
-                min_locule_area=min_locule_area_morph,
-                max_locule_area=max_locule_area,
-                angle_shifts=angle_shifts,
-                num_rays=num_rays,
-                font_size=font_size,
-                font_thickness=font_thickness,
-                font_color=font_color,
-                label_position=label_position,
-                label_color=label_color,
-                pericarp_ext_color=pericarp_ext_color,
-                pericarp_ext_thickness=pericarp_ext_thickness,
-                centroid_fruit_color=centroid_fruit_color,
-                centroid_fruit_thickness=centroid_fruit_thickness,
-                pericarp_int_color=pericarp_int_color,
-                pericarp_int_thickness=pericarp_int_thickness,
-                locule_color=locule_color,
-                locule_thickness=locule_thickness,
-                centroid_locule_color=centroid_locule_color,
-                centroid_locule_thickness=centroid_locule_thickness,
-                dilation_factor=dilation_factor,
-            ),
-        )
-        _apply(
-            "analyze_color_params",
-            dict(
-                stat=stat,
-                tissue=tissue,
-                color_space=color_space,
-                label_opacity=label_opacity,
-                get_color_histogram=get_color_histogram,
-                dilation_factor=dilation_factor,
-                pericarp_int_color=pericarp_int_color,
-                pericarp_int_thickness=pericarp_int_thickness,
-            ),
-        )
+        _apply("setup_measurements_params", dict(
+            width_cm=width_cm, length_cm=length_cm, diameter_cm=diameter_cm,
+            skip_yolo=skip_yolo, skip_qr=skip_qr, detect_label=detect_label,
+            confidence=confidence,
+        ))
+        _apply("generate_fruit_mask_params", dict(
+            stamp=stamp, lower_hsv=lower_hsv, upper_hsv=upper_hsv,
+            n_iteration=n_iteration, kernel_blur=kernel_blur, kernel_open=kernel_open,
+            kernel_close=kernel_close, canny_min=canny_min, canny_max=canny_max,
+            remove_roi=remove_roi, roi_expansion=roi_expansion,
+            background_color=background_color, fill_holes=fill_holes,
+            apply_convex_hull=apply_convex_hull, erosion_px=erosion_px,
+        ))
+        _apply("enhance_locule_contrast_params", dict(
+            contrast_method=contrast_method, gamma=gamma, gain=gain,
+            cutoff=cutoff, c=c, kernel_blur=kernel_blur_contrast,
+            clip_limit=clip_limit, tile_grid_size=tile_grid_size,
+        ))
+        _apply("generate_locule_mask_params", dict(
+            thresh_min=thresh_min, thresh_max=thresh_max,
+            min_fruit_area=min_fruit_area_locule, kernel_close=kernel_close_locule,
+            kernel_open=kernel_open_locule, invert_locule=invert_locule,
+        ))
+        _apply("detect_fruits_params", dict(
+            min_fruit_area=min_fruit_area, max_fruit_area=max_fruit_area,
+            min_fruit_circularity=min_fruit_circularity,
+            min_locule_area=min_locule_area, min_locule_per_fruit=min_locule_per_fruit,
+        ))
+        _apply("analyze_morphology_params", dict(
+            contour_mode=contour_mode, epsilon=epsilon,
+            min_locule_area=min_locule_area_morph, max_locule_area=max_locule_area,
+            angle_shifts=angle_shifts, num_rays=num_rays,
+            font_size=font_size, font_thickness=font_thickness, font_color=font_color,
+            label_position=label_position, label_color=label_color,
+            pericarp_ext_color=pericarp_ext_color, pericarp_ext_thickness=pericarp_ext_thickness,
+            centroid_fruit_color=centroid_fruit_color, centroid_fruit_thickness=centroid_fruit_thickness,
+            pericarp_int_color=pericarp_int_color, pericarp_int_thickness=pericarp_int_thickness,
+            locule_color=locule_color, locule_thickness=locule_thickness,
+            centroid_locule_color=centroid_locule_color, centroid_locule_thickness=centroid_locule_thickness,
+            dilation_factor=dilation_factor,
+        ))
+        _apply("analyze_color_params", dict(
+            stat=stat, tissue=tissue, color_space=color_space,
+            label_opacity=label_opacity, get_color_histogram=get_color_histogram,
+            dilation_factor=dilation_factor,
+            pericarp_int_color=pericarp_int_color, pericarp_int_thickness=pericarp_int_thickness,
+        ))
 
-        # Sync to self._parameters for session report
-        _param_keys = [
-            "setup_measurements_params",
-            "generate_fruit_mask_params",
-            "enhance_locule_contrast_params",
-            "generate_locule_mask_params",
-            "detect_fruits_params",
-            "analyze_morphology_params",
-            "analyze_color_params",
-        ]
-        for key in _param_keys:
+        # 3. Sincronize config to self._parameters for the session report
+        for key in (
+            "setup_measurements_params", "generate_fruit_mask_params",
+            "enhance_locule_contrast_params", "generate_locule_mask_params",
+            "detect_fruits_params", "analyze_morphology_params", "analyze_color_params",
+        ):
             if key in config and config[key]:
                 setattr(self._parameters, key, config[key])
 
-        # Print header message:
+        # 4. Verbose header
         session_start = datetime.now()
-        if verbose:
-            print("=" * 60)
-            print(" Traitly running ⋆✧｡٩(ˊᗜˋ )و✧*｡   ")
-            print("=" * 60)
-            print(f"    > Input folder: {folder_path}")
-            print(f"    > Image(s) detected: {len(img_paths)}")
-            print(f"    > analyze_morphology: {analyze_morphology}")
-            print(f"    > analyze_color: {analyze_color}")
-            if num_cores_message is not None:
-                print(num_cores_message)
-            else:
-                print(f"    > num_cores: {num_cores}\n")
-            if json_path is not None:
-                print(f"    > Parameters loaded from: {os.path.abspath(json_path)}\n")
 
-        # Create lists to save results
-        all_morphology: List[pd.DataFrame] = []
-        all_color: List[pd.DataFrame] = []
-        errors: List[Dict] = []
-        total_fruits = 0
-        per_image_times: List[Dict] = []
+        _print_batch_header(
+            folder_path = folder_path,
+            img_paths = img_paths,
+            num_cores = num_cores,
+            num_cores_message = num_cores_message,
+            verbose = verbose,
+            json_path = json_path,
+            extra_lines = [
+                f"    > analyze_morphology: {analyze_morphology}",
+                f"    > analyze_color: {analyze_color}",
+            ],
+        )
 
+        # 5. Process loop:
         def _run_one(img_path: str):
             t0 = time.time()
             try:
                 worker = FruitInternalAnalyzer(img_path)
                 worker.load_image(plot=False)
                 df_m, df_c, err, n, ann_img = worker.process_single_file(
-                    config=config,
-                    json_path=None,
+                    config=config, json_path=None,
                     analyze_morphology=analyze_morphology,
                     analyze_color=analyze_color,
-                    save_image=True,
-                    output_path=output_path,
+                    save_image=True, output_path=output_path,
                 )
-                return (
-                    df_m,
-                    df_c,
-                    err,
-                    n,
-                    ann_img,
-                    os.path.basename(img_path),
-                    time.time() - t0,
-                )
+                return df_m, df_c, err, n, ann_img, os.path.basename(img_path), time.time() - t0
             except Exception as e:
-                return (
-                    None,
-                    None,
-                    {
-                        "filename": os.path.basename(img_path),
-                        "status": f"Error: {str(e)}",
-                    },
-                    0,
-                    None,
-                    os.path.basename(img_path),
-                    time.time() - t0,
-                )
+                return None, None, {"filename": os.path.basename(img_path), "status": f"Error: {str(e)}"}, 0, None, os.path.basename(img_path), time.time() - t0
 
-        # Run parallel analysis if num_cores > 1, else run sequential analysis
-        if num_cores == 1:
-            for img_path in tqdm(
-                img_paths, desc="Processing images", unit="img", disable=not verbose
-            ):
-                df_m, df_c, err, n, _, fname, elapsed = _run_one(img_path)
-
-                per_image_times.append(
-                    {
-                        "filename": fname,
-                        "time_s": round(elapsed, 2),
-                        "status": "error" if err else "ok",
-                        "fruits": n,
-                    }
-                )
-
-                if err:
-                    errors.append(err)
-                else:
-                    if df_m is not None:
-                        all_morphology.append(df_m)
-                    if df_c is not None:
-                        all_color.append(df_c)
-                    total_fruits += n
-
-        else:
-            with ProcessPoolExecutor(max_workers=num_cores) as executor:
-                futures = {
-                    executor.submit(
-                        _process_image_worker,
-                        img_path,
-                        config,
-                        analyze_morphology,
-                        analyze_color,
-                    ): img_path
-                    for img_path in img_paths
-                }
-                for future in tqdm(
-                    as_completed(futures),
-                    total=len(futures),
-                    desc="Processing images",
-                    unit="img",
-                    disable=not verbose,
-                ):
-                    result = future.result()
-                    df_m, df_c, err, n, ann_img, fname = result[:6]
-                    elapsed = result[6] if len(result) > 6 else 0.0
-
-                    per_image_times.append(
-                        {
-                            "filename": fname,
-                            "time_s": round(elapsed, 2),
-                            "status": "error" if err else "ok",
-                            "fruits": n,
-                        }
-                    )
-
-                    if err:
-                        errors.append(err)
-                    else:
-                        if ann_img is not None:
-                            base = os.path.splitext(fname)[0]
-                            out_img = os.path.join(output_path, f"{base}_annotated.jpg")
-                            cv2.imwrite(out_img, ann_img)
-                        if df_m is not None:
-                            all_morphology.append(df_m)
-                        if df_c is not None:
-                            all_color.append(df_c)
-                        total_fruits += n
-
-        # Merge all the results in a single df
-        df_morphology_all = (
-            pd.concat(all_morphology, ignore_index=True) if all_morphology else None
+        all_morphology, all_color, errors, total_fruits, _ = _run_fruit_batch_loop(
+            img_paths=img_paths,
+            worker_fn=_run_one,
+            parallel_worker_fn=_process_image_worker,
+            num_cores=num_cores,
+            config=config,
+            analyze_morphology=analyze_morphology,
+            analyze_color=analyze_color,
+            output_path=output_path,
+            verbose=verbose,
         )
-        df_color_all = pd.concat(all_color, ignore_index=True) if all_color else None
 
-        # Save csv files
-        morph_csv = None
-        color_csv = None
-
-        if df_morphology_all is not None:
-            morph_csv = os.path.join(output_path, "morphology_results.csv")
-            df_morphology_all.to_csv(morph_csv, index=False)
-
-        if df_color_all is not None:
-            color_csv = os.path.join(output_path, "color_results.csv")
-            df_color_all.to_csv(color_csv, index=False)
-
-        # Save session report
-        session_end = datetime.now()
-        total_time = (session_end - session_start).total_seconds()
-        avg_time = total_time / len(img_paths) if img_paths else 0
-
-        if total_time < 60:
-            time_str = f"{total_time:.1f}s"
-        else:
-            time_str = f"{total_time / 60:.1f}min"
-
-        def _filter_params(p: Dict) -> Dict:
-            return {
-                k: v
-                for k, v in p.items()
-                if "plot" not in k.lower() and "color" not in k.lower()
-            }
-
-        if json_path is not None:
-            json_report = os.path.abspath(json_path)
-        else:
-            json_report = "No JSON file provided"
-
-        session_lines = [
-            "=" * 70,
-            "SESSION REPORT",
-            "=" * 70,
-            f"traitly              : v{__version__}",
-            f"run date             : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"image folder         : {folder_path}",
-            f"results folder       : {output_path}",
-            f"images found         : {len(img_paths)}",
-            f"images ok            : {len(img_paths) - len(errors)}",
-            f"images failed        : {len(errors)}",
-            f"total fruits         : {total_fruits}",
-            f"analyze_morphology   : {analyze_morphology}",
-            f"analyze_color        : {analyze_color}",
-            f"JSON path            : {json_report}",
-            f"num_cores            : {num_cores}",
-            f"total time           : {time_str}",
-            f"avg per image        : {avg_time:.1f}s",
-            "",
-            "=" * 70,
-            "ANALYSIS PARAMETERS",
-            "=" * 70,
-        ]
-
-        param_sections = {
-            "SETUP_MEASUREMENTS": "setup_measurements_params",
-            "GENERATE_FRUIT_MASK": "generate_fruit_mask_params",
-            "ENHANCE_LOCULE_CONTRAST": "enhance_locule_contrast_params",
-            "GENERATE_LOCULE_MASK": "generate_locule_mask_params",
-            "DETECT_FRUITS": "detect_fruits_params",
-            "ANALYZE_MORPHOLOGY": "analyze_morphology_params",
-            "ANALYZE_COLOR": "analyze_color_params",
-        }
-
-        for title, attr in param_sections.items():
-            raw = getattr(self._parameters, attr, {}) or {}
-            filtered = _filter_params(raw)
-            if filtered:
-                session_lines.append(f"\n{title}:")
-                for k, v in filtered.items():
-                    session_lines.append(f"   - {k}: {v}")
-
-        session_lines += [
-            "",
-            "=" * 70,
-            "DEPENDENCIES",
-            "=" * 70,
-        ] + [
-            f"   - {pkg:<30} {ver}"
-            for pkg, ver in get_package_versions().items()
-        ]
-
-        # Create session report
-        session_txt = os.path.join(output_path, "session_report.txt")
-        with open(session_txt, "w", encoding="utf-8") as f:
-            f.write("\n".join(session_lines))
-
-        # Error report table format
-        error_txt = None
-        if errors:
-            col1_w = max(len("IMAGE"), max(len(e["filename"]) for e in errors)) + 2
-            col2_w = max(len("ERROR"), max(len(e["status"]) for e in errors)) + 2
-            sep = f"+{'-' * col1_w}+{'-' * col2_w}+"
-            header = f"| {'IMAGE':<{col1_w - 2}} | {'ERROR':<{col2_w - 2}} |"
-
-            error_lines = (
-                [
-                    "=" * 70,
-                    "ERROR REPORT",
-                    "=" * 70,
-                    f"run date   : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
-                    f"folder     : {folder_path}",
-                    f"failed     : {len(errors)}/{len(img_paths)} images",
-                    "",
-                    sep,
-                    header,
-                    sep,
-                ]
-                + [
-                    f"| {e['filename']:<{col1_w - 2}} | {e['status']:<{col2_w - 2}} |"
-                    for e in errors
-                ]
-                + [sep]
-            )
-
-            error_txt = os.path.join(output_path, "error_report.txt")
-            with open(error_txt, "w", encoding="utf-8") as f:
-                f.write("\n".join(error_lines))
-
-        # Final message
-        if verbose:
-            total_img_processed = len(img_paths) - len(errors)
-            if len(errors) == len(img_paths):
-                print("\n( ദ്ദി ༎ຶ‿༎ຶ ) Task failed successfully " + "=" * 37)
-                print("    > Image(s) processed:")
-                print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
-                print(
-                    f"    > For more details, check error_report.txt saved in: {output_path}"
-                )
-
-            else:
-                print("\n( ദ്ദി ˙ᗜ˙ ) Finished " + "=" * 47)
-                print("    > Image(s) processed:")
-                print(
-                    f"        - Successfully: {total_img_processed}/{len(img_paths)} img(s)"
-                )
-                if errors:
-                    print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
-                print(f"        - Total fruits: {total_fruits}")
-                print(
-                    f"        - Total time: {time_str}  (avg {avg_time:.1f}s/img)"
-                )
-                print("    > Files saved:")
-                print(f"        - {total_img_processed} annotated image(s)")
-                if morph_csv:
-                    print(f"        - {os.path.basename(morph_csv)}")
-                if color_csv:
-                    print(f"        - {os.path.basename(color_csv)}")
-                print(f"        - {os.path.basename(session_txt)}")
-                if error_txt:
-                    print(f"        - {os.path.basename(error_txt)}")
-                print(f"        - Results folder: {output_path}")
+        # 6. Save results
+        _save_fruit_batch_results(
+            all_morphology=all_morphology,
+            all_color=all_color,
+            errors=errors,
+            output_path=output_path,
+            folder_path=folder_path,
+            img_paths=img_paths,
+            total_fruits=total_fruits,
+            num_cores=num_cores,
+            analyze_morphology=analyze_morphology,
+            analyze_color=analyze_color,
+            json_path=json_path,
+            session_start=session_start,
+            parameters=self._parameters,
+            param_sections={
+                "SETUP_MEASUREMENTS": "setup_measurements_params",
+                "GENERATE_FRUIT_MASK": "generate_fruit_mask_params",
+                "ENHANCE_LOCULE_CONTRAST": "enhance_locule_contrast_params",
+                "GENERATE_LOCULE_MASK": "generate_locule_mask_params",
+                "DETECT_FRUITS": "detect_fruits_params",
+                "ANALYZE_MORPHOLOGY": "analyze_morphology_params",
+                "ANALYZE_COLOR": "analyze_color_params",
+            },
+            verbose=verbose,
+        )
 
         return None
 
