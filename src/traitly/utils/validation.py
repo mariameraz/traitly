@@ -51,12 +51,44 @@ def _validate_color_image(
             "Make sure the image is not grayscale or RGBA."
         )
 
-def _validate_path_exists(path):
+def _validate_path_exists(
+    path: str,
+    makedir: bool = False,
+    base_name: Optional[str] = "Results"
+):
+    """
+    Validate that a path exists.
+
+    Parameters
+    ----------
+    path : str
+        Path to validate.
+    makedir : bool, optional
+        If True, create the directory if it doesn't exist.
+        Default is False.
+    base_name : str or None, optional
+        If provided and makedir=True, create a subdirectory with this name.
+        If None or empty string, create the exact path provided.
+        Default is "Results".
+    """
+    new_path = path
+
+    if makedir:
+        if base_name and base_name.strip():
+            new_path = os.path.join(path, base_name)
+        else:
+            new_path = path
+
+        os.makedirs(new_path, exist_ok=True)
+        return new_path
+
     if not os.path.exists(path):
         raise FileNotFoundError(
             f"The path does not exist: {path}\n"
             f"Verify that the file exists and the path is correct."
         )
+
+    return path
 
 def _validate_img_suffix(path):
     abs_path = Path(path)
@@ -81,3 +113,20 @@ def _validate_num_cores(
         num_cores_message = None
 
     return num_cores, num_cores_message
+
+def _valid_images_in_folder(folder_path: str):
+
+    img_paths = sorted(
+        [
+            os.path.join(folder_path, f)
+            for f in os.listdir(folder_path)
+            if Path(f).suffix.lower() in valid_extensions
+        ]
+    )
+
+    if not img_paths:
+        raise ValueError(
+            f"No valid images found in: {folder_path}. Valid image extensions include: {valid_extensions}"
+        )
+
+    return img_paths
