@@ -27,7 +27,7 @@ def df_hist():
 
 @pytest.fixture
 def df_means():
-    path = Path(__file__).parent.parent / "data" / "external" / "white_bg" /"Results" / "color_results.csv"
+    path = Path(__file__).parent.parent / "data" / "external" / "blue_bg" /"Results" / "color_results.csv"
     return pd.read_csv(path)
 
 @pytest.fixture(autouse=True)
