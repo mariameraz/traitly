@@ -5,7 +5,7 @@
 # ============================================================================
 import os
 from pathlib import Path
-
+import shutil
 # ============================================================================
 # THIRD-PARTY
 # ============================================================================
@@ -24,7 +24,20 @@ external_folder_blue = data_dir / "external" / "blue_bg"
 external_folder_white =  data_dir / "external" / "white_bg"
 internal_folder = data_dir / "internal"
 ####################################################################################
-#
+
+def get_input_images(folder: Path) -> list:
+    images = list(folder.glob("*.jpg")) + list(folder.glob("*.png"))
+    return [p for p in images if "_processed" not in p.stem]
+
+@pytest.fixture(autouse=True)
+def cleanup_results():
+    """Remove Results folders before each test to avoid output contamination."""
+    for folder in [external_folder_blue, external_folder_white, internal_folder]:
+        results = folder / "Results"
+        if results.exists():
+            shutil.rmtree(results)
+    yield
+
 def test_internal_analyzer():
     test = FruitInternalAnalyzer(path = internal_folder)
     test.analyze_folder()
@@ -72,9 +85,6 @@ def test_json():
 def test_processed_images_created():
     test = FruitExternalAnalyzer(path=external_folder_blue)
     test.analyze_folder()
-
-    input_images = list(external_folder_blue.glob("*.jpg")) + list(external_folder_blue.glob("*.png"))
-
-    for img_path in input_images:
-        expected = Path(external_folder_blue) / "Results" / f"{img_path.stem}_processed.jpg"
+    for img_path in get_input_images(external_folder_blue):
+        expected = external_folder_blue / "Results" / f"{img_path.stem}_processed.jpg"
         assert expected.exists(), f"Processed image not found for: {img_path.name}"
