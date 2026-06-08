@@ -20,7 +20,7 @@ The typical analysis pipeline follows this order:
 
 For batch processing, steps 1–7 are orchestrated automatically by
 :meth:`~FruitInternalAnalyzer.analyze_folder` or
-:meth:`~FruitInternalAnalyzer.process_single_file`.
+:meth:`~FruitInternalAnalyzer._process_single_file`.
 """
 
 # ============================================================================
@@ -120,7 +120,7 @@ def _process_image_worker(
         analyzer = FruitInternalAnalyzer(img_path)
         analyzer.load_image(plot=False)
         df_morphology, df_color, error_dict, n_fruits, annotated_img = (
-            analyzer.process_single_file(
+            analyzer._process_single_file(
                 config=config,
                 json_path=None,
                 analyze_morphology=analyze_morphology,
@@ -1994,7 +1994,7 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     # PRocess a single file (needed for analyze_folder)
     ##########################################################################################
-    def process_single_file(
+    def _process_single_file(
         self,
         config: Optional[Dict] = None,
         json_path: Optional[str] = None,
@@ -2054,11 +2054,7 @@ class FruitInternalAnalyzer:
             - ``annotated_img`` – annotated BGR image or ``None``.
         """
 
-        # Load parameters using json file
-        params = _import_params(
-                    json_path = json_path,
-                    config = config
-        )
+        config = config or {}
 
         error_dict = None
         n_fruits = 0
@@ -2071,7 +2067,7 @@ class FruitInternalAnalyzer:
             # 1. setup_measurements
             try:
                 self.setup_measurements(
-                    verbose=False, **_clean_params(_get_params(params, "setup_measurements_params"))
+                    verbose=False, **_clean_params(_get_params(config, "setup_measurements_params"))
                 )
             except Exception as e:
                 raise RuntimeError(f"[setup_measurements] {e}")
@@ -2079,13 +2075,13 @@ class FruitInternalAnalyzer:
             # 2. generate_fruit_mask
             try:
                 self.generate_fruit_mask(
-                    plot=False, **_clean_params(_get_params(params, "generate_fruit_mask_params"))
+                    plot=False, **_clean_params(_get_params(config, "generate_fruit_mask_params"))
                 )
             except Exception as e:
                 raise RuntimeError(f"[generate_fruit_mask] {e}")
 
             # 3. enhance_locule_contrast (optional)
-            elc = _get_params(params, "enhance_locule_contrast_params")
+            elc = _get_params(config, "enhance_locule_contrast_params")
             if elc:
                 try:
                     self.enhance_locule_contrast(plot=False, **_clean_params(elc))
@@ -2093,17 +2089,17 @@ class FruitInternalAnalyzer:
                     raise RuntimeError(f"[enhance_locule_contrast] {e}")
 
                 # 4. generate_locule_mask (only if enhance was run)
-                glm = _get_params(params, "generate_locule_mask_params")
+                glm = _get_params(config, "generate_locule_mask_params")
                 if glm:
                     try:
-                        self.generate_locule_mask(params, plot=False, **_clean_params(glm))
+                        self.generate_locule_mask(config, plot=False, **_clean_params(glm))
                     except Exception as e:
                         raise RuntimeError(f"[generate_locule_mask] {e}")
 
             # 5. detect_fruits
             try:
                 self.detect_fruits(
-                    verbose=False, **_clean_params(_get_params(params, "detect_fruits_params"))
+                    verbose=False, **_clean_params(_get_params(config, "detect_fruits_params"))
                 )
             except Exception as e:
                 raise RuntimeError(f"[detect_fruits] {e}")
@@ -2121,7 +2117,7 @@ class FruitInternalAnalyzer:
                     self.analyze_morphology(
                         plot=False,
                         display_table=False,
-                        **_clean_params(_get_params(params, "analyze_morphology_params")),
+                        **_clean_params(_get_params(config, "analyze_morphology_params")),
                     )
                     if self.results and self.results.morphology_results is not None:
                         df_morph = (
@@ -2136,7 +2132,7 @@ class FruitInternalAnalyzer:
             if analyze_color:
                 try:
                     self.analyze_color(
-                        display_table=False, **_clean_params(_get_params(params, "analyze_color_params"))
+                        display_table=False, **_clean_params(_get_params(config, "analyze_color_params"))
                     )
                     if self.results and self.results.color_results is not None:
                         df_color = (
@@ -2362,7 +2358,7 @@ class FruitInternalAnalyzer:
             try:
                 worker = FruitInternalAnalyzer(img_path)
                 worker.load_image(plot=False)
-                df_m, df_c, err, n, ann_img = worker.process_single_file(
+                df_m, df_c, err, n, ann_img = worker._process_single_file(
                     config=config, json_path=None,
                     analyze_morphology=analyze_morphology,
                     analyze_color=analyze_color,
