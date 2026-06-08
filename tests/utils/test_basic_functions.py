@@ -25,7 +25,7 @@ from traitly.utils.basic_functions import load_img, _load_img_cached
 invalid_paths = ["/img.txt", "/img.pdf", "/img.gif", "/img"]
 
 @pytest.mark.parametrize("bad_paths", invalid_paths)
-def test_extension_invalida(bad_paths):
+def test_extension_invalid(bad_paths):
     assert load_img(bad_paths) is None
     with pytest.raises(ValueError, match="Unsupported image format"):
             _load_img_cached(bad_paths)
