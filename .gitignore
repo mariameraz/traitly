@@ -28,7 +28,9 @@ requirements-dev.txt
 tests/**/Results
 tests/**/Images_from_PDF/
 tests/**/*.txt
-
+tests/color_correction/18-26*
+tests/data/**/*.json
+tests/data/external/**/*.json
 .coverage
 
 # notebooks
