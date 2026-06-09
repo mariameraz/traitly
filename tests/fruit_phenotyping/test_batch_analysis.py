@@ -30,13 +30,13 @@ def get_input_images(folder: Path) -> list:
     return [p for p in images if "_processed" not in p.stem]
 
 @pytest.fixture(autouse=True)
-def cleanup_results():
-    """Remove Results folders before each test to avoid output contamination."""
+def cleanup_results(request):
+    """Remove Results folders after each test to avoid output contamination."""
+    yield
     for folder in [external_folder_blue, external_folder_white, internal_folder]:
         results = folder / "Results"
         if results.exists():
             shutil.rmtree(results)
-    yield
 
 def test_internal_analyzer():
     test = FruitInternalAnalyzer(path = internal_folder)
