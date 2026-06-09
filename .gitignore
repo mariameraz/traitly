@@ -25,13 +25,14 @@ requirements.txt
 requirements-dev.txt
 
 # test results
-tests/**/Results
+
 tests/**/Images_from_PDF/
 tests/**/*.txt
 tests/color_correction/18-26*
 tests/data/**/*.json
 tests/data/external/**/*.json
 .coverage
+
 
 # notebooks
 Untitled*
@@ -41,3 +42,6 @@ Untitled*
 
 # Notes
 scripts/
+
+# Logs
+*.log
