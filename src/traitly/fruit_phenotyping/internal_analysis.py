@@ -111,7 +111,7 @@ def _process_image_worker(
                 json_path=None,
                 analyze_morphology=analyze_morphology,
                 analyze_color=analyze_color,
-                save_image=False,
+                save_image=True,
                 output_path=output_path,
             )
         )
