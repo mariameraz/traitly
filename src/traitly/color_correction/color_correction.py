@@ -5,6 +5,11 @@
 # ============================================================================
 import os
 from typing import Tuple, Optional, Dict
+import copy
+import json
+import time
+from datetime import datetime
+import logging
 
 # ============================================================================
 # THIRD-PARTY
@@ -46,7 +51,55 @@ from traitly.color_correction.color_analysis import (
 
 )
 
+from traitly.utils.batch import (
+    _setup_batch,
+    _print_batch_header,
+    _run_color_batch_loop,
+    _save_color_batch_results
+)
+
+from traitly.utils.manage_params import _get_params, _clean_params
+
 from .correction_parameters import ColorCorrectionParameters
+
+logger = logging.getLogger(__name__)
+
+def _process_color_worker(img_path: str, config: Dict, output_path: str, delta_e: bool = False):
+    t0 = time.time()
+    try:
+        worker = ColorCorrection(img_path)
+        worker.load_image(plot=False)
+        err = worker.process_single_file(config=config)
+
+        delta_df = None
+
+        if err is None:
+            worker.save_img(output_path=output_path, verbose=False)
+            if delta_e:
+                try:
+                    worker.calculate_delta_e_stats(verbose=False)
+                    delta_df = pd.DataFrame(
+                        worker._delta_e_stats,
+                        columns=["Patch", "Color", "DeltaE_Before",
+                                 "DeltaE_After", "DeltaE_Improvement"],
+                    )
+                    for col in ["DeltaE_Before", "DeltaE_After", "DeltaE_Improvement"]:
+                        delta_df[col] = delta_df[col].astype(float)
+                    delta_df.insert(0, "Image_name", os.path.basename(img_path))
+                except Exception:
+                    logger.warning(
+                            "Cannot calculate delta E for %s",
+                            os.path.basename(img_path),
+                            exc_info=True,
+                                        )
+                    delta_df = None
+
+        return err, os.path.basename(img_path), time.time() - t0, delta_df
+
+    except Exception as e:
+        err = {"filename": os.path.basename(img_path), "status": f"Error: {str(e)}"}
+        return err, os.path.basename(img_path), time.time() - t0, None
+
 
 ## Color correction class ##
 class ColorCorrection:
@@ -58,7 +111,7 @@ class ColorCorrection:
         _validate_path_exists(self.input_path)
 
         # Determine if the path is to an image or a folder
-        self._is_directory = os.path.isdir(os.path.dirname(path))
+        self._is_directory = os.path.isdir(path)
 
         # load_image
         self.original_img = None
@@ -93,6 +146,8 @@ class ColorCorrection:
     ):
         # validate valid image format
         _validate_img_suffix(self.input_path)
+
+        logger.info("Processing %s", os.path.basename(self.input_path))
 
         self.original_img = load_img(
             self.input_path,
@@ -146,6 +201,7 @@ class ColorCorrection:
         }
 
         # Fit a PLSR model per LAB channel
+        logger.debug("Adjusting PLSR models (degree=%s, num_components=%s)", degree, num_components)
         self._models = _fit_plsr_models(
             self._detected_lab,
             scaler = StandardScaler(),
@@ -162,6 +218,7 @@ class ColorCorrection:
             print("Correcting color, this may take a few seconds... ⋆✧｡٩(ˊᗜˋ)و✧*｡", flush=True)
 
         # Apply color correction to LAB image and return corrected BGR image
+        logger.info("Applying color correction...")
         self.corrected_img = _apply_color_correction(
             self._img_lab,
             self._models
@@ -186,6 +243,7 @@ class ColorCorrection:
             print("Correction finished!")
             print("=" * 65, flush=True)
 
+        logger.info("Correction finished")
         return None
 
     def calculate_delta_e_stats(
@@ -265,62 +323,110 @@ class ColorCorrection:
     def save_parameters(self, output_path=None):
         _save_parameters(self.input_path, self._parameters, output_path)
 
-    def process_single_file(
-        self,
-        config: Optional[Dict] = None,
-        json_path: Optional[str] = None,
-    ):
-        """
-        Run the full color correction pipeline on the already loaded image
-        """
-
-        # 1. Load params from json file if passed
-        params = _import_params(
-            json_path = json_path,
-            config = config
-        )
-
-        # 2. Create empty objs to save Results
+    def process_single_file(self, config=None):
+        config = config or {}
         error_dict = None
 
         try:
-            # Parameters for apply the color correction model
+            self.detect_color_checker(plot=False, verbose=False)
+            if self._chart is None:
+                raise RuntimeError("No color checker detected")
             self.apply_color_correction(
-                verbose=False, **_clean_params(_get_params("apply_color_correction_params"))
+                plot=False, verbose=False,
+                **_clean_params(_get_params(config, "apply_color_correction_params"))
             )
+
         except Exception as e:
             error_dict = {"filename": os.path.basename(self.input_path), "status": str(e)}
-            raise RuntimeError(f"[apply_color_correction] {e}")
 
         return error_dict
 
     def analyze_folder(
         self,
-        delta_e: bool = False,
+        delta_e: bool = True,
+        degree: Optional[int] = None,
+        num_components: Optional[int] = None,
+        max_iterations: Optional[int] = None,
+        scaler=None,
+        num_cores: int = 1,
+        verbose: bool = True,
+        json_path: Optional[str] = None,
+        config: Optional[Dict] = None,
+        output_path: Optional[str] = None,
     ):
-        """
-        Process all images in the folder passed to :class `ColorCorrection`.
-        """
+        folder_path, output_path, num_cores, num_cores_message, img_paths = _setup_batch(
+            is_directory=self._is_directory,
+            input_path=self.input_path,
+            output_path=output_path,
+            num_cores=num_cores,
+        )
 
-        # 1. Check if path is passing a directory
-        if not self._is_directory:
-            raise ValueError(
-                "analyze_folder() requires a directory path. "
-                "Pass a folder to ColorCorrection(), not a single file."
-            )
+        config = copy.deepcopy(config) if config else {}
 
-        # 2. If so, check if it exists
-        folder_path = self.input_path
-        _validate_path_exists(folder_path, makedir = False)
+        if json_path is not None and os.path.exists(json_path):
+            with open(json_path, "r", encoding="utf-8") as f:
+                config.update(json.load(f) or {})
 
-        # 3. Check if num_cores is a valid number
-        num_cores, num_cores_message = _validate_num_cores(num_cores=num_cores)
+        def _apply(section, mapping):
+            overrides = {k: v for k, v in mapping.items() if v is not None}
+            if overrides:
+                config.setdefault(section, {})
+                config[section].update(overrides)
 
-        # 4. If output_path is None, create a new results folder
-        if output_path is None:
-            output_path = _validate_path_exists(folder_path, makedir=True)
-        else:
-            output_path = _validate_path_exists(output_path, makedir=True)
+        _apply("apply_color_correction_params", dict(
+            degree=degree,
+            num_components=num_components,
+            max_iterations=max_iterations,
+            scaler=scaler,
+        ))
 
-        # 5. Obtain the paths for all the valid images in the input folder
-        img_paths = _valid_images_in_folder(folder_path)
+        if config.get("apply_color_correction_params"):
+            setattr(self._parameters, "apply_color_correction_params", config["apply_color_correction_params"])
+
+        session_start = datetime.now()
+
+        _print_batch_header(
+            folder_path=folder_path,
+            img_paths=img_paths,
+            num_cores=num_cores,
+            num_cores_message=num_cores_message,
+            verbose=verbose,
+            json_path=json_path,
+        )
+
+
+        errors, per_image_times, all_delta = _run_color_batch_loop(
+            img_paths=img_paths,
+            worker_fn=_process_color_worker,
+            parallel_worker_fn=_process_color_worker,
+            num_cores=num_cores,
+            config=config,
+            output_path=output_path,
+            verbose=verbose,
+            delta_e=delta_e,
+        )
+
+        delta_before_mean = delta_after_mean = None
+
+        if delta_e and all_delta:
+            df_delta_all = pd.concat(all_delta, ignore_index=True)
+            delta_csv = os.path.join(output_path, "delta_e_results.csv")
+            df_delta_all.to_csv(delta_csv, index=False)
+
+            delta_before_mean = df_delta_all["DeltaE_Before"].mean()
+            delta_after_mean = df_delta_all["DeltaE_After"].mean()
+
+        _save_color_batch_results(
+            errors=errors,
+            output_path=output_path,
+            folder_path=folder_path,
+            img_paths=img_paths,
+            num_cores=num_cores,
+            json_path=json_path,
+            session_start=session_start,
+            parameters=self._parameters,
+            param_sections={"APPLY_COLOR_CORRECTION": "apply_color_correction_params"},
+            verbose=verbose,
+            delta_before_mean=delta_before_mean,
+            delta_after_mean=delta_after_mean,
+        )
