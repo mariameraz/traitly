@@ -10,6 +10,7 @@ import re
 # THIRD-PARTY LIBRARIES
 # ============================================================================
 import numpy as np
+import colour
 import cv2
 import matplotlib.pyplot as plt
 from sklearn.pipeline import make_pipeline
@@ -202,53 +203,19 @@ def _fit_plsr_models(
     degree: int = 3,
     num_components: int = 11,
     max_iterations: int = 1000,
-    scaler = StandardScaler(),
-) -> list:
-    """
-    Adjust 3 PLSR models, each for every LAB channel (L, a, b).
+    scaler=StandardScaler(),
+):
 
-    Parameters
-    ----------
-    detected_lab : np.ndarray
-        Lab values for patches detected from the color checker of shape (24, 3)
-    reference_lab : np.ndarray
-        Default CHECKER_LAB_D50 of shape (24, 3)
-    degree : int
-        Polynomial degree (default 3)
-    num_components : int
-        PLS components (default 11)
-    max_iterations : int
-        Max iterations for PLSRegression (default 1000)
-    scaler : sklearn scaler, optional
-        Scaler to use before polynomial expansion. Default is StandardScaler().
-        Options are: RobustScaler(), StandardScaler(), MaxAbsScaler(), MinMaxScaler().
-        Usage details are in the official documentation of sklearn.preprocessing
-
-    Examples
-        --------
-        >>> from sklearn.preprocessing import RobustScaler, StandardScaler
-        >>> # default
-        >>> models = color_correction(detected_lab)
-        >>> # with RobustScaler
-        >>> models = color_correction(detected_lab, scaler=RobustScaler())
-        >>> # with custom parameters
-        >>> models = color_correction(detected_lab, scaler=RobustScaler(quantile_range=(25, 75)))
-        >>> models = color_correction(detected_lab, scaler=StandardScaler(with_mean=False))
-    """
+    pre = make_pipeline(scaler, PolynomialFeatures(degree=degree))
+    feats = pre.fit_transform(detected_lab)
 
     models = []
-
-    # fit a model for each LAB channel:
     for i in range(3):
-        model = make_pipeline(
-            scaler, # RobustScaler(), StandardScaler(), MaxAbsScaler(), MinMaxScaler()
-            PolynomialFeatures(degree=degree),
-            PLSRegression(n_components=num_components, max_iter=max_iterations)
-        )
-        model.fit(detected_lab, reference_lab[:, i])
-        models.append(model)
+        pls = PLSRegression(n_components=num_components, max_iter=max_iterations)
+        pls.fit(feats, reference_lab[:, i])
+        models.append(pls)
 
-    return models
+    return pre, models
 
 ##################################
 # Convert LAB image to BGR again #
@@ -273,19 +240,19 @@ def _lab_to_bgr(img_lab: np.ndarray) -> np.ndarray:
 
 def _apply_color_correction(
     img_lab: np.ndarray,
-    models: List
+    fitted,
 ) -> np.ndarray:
-
+    pre, models = fitted
     h, w = img_lab.shape[:2]
     flat = img_lab.reshape(-1, 3)
 
-    corrected_lab = np.zeros_like(flat)
+    feats = pre.transform(flat)
 
+    corrected_lab = np.empty((flat.shape[0], 3), dtype=np.float32)
     for i in range(3):
-        corrected_lab[:, i] = models[i].predict(flat)
+        corrected_lab[:, i] = models[i].predict(feats).ravel()
 
-    corrected_bgr = _lab_to_bgr(corrected_lab.reshape(h,w, 3))
-
+    corrected_bgr = _lab_to_bgr(corrected_lab.reshape(h, w, 3))
     return corrected_bgr
 
 ##########################################################################
@@ -319,19 +286,19 @@ def _delta_e_stats(
     verbose: bool = True,
     reference_lab: np.ndarray = CHECKER_LAB_D50,
 ) -> None:
+    # Delta E before the correction
     if detected_lab is not None:
-        # Get delta E before correction (original image)
-        delta_e_before = _delta_e(detected_lab)
+        delta_e_before = colour.delta_E(detected_lab, reference_lab, method="CIE 2000")
     else:
         if original_img is not None:
             _, chart_before, _ = _detect_color_checker(original_img.copy(), verbose=False)
             detected_lab_before = _get_lab_patches(chart_before)
-            delta_e_before = _delta_e(detected_lab_before)
+            delta_e_before = colour.delta_E(detected_lab_before, reference_lab, method="CIE 2000")
 
-    # Get delta E after correction
+    # Delta E after the correction
     _, chart_after, _ = _detect_color_checker(corrected_img.copy(), verbose=False)
     detected_lab_after = _get_lab_patches(chart_after)
-    delta_e_after = _delta_e(detected_lab_after)
+    delta_e_after = colour.delta_E(detected_lab_after, reference_lab, method="CIE 2000")
 
     if verbose:
         print("-" * 55)
