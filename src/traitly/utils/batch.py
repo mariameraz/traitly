@@ -7,7 +7,7 @@ import cv2
 from typing import Optional, Tuple, List, Callable, Dict
 from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor, as_completed
-
+import json
 # ============================================================================
 # THIRD-PARTY
 # ============================================================================
@@ -458,3 +458,11 @@ def _save_color_batch_results(
             if error_txt:
                 print(f"        - {os.path.basename(error_txt)} created")
             print(f"        - Results folder: {output_path}")
+
+def _config_from_json(
+    json_path: str,
+    config: Dict,
+):
+    if json_path is not None and os.path.exists(json_path):
+        with open(json_path, "r", encoding="utf-8") as f:
+            config.update(json.load(f) or {})

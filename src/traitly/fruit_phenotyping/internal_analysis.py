@@ -12,8 +12,6 @@ multiprocessing via :func:`_process_internal_image_worker`.
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
-import json
-import multiprocessing as mp
 import os
 import sys
 import time
@@ -35,7 +33,6 @@ import pandas as pd
 # ============================================================================
 # INTERNAL IMPORTS
 # ============================================================================
-
 from traitly.fruit_phenotyping.mask import (
     apply_contrast,
     create_mask,
@@ -49,8 +46,11 @@ from traitly.fruit_phenotyping.mask import (
 from traitly.fruit_phenotyping.processing import annotate_all_fruits, get_internal_pericarp_contour
 
 from traitly.utils.basic_functions import detect_img_name, load_img
-from traitly.utils.manage_params import _import_params, _get_params, _clean_params
+
+from traitly.utils.manage_params import _get_params, _clean_params
+
 from traitly.utils.calibration import px_cm_density
+
 from traitly.utils.label import (
     detect_label_box,
     detect_label_box_yolo,
@@ -62,7 +62,8 @@ from traitly.utils.batch import (
     _setup_batch,
     _print_batch_header,
     _run_fruit_batch_loop,
-    _save_fruit_batch_results
+    _save_fruit_batch_results,
+    _config_from_json,
 )
 
 from traitly.utils.validation import (
@@ -71,10 +72,12 @@ from traitly.utils.validation import (
     _validate_img_suffix,
 )
 
-from traitly.utils import get_package_versions, _save_parameters
+from traitly.utils import _save_parameters
 
 from traitly.fruit_phenotyping.analysis_parameters import FruitAnalyzerParameters
+
 from traitly.fruit_phenotyping.results_image import ResultsImage
+
 from traitly.fruit_phenotyping.color_analysis import (
     analyze_all_fruits_color,
     get_fruit_color_histograms,
@@ -2079,7 +2082,7 @@ class FruitInternalAnalyzer:
                 glm = _get_params(config, "generate_locule_mask_params")
                 if glm:
                     try:
-                        self.generate_locule_mask(config, plot=False, **_clean_params(glm))
+                        self.generate_locule_mask(plot=False, **_clean_params(glm))
                     except Exception as e:
                         raise RuntimeError(f"[generate_locule_mask] {e}")
 
@@ -2256,9 +2259,7 @@ class FruitInternalAnalyzer:
         # 2. create config for internal analysis
         config = copy.deepcopy(config) if config else {}
 
-        if json_path is not None and os.path.exists(json_path):
-            with open(json_path, "r", encoding="utf-8") as f:
-                config.update(json.load(f) or {})
+        _config_from_json(json_path, config)
 
         def _apply(section: str, mapping: Dict):
             overrides = {k: v for k, v in mapping.items() if v is not None}

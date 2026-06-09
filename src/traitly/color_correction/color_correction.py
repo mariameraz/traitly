@@ -6,7 +6,6 @@
 import os
 from typing import Tuple, Optional, Dict
 import copy
-import json
 import time
 from datetime import datetime
 import logging
@@ -55,7 +54,8 @@ from traitly.utils.batch import (
     _setup_batch,
     _print_batch_header,
     _run_color_batch_loop,
-    _save_color_batch_results
+    _save_color_batch_results,
+    _config_from_json
 )
 
 from traitly.utils.manage_params import _get_params, _clean_params
@@ -361,11 +361,9 @@ class ColorCorrection:
             num_cores=num_cores,
         )
 
+        # Configurate params
         config = copy.deepcopy(config) if config else {}
-
-        if json_path is not None and os.path.exists(json_path):
-            with open(json_path, "r", encoding="utf-8") as f:
-                config.update(json.load(f) or {})
+        _config_from_json(json_path, config)
 
         def _apply(section, mapping):
             overrides = {k: v for k, v in mapping.items() if v is not None}
@@ -398,7 +396,6 @@ class ColorCorrection:
         errors, per_image_times, all_delta = _run_color_batch_loop(
             img_paths=img_paths,
             worker_fn=_process_color_worker,
-            parallel_worker_fn=_process_color_worker,
             num_cores=num_cores,
             config=config,
             output_path=output_path,
