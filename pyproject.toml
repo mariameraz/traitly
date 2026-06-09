@@ -29,6 +29,7 @@ dependencies = [
   "rich-argparse",
   "ipython",
   "scikit-learn",
+  "colour-science"
 ]
 
 
