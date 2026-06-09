@@ -38,7 +38,7 @@ def _setup_batch(
         )
 
     folder_path = input_path
-    _validate_path_exists(folder_path)
+    _validate_path_exists(folder_path, makedir = False)
 
     num_cores, num_cores_message = _validate_num_cores(num_cores=num_cores)
 
@@ -64,7 +64,7 @@ def _print_batch_header(
     if not verbose:
         return
     print("=" * 60)
-    print(" Traitly running ⋆✧｡٩(ˊᗜˋ )و✧*｡")
+    print(" Traitly running ⋆✧｡٩(ˊᗜˋ)و✧*｡")
     print("=" * 60)
     print(f"    > Input folder: {folder_path}")
     print(f"    > Image(s) detected: {len(img_paths)}")
@@ -94,7 +94,7 @@ def _run_fruit_batch_loop(
 
     if num_cores == 1:
         for img_path in tqdm(img_paths, desc="Processing images", unit="img", disable=not verbose):
-            df_m, df_c, err, n, _, fname, elapsed = worker_fn(img_path)
+            err, fname, elapsed = worker_fn(img_path, config, output_path)
             per_image_times.append({"filename": fname, "time_s": round(elapsed, 2), "status": "error" if err else "ok", "fruits": n})
             if err:
                 errors.append(err)
@@ -123,6 +123,118 @@ def _run_fruit_batch_loop(
     return all_morphology, all_color, errors, total_fruits, per_image_times
 
 
+def _run_color_batch_loop(
+    img_paths: List[str],
+    worker_fn: Callable,
+    parallel_worker_fn: Callable,
+    num_cores: int,
+    config: Dict,
+    output_path: str,
+    verbose: bool,
+    delta_e: bool = False,
+) -> Tuple[List, List, List]:
+
+    errors = []
+    per_image_times = []
+    all_delta = []
+
+    if num_cores == 1:
+        for img_path in tqdm(img_paths, desc="Processing images", unit="img", disable=not verbose):
+            err, fname, elapsed, delta_df = worker_fn(img_path, config, output_path, delta_e)
+            per_image_times.append({
+                "filename": fname,
+                "time_s": round(elapsed, 2),
+                "status": "error" if err else "ok",
+            })
+            if err:
+                errors.append(err)
+            elif delta_df is not None:
+                all_delta.append(delta_df)
+    else:
+        with ProcessPoolExecutor(max_workers=num_cores) as executor:
+            futures = {
+                executor.submit(parallel_worker_fn, img_path, config, output_path, delta_e): img_path
+                for img_path in img_paths
+            }
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Processing images", unit="img", disable=not verbose):
+                err, fname, elapsed, delta_df = future.result()
+                per_image_times.append({
+                    "filename": fname,
+                    "time_s": round(elapsed, 2),
+                    "status": "error" if err else "ok",
+                })
+                if err:
+                    errors.append(err)
+                elif delta_df is not None:
+                    all_delta.append(delta_df)
+
+    return errors, per_image_times, all_delta
+
+def _build_session_lines(
+    session_start: datetime,
+    folder_path: str,
+    output_path: str,
+    img_paths: List[str],
+    errors: List[Dict],
+    num_cores: int,
+    json_path: Optional[str],
+    extra_lines: Optional[List[str]] = None,
+) -> Tuple[List[str], str, str]:
+    session_end = datetime.now()
+    total_time = (session_end - session_start).total_seconds()
+    avg_time = total_time / len(img_paths) if img_paths else 0
+    time_str = f"{total_time:.1f}s" if total_time < 60 else f"{total_time / 60:.1f}min"
+    json_report = os.path.abspath(json_path) if json_path else "No JSON file provided"
+
+    lines = [
+        "=" * 70, "SESSION REPORT", "=" * 70,
+        f"traitly              : v{__version__}",
+        f"run date             : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
+        f"image folder         : {folder_path}",
+        f"results folder       : {output_path}",
+        f"images found         : {len(img_paths)}",
+        f"images ok            : {len(img_paths) - len(errors)}",
+        f"images failed        : {len(errors)}",
+        f"JSON path            : {json_report}",
+        f"num_cores            : {num_cores}",
+        f"total time           : {time_str}",
+        f"avg per image        : {avg_time:.1f}s",
+    ]
+
+    if extra_lines:
+        lines += extra_lines
+
+    return lines, time_str, avg_time
+
+
+def _build_error_report(
+    errors: List[Dict],
+    img_paths: List[str],
+    output_path: str,
+    session_start: datetime,
+    folder_path: str,
+) -> Optional[str]:
+    if not errors:
+        return None
+
+    col1_w = max(len("IMAGE"), max(len(e["filename"]) for e in errors)) + 2
+    col2_w = max(len("ERROR"), max(len(e["status"]) for e in errors)) + 2
+    sep = f"+{'-' * col1_w}+{'-' * col2_w}+"
+    header = f"| {'IMAGE':<{col1_w - 2}} | {'ERROR':<{col2_w - 2}} |"
+
+    error_lines = [
+        "=" * 70, "ERROR REPORT", "=" * 70,
+        f"run date   : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
+        f"folder     : {folder_path}",
+        f"failed     : {len(errors)}/{len(img_paths)} images",
+        "", sep, header, sep,
+    ] + [f"| {e['filename']:<{col1_w - 2}} | {e['status']:<{col2_w - 2}} |" for e in errors] + [sep]
+
+    error_txt = os.path.join(output_path, "error_report.txt")
+    with open(error_txt, "w", encoding="utf-8") as f:
+        f.write("\n".join(error_lines))
+
+
 def _save_fruit_batch_results(
     all_morphology: List[pd.DataFrame],
     all_color: List[pd.DataFrame],
@@ -141,7 +253,7 @@ def _save_fruit_batch_results(
     verbose: bool,
 ) -> None:
 
-    # 1. Merge and save a single csv
+    # 1. Merge and save CSVs
     morph_csv = color_csv = None
 
     df_morph_all = pd.concat(all_morphology, ignore_index=True) if all_morphology else None
@@ -156,39 +268,28 @@ def _save_fruit_batch_results(
         df_color_all.to_csv(color_csv, index=False)
 
     # 2. Session report
-    session_end = datetime.now()
-    total_time = (session_end - session_start).total_seconds()
-    avg_time = total_time / len(img_paths) if img_paths else 0
-    time_str = f"{total_time:.1f}s" if total_time < 60 else f"{total_time / 60:.1f}min"
-    json_report = os.path.abspath(json_path) if json_path is not None else "No JSON file provided"
+    extra_lines = [
+        "",
+        f"total fruits         : {total_fruits}",
+        f"analyze_morphology   : {analyze_morphology}",
+        f"analyze_color        : {analyze_color}",
+    ]
+
+    session_lines, time_str, avg_time = _build_session_lines(
+        session_start = session_start,
+        folder_path = folder_path,
+        output_path = output_path,
+        img_paths = img_paths,
+        errors = errors,
+        num_cores = num_cores,
+        json_path = json_path,
+        extra_lines = extra_lines,
+    )
 
     def _filter_params(p: Dict) -> Dict:
         return {k: v for k, v in p.items() if "plot" not in k.lower() and "color" not in k.lower()}
 
-    session_lines = [
-        "=" * 70,
-        "SESSION REPORT",
-        "=" * 70,
-        f"traitly              : v{__version__}",
-        f"run date             : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
-        f"image folder         : {folder_path}",
-        f"results folder       : {output_path}",
-        f"images found         : {len(img_paths)}",
-        f"images ok            : {len(img_paths) - len(errors)}",
-        f"images failed        : {len(errors)}",
-        f"total fruits         : {total_fruits}",
-        f"analyze_morphology   : {analyze_morphology}",
-        f"analyze_color        : {analyze_color}",
-        f"JSON path            : {json_report}",
-        f"num_cores            : {num_cores}",
-        f"total time           : {time_str}",
-        f"avg per image        : {avg_time:.1f}s",
-        "",
-        "=" * 70,
-        "ANALYSIS PARAMETERS",
-        "=" * 70,
-    ]
-
+    session_lines += ["", "=" * 70, "ANALYSIS PARAMETERS", "=" * 70]
     for title, attr in param_sections.items():
         raw = getattr(parameters, attr, {}) or {}
         filtered = _filter_params(raw)
@@ -198,10 +299,7 @@ def _save_fruit_batch_results(
                 session_lines.append(f"   - {k}: {v}")
 
     session_lines += [
-        "",
-        "=" * 70,
-        "DEPENDENCIES",
-        "=" * 70,
+        "", "=" * 70, "DEPENDENCIES", "=" * 70,
     ] + [f"   - {pkg:<30} {ver}" for pkg, ver in get_package_versions().items()]
 
     session_txt = os.path.join(output_path, "session_report.txt")
@@ -209,35 +307,17 @@ def _save_fruit_batch_results(
         f.write("\n".join(session_lines))
 
     # 3. Error report
-    error_txt = None
-    if errors:
-        col1_w = max(len("IMAGE"), max(len(e["filename"]) for e in errors)) + 2
-        col2_w = max(len("ERROR"), max(len(e["status"]) for e in errors)) + 2
-        sep = f"+{'-' * col1_w}+{'-' * col2_w}+"
-        header = f"| {'IMAGE':<{col1_w - 2}} | {'ERROR':<{col2_w - 2}} |"
+    error_txt = _build_error_report(
+        errors=errors,
+        img_paths=img_paths,
+        output_path=output_path,
+        session_start=session_start,
+        folder_path=folder_path,
+    )
 
-        error_lines = [
-            "=" * 70,
-            "ERROR REPORT",
-            "=" * 70,
-            f"run date   : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"folder     : {folder_path}",
-            f"failed     : {len(errors)}/{len(img_paths)} images",
-            "",
-            sep, header, sep,
-        ] + [
-            f"| {e['filename']:<{col1_w - 2}} | {e['status']:<{col2_w - 2}} |"
-            for e in errors
-        ] + [sep]
-
-        error_txt = os.path.join(output_path, "error_report.txt")
-        with open(error_txt, "w", encoding="utf-8") as f:
-            f.write("\n".join(error_lines))
-
-
+    # 4. Verbose
     if verbose:
         total_processed = len(img_paths) - len(errors)
-
         if len(errors) == len(img_paths):
             print("\n( ദ്ദി ༎ຶ‿༎ຶ ) Task failed successfully " + "=" * 37)
             print("    > Image(s) processed:")
@@ -260,4 +340,78 @@ def _save_fruit_batch_results(
             print(f"        - {os.path.basename(session_txt)}")
             if error_txt:
                 print(f"        - {os.path.basename(error_txt)}")
+            print(f"        - Results folder: {output_path}")
+
+
+def _save_color_batch_results(
+    errors: List[Dict],
+    output_path: str,
+    folder_path: str,
+    img_paths: List[str],
+    num_cores: int,
+    json_path: Optional[str],
+    session_start: datetime,
+    parameters,
+    param_sections: Dict,
+    verbose: bool,
+    delta_before_mean: Optional[float] = None,
+    delta_after_mean: Optional[float] = None,
+) -> None:
+
+    # 1. Session report
+    session_lines, time_str, avg_time = _build_session_lines(
+        session_start = session_start,
+        folder_path = folder_path,
+        output_path = output_path,
+        img_paths = img_paths,
+        errors = errors,
+        num_cores = num_cores,
+        json_path = json_path,
+    )
+
+    session_lines += ["", "=" * 70, "ANALYSIS PARAMETERS", "=" * 70]
+    for title, attr in param_sections.items():
+        raw = getattr(parameters, attr, {}) or {}
+        if raw:
+            session_lines.append(f"\n{title}:")
+            for k, v in raw.items():
+                session_lines.append(f"   - {k}: {v}")
+
+    session_lines += [
+        "", "=" * 70, "DEPENDENCIES", "=" * 70,
+    ] + [f"   - {pkg:<30} {ver}" for pkg, ver in get_package_versions().items()]
+
+    session_txt = os.path.join(output_path, "session_report.txt")
+    with open(session_txt, "w", encoding="utf-8") as f:
+        f.write("\n".join(session_lines))
+
+    # 2. Error report
+    error_txt = _build_error_report(
+        errors = errors,
+        img_paths = img_paths,
+        output_path = output_path,
+        session_start = session_start,
+        folder_path = folder_path,
+    )
+
+    # 3. verbose
+    if verbose:
+        total_processed = len(img_paths) - len(errors)
+        if len(errors) == len(img_paths):
+            print("\n( ദ്ദി ༎ຶ‿༎ຶ ) Task failed successfully " + "=" * 37)
+            print("    > Image(s) processed:")
+            print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
+            print(f"    > For more details, check error_report.txt saved in: {output_path}")
+        else:
+            print("\n( ദ്ദി ˙ᗜ˙ ) Finished " + "=" * 47)
+            print("    > Image(s) processed:")
+            print(f"        - Successfully: {total_processed}/{len(img_paths)} img(s)")
+            if errors:
+                print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
+            if delta_before_mean is not None:
+                print(f"        - Mean ΔE before correction: {delta_before_mean:.2f}")
+                print(f"        - Mean ΔE after correction:  {delta_after_mean:.2f}")
+            print(f"        - Total time: {time_str}  (avg {avg_time:.1f}s/img)")
+            if error_txt:
+                print(f"        - {os.path.basename(error_txt)} created")
             print(f"        - Results folder: {output_path}")
