@@ -1449,7 +1449,7 @@ def interactive_mask_editor(mask: np.ndarray, original_img: Optional[np.ndarray]
     - Enter : apply current polygon
     - Z : undo last edit
     - C : clear current polygon points
-    - \+ / - : zoom in / out
+    - \\+ / - : zoom in / out
     - T : toggle overlay opacity
     - Q : quit and save changes
     - ESC : quit and discard all changes
