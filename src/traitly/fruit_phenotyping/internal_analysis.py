@@ -7,20 +7,6 @@ Provides :class:`FruitInternalAnalyzer`, the core analyzer class for
 whole-fruit and internal morphology, color, and symmetry analysis.
 Supports single-image and batch folder processing with optional
 multiprocessing via :func:`_process_image_worker`.
-
-The typical analysis pipeline follows this order:
-
-1. :meth:`~FruitInternalAnalyzer.load_image`
-2. :meth:`~FruitInternalAnalyzer.setup_measurements`
-3. :meth:`~FruitInternalAnalyzer.generate_fruit_mask`
-4. :meth:`~FruitInternalAnalyzer.enhance_locule_contrast` *(optional)*
-5. :meth:`~FruitInternalAnalyzer.generate_locule_mask` *(optional)*
-6. :meth:`~FruitInternalAnalyzer.detect_fruits`
-7. :meth:`~FruitInternalAnalyzer.analyze_morphology` and/or :meth:`~FruitInternalAnalyzer.analyze_color`
-
-For batch processing, steps 1–7 are orchestrated automatically by
-:meth:`~FruitInternalAnalyzer.analyze_folder` or
-:meth:`~FruitInternalAnalyzer._process_single_file`.
 """
 
 # ============================================================================
@@ -150,6 +136,7 @@ def _process_image_worker(
             os.path.basename(img_path),
             time.time() - t0,
         )
+
 
 ##########################################################################################
 # Initializig class
@@ -2151,11 +2138,11 @@ class FruitInternalAnalyzer:
                     annotated_img = self.results.color_image
 
             # 9. Save image if requested
-            if save_image and annotated_img is not None:
-                out_dir = output_path or os.path.dirname(self.input_path)
-                base = os.path.splitext(os.path.basename(self.input_path))[0]
-                out_img = os.path.join(out_dir, f"{base}_processed.jpg")
-                cv2.imwrite(out_img, annotated_img)
+            if save_image and self.results is not None:
+                self.results.save_img(
+                    output_path=output_path,
+                    output_message=False,
+                )
 
         except Exception as e:
             error_dict = {"filename": os.path.basename(self.input_path), "status": str(e)}
