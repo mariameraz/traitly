@@ -27,8 +27,18 @@ def df_hist():
 
 @pytest.fixture
 def df_means():
-    path = Path(__file__).parent.parent / "data" / "external" / "blue_bg" /"Results" / "color_results.csv"
-    return pd.read_csv(path)
+    """Generate color_results.csv if it doesn't exist."""
+    from traitly.fruit_phenotyping import FruitExternalAnalyzer
+
+    data_dir = Path(__file__).parent.parent / "data"
+    external_folder_blue = data_dir / "external" / "blue_bg"
+    results_file = external_folder_blue / "Results" / "color_results.csv"
+
+    if not results_file.exists():
+        analyzer = FruitExternalAnalyzer(path=external_folder_blue)
+        analyzer.analyze_folder()
+
+    return pd.read_csv(results_file)
 
 @pytest.fixture(autouse=True)
 def no_plots():
