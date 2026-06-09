@@ -14,13 +14,9 @@ processing with optional multiprocessing.
 # STANDARD LIBRARY
 # ============================================================================
 import copy
-import json
-import multiprocessing as mp
 import os
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 #import logging
 # ============================================================================
@@ -29,23 +25,18 @@ from typing import Dict, List, Optional, Tuple
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-from tqdm import tqdm
-
-from traitly import __version__
 
 # ============================================================================
 # INTERNAL IMPORTS
 # ============================================================================
 from traitly.fruit_phenotyping.internal_analysis import FruitInternalAnalyzer
-from traitly.utils.constants import valid_extensions as _valid_ext
-from traitly.utils.environment import get_package_versions
 
 from traitly.utils.batch import (
     _setup_batch,
     _print_batch_header,
     _run_fruit_batch_loop,
-    _save_fruit_batch_results
+    _save_fruit_batch_results,
+    _config_from_json,
 )
 
 #############
@@ -820,9 +811,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         # 2. create config for internal analysis
         config = copy.deepcopy(config) if config else {}
 
-        if json_path is not None and os.path.exists(json_path):
-            with open(json_path, "r", encoding="utf-8") as f:
-                config.update(json.load(f) or {})
+        _config_from_json(json_path, config)
 
         def _apply(section: str, mapping: Dict):
             overrides = {k: v for k, v in mapping.items() if v is not None}
