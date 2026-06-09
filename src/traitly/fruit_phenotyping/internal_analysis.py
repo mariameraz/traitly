@@ -6,7 +6,7 @@ Internal fruit analysis pipeline for traitly.
 Provides :class:`FruitInternalAnalyzer`, the core analyzer class for
 whole-fruit and internal morphology, color, and symmetry analysis.
 Supports single-image and batch folder processing with optional
-multiprocessing via :func:`_process_image_worker`.
+multiprocessing via :func:`_process_internal_image_worker`.
 """
 
 # ============================================================================
@@ -94,7 +94,7 @@ warnings.filterwarnings("ignore", message="Using CPU")
 # Worker function for parallel processing
 ##########################################################################################
 
-def _process_image_worker(
+def _process_internal_image_worker(
     img_path: str,
     config: Dict,
     analyze_morphology: bool,
@@ -107,12 +107,12 @@ def _process_image_worker(
         analyzer.load_image(plot=False)
         df_morphology, df_color, error_dict, n_fruits, annotated_img = (
             analyzer._process_single_file(
-                config=config,
-                json_path=None,
-                analyze_morphology=analyze_morphology,
-                analyze_color=analyze_color,
-                save_image=True,
-                output_path=output_path,
+                config = config,
+                json_path = None,
+                analyze_morphology = analyze_morphology,
+                analyze_color = analyze_color,
+                save_image = True,
+                output_path = output_path,
             )
         )
         elapsed = time.time() - t0
@@ -2314,7 +2314,7 @@ class FruitInternalAnalyzer:
             pericarp_int_color=pericarp_int_color, pericarp_int_thickness=pericarp_int_thickness,
         ))
 
-        # 3. Sincronize config to self._parameters for the session report
+        # 3. Syncronize config to self._parameters for the session report
         for key in (
             "setup_measurements_params", "generate_fruit_mask_params",
             "enhance_locule_contrast_params", "generate_locule_mask_params",
@@ -2340,10 +2340,9 @@ class FruitInternalAnalyzer:
         )
 
         # 5. Process loop:
-
         all_morphology, all_color, errors, total_fruits, _ = _run_fruit_batch_loop(
             img_paths=img_paths,
-            worker_fn=_process_image_worker,
+            worker_fn=_process_internal_image_worker,
             num_cores=num_cores,
             config=config,
             analyze_morphology=analyze_morphology,
