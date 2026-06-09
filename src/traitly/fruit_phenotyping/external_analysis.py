@@ -18,7 +18,7 @@ The typical analysis pipeline follows this order:
 
 For batch processing, steps 1–7 are orchestrated automatically by
 :meth:`~FruitExternalAnalyzer.analyze_folder` or
-:meth:`~FruitExternalAnalyzer.process_single_file`.
+:meth:`~FruitExternalAnalyzer._process_single_file`.
 """
 
 # ============================================================================
@@ -72,7 +72,7 @@ def _process_external_worker(
         Absolute path to the image file to process.
     config : Dict
         Analysis configuration dictionary passed to
-        :meth:`FruitExternalAnalyzer.process_single_file`.
+        :meth:`FruitExternalAnalyzer._process_single_file`.
     analyze_morphology : bool
         If True, run morphology analysis.
     analyze_color : bool
@@ -90,7 +90,7 @@ def _process_external_worker(
         analyzer = FruitExternalAnalyzer(path)
         analyzer.load_image(plot=False)
         df_morphology, df_color, error_dict, n_fruits, annotated_img = (
-            analyzer.process_single_file(
+            analyzer._process_single_file(
                 config=config,
                 json_path=None,
                 analyze_morphology=analyze_morphology,
@@ -633,7 +633,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         -------
         dict
             Deep copy of ``config`` with internal-only sections and keys removed,
-        safe to pass to :meth:`process_single_file` or :meth:`analyze_folder`.
+        safe to pass to :meth:`_process_single_file` or :meth:`analyze_folder`.
         """
         cfg = copy.deepcopy(config)
         for section in cls._INTERNAL_ONLY_SECTIONS:
@@ -645,18 +645,18 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         return cfg
 
     ##########################################################################################
-    # Override process_single_file to clean config before calling the parent
+    # Override _process_single_file to clean config before calling the parent
     ##########################################################################################
 
-    def process_single_file(
+    def _process_single_file(
         self,
-        config=None,
-        json_path=None,
-        analyze_morphology=True,
-        analyze_color=True,
-        save_image=False,
-        output_path=None,
-        skip_sanitize=False,
+        config: Dict = None,
+        json_path: str =None,
+        analyze_morphology: bool = True,
+        analyze_color: bool =True,
+        save_image: bool = False,
+        output_path: str = None,
+        skip_sanitize: bool = False,
     ):
         """
         Run the full analysis pipeline on the loaded image.
@@ -688,8 +688,9 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         -------
         tuple
             Results tuple as returned by the parent
-            :meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.process_single_file`.
+            :meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer._process_single_file`.
         """
+
         # Resolve config the same way the parent does (json -> dict -> {})
         if json_path is not None and os.path.exists(json_path):
             with open(json_path, "r", encoding="utf-8") as f:
@@ -702,7 +703,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         if not skip_sanitize:
             resolved = self._sanitize_config(resolved)
 
-        return super().process_single_file(
+        return super()._process_single_file(
             config=resolved,
             json_path=None,
             analyze_morphology=analyze_morphology,
@@ -1034,7 +1035,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             try:
                 worker = FruitExternalAnalyzer(path)
                 worker.load_image(plot=False)
-                df_m, df_c, err, n, ann_img = worker.process_single_file(
+                df_m, df_c, err, n, ann_img = worker._process_single_file(
                     config=cfg,
                     json_path=None,
                     analyze_morphology=analyze_morphology,
