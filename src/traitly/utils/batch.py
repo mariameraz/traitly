@@ -80,7 +80,6 @@ def _print_batch_header(
 def _run_fruit_batch_loop(
     img_paths: List[str],
     worker_fn: Callable,
-    parallel_worker_fn: Callable,
     num_cores: int,
     config: Dict,
     analyze_morphology: bool,
@@ -94,8 +93,11 @@ def _run_fruit_batch_loop(
 
     if num_cores == 1:
         for img_path in tqdm(img_paths, desc="Processing images", unit="img", disable=not verbose):
-            err, fname, elapsed = worker_fn(img_path, config, output_path)
-            per_image_times.append({"filename": fname, "time_s": round(elapsed, 2), "status": "error" if err else "ok", "fruits": n})
+            result = worker_fn(img_path, config, analyze_morphology, analyze_color, output_path)
+            df_m, df_c, err, n, ann_img, fname = result[:6]
+            elapsed = result[6] if len(result) > 6 else 0.0
+
+            per_image_times.append({...})
             if err:
                 errors.append(err)
             else:
@@ -105,7 +107,7 @@ def _run_fruit_batch_loop(
     else:
         with ProcessPoolExecutor(max_workers=num_cores) as executor:
             futures = {
-                executor.submit(parallel_worker_fn, img_path, config, analyze_morphology, analyze_color): img_path
+                executor.submit(worker_fn, img_path, config, analyze_morphology, analyze_color): img_path
                 for img_path in img_paths
             }
             for future in tqdm(as_completed(futures), total=len(futures), desc="Processing images", unit="img", disable=not verbose):
