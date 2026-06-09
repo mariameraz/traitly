@@ -2340,25 +2340,10 @@ class FruitInternalAnalyzer:
         )
 
         # 5. Process loop:
-        def _run_one(img_path: str):
-            t0 = time.time()
-            try:
-                worker = FruitInternalAnalyzer(img_path)
-                worker.load_image(plot=False)
-                df_m, df_c, err, n, ann_img = worker._process_single_file(
-                    config=config, json_path=None,
-                    analyze_morphology=analyze_morphology,
-                    analyze_color=analyze_color,
-                    save_image=True, output_path=output_path,
-                )
-                return df_m, df_c, err, n, ann_img, os.path.basename(img_path), time.time() - t0
-            except Exception as e:
-                return None, None, {"filename": os.path.basename(img_path), "status": f"Error: {str(e)}"}, 0, None, os.path.basename(img_path), time.time() - t0
 
         all_morphology, all_color, errors, total_fruits, _ = _run_fruit_batch_loop(
             img_paths=img_paths,
-            worker_fn=_run_one,
-            parallel_worker_fn=_process_image_worker,
+            worker_fn=_process_image_worker,
             num_cores=num_cores,
             config=config,
             analyze_morphology=analyze_morphology,
