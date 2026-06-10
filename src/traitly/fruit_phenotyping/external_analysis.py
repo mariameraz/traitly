@@ -64,7 +64,7 @@ def _process_external_image_worker(
     try:
         analyzer = FruitExternalAnalyzer(img_path)
         analyzer.load_image(plot = False)
-        df_morphology, df_color, error_dict, n_fruits, annotated_img = (
+        df_morphology, df_color, error_dict, n_fruits = (
             analyzer._process_single_file(
                 config = config,
                 json_path = None,
@@ -87,7 +87,6 @@ def _process_external_image_worker(
             df_color,
             error_dict,
             n_fruits,
-            annotated_img,
             filename,
             elapsed,
         )
@@ -98,7 +97,6 @@ def _process_external_image_worker(
             None,
             {"filename": os.path.basename(img_path), "status": f"Error: {str(e)}"},
             0,
-            None,
             os.path.basename(img_path),
             time.time() - t0,
         )
