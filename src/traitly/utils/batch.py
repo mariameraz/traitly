@@ -94,8 +94,8 @@ def _run_fruit_batch_loop(
     if num_cores == 1:
         for img_path in tqdm(img_paths, desc="Processing images", unit="img", disable=not verbose):
             result = worker_fn(img_path, config, analyze_morphology, analyze_color, output_path)
-            df_m, df_c, err, n, ann_img, fname = result[:6]
-            elapsed = result[6] if len(result) > 6 else 0.0
+            df_m, df_c, err, n, fname = result[:5]
+            elapsed = result[5] if len(result) > 5 else 0.0
 
             per_image_times.append({
                 "filename": fname,
@@ -118,8 +118,8 @@ def _run_fruit_batch_loop(
             }
             for future in tqdm(as_completed(futures), total=len(futures), desc="Processing images", unit="img", disable=not verbose):
                 result = future.result()
-                df_m, df_c, err, n, ann_img, fname = result[:6]
-                elapsed = result[6] if len(result) > 6 else 0.0
+                df_m, df_c, err, n, fname = result[:5]
+                elapsed = result[5] if len(result) > 5 else 0.0
 
                 per_image_times.append({
                     "filename": fname,

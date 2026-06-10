@@ -108,7 +108,7 @@ def _process_internal_image_worker(
     try:
         analyzer = FruitInternalAnalyzer(img_path)
         analyzer.load_image(plot=False)
-        df_morphology, df_color, error_dict, n_fruits, annotated_img = (
+        df_morphology, df_color, error_dict, n_fruits = (
             analyzer._process_single_file(
                 config = config,
                 json_path = None,
@@ -125,7 +125,6 @@ def _process_internal_image_worker(
             df_color,
             error_dict,
             n_fruits,
-            annotated_img,
             filename,
             elapsed,
         )
@@ -135,7 +134,6 @@ def _process_internal_image_worker(
             None,
             {"filename": os.path.basename(img_path), "status": f"Error: {str(e)}"},
             0,
-            None,
             os.path.basename(img_path),
             time.time() - t0,
         )
@@ -1997,7 +1995,6 @@ class FruitInternalAnalyzer:
         Optional[pd.DataFrame],
         Optional[Dict],
         int,
-        Optional[np.ndarray],
     ]:
         """
         Run the full analysis pipeline on the already-loaded image.
@@ -2033,7 +2030,7 @@ class FruitInternalAnalyzer:
         Returns
         -------
         tuple
-            ``(df_morphology, df_color, error_dict, n_fruits, annotated_img)``
+            ``(df_morphology, df_color, error_dict, n_fruits)``
             where:
 
             - ``df_morphology`` – morphology results DataFrame or ``None``.
@@ -2050,7 +2047,6 @@ class FruitInternalAnalyzer:
         n_fruits = 0
         df_morph = None
         df_color = None
-        annotated_img = None
 
         # Run every step and cath errors (if any)
         try:
@@ -2133,14 +2129,7 @@ class FruitInternalAnalyzer:
                 except Exception as e:
                     raise RuntimeError(f"[analyze_color] {e}")
 
-            # 8. Get annotated image
-            if self.results is not None:
-                if analyze_morphology:
-                    annotated_img = self.results.morphology_image
-                else:
-                    annotated_img = self.results.color_image
-
-            # 9. Save image if requested
+            # 8. Save image if requested
             if save_image and self.results is not None:
                 self.results.save_img(
                     output_path=output_path,
@@ -2150,7 +2139,7 @@ class FruitInternalAnalyzer:
         except Exception as e:
             error_dict = {"filename": os.path.basename(self.input_path), "status": str(e)}
 
-        return df_morph, df_color, error_dict, n_fruits, annotated_img
+        return df_morph, df_color, error_dict, n_fruits
 
     ##########################################################################################
     # Process all images in a folder
