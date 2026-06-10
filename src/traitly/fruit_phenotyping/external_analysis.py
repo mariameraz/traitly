@@ -64,13 +64,13 @@ def _process_external_image_worker(
     try:
         analyzer = FruitExternalAnalyzer(img_path)
         analyzer.load_image(plot = False)
-        df_morphology, df_color, error_dict, n_fruits = (
+        df_morphology, df_color, error_dict, n_fruits, annotated_img = (
             analyzer._process_single_file(
                 config = config,
                 json_path = None,
                 analyze_morphology = analyze_morphology,
                 analyze_color = analyze_color,
-                save_image = True,
+                save_image = False,
                 output_path = output_path
             )
         )
@@ -87,6 +87,7 @@ def _process_external_image_worker(
             df_color,
             error_dict,
             n_fruits,
+            annotated_img,
             filename,
             elapsed,
         )
@@ -97,6 +98,7 @@ def _process_external_image_worker(
             None,
             {"filename": os.path.basename(img_path), "status": f"Error: {str(e)}"},
             0,
+            None,
             os.path.basename(img_path),
             time.time() - t0,
         )
@@ -671,6 +673,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         min_fruit_area: Optional[int] = None,
         max_fruit_area: Optional[int]=None,
         min_fruit_circularity: Optional[float]=None,
+        rescale_factor: Optional[float] = None,
         # analyze_morphology
         contour_mode: Optional[str]=None,
         epsilon: Optional[float]=None,
@@ -843,6 +846,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                 min_fruit_area=min_fruit_area,
                 max_fruit_area=max_fruit_area,
                 min_fruit_circularity=min_fruit_circularity,
+                rescale_factor = rescale_factor,
             ),
         )
         _apply(
