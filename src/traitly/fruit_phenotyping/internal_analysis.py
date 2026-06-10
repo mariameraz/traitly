@@ -108,13 +108,13 @@ def _process_internal_image_worker(
     try:
         analyzer = FruitInternalAnalyzer(img_path)
         analyzer.load_image(plot=False)
-        df_morphology, df_color, error_dict, n_fruits = (
+        df_morphology, df_color, error_dict, n_fruits, annotated_img = (
             analyzer._process_single_file(
                 config = config,
                 json_path = None,
                 analyze_morphology = analyze_morphology,
                 analyze_color = analyze_color,
-                save_image = True,
+                save_image = False,
                 output_path = output_path,
             )
         )
@@ -125,6 +125,7 @@ def _process_internal_image_worker(
             df_color,
             error_dict,
             n_fruits,
+            annotated_img,
             filename,
             elapsed,
         )
@@ -134,6 +135,7 @@ def _process_internal_image_worker(
             None,
             {"filename": os.path.basename(img_path), "status": f"Error: {str(e)}"},
             0,
+            None,
             os.path.basename(img_path),
             time.time() - t0,
         )
@@ -1995,6 +1997,7 @@ class FruitInternalAnalyzer:
         Optional[pd.DataFrame],
         Optional[Dict],
         int,
+        Optional[np.ndarray],
     ]:
         """
         Run the full analysis pipeline on the already-loaded image.
@@ -2030,7 +2033,7 @@ class FruitInternalAnalyzer:
         Returns
         -------
         tuple
-            ``(df_morphology, df_color, error_dict, n_fruits)``
+            ``(df_morphology, df_color, error_dict, n_fruits, annotated_img)``
             where:
 
             - ``df_morphology`` – morphology results DataFrame or ``None``.
@@ -2047,6 +2050,7 @@ class FruitInternalAnalyzer:
         n_fruits = 0
         df_morph = None
         df_color = None
+        annotated_img = None
 
         # Run every step and cath errors (if any)
         try:
@@ -2129,7 +2133,14 @@ class FruitInternalAnalyzer:
                 except Exception as e:
                     raise RuntimeError(f"[analyze_color] {e}")
 
-            # 8. Save image if requested
+            # 8. Get annotated image
+            if self.results is not None:
+                if analyze_morphology:
+                    annotated_img = self.results.morphology_image
+                else:
+                    annotated_img = self.results.color_image
+
+            # 9. Save image if requested
             if save_image and self.results is not None:
                 self.results.save_img(
                     output_path=output_path,
@@ -2139,7 +2150,7 @@ class FruitInternalAnalyzer:
         except Exception as e:
             error_dict = {"filename": os.path.basename(self.input_path), "status": str(e)}
 
-        return df_morph, df_color, error_dict, n_fruits
+        return df_morph, df_color, error_dict, n_fruits, annotated_img
 
     ##########################################################################################
     # Process all images in a folder
@@ -2200,6 +2211,7 @@ class FruitInternalAnalyzer:
         min_fruit_circularity: Optional[float] = None,
         min_locule_area: Optional[int] = None,
         min_locule_per_fruit: Optional[int] = None,
+        rescale_factor: Optional[float] = None,
         # analyze_morphology
         contour_mode: Optional[str] = None,
         epsilon: Optional[float] = None,
@@ -2281,7 +2293,7 @@ class FruitInternalAnalyzer:
         ))
         _apply("detect_fruits_params", dict(
             min_fruit_area=min_fruit_area, max_fruit_area=max_fruit_area,
-            min_fruit_circularity=min_fruit_circularity,
+            min_fruit_circularity=min_fruit_circularity, rescale_factor = rescale_factor,
             min_locule_area=min_locule_area, min_locule_per_fruit=min_locule_per_fruit,
         ))
         _apply("analyze_morphology_params", dict(

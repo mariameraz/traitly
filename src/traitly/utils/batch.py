@@ -94,8 +94,8 @@ def _run_fruit_batch_loop(
     if num_cores == 1:
         for img_path in tqdm(img_paths, desc="Processing images", unit="img", disable=not verbose):
             result = worker_fn(img_path, config, analyze_morphology, analyze_color, output_path)
-            df_m, df_c, err, n, fname = result[:5]
-            elapsed = result[5] if len(result) > 5 else 0.0
+            df_m, df_c, err, n, ann_img, fname = result[:6]
+            elapsed = result[6] if len(result) > 6 else 0.0
 
             per_image_times.append({
                 "filename": fname,
@@ -107,6 +107,9 @@ def _run_fruit_batch_loop(
             if err:
                 errors.append(err)
             else:
+                if ann_img is not None:
+                    out_img = os.path.join(output_path, f"{os.path.splitext(fname)[0]}_processed.jpg")
+                    cv2.imwrite(out_img, ann_img)
                 if df_m is not None: all_morphology.append(df_m)
                 if df_c is not None: all_color.append(df_c)
                 total_fruits += n
@@ -118,8 +121,8 @@ def _run_fruit_batch_loop(
             }
             for future in tqdm(as_completed(futures), total=len(futures), desc="Processing images", unit="img", disable=not verbose):
                 result = future.result()
-                df_m, df_c, err, n, fname = result[:5]
-                elapsed = result[5] if len(result) > 5 else 0.0
+                df_m, df_c, err, n, ann_img, fname = result[:6]
+                elapsed = result[6] if len(result) > 6 else 0.0
 
                 per_image_times.append({
                     "filename": fname,
@@ -131,6 +134,9 @@ def _run_fruit_batch_loop(
                 if err:
                     errors.append(err)
                 else:
+                    if ann_img is not None:
+                        out_img = os.path.join(output_path, f"{os.path.splitext(fname)[0]}_processed.jpg")
+                        cv2.imwrite(out_img, ann_img)
                     if df_m is not None: all_morphology.append(df_m)
                     if df_c is not None: all_color.append(df_c)
                     total_fruits += n
