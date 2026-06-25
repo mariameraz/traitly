@@ -8,6 +8,7 @@ __pycache__/
 
 # python environments
 traitly_test/*
+dev_venv
 
 # Cache
 .cache/
