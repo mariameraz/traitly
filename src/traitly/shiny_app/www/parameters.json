@@ -36,7 +36,7 @@
   "enhance_locule_contrast_params": {},
   "generate_locule_mask_params": {},
   "detect_fruits_params": {
-    "min_fruit_area": 500,
+    "min_fruit_area": 1000,
     "max_fruit_area": null,
     "min_fruit_circularity": 0.5,
     "min_locule_area": 50,
