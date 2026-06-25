@@ -232,6 +232,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         plot_size: Tuple[int, int] = (5, 5),
         contour_color: Tuple[int, int, int] = (0, 255, 0),
         contour_thickness: int = 2,
+        rescale_factor: Optional[float] = None,
     ) -> None:
         """
         Detect individual fruits from the binary mask.
@@ -272,6 +273,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             plot_size=plot_size,
             contour_color=contour_color,
             contour_thickness=contour_thickness,
+            rescale_factor = rescale_factor,
         )
 
         if self.fruit_locule_map is not None:
