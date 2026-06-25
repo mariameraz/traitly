@@ -1144,7 +1144,7 @@ def create_mask_locules(
     erosion_px: int = 0,
     use_otsu: bool = False,
     otsu_offset: int = 0,
-    min_fruit_area: int = 5000,
+    min_fruit_area: int = 1000,
     min_locule_area: int = 50,
     invert_locules: bool = False,
     plot: bool = False,

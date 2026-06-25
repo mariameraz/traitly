@@ -1128,7 +1128,7 @@ class FruitInternalAnalyzer:
         verbose: bool = True,
         min_locule_area: int = 50,
         min_locule_per_fruit: int = 1,
-        min_fruit_area: int = 5000,
+        min_fruit_area: int = 1000,
         max_fruit_area: Optional[int] = None,
         plot: bool = False,
         plot_size: Tuple[int, int] = (5, 5),

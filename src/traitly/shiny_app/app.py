@@ -1338,7 +1338,7 @@ step_locule = _panel(
             ui.output_ui("otsu_ui"),
             ui.hr(),
             ui.input_numeric(
-                "min_fruit_area_lm", "Min fruit area (px)", 5000, min=100, step=100
+                "min_fruit_area_lm", "Min fruit area (px)", 1000, min=10, step=100
             ),
             ui.input_numeric(
                 "min_locule_area_lm", "Min locule area (px)", 0, min=0, step=10
@@ -1381,7 +1381,7 @@ step_detect = _panel(
                 "min_fruit_circularity", "Min circularity", 0.0, 1.0, 0.5, step=0.05
             ),
             ui.input_numeric(
-                "min_fruit_area_det", "Min fruit area (px)", 500, min=1, step=100
+                "min_fruit_area_det", "Min fruit area (px)", 1000, min=10, step=100
             ),
             ui.input_numeric(
                 "max_fruit_area_det", "Max fruit area (px)", 0, min=0, step=100
