@@ -134,6 +134,7 @@ def _run_fruit_batch_loop(
                 if err:
                     errors.append(err)
                 else:
+
                     if ann_img is not None:
                         out_img = os.path.join(output_path, f"{os.path.splitext(fname)[0]}_processed.jpg")
                         cv2.imwrite(out_img, ann_img)
