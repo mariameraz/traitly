@@ -88,10 +88,6 @@ def img_px_per_cm(
         If an unexpected calculation error occurs.
     """
     try:
-        if not isinstance(img, np.ndarray):
-            raise TypeError("Input must be a numpy array")
-        if img.ndim not in [2, 3]:
-            raise ValueError("Image must be 2D (grayscale) or 3D (color)")
         if size not in ["letter_ansi", "legal_ansi", "a4_iso", "a3_iso"] and (
             width_cm is None or length_cm is None
         ):
@@ -114,27 +110,21 @@ def img_px_per_cm(
             "a3_iso": (29.7, 42.0),
         }
 
-        img_height_px = img.shape[0]
-        img_width_px = img.shape[1]
+        img_h = max(img.shape[0], img.shape[1])
+        img_w = min(img.shape[0], img.shape[1])
 
         if width_cm is not None and length_cm is not None:
-            used_width_cm = width_cm
-            used_length_cm = length_cm
+            used_w_cm = width_cm
+            used_l_cm = length_cm
         else:
             paper_w, paper_h = paper_sizes[size]
-            if img_width_px > img_height_px:
-                # Landscape
-                used_width_cm = max(paper_w, paper_h)
-                used_length_cm = min(paper_w, paper_h)
-            else:
-                # Portrait
-                used_width_cm = min(paper_w, paper_h)
-                used_length_cm = max(paper_w, paper_h)
+            used_w_cm = min(paper_w, paper_h)
+            used_l_cm = max(paper_w, paper_h)
 
-        px_per_cm_width = img_width_px / used_width_cm
-        px_per_cm_length = img_height_px / used_length_cm
+        px_per_cm_w = img_w / used_w_cm
+        px_per_cm_l = img_h / used_l_cm
 
-        return px_per_cm_width, px_per_cm_length, used_width_cm, used_length_cm
+        return px_per_cm_w, px_per_cm_l, used_w_cm, used_l_cm
 
     except Exception as e:
         raise RuntimeError(f"Calculation error: {str(e)}")
