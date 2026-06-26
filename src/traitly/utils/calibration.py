@@ -332,7 +332,7 @@ def px_cm_density(
     # Method 1: circle detection via YOLO
     list_circles, img_annotated, roi_boxes = _detect_size_ref_yolo(
         img,
-        model_path=model_path,
+        model_path=_get_package_model_path("size_reference.pt"),
         plot=plot,
         font_size=font_size * 0.5,
         confidence_threshold=confidence_threshold,
