@@ -506,7 +506,6 @@ class FruitInternalAnalyzer:
                     width_cm=width_cm,
                     length_cm=length_cm,
                     diameter_cm=diameter_cm,
-                    return_coordinates=True,
                 )
 
         if self._ref_roi is not None:
