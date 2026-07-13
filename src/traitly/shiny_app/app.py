@@ -446,7 +446,7 @@ button.action-button, a.action-button {
 }
 
 #step1_preview img {
-    max-height: 1500px;
+    max-height: 1000px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -471,7 +471,7 @@ button.action-button, a.action-button {
 }
 
 #step2_results img {
-    max-height: 1500px;
+    max-height: 1000px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -479,7 +479,7 @@ button.action-button, a.action-button {
 }
 
 #step3_results img {
-    max-height: 1500px;
+    max-height: 1000px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -487,7 +487,7 @@ button.action-button, a.action-button {
 }
 
 #step4_results img {
-    max-height: 1500px;
+    max-height: 1000px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -496,7 +496,7 @@ button.action-button, a.action-button {
 
 /* step 5 */
 #detect_results img {
-    max-height: 1500px;
+    max-height: 1000px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -505,7 +505,7 @@ button.action-button, a.action-button {
 
 /* step 6 - morphology */
 #morph_results img {
-    max-height: 1500px;
+    max-height: 1000px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -514,7 +514,7 @@ button.action-button, a.action-button {
 
 /* step 7 - color */
 #color_results img {
-    max-height: 1500px;
+    max-height: 1000px;
     max-width: 100%;
     object-fit: contain;
     display: block;
