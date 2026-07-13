@@ -725,6 +725,7 @@ _HEADER = f"""
         <a id="hn-3" onclick="goMainTab('tab_bg',3)">Background Helper</a>
         <a id="hn-4" onclick="goMainTab('tab_batch',4)">Batch Analysis</a>
         <a id="hn-5" onclick="goMainTab('tab_pdf',5)">PDF Extractor</a>
+        <a id="hn-6" onclick="goMainTab('tab_cc',6)">Color Correction</a>
     </nav>
 
     <div class="t-right">
@@ -1928,6 +1929,31 @@ tab_pdf = ui.nav_panel(
     value="tab_pdf",
 )
 
+## Color correction
+tab_cc = ui.nav_panel(
+    "Color Correction",
+    ui.layout_columns(
+        ui.div(
+            ui.HTML('<p class="panel-title">Batch Correction</p>'),
+            ui.input_file(
+                "cc_files",
+                "Select images",
+                accept=[".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"],
+                multiple=True,
+            ),
+            ui.hr(),
+            ui.input_action_button(
+                "run_cc",
+                "▶  Run Color Correction",
+                class_="btn btn-primary",
+                style="font-size:2rem;padding:.8rem 1.5rem;",
+            ),
+        ),
+        ui.div(ui.output_ui("cc_results")),
+        col_widths=[3, 9],
+    ),
+    value="tab_cc",
+)
 # side bar config
 sidebar_ui = ui.sidebar(
     ui.output_ui("sidebar_content"),
@@ -1959,12 +1985,14 @@ app_ui = ui.page_sidebar(
         tab_bg,
         tab_batch,
         tab_pdf,
+        tab_cc,
         id="main_tab",
         selected="tab_home",
     ),
     title="Traitly",
     fillable=False,
 )
+
 
 
 # servers
@@ -2040,7 +2068,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     @reactive.event(input.js_main_tab)
     def _on_main_tab():
         tab = input.js_main_tab()
-        ui.update_navs("main_tab", selected=tab, session=session)
+        ui.update_navset("main_tab", selected=tab, session=session)
 
         if tab == "tab_analysis" and r_mode.get() is None:
             session.send_custom_message("get_current_mode", {})
@@ -2069,13 +2097,13 @@ def server(input: Inputs, output: Outputs, session: Session):
             r_mask_points.set([])
             r_mask_history.set([])
             r_mask_mode.set("white")
-            ui.update_navs("pipeline_step", selected="step_setup", session=session)
+            ui.update_navset("pipeline_step", selected="step_setup", session=session)
 
     @reactive.effect
     @reactive.event(input.js_step_click)
     def _on_step():
         sid = input.js_step_click()
-        ui.update_navs("pipeline_step", selected=sid, session=session)
+        ui.update_navset("pipeline_step", selected=sid, session=session)
         r_cur_step.set(sid)
 
     @render.ui
@@ -2149,7 +2177,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         r_img_ready.set(False)
         r_upload_key.set(r_upload_key.get() + 1)
         r_step1_result.set(ui.div())
-        ui.update_navs("pipeline_step", selected="step_setup", session=session)
+        ui.update_navset("pipeline_step", selected="step_setup", session=session)
 
     @render.ui
     def upload_input_ui():
@@ -3770,7 +3798,6 @@ def server(input: Inputs, output: Outputs, session: Session):
         )
 
     ## batch analysis
-
     @render.ui
     @reactive.event(input.run_batch)
     def batch_results():
@@ -4111,9 +4138,15 @@ def server(input: Inputs, output: Outputs, session: Session):
         if data:
             yield data
 
+    @render.ui
+    @reactive.event(input.run_cc)
+    def cc_results():
+        files = input.cc_files()
+        if not files:
+            return ui.p("Select images first.", class_="text-info")
+
 
 app = App(app_ui, server)
-
 
 # Run the app with CLI
 def run():
