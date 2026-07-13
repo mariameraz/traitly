@@ -715,7 +715,7 @@ _HEADER = f"""
 
 <div class="traitly-header">
     <a class="t-brand">
-        Traitly <span class="ver">v{__version__}</span>
+        Traitly <span class="ver">{__version__}</span>
     </a>
 
     <nav class="t-nav" id="t-nav">
@@ -1733,7 +1733,7 @@ tab_bg = ui.nav_panel(
         ui.div(
             ui.HTML('<p class="panel-title">Background Color Helper</p>'),
             ui.p(
-                "⋆˙⟡ Upload an image to inspect its HSV pixel distribution, then tune thresholds to isolate the background.",
+                "⋆˙⟡ Upload an image to inspect its HSV pixel distribution, then tune thresholds to segmentate the background.",
                 style="font-size: 2rem; margin-bottom: 1rem",
             ),
             ui.HTML("<br>"),
@@ -2073,6 +2073,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         if tab == "tab_analysis" and r_mode.get() is None:
             session.send_custom_message("get_current_mode", {})
 
+
     @reactive.effect
     @reactive.event(input.js_mode)
     def _on_mode():
@@ -2395,18 +2396,19 @@ def server(input: Inputs, output: Outputs, session: Session):
                 verbose=False,
             )
 
-            detect_color_checker = az.detect_color_checker(),
+            if input.detect_color_checker():
+                az.detect_color_checker()
 
             mark_done(0)
             h, w = az.img.shape[:2] if az.img is not None else (0, 0)
             n_refs = len(az._ref_roi) if az._ref_roi else 0
             r_step1_result.set(
                 ui.div(
-                    ui.p(
-                        "Setup complete!",
-                        style="font-size:3.4rem; text-align:center; max-width:700px; "
-                        "margin:0 auto; color: #97c8ec; font-weight:700; background-color:rgba(49,63,65,0.8);",
-                    ),
+                    # ui.p(
+                    #     "Process completed!",
+                    #     style="font-size:3.4rem; text-align:center; max-width:700px; "
+                    #     "margin:0 auto; color: #97c8ec; font-weight:700; background-color:rgba(49,63,65,0.8);",
+                    # ),
                     ui.div(
                         ui.layout_columns(
                             ui.value_box(
@@ -3249,7 +3251,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 kw["min_locule_per_fruit"] = input.min_locule_per_fruit()
                 kw["locule_thickness"] = input.locule_thickness_det()
                 kw["locule_color"] = _parse_color(input.locule_color_det())
-                kw["dilation_factor"] = input.dilation_factor() or None
+                kw["dilation_factor"] = input._dilation_factor() or None
                 kw["pericarp_int_color"] = _parse_color(input.pericarp_int_color_det())
                 kw["pericarp_int_thickness"] = input.pericarp_int_thickness_det()
             az.detect_fruits(**kw)
