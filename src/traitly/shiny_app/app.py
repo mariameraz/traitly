@@ -1402,10 +1402,10 @@ step_detect = _panel(
             """),
             ui.output_ui("detect_dilation_ui"),
             ui.input_numeric(
-                "rescale_factor_det", "Rescale factor", 0, min=0, step=0.1
+                "rescale_factor_det", "Rescale factor", 0, min=0, step=0.1, max=1
             ),
             ui.p(
-                "Set to 0 for no upper limit.",
+                "Set to 0 for no upper limit. Value range (0-1)",
                 style="font-size:1.4rem;color:#94a3b8;margin-top:-.5rem;",
             ),
             ui.hr(),
@@ -2323,8 +2323,8 @@ def server(input: Inputs, output: Outputs, session: Session):
         if az is None:
             return ui.div()
         display_img = (
-            cv2.cvtColor(az.img_copy, cv2.COLOR_BGR2RGB)
-            if (hasattr(az, "img_copy") and az.img_copy is not None)
+            cv2.cvtColor(az._img_copy, cv2.COLOR_BGR2RGB)
+            if (hasattr(az, "_img_copy") and az._img_copy is not None)
             else cv2.cvtColor(az.img, cv2.COLOR_BGR2RGB)
         )
 
@@ -2361,15 +2361,17 @@ def server(input: Inputs, output: Outputs, session: Session):
                 detect_label=input.detect_label(),
                 confidence=input.confidence(),
                 skip_qr=input.skip_qr(),
-                detect_color_checker=input.detect_color_checker(),
                 width_cm=input.width_cm() if input.use_dimensions() else None,
                 length_cm=input.length_cm() if input.use_dimensions() else None,
                 diameter_cm=input.diameter_cm(),
                 verbose=False,
             )
+
+            detect_color_checker = az.detect_color_checker(),
+
             mark_done(0)
             h, w = az.img.shape[:2] if az.img is not None else (0, 0)
-            n_refs = len(az.ref_roi) if az.ref_roi else 0
+            n_refs = len(az._ref_roi) if az._ref_roi else 0
             r_step1_result.set(
                 ui.div(
                     ui.p(
@@ -2536,7 +2538,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         )
 
         # right panel (overlay)
-        orig_rgb = az.img_rgb if az.img_rgb is not None else None
+        orig_rgb = az._img_rgb if az._img_rgb is not None else None
 
         if orig_rgb is not None:
             orig_rgb_correct = cv2.cvtColor(orig_rgb, cv2.COLOR_BGR2RGB)
@@ -3110,7 +3112,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     def detect_dilation_ui():
         if r_mode.get() == "internal":
             return ui.input_numeric(
-                "dilation_factor", "Dilation factor", 0, min=0, step=0.1
+                "_dilation_factor", "Dilation factor", 0, min=0, step=0.1
             )
         return ui.div()
 
@@ -3720,7 +3722,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         hi = np.array(
             [input.bg_h_hi(), input.bg_s_hi(), input.bg_v_hi()], dtype=np.uint8
         )
-        mask = cv2.inRange(az.img_hsv, lo, hi)
+        mask = cv2.inRange(az._img_hsv, lo, hi)
         orig = az.img.copy()
         fruit_mask = cv2.bitwise_not(mask)
         pct = 100 * mask.sum() / 255 / mask.size
