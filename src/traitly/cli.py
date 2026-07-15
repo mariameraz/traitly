@@ -406,7 +406,7 @@ def main() -> None:
             print(f"    {line}")
         print("\ndependencies:")
         for pkg, version in get_package_versions().items():
-            print(f"    {pkg}: v{version}")
+            print(f"    {pkg}: {version}")
     else:
         parser.print_help()
         sys.exit(0)
