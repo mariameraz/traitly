@@ -32,34 +32,15 @@ from .constants import valid_extensions, valid_cv2_extensions
 # Load an image
 ##############################################################################
 
-@lru_cache(maxsize=128)
-def _load_img_cached(path: str) -> np.ndarray:
+def _patch_imread(path: str) -> np.ndarray:
     """
-    Load an image from disk into BGR format with LRU caching.
-
-    Parameters
-    ----------
-    path : str
-        Absolute path to the image file. Extension must be in
-        ``valid_extensions``.
-
-    Returns
-    -------
-    np.ndarray
-        Loaded BGR image.
-
-    Raises
-    ------
-    ValueError
-        If the file extension is unsupported or the image cannot be
-        loaded by ``cv2.imread``.
+    Try/except included for problem with ultralytics and cv2.imread on windows:
+    ultralytics raises FileNotFoundError instead of None when the file does not exist
     """
     path_obj = Path(path)
     if path_obj.suffix.lower() not in valid_extensions:
         raise ValueError(f"Unsupported image format: '{path_obj.suffix.lower()}'")
 
-    # Try/except included for problem with ultralytics and cv2.imread on windows:
-    # ultralytics raises FileNotFoundError instead of None when the file does not exist
     try:
         img = cv2.imread(str(path_obj), cv2.IMREAD_COLOR)
     except (FileNotFoundError, OSError):
@@ -67,7 +48,6 @@ def _load_img_cached(path: str) -> np.ndarray:
 
     if img is None:
         raise ValueError(f"Cannot load image: {path_obj.name}")
-
     return img
 
 
@@ -112,7 +92,7 @@ def load_img(
         BGR image array (cropped if x/y/w/h are provided), or ``None`` if loading fails.
     """
     try:
-        img = _load_img_cached(path)
+        img = _patch_imread(path)
 
         # Crop
         if any(v is not None for v in (x, y, w, h)):
