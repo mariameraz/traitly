@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import copy
 
+
 # ============================================================================
 # THIRD-PARTY LIBRARIES
 # ============================================================================
@@ -2341,16 +2342,35 @@ class FruitInternalAnalyzer:
         )
 
         # 5. Process loop:
-        all_morphology, all_color, errors, total_fruits, _ = _run_fruit_batch_loop(
-            img_paths=img_paths,
-            worker_fn=_process_internal_image_worker,
-            num_cores=num_cores,
-            config=config,
-            analyze_morphology=analyze_morphology,
-            analyze_color=analyze_color,
-            output_path=output_path,
-            verbose=verbose,
-        )
+        try:
+            all_morphology, all_color, errors, total_fruits, _ = _run_fruit_batch_loop(
+                img_paths=img_paths,
+                worker_fn=_process_internal_image_worker,
+                num_cores=num_cores,
+                config=config,
+                analyze_morphology=analyze_morphology,
+                analyze_color=analyze_color,
+                output_path=output_path,
+                verbose=verbose,
+            )
+        except Exception as e:
+            if "spawn" in str(e) or "fork" in str(e) or "bootstrapping" in str(e) or "CUDA" in str(e):
+                if verbose:
+                    print("\n> Multiprocessing with CUDA failed (missing the required `if __name__ == '__main__':` block)")
+                    print("     - Falling back to single-core processing (num_cores=1)...\n")
+            
+                all_morphology, all_color, errors, total_fruits, _ = _run_fruit_batch_loop(
+                    img_paths=img_paths,
+                    worker_fn=_process_internal_image_worker,
+                    num_cores=1, # 'deactivate' multiprocessing
+                    config=config,
+                    analyze_morphology=analyze_morphology,
+                    analyze_color=analyze_color,
+                    output_path=output_path,
+                    verbose=verbose,
+                )
+            else:
+                raise
 
         # 6. Save results
         _save_fruit_batch_results(

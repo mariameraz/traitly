@@ -64,5 +64,5 @@ def get_system_metadata() -> list[str]:
         f"architecture: {platform.machine()}",
         f"cpu cores: {psutil.cpu_count(logical=False)} cores ({psutil.cpu_count(logical=True)} threads)",
         f"ram: {psutil.virtual_memory().total / (1024**3):.1f} GB",
-        f"gpu: {'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'}",
+        f"gpu: {'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'none (cpu only)'}",
     ]
