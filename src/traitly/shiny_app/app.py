@@ -691,7 +691,6 @@ body.dark-theme .irs--shiny .irs-bar {
     background: #3b82f6 !important;
 }
 
-
 .bslib-value-box { border-radius:10px !important; border:1px solid #e2e8f0 !important; }
 ::-webkit-scrollbar { width:5px; }
 ::-webkit-scrollbar-track { background:#f1f5f9; }
@@ -1835,7 +1834,7 @@ tab_batch = ui.nav_panel(
             ),
             # ui.output_ui("batch_file_info"),
             ui.hr(),
-            ui.HTML('<div class="sb-label">Analysis Mode</div>'),
+            ui.HTML('<div class="sb-label">Analysis Type</div>'),
             ui.input_radio_buttons(
                 "batch_mode",
                 None,

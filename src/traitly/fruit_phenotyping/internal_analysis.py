@@ -104,7 +104,7 @@ def _process_internal_image_worker(
     analyze_color: bool,
     output_path: str = None,
 ) -> Tuple:
-    t0 = time.time()
+    t0 = time.perf_counter()
     try:
         analyzer = FruitInternalAnalyzer(img_path)
         analyzer.load_image(plot=False)
@@ -118,7 +118,7 @@ def _process_internal_image_worker(
                 output_path = output_path,
             )
         )
-        elapsed = time.time() - t0
+        elapsed = time.perf_counter() - t0
         filename = os.path.basename(img_path)
         return (
             df_morphology,
@@ -137,7 +137,7 @@ def _process_internal_image_worker(
             0,
             None,
             os.path.basename(img_path),
-            time.time() - t0,
+            time.perf_counter() - t0,
         )
 
 
@@ -370,10 +370,10 @@ class FruitInternalAnalyzer:
 
         # 3. QR
         if not skip_qr:
-            qr_start = time.time()
+            qr_start = time.perf_counter()
             self.label_text = detect_qr(img=self.img)
             if verbose and self.label_text:
-                print(f"> QR Code detected: {self.label_text} ({time.time() - qr_start:.2f}s)")
+                print(f"> QR Code detected: {self.label_text} ({time.perf_counter() - qr_start:.2f}s)")
         else:
             if verbose:
                 print("> QR detection: SKIPPED")
@@ -385,7 +385,7 @@ class FruitInternalAnalyzer:
                 self._label_roi = detect_label_box(img=self.img, verbose=False, plot=False)
 
         if self._label_roi and not self.label_text:
-            ocr_start = time.time()
+            ocr_start = time.perf_counter()
             old_stdout = sys.stdout
             sys.stdout = StringIO()
             try:
@@ -401,7 +401,7 @@ class FruitInternalAnalyzer:
                 sys.stdout = old_stdout
 
                 if verbose and self.label_text:
-                    print(f"> Label text detected: {self.label_text}   (OCR: {time.time() - ocr_start:.2f}s)")
+                    print(f"> Label text detected: {self.label_text}   (OCR: {time.perf_counter() - ocr_start:.2f}s)")
 
         elif skip_label_roi:
             self._label_roi = None
