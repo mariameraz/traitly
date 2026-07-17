@@ -6,7 +6,7 @@ import os
 import cv2
 from typing import Optional, Tuple, List, Callable, Dict
 from datetime import datetime
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed, wait, FIRST_COMPLETED
 import json
 import multiprocessing as mp
 
@@ -103,6 +103,7 @@ def _run_fruit_batch_loop(
     all_morphology, all_color, errors = [], [], []
     total_fruits = 0
     per_image_times = []
+    max_pending = num_cores * 4
 
     if num_cores == 1:
         for img_path in tqdm(img_paths, desc="Processing images", unit="img", disable=not verbose):
@@ -128,32 +129,52 @@ def _run_fruit_batch_loop(
                 total_fruits += n
     else:
         with ProcessPoolExecutor(max_workers=num_cores, mp_context=_get_mp_context()) as executor:
-            futures = {
-                executor.submit(worker_fn, img_path, config, analyze_morphology, analyze_color, output_path): img_path
-                for img_path in img_paths
-            }
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Processing images", unit="img", disable=not verbose):
-                result = future.result()
-                df_m, df_c, err, n, ann_img, fname = result[:6]
-                elapsed = result[6] if len(result) > 6 else 0.0
+            pending = {}
+            img_iter = iter(img_paths)
 
-                per_image_times.append({
-                    "filename": fname,
-                    "time_s": round(elapsed, 2),
-                    "status": "error" if err else "ok",
-                    "fruits": n if not err else 0
-                })
+            for _ in range(min(max_pending, len(img_paths))):
+                img_path = next(img_iter)
+                fut = executor.submit(worker_fn, img_path, config, analyze_morphology, analyze_color, output_path)
+                pending[fut] = img_path
 
-                if err:
-                    errors.append(err)
-                else:
+            pbar = tqdm(total=len(img_paths), desc="Processing images", unit="img", disable=not verbose)
 
-                    if ann_img is not None:
-                        out_img = os.path.join(output_path, f"{os.path.splitext(fname)[0]}_processed.jpg")
-                        cv2.imwrite(out_img, ann_img)
-                    if df_m is not None: all_morphology.append(df_m)
-                    if df_c is not None: all_color.append(df_c)
-                    total_fruits += n
+            while pending:
+                done, _ = wait(pending, return_when=FIRST_COMPLETED)
+
+                for future in done:
+                    result = future.result()
+                    df_m, df_c, err, n, ann_img, fname = result[:6]
+                    elapsed = result[6] if len(result) > 6 else 0.0
+
+                    per_image_times.append({
+                        "filename": fname,
+                        "time_s": round(elapsed, 2),
+                        "status": "error" if err else "ok",
+                        "fruits": n if not err else 0
+                    })
+
+                    if err:
+                        errors.append(err)
+                    else:
+                        if ann_img is not None:
+                            out_img = os.path.join(output_path, f"{os.path.splitext(fname)[0]}_processed.jpg")
+                            cv2.imwrite(out_img, ann_img)
+                        if df_m is not None: all_morphology.append(df_m)
+                        if df_c is not None: all_color.append(df_c)
+                        total_fruits += n
+
+                    del pending[future]
+                    pbar.update(1)
+
+                    try:
+                        img_path = next(img_iter)
+                        new_fut = executor.submit(worker_fn, img_path, config, analyze_morphology, analyze_color, output_path)
+                        pending[new_fut] = img_path
+                    except StopIteration:
+                        pass
+
+            pbar.close()
 
     return all_morphology, all_color, errors, total_fruits, per_image_times
 
@@ -251,7 +272,7 @@ def _build_session_lines(
 
     lines = [
         "=" * 70, "SESSION REPORT", "=" * 70,
-        f"traitly              : v{__version__}",
+        f"traitly              : {__version__}",
         f"run date             : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
         f"image folder         : {folder_path}",
         f"results folder       : {output_path}",
