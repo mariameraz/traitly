@@ -57,6 +57,7 @@ def get_session_metadata(
         lines.insert(2, f"image: {img_path}")
     return lines
 
+
 def get_system_metadata() -> list[str]:
     return [
         f"os: {platform.system()} {platform.release()}",
