@@ -65,7 +65,7 @@ from .correction_parameters import ColorCorrectionParameters
 logger = logging.getLogger(__name__)
 
 def _process_color_worker(img_path: str, config: Dict, output_path: str, delta_e: bool = False):
-    t0 = time.time()
+    t0 = time.perf_counter()
     try:
         worker = ColorCorrection(img_path)
         worker.load_image(plot=False)
@@ -94,11 +94,11 @@ def _process_color_worker(img_path: str, config: Dict, output_path: str, delta_e
                                         )
                     delta_df = None
 
-        return err, os.path.basename(img_path), time.time() - t0, delta_df
+        return err, os.path.basename(img_path), time.perf_counter() - t0, delta_df
 
     except Exception as e:
         err = {"filename": os.path.basename(img_path), "status": f"Error: {str(e)}"}
-        return err, os.path.basename(img_path), time.time() - t0, None
+        return err, os.path.basename(img_path), time.perf_counter() - t0, None
 
 
 ## Color correction class ##

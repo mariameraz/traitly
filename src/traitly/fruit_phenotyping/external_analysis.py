@@ -58,7 +58,7 @@ def _process_external_image_worker(
 ) -> Tuple:
 
     # 1. Starts counting time processing
-    t0 = time.time()
+    t0 = time.perf_counter()
 
     # 2. Run the individual analysis
     try:
@@ -76,7 +76,7 @@ def _process_external_image_worker(
         )
 
         # 3. Get processing total time
-        elapsed = time.time() - t0
+        elapsed = time.perf_counter() - t0
 
         # 4. Save image file name
         filename = os.path.basename(img_path)
@@ -100,7 +100,7 @@ def _process_external_image_worker(
             0,
             None,
             os.path.basename(img_path),
-            time.time() - t0,
+            time.perf_counter() - t0,
         )
 
 
