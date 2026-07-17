@@ -114,7 +114,7 @@ def _run_fruit_batch_loop(
                 if df_c is not None: all_color.append(df_c)
                 total_fruits += n
     else:
-        with ProcessPoolExecutor(max_workers=num_cores) as executor:
+        with ProcessPoolExecutor(max_workers=num_cores, max_tasks_per_child=50) as executor:
             futures = {
                 executor.submit(worker_fn, img_path, config, analyze_morphology, analyze_color, output_path): img_path
                 for img_path in img_paths
@@ -190,7 +190,7 @@ def _run_color_batch_loop(
                     "status": "error",
                 })
     else:
-        with ProcessPoolExecutor(max_workers=num_cores) as executor:
+        with ProcessPoolExecutor(max_workers=num_cores, max_tasks_per_child=50) as executor:
             futures = {
                 executor.submit(worker_fn, img_path, config, output_path, delta_e): img_path
                 for img_path in img_paths
