@@ -8,6 +8,8 @@ from typing import Optional, Tuple, List, Callable, Dict
 from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import json
+import multiprocessing as mp
+
 # ============================================================================
 # THIRD-PARTY
 # ============================================================================
@@ -24,6 +26,17 @@ from traitly.utils.validation import (
     _validate_num_cores,
     _valid_images_in_folder,
 )
+
+
+def _get_mp_context():
+    """Returns 'spawn' if CUDA is available, otherwise None (default:fork)."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            return mp.get_context('spawn')
+    except ImportError:
+        pass
+    return None
 
 def _setup_batch(
     is_directory: bool,
@@ -114,7 +127,7 @@ def _run_fruit_batch_loop(
                 if df_c is not None: all_color.append(df_c)
                 total_fruits += n
     else:
-        with ProcessPoolExecutor(max_workers=num_cores, max_tasks_per_child=50) as executor:
+        with ProcessPoolExecutor(max_workers=num_cores, mp_context=_get_mp_context()) as executor:
             futures = {
                 executor.submit(worker_fn, img_path, config, analyze_morphology, analyze_color, output_path): img_path
                 for img_path in img_paths
@@ -190,7 +203,7 @@ def _run_color_batch_loop(
                     "status": "error",
                 })
     else:
-        with ProcessPoolExecutor(max_workers=num_cores, max_tasks_per_child=50) as executor:
+        with ProcessPoolExecutor(max_workers=num_cores, mp_context=_get_mp_context()) as executor:
             futures = {
                 executor.submit(worker_fn, img_path, config, output_path, delta_e): img_path
                 for img_path in img_paths
