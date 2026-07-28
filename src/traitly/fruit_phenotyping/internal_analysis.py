@@ -1659,6 +1659,7 @@ class FruitInternalAnalyzer:
             [
                 "locules_mean_area",
                 "locules_std_area",
+                'locules_std_log_area',
                 "locules_cv_area",
                 "locules_mean_circularity",
                 "locules_std_circularity",
@@ -1967,6 +1968,11 @@ class FruitInternalAnalyzer:
         :attr:`checker_coords` are set to ``None`` and a ``UserWarning`` is
         issued. This does not raise an exception so the pipeline can continue.
         """
+        metadata = self._is_metadata_saved
+        if metadata:
+            self._parameters.detect_color_checker_params = {
+                "detect_color_checker": True
+            }
 
         self._checker_coords, self._color_charts, self.img_copy = _detect_color_checker(
                                                                     self.img,
@@ -2070,6 +2076,14 @@ class FruitInternalAnalyzer:
             except Exception as e:
                 raise RuntimeError(f"[generate_fruit_mask] {e}")
 
+            # opt: detect_color_checker
+            elc = _get_params(config, "detect_color_checker_params")
+            if elc:
+                try:
+                    self.detect_color_checker(plot=False, verbose=False)
+                except Exception as e:
+                    raise RuntimeError(f"[detect_color_checker] {e}")
+
             # 3. enhance_locule_contrast (optional)
             elc = _get_params(config, "enhance_locule_contrast_params")
             if elc:
@@ -2165,6 +2179,7 @@ class FruitInternalAnalyzer:
         output_path: Optional[str] = None,
         num_cores: int = 1,
         verbose: bool = True,
+
         # setup_measurements
         width_cm: Optional[float] = None,
         length_cm: Optional[float] = None,
@@ -2173,6 +2188,9 @@ class FruitInternalAnalyzer:
         skip_qr: Optional[bool] = None,
         detect_label: Optional[bool] = None,
         confidence: Optional[float] = None,
+        # detect color card
+        detect_color_checker_params: Optional[bool] = None,
+
         # generate_fruit_mask
         stamp: Optional[bool] = None,
         lower_hsv: Optional[Tuple[int,int,int]] = None,
@@ -2273,6 +2291,11 @@ class FruitInternalAnalyzer:
             skip_yolo=skip_yolo, skip_qr=skip_qr, detect_label=detect_label,
             confidence=confidence,
         ))
+
+        _apply("detect_color_checker_params", dict(
+            detect_color_checker=detect_color_checker
+        ))
+
         _apply("generate_fruit_mask_params", dict(
             stamp=stamp, lower_hsv=lower_hsv, upper_hsv=upper_hsv,
             n_iteration=n_iteration, kernel_blur=kernel_blur, kernel_open=kernel_open,
@@ -2318,7 +2341,8 @@ class FruitInternalAnalyzer:
 
         # 3. Syncronize config to self._parameters for the session report
         for key in (
-            "setup_measurements_params", "generate_fruit_mask_params",
+            "setup_measurements_params", "detect_color_checker_params",
+            "generate_fruit_mask_params",
             "enhance_locule_contrast_params", "generate_locule_mask_params",
             "detect_fruits_params", "analyze_morphology_params", "analyze_color_params",
         ):
@@ -2358,7 +2382,7 @@ class FruitInternalAnalyzer:
                 if verbose:
                     print("\n> Multiprocessing with CUDA failed (missing the required `if __name__ == '__main__':` block)")
                     print("     - Falling back to single-core processing (num_cores=1)...\n")
-            
+
                 all_morphology, all_color, errors, total_fruits, _ = _run_fruit_batch_loop(
                     img_paths=img_paths,
                     worker_fn=_process_internal_image_worker,
@@ -2389,6 +2413,7 @@ class FruitInternalAnalyzer:
             parameters=self._parameters,
             param_sections={
                 "SETUP_MEASUREMENTS": "setup_measurements_params",
+                "DETECT_COLOR_CHECKER": "detect_color_checker_params",
                 "GENERATE_FRUIT_MASK": "generate_fruit_mask_params",
                 "ENHANCE_LOCULE_CONTRAST": "enhance_locule_contrast_params",
                 "GENERATE_LOCULE_MASK": "generate_locule_mask_params",
