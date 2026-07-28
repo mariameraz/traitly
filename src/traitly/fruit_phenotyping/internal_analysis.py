@@ -2068,6 +2068,15 @@ class FruitInternalAnalyzer:
             except Exception as e:
                 raise RuntimeError(f"[setup_measurements] {e}")
 
+            # opt: detect_color_checker
+
+            elc = _get_params(config, "detect_color_checker_params")
+            if elc:
+                try:
+                    self.detect_color_checker(plot=False, verbose=False)
+                except Exception as e:
+                    raise RuntimeError(f"[detect_color_checker] {e}")
+
             # 2. generate_fruit_mask
             try:
                 self.generate_fruit_mask(
@@ -2076,13 +2085,6 @@ class FruitInternalAnalyzer:
             except Exception as e:
                 raise RuntimeError(f"[generate_fruit_mask] {e}")
 
-            # opt: detect_color_checker
-            elc = _get_params(config, "detect_color_checker_params")
-            if elc:
-                try:
-                    self.detect_color_checker(plot=False, verbose=False)
-                except Exception as e:
-                    raise RuntimeError(f"[detect_color_checker] {e}")
 
             # 3. enhance_locule_contrast (optional)
             elc = _get_params(config, "enhance_locule_contrast_params")
@@ -2189,7 +2191,7 @@ class FruitInternalAnalyzer:
         detect_label: Optional[bool] = None,
         confidence: Optional[float] = None,
         # detect color card
-        detect_color_checker_params: Optional[bool] = None,
+        detect_color_checker: Optional[bool] = None,
 
         # generate_fruit_mask
         stamp: Optional[bool] = None,
