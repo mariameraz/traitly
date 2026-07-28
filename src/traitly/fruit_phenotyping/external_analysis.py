@@ -655,6 +655,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         skip_qr: Optional[bool] = None,
         detect_label: Optional[bool] = None,
         confidence: Optional[float] = None,
+
         # generate_fruit_mask
         lower_hsv: Optional[Tuple[int, int, int]] = None,
         upper_hsv: Optional[Tuple[int, int, int]] = None,
@@ -671,6 +672,8 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         roi_expansion: Optional[int] = None,
         stamp: Optional[bool] = None,
         erosion_px: Optional[int] = None,
+        # detect color checker
+        detect_color_checker: Optional[bool] = None,
         # detect_fruits
         min_fruit_area: Optional[int] = None,
         max_fruit_area: Optional[int]=None,
@@ -830,6 +833,11 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                 detect_label=detect_label, confidence=confidence,
             ),
         )
+
+        _apply("detect_color_checker_params", dict(
+            detect_color_checker=detect_color_checker
+        ))
+
         _apply(
             "generate_fruit_mask_params",
             dict(
@@ -842,6 +850,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
                 apply_convex_hull=apply_convex_hull, erosion_px = erosion_px
             ),
         )
+
         _apply(
             "detect_fruits_params",
             dict(
@@ -879,6 +888,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         for key in (
             "setup_measurements_params",
             "generate_fruit_mask_params",
+            "detect_color_checker_params",
             "detect_fruits_params",
             "analyze_morphology_params",
             "analyze_color_params",
@@ -952,6 +962,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             param_sections={
                 "SETUP_MEASUREMENTS": "setup_measurements_params",
                 "GENERATE_FRUIT_MASK": "generate_fruit_mask_params",
+                "DETECT_COLOR_CHECKER": "detect_color_checker_params",
                 "DETECT_FRUITS": "detect_fruits_params",
                 "ANALYZE_MORPHOLOGY": "analyze_morphology_params",
                 "ANALYZE_COLOR": "analyze_color_params",
