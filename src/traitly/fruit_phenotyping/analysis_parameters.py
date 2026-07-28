@@ -7,6 +7,7 @@ from traitly.utils.session_report import AnalysisParameters
 @dataclass
 class FruitAnalyzerParameters(AnalysisParameters):
     setup_measurements_params: Dict[str, Any] = field(default_factory=dict)
+    detect_fruits_params: Dict[str, Any] = field(default_factory=dict)
     generate_fruit_mask_params: Dict[str, Any] = field(default_factory=dict)
     enhance_locule_contrast_params: Dict[str, Any] = field(default_factory=dict)
     generate_locule_mask_params: Dict[str, Any] = field(default_factory=dict)
@@ -17,6 +18,7 @@ class FruitAnalyzerParameters(AnalysisParameters):
     def _get_sections(self) -> Dict[str, Any]:
         return {
             "SETUP_MEASUREMENTS": self.setup_measurements_params,
+            "DETECT_COLOR_CHECKER": self.detect_fruits_params,
             "GENERATE_FRUIT_MASK": self.generate_fruit_mask_params,
             "ENHANCE_LOCULE_CONTRAST": self.enhance_locule_contrast_params,
             "GENERATE_LOCULE_MASK": self.generate_locule_mask_params,
