@@ -35,8 +35,8 @@ def calculate_axes(
     px_per_cm: Optional[float] = None,
     img: Optional[np.ndarray] = None,
     draw_axes: bool = False,
-    major_axis_color: Tuple[int, int, int] = (0, 255, 0),
-    minor_axis_color: Tuple[int, int, int] = (255, 0, 0),
+    major_axis_color: Tuple[int, int, int] = (0,159,230),
+    minor_axis_color: Tuple[int, int, int] = (233, 180, 86),
     axis_thickness: int = 2,
     hull_verts: Optional[np.ndarray] = None,
 ) -> Tuple[float, float, float, float]:
@@ -94,11 +94,11 @@ def calculate_axes(
     # Reshape and convert contour to float32
     points_px = fruit_contour.reshape(-1, 2).astype(np.float32)
     n = points_px.shape[0] # Number of points in contour
-    
+
     # Early exit if not enough points
-    if n < 2: 
+    if n < 2:
         return np.nan, np.nan, np.nan, np.nan
-    
+
     # Major axis calculation
     if hull_verts is None:
         if n >= 3:
@@ -109,10 +109,10 @@ def calculate_axes(
         verts = hull_verts
 
     hull_points = points_px[verts]
-    
+
     if len(hull_points) < 2:
         return np.nan, np.nan, np.nan, np.nan
-    
+
     if len(hull_points) == 2:
         max_dist_px = np.linalg.norm(hull_points[1] - hull_points[0])
         point1_idx, point2_idx = verts[0], verts[1]
@@ -122,61 +122,61 @@ def calculate_axes(
         max_idx = np.unravel_index(dist_matrix.argmax(), dist_matrix.shape)
         point1_idx, point2_idx = verts[max_idx[0]], verts[max_idx[1]]
         max_dist_px = dist_matrix[max_idx]
-    
+
     if max_dist_px == 0:
         return np.nan, np.nan, np.nan, np.nan
-    
+
     # Major axis length in cm calculation
     if px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
         inv_px_per_cm = 1.0 / px_per_cm
         max_dist_cm = max_dist_px * inv_px_per_cm
     else:
         max_dist_cm = np.nan
-    
+
     # Major axis endpoints
     p1_px = points_px[point1_idx]
     p2_px = points_px[point2_idx]
-    
+
     # Minor axis calculation
     # Vector along major axis
     major_vec = p2_px - p1_px
-    major_norm = max_dist_px 
-    
+    major_norm = max_dist_px
+
     if major_norm < 1e-10:
         min_dist_cm = np.nan if (isinstance(px_per_cm, (int, float)) and px_per_cm > 0) else np.nan
         return max_dist_cm, min_dist_cm, max_dist_px, 0.0
-    
+
     # Calculate perpendicular unit vector
     perp_unit = np.array([-major_vec[1], major_vec[0]], dtype=np.float32) / major_norm
-    
+
     # Vectorized projection calculation
     centered_points = points_px - p1_px
     proj = centered_points @ perp_unit
-    
+
     min_dist_px = proj.max() - proj.min()
-    
+
     if isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
         min_dist_cm = min_dist_px * inv_px_per_cm
     else:
         min_dist_cm = np.nan
-    
+
     # Minor axis endpoints
     idx_min = int(np.argmin(proj))
     idx_max = int(np.argmax(proj))
     p_min_px = points_px[idx_min]
     p_max_px = points_px[idx_max]
-    
+
     # Draw axes if requested
     if draw_axes and img is not None:
-        cv2.line(img, 
-                 (int(p1_px[0]), int(p1_px[1])), 
-                 (int(p2_px[0]), int(p2_px[1])), 
+        cv2.line(img,
+                 (int(p1_px[0]), int(p1_px[1])),
+                 (int(p2_px[0]), int(p2_px[1])),
                  major_axis_color, axis_thickness)
-        cv2.line(img, 
-                 (int(p_min_px[0]), int(p_min_px[1])), 
-                 (int(p_max_px[0]), int(p_max_px[1])), 
+        cv2.line(img,
+                 (int(p_min_px[0]), int(p_min_px[1])),
+                 (int(p_max_px[0]), int(p_max_px[1])),
                  minor_axis_color, axis_thickness)
-    
+
     return max_dist_cm, min_dist_cm, max_dist_px, min_dist_px
 
 
@@ -246,21 +246,21 @@ def rotate_box(
 
     if draw_box and img is None:
         raise ValueError(f"img must be provided when draw_box=True")
-    
+
     # Compute the smallest rotated rectangle that encloses the contour (fruit)
     rotated_rect = cv2.minAreaRect(contour)
-    
+
     # Obtain the width and height in pixels of the computed rectangle
     (center, (width_px, height_px), angle) = rotated_rect
-    
+
     # Convert the rotated box into its 4 corner points
     box_points = cv2.boxPoints(rotated_rect)
     box_points = box_points.astype(int)
-    
+
     # Determine the length (maximum value) and width (minimum value)
     box_length_px = max(width_px, height_px)
     box_width_px = min(width_px, height_px)
-    
+
     if px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0:
         inv_px_per_cm = 1.0 / px_per_cm
         box_length_cm = box_length_px * inv_px_per_cm
@@ -268,11 +268,11 @@ def rotate_box(
     else:
         box_length_cm = np.nan
         box_width_cm = np.nan
-    
-    if draw_box: 
+
+    if draw_box:
         # Draw the rotated box on the image as a light blue rectangle
         cv2.drawContours(img, [box_points], 0, box_color, box_thickness)
-    
+
     return box_length_cm, box_width_cm, box_length_px, box_width_px
 
 
@@ -337,7 +337,7 @@ def get_fruit_morphology(
     has_calibration = px_per_cm is not None and isinstance(px_per_cm, (int, float)) and px_per_cm > 0
     unit = 'cm' if has_calibration else 'px'
     unit_area = 'cm2' if has_calibration else 'px2'
-    
+
     # Early exit for invalid contours
     if len(contour) < 3:
         return {
@@ -347,7 +347,7 @@ def get_fruit_morphology(
             'fruit_solidity': np.nan,
             'fruit_convexity': np.nan
         }
-    
+
     if contour_mode == 'raw':
         transformed_contour = contour
     else:
@@ -358,7 +358,7 @@ def get_fruit_morphology(
             contour_mode=contour_mode,
         epsilon=epsilon
         )
-    
+
     # Early exit after transformation
     if len(transformed_contour) < 3:
         return {
@@ -368,11 +368,11 @@ def get_fruit_morphology(
             'fruit_solidity': np.nan,
             'fruit_convexity': np.nan
         }
-    
+
     # Calculate area and perimeter on transformed contour
     area_px = cv2.contourArea(transformed_contour)
     perimeter_px = cv2.arcLength(transformed_contour, True)
-    
+
     # Single validation check
     if area_px <= 0 or perimeter_px <= 0:
         return {
@@ -382,7 +382,7 @@ def get_fruit_morphology(
             'fruit_solidity': np.nan,
             'fruit_convexity': np.nan
         }
-    
+
     if has_calibration:
         inv_px_per_cm = 1.0 / px_per_cm
         inv_px_per_cm_sq = inv_px_per_cm * inv_px_per_cm
@@ -391,10 +391,10 @@ def get_fruit_morphology(
     else:
         area_val = area_px
         perimeter_val = perimeter_px
-    
+
     # Calculate shape metrics using transformed contour
     circularity = (4 * np.pi * area_px) / (perimeter_px ** 2) if perimeter_px > 0 else np.nan
-    
+
     # Reuse hull if contour_mode is 'hull'
     if contour_mode == 'hull':
         hull = transformed_contour  # Already is the convex hull
@@ -404,10 +404,10 @@ def get_fruit_morphology(
         hull = cv2.convexHull(transformed_contour)
         hull_perimeter_px = cv2.arcLength(hull, True)
         hull_area_px = cv2.contourArea(hull)
-    
+
     solidity = area_px / hull_area_px if hull_area_px > 0 else np.nan
-    
-    # Convexity 
+
+    # Convexity
     convexity = hull_perimeter_px / perimeter_px if perimeter_px > 0 else np.nan
 
     return {
