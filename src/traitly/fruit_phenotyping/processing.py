@@ -380,12 +380,11 @@ def calculate_pericarp_thickness_radial(
         outer_distances_px.append(outer_r)
 
         # Find internal boundary (first 255 in internal mask)
-        inner_white_idx = np.argmax(inner_vals == 255)
+        inner_hits = np.flatnonzero(inner_vals == 255)
+        inner_r = r_valid[inner_hits[-1]] if inner_hits.size > 0 else 0
 
-        if inner_vals[inner_white_idx] == 255:
-            inner_r = r_valid[inner_white_idx]
-            if outer_r > inner_r:
-                thicknesses_px.append(outer_r - inner_r)
+        if outer_r > inner_r:
+            thicknesses_px.append(outer_r - inner_r)
 
     if not thicknesses_px:
         return {
