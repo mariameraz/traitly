@@ -402,50 +402,31 @@ def px_cm_density(
 ##############################################################################
 # Find black circles in a size reference box
 ##############################################################################
-
 def _find_size_ref_circles(
     roi_gray: np.ndarray,
     return_debug: bool = False,
     ref_circularity: float = 0.8,
     min_area: int = 50,
+    threshold_value: int = 200,
 ) -> Union[
     List[Tuple[int, int, int]],
     Tuple[List[Tuple[int, int, int]], Dict],
 ]:
     """
-    Detect dark circular objects in a grayscale ROI (size references).
+    Detect dark circular objects using pixel intensity threshold.
 
-    Applies Otsu thresholding and filters contours by area and
-    circularity. Each valid contour is fitted with a minimum
-    enclosing circle.
-
-    Parameters
-    ----------
-    roi_gray : np.ndarray
-        Grayscale crop of the reference region.
-    return_debug : bool, optional
-        If True, also return a debug dictionary with intermediate images
-        and statistics. Default is False.
-    ref_circularity : float, optional
-        Minimum circularity score in [0, 1] to accept a contour as a
-        circle. Default is 0.7.
-    min_area : int, optional
-        Minimum contour area. Default is 50 px^2.
-
-    Returns
-    -------
-    list of tuple of int
-        If ``return_debug=False``: list of ``(cx, cy, radius)`` in ROI
-        coordinates.
-    tuple
-        If ``return_debug=True``: ``(circles, debug_dict)`` where
-        ``debug_dict`` contains ``'roi_gray'``, ``'binary'``,
-        ``'overlay'``, ``'num_contours'``, and ``'num_circles'``.
+    Expects white background (>200) and black dots.
     """
     h, w = roi_gray.shape
 
-    # apply otsu threshold to detect dark circles
-    _, binary = cv2.threshold(roi_gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    # 1. Segmentate the background based on a pixel threshold
+    _, binary = cv2.threshold(roi_gray, threshold_value, 255, cv2.THRESH_BINARY_INV)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=1)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=1)
+
+    # 2. Find contours
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     circles = []
@@ -464,7 +445,14 @@ def _find_size_ref_circles(
         if circularity < ref_circularity:
             continue
 
-        (x, y), radius = cv2.minEnclosingCircle(contour)
+        # 3. Fit an ellipse and obtain the ratio
+        if len(contour) >= 5:
+            (x, y), (major_axis, minor_axis), angle = cv2.fitEllipse(contour)
+            radius = (major_axis + minor_axis) / 4
+        else:
+            # fit a circle as fallback when a contour has few points
+            (x, y), radius = cv2.minEnclosingCircle(contour)
+
         circles.append((int(x), int(y), int(radius)))
         valid_contours.append(contour)
 
@@ -480,6 +468,7 @@ def _find_size_ref_circles(
             "overlay": overlay,
             "num_contours": len(contours),
             "num_circles": len(circles),
+            "threshold": threshold_value,
         }
 
     return circles
@@ -704,7 +693,7 @@ def _detect_size_ref_yolo(
             )
 
             if plot_roi_analysis:
-                circles, dbg = _find_size_ref_circles(roi_gray, return_debug=True, ref_circularity=0.7)
+                circles, dbg = _find_size_ref_circles(roi_gray, return_debug=True)
                 rois_debug.append({
                     "idx": i + 1,
                     "conf": conf,
@@ -715,7 +704,7 @@ def _detect_size_ref_yolo(
                     "num_circles": len(circles),
                 })
             else:
-                circles = _find_size_ref_circles(roi_gray, return_debug=False, ref_circularity=0.7)
+                circles = _find_size_ref_circles(roi_gray, return_debug=False)
 
             for cx_roi, cy_roi, radius in circles:
                 cx_global = cx_roi + roi_x1
