@@ -1821,7 +1821,7 @@ class FruitInternalAnalyzer:
             self._dilation_factor = dilation_factor
 
         if self._img_copy is None:
-            self._img_copy = self._img_rgb.copy()
+            self._img_copy = self.img.copy()
 
         metadata = self._is_metadata_saved
         if metadata:
