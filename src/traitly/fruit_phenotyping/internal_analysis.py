@@ -6,37 +6,22 @@ Internal fruit analysis pipeline for traitly.
 Provides :class:`FruitInternalAnalyzer`, the core analyzer class for
 whole-fruit and internal morphology, color, and symmetry analysis.
 Supports single-image and batch folder processing with optional
-multiprocessing via :func:`_process_image_worker`.
-
-The typical analysis pipeline follows this order:
-
-1. :meth:`~FruitInternalAnalyzer.load_image`
-2. :meth:`~FruitInternalAnalyzer.setup_measurements`
-3. :meth:`~FruitInternalAnalyzer.generate_fruit_mask`
-4. :meth:`~FruitInternalAnalyzer.enhance_locule_contrast` *(optional)*
-5. :meth:`~FruitInternalAnalyzer.generate_locule_mask` *(optional)*
-6. :meth:`~FruitInternalAnalyzer.detect_fruits`
-7. :meth:`~FruitInternalAnalyzer.analyze_morphology` and/or :meth:`~FruitInternalAnalyzer.analyze_color`
-
-For batch processing, steps 1–7 are orchestrated automatically by
-:meth:`~FruitInternalAnalyzer.analyze_folder` or
-:meth:`~FruitInternalAnalyzer.process_single_file`.
+multiprocessing via :func:`_process_internal_image_worker`.
 """
 
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
-import json
-import multiprocessing as mp
 import os
 import sys
 import time
 import warnings
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+import copy
+
 
 # ============================================================================
 # THIRD-PARTY LIBRARIES
@@ -46,32 +31,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-# import psutil
-from tqdm import tqdm
-
-from traitly import __version__
-
-from ..utils.basic_functions import detect_img_name, load_img
-from ..utils.calibration import px_cm_density
-from ..utils.constants import valid_extensions
-from ..utils.label import (
-    detect_label_box,
-    detect_label_box_yolo,
-    detect_label_text,
-    detect_qr,
-)
-from .analysis_parameters import AnalysisParameters
-from .color_analysis import (
-    analyze_all_fruits_color,
-    get_fruit_color_histograms,
-    get_single_fruit_masks,
-)
-from .fruit_config import analyze_fruits_morphology
-
 # ============================================================================
 # INTERNAL IMPORTS
 # ============================================================================
-from .mask import (
+from traitly.fruit_phenotyping.mask import (
     apply_contrast,
     create_mask,
     create_mask_locules,
@@ -80,13 +43,54 @@ from .mask import (
     generate_scatter_plot,
     interactive_mask_editor,
 )
-from .processing import annotate_all_fruits, get_internal_pericarp_contour
-from .results_image import ResultsImage
+
+from traitly.fruit_phenotyping.processing import annotate_all_fruits, get_internal_pericarp_contour
+
+from traitly.utils.basic_functions import detect_img_name, load_img
+
+from traitly.utils.manage_params import _get_params, _clean_params
+
+from traitly.utils.calibration import px_cm_density
+
+from traitly.utils.label import (
+    detect_label_box,
+    detect_label_box_yolo,
+    detect_label_text,
+    detect_qr,
+)
+
+from traitly.utils.batch import (
+    _setup_batch,
+    _print_batch_header,
+    _run_fruit_batch_loop,
+    _save_fruit_batch_results,
+    _config_from_json,
+)
+
+from traitly.utils.validation import (
+    _validate_path_exists,
+    _validate_color_image,
+    _validate_img_suffix,
+)
+
+from traitly.utils import _save_parameters
+
+from traitly.fruit_phenotyping.analysis_parameters import FruitAnalyzerParameters
+
+from traitly.fruit_phenotyping.results_image import ResultsImage
+
+from traitly.fruit_phenotyping.color_analysis import (
+    analyze_all_fruits_color,
+    get_fruit_color_histograms,
+    get_single_fruit_masks,
+)
+from traitly.fruit_phenotyping.fruit_config import analyze_fruits_morphology
+
+from traitly.color_correction.color_analysis import _detect_color_checker
 
 ##########################################################################################
 # Ignore warnings from torch
 ##########################################################################################
-
 warnings.filterwarnings("ignore", category=UserWarning, module="torch")
 warnings.filterwarnings("ignore", message="Using CPU")
 
@@ -94,56 +98,28 @@ warnings.filterwarnings("ignore", message="Using CPU")
 # Worker function for parallel processing
 ##########################################################################################
 
-
-def _process_image_worker(
+def _process_internal_image_worker(
     img_path: str,
     config: Dict,
     analyze_morphology: bool,
     analyze_color: bool,
+    output_path: str = None,
 ) -> Tuple:
-    """
-    Worker function for parallel processing of a single image.
-
-    Instantiates a :class:`FruitInternalAnalyzer`, loads the image, and
-    runs the full pipeline via :meth:`~FruitInternalAnalyzer.process_single_file`.
-    Designed to be called inside a
-    :class:`~concurrent.futures.ProcessPoolExecutor`.
-
-    Parameters
-    ----------
-    img_path : str
-        Absolute path to the image file to process.
-    config : dict
-        Analysis configuration dictionary forwarded to
-        :meth:`~FruitInternalAnalyzer.process_single_file`.
-    analyze_morphology : bool
-        If True, run morphology analysis.
-    analyze_color : bool
-        If True, run color analysis.
-
-    Returns
-    -------
-    tuple
-        ``(df_morphology, df_color, error_dict, n_fruits, annotated_img,
-        filename, elapsed)``. On failure, ``df_morphology`` and
-        ``df_color`` are ``None`` and ``error_dict`` contains the error
-        message.
-    """
-
-    t0 = time.time()
+    t0 = time.perf_counter()
     try:
         analyzer = FruitInternalAnalyzer(img_path)
         analyzer.load_image(plot=False)
         df_morphology, df_color, error_dict, n_fruits, annotated_img = (
-            analyzer.process_single_file(
-                config=config,
-                json_path=None,
-                analyze_morphology=analyze_morphology,
-                analyze_color=analyze_color,
-                save_image=False,
+            analyzer._process_single_file(
+                config = config,
+                json_path = None,
+                analyze_morphology = analyze_morphology,
+                analyze_color = analyze_color,
+                save_image = False,
+                output_path = output_path,
             )
         )
-        elapsed = time.time() - t0
+        elapsed = time.perf_counter() - t0
         filename = os.path.basename(img_path)
         return (
             df_morphology,
@@ -162,14 +138,13 @@ def _process_image_worker(
             0,
             None,
             os.path.basename(img_path),
-            time.time() - t0,
+            time.perf_counter() - t0,
         )
 
 
 ##########################################################################################
 # Initializig class
 ##########################################################################################
-
 
 class FruitInternalAnalyzer:
     """
@@ -202,33 +177,25 @@ class FruitInternalAnalyzer:
             :exc:`FileNotFoundError` if the path does not exist.
         """
 
-        ## Verify image path exists
-        # Assign the path first
+        # Get absolute path
         self.input_path = os.path.abspath(path)
-
-        # Then verify if it was provided and exists
-        if self.input_path is not None:
-            if not os.path.exists(self.input_path):
-                raise FileNotFoundError(
-                    f"The path does not exist: {self.input_path}\n"
-                    f"Verify that the file exists and the path is correct."
-                )
+        ## Verify path exists
+        _validate_path_exists(self.input_path)
 
         ## Class attributes:
         # load_img
-        self.is_directory = os.path.isdir(os.path.dirname(path))
+        self._is_directory = os.path.isdir(os.path.dirname(path))
         self.img = None
         self.img_name = None
-        self.img_copy = None
+        self._img_copy = None
         self.img_shape = None
-        self.img_rgb = None
-        self.img_hsv = None
+        self._img_rgb = None
+        self._img_hsv = None
 
         # setup_measurements
-        self.ref_roi = None
+        self._ref_roi = None
         self.px_per_cm = None
-        self.label_roi = None
-        self.checker_coords = None
+        self._label_roi = None
         self.label_text = None
 
         # create_mask
@@ -242,12 +209,16 @@ class FruitInternalAnalyzer:
 
         # analyze fruits
         self.results = None
-        self.dilation_factor = None
+        self._dilation_factor = None
+
+        # detect_color_checker
+        self._color_charts = None
+        self._checker_coords = None
 
         # save metadata
-        self.parameters = AnalysisParameters()
-        self.is_metadata_saved = True
-        self.is_morphology_results = None
+        self._parameters = FruitAnalyzerParameters()
+        self._is_metadata_saved = True
+        self._is_morphology_results = None
 
     ##########################################################################################
     ## Load and display an image
@@ -300,11 +271,7 @@ class FruitInternalAnalyzer:
 
         # Check image format
         path = Path(self.input_path)
-        if path.suffix.lower() not in valid_extensions:
-            raise ValueError(
-                f"No valid image format: '{path.suffix.lower()}' -> "
-                f"Supported formats are: {valid_extensions}"
-            )
+        _validate_img_suffix(path)
 
         # Load image
         self.img = load_img(
@@ -319,18 +286,15 @@ class FruitInternalAnalyzer:
         )
 
         # Check image loaded successfully
-        if self.img is None:
-            raise ValueError(
-                f"Failed to load image: {self.input_path}."
-            )
+        _validate_color_image(self.img)
 
         # Save some image attributes
         self.img_shape = self.img.shape[:2] # Image shape
-        self.img_hsv = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV) # HSV Image
-        self.img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB) # RGB Image
+        self._img_hsv = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV) # HSV Image
+        self._img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB) # RGB Image
         self.img_name = detect_img_name(self.input_path) # Image name
 
-        self.parameters.img_params = {"img_path": self.input_path} # Save used parameters
+        self._parameters.input_params = {"input_path": self.input_path} # Save used parameters
 
         return None
 
@@ -393,7 +357,7 @@ class FruitInternalAnalyzer:
 
         # 1. early return if no label detection required
         if not detect_label:
-            self.label_roi = None
+            self._label_roi = None
             self.label_text = "No label detected"
             if verbose:
                 print("> Label detection: SKIPPED (detect_label=False)")
@@ -407,42 +371,41 @@ class FruitInternalAnalyzer:
 
         # 3. QR
         if not skip_qr:
-            qr_start = time.time()
+            qr_start = time.perf_counter()
             self.label_text = detect_qr(img=self.img)
             if verbose and self.label_text:
-                print(f"> QR Code detected: {self.label_text} ({time.time() - qr_start:.2f}s)")
+                print(f"> QR Code detected: {self.label_text} ({time.perf_counter() - qr_start:.2f}s)")
         else:
             if verbose:
                 print("> QR detection: SKIPPED")
 
         # 4. ROI + OCR (only if the qr did not detect the text)
-        if not skip_label_roi and not self.label_text:
-            self.label_roi = detect_label_box_yolo(img=self.img, plot=False, conf=0.4)
+        if not skip_label_roi:
+            self._label_roi = detect_label_box_yolo(img=self.img, plot=False, conf=0.4)
+            if not self._label_roi:
+                self._label_roi = detect_label_box(img=self.img, verbose=False, plot=False)
 
-            if not self.label_roi:
-                self.label_roi = detect_label_box(img=self.img, verbose=False, plot=False)
-
-            if self.label_roi:
-                ocr_start = time.time()
-                old_stdout = sys.stdout
-                sys.stdout = StringIO()
-                try:
-                    self.label_text = detect_label_text(
-                        img=self.img,
-                        label_roi=self.label_roi,
-                        language=language_label,
-                        blur_label=blur_label,
-                        verbose=False,
-                        gpu=gpu,
-                    )
-                finally:
-                    sys.stdout = old_stdout
+        if self._label_roi and not self.label_text:
+            ocr_start = time.perf_counter()
+            old_stdout = sys.stdout
+            sys.stdout = StringIO()
+            try:
+                self.label_text = detect_label_text(
+                    img=self.img,
+                    label_roi=self._label_roi,
+                    language=language_label,
+                    blur_label=blur_label,
+                    verbose=False,
+                    gpu=gpu,
+                )
+            finally:
+                sys.stdout = old_stdout
 
                 if verbose and self.label_text:
-                    print(f"> Label text detected: {self.label_text}   (OCR: {time.time() - ocr_start:.2f}s)")
+                    print(f"> Label text detected: {self.label_text}   (OCR: {time.perf_counter() - ocr_start:.2f}s)")
 
         elif skip_label_roi:
-            self.label_roi = None
+            self._label_roi = None
 
         # 5. final result
         if not self.label_text:
@@ -517,26 +480,26 @@ class FruitInternalAnalyzer:
             using_default_diameter = True
 
         # create an image copy to work with
-        self.img_copy = self.img.copy()
+        self._img_copy = self.img.copy()
 
         if (width_cm is not None) != (length_cm is not None):
             raise ValueError("Error: both width_cm and length_cm are required")
 
         if width_cm and length_cm:
             self.px_per_cm = np.sqrt((w * h) / (width_cm * length_cm))
-            self.ref_roi = None
+            self._ref_roi = None
             if verbose:
                 print("> Size reference detection: SKIPPED (skip_yolo=True).")
         else:
             # No calibration available: measurements will be in pixels
             self.px_per_cm = None
-            self.ref_roi = None
+            self._ref_roi = None
             if skip_yolo:
                 if verbose:
                     print("> Size reference detection: SKIPPED (skip_yolo=True).")
             else:
-                self.px_per_cm, self.img_copy, self.ref_roi = px_cm_density(
-                    self.img_copy,
+                self.px_per_cm, self._img_copy, self._ref_roi = px_cm_density(
+                    self._img_copy,
                     confidence_threshold=confidence,
                     plot=False,
                     font_size=font_size,
@@ -544,10 +507,9 @@ class FruitInternalAnalyzer:
                     width_cm=width_cm,
                     length_cm=length_cm,
                     diameter_cm=diameter_cm,
-                    return_coordinates=True,
                 )
 
-        if self.ref_roi is not None:
+        if self._ref_roi is not None:
             if verbose and using_default_diameter:
                 print("\nNote: Default reference diameter (2.5 cm) applied.")
                 print("        Specify diameter_cm to override this value.")
@@ -577,8 +539,7 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     def setup_measurements(
         self,
-        plot_reference: bool = False,
-        plot_color_checker: bool = False,
+        plot: bool = False,
         font_size: int = 3,
         confidence: float = 0.6,
         detect_label: bool = False,
@@ -591,25 +552,19 @@ class FruitInternalAnalyzer:
         gpu: bool = False,
         skip_qr: bool = False,
         skip_yolo: bool = False,
-        detect_color_checker: bool = False,
-        scale_factor: float = 0.5,
     ) -> None:
         """
         Detect label text and calculate the pixel-to-centimetre scale factor.
 
         Orchestrates :meth:`setup_label` and :meth:`setup_calibration` in
-        order, and optionally runs :meth:`detect_color_checker`. Populates
-        :attr:`label_text`, :attr:`label_roi`, :attr:`ref_roi`, and
+        order. Populates :attr:`label_text`, :attr:`label_roi`, :attr:`ref_roi`, and
         :attr:`px_per_cm`.
 
         Parameters
         ----------
-        plot_reference : bool, optional
+        plot: bool, optional
             If True, display a cropped view of each detected reference ROI.
             Default is False.
-        plot_color_checker : bool, optional
-            If True, display the detected color checker region. Default is
-            False.
         font_size : int, optional
             Font size forwarded to :meth:`setup_calibration`. Default is 3.
         confidence : float, optional
@@ -642,27 +597,14 @@ class FruitInternalAnalyzer:
         skip_yolo : bool, optional
             If True and ``width_cm`` and ``length_cm`` are set, skip YOLO
             detection in :meth:`setup_calibration`. Default is False.
-        detect_color_checker : bool, optional
-            If True, run :meth:`detect_color_checker` after calibration.
-            Default is False.
-        scale_factor : float, optional
-            Downscaling factor for color checker detection in
-            :meth:`detect_color_checker`. Must be in [0.1, 1.0]. Default is
-            0.5.
 
-        Raises
-        ------
-        ValueError
-            If no image is loaded or ``scale_factor`` is outside [0.1, 1.0].
         """
         if self.img is None:
             raise ValueError("No image loaded. Run load_img() first.")
-        if scale_factor > 1 or scale_factor < 0.1:
-            raise ValueError(f"scale_factor: {scale_factor} must be > 0.1 and ≤ 1.")
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
 
         if metadata:
-            self.parameters.setup_measurements_params = {
+            self._parameters.setup_measurements_params = {
                 "width_cm": width_cm,
                 "length_cm": length_cm,
                 "diameter_cm": diameter_cm,
@@ -673,8 +615,6 @@ class FruitInternalAnalyzer:
                 "confidence": confidence,
                 "gpu": gpu,
                 "font_size": font_size,
-                "detect_color_checker": detect_color_checker,
-                "scale_factor": scale_factor,
             }
 
         # 1) label
@@ -697,19 +637,15 @@ class FruitInternalAnalyzer:
             skip_yolo=skip_yolo,
         )
 
-        if detect_color_checker:
-            self.detect_color_checker(
-                verbose=verbose, plot=plot_color_checker, scale_factor=scale_factor
-            )
 
         # Plot
-        if plot_reference and self.ref_roi:
+        if plot and self._ref_roi:
             h_img, w_img = self.img.shape[:2]
             margin = 5  # px
 
             # Determine orientation and plot size
             is_portrait = h_img > w_img
-            n = len(self.ref_roi)
+            n = len(self._ref_roi)
 
             if is_portrait:
                 nrows, ncols = n, 1
@@ -721,7 +657,7 @@ class FruitInternalAnalyzer:
             plt.figure(figsize=figsize)
 
             # Plot all the reference boxes detected
-            for i, ref_contour in enumerate(self.ref_roi, 1):
+            for i, ref_contour in enumerate(self._ref_roi, 1):
                 x, y, w, h = cv2.boundingRect(ref_contour)
                 # Add the margin
                 x1 = max(0, x - margin)
@@ -729,7 +665,7 @@ class FruitInternalAnalyzer:
                 x2 = min(w_img, x + w + margin)
                 y2 = min(h_img, y + h + margin)
 
-                roi_ref_img = self.img_copy[y1:y2, x1:x2]
+                roi_ref_img = self._img_copy[y1:y2, x1:x2]
 
                 plt.subplot(nrows, ncols, i)
                 plt.imshow(cv2.cvtColor(roi_ref_img, cv2.COLOR_BGR2RGB))
@@ -834,8 +770,8 @@ class FruitInternalAnalyzer:
             )
 
         generate_scatter_plot(
-            img_hsv=self.img_hsv,
-            img_rgb=self.img_rgb,
+            img_hsv=self._img_hsv,
+            img_rgb=self._img_rgb,
             sample_size=sample_size,
             plot_size=plot_size,
         )
@@ -866,12 +802,12 @@ class FruitInternalAnalyzer:
         erosion_px: int = 0,
     ) -> None:
 
-        if self.img_rgb is None:
+        if self._img_rgb is None:
             raise ValueError("No image loaded. Run load_image() first.")
 
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
         if metadata:
-            self.parameters.generate_fruit_mask_params = {
+            self._parameters.generate_fruit_mask_params = {
                 "stamp": stamp,
                 "lower_hsv": lower_hsv,
                 "upper_hsv": upper_hsv,
@@ -889,10 +825,10 @@ class FruitInternalAnalyzer:
                 "erosion_px": erosion_px,
             }
         if stamp:
-            img = 255 - self.img_rgb
+            img = 255 - self._img_rgb
 
         else:
-            img = cv2.cvtColor(self.img_rgb, cv2.COLOR_RGB2HSV)
+            img = cv2.cvtColor(self._img_rgb, cv2.COLOR_RGB2HSV)
 
         # Create base mask
         self.mask_fruit = create_mask(
@@ -917,8 +853,8 @@ class FruitInternalAnalyzer:
             mask_rois = np.zeros_like(self.mask_fruit)
 
             # Label ROI
-            if hasattr(self, "label_roi") and self.label_roi:
-                for box in self.label_roi:
+            if hasattr(self, "_label_roi") and self._label_roi:
+                for box in self._label_roi:
                     x, y = box["x"], box["y"]
                     w, h = box["width"], box["height"]
                     x_expanded = max(0, x - roi_expansion)
@@ -934,8 +870,8 @@ class FruitInternalAnalyzer:
                     )
 
             # Reference ROI
-            if hasattr(self, "ref_roi") and self.ref_roi:
-                for roi in self.ref_roi:
+            if hasattr(self, "_ref_roi") and self._ref_roi:
+                for roi in self._ref_roi:
                     x, y, w, h = cv2.boundingRect(roi)
                     x_expanded = max(0, x - roi_expansion)
                     y_expanded = max(0, y - roi_expansion)
@@ -950,25 +886,22 @@ class FruitInternalAnalyzer:
                     )
 
             # Color checker ROI
-            if hasattr(self, "checker_coords") and self.checker_coords is not None:
-                if len(self.checker_coords) == 4:
-                    x, y, w, h = self.checker_coords
-                    x_expanded = max(0, x - roi_expansion)
-                    y_expanded = max(0, y - roi_expansion)
-                    w_expanded = w + 2 * roi_expansion
-                    h_expanded = h + 2 * roi_expansion
-                    img_h, img_w = self.mask_fruit.shape[:2]
-                    x_expanded = max(0, min(x_expanded, img_w))
-                    y_expanded = max(0, min(y_expanded, img_h))
-                    w_expanded = min(w_expanded, img_w - x_expanded)
-                    h_expanded = min(h_expanded, img_h - y_expanded)
-                    cv2.rectangle(
-                        mask_rois,
-                        (x_expanded, y_expanded),
-                        (x_expanded + w_expanded, y_expanded + h_expanded),
-                        255,
-                        -1,
-                    )
+            if hasattr(self, "_checker_coords") and self._checker_coords is not None:
+                x = self._checker_coords['x1']
+                y = self._checker_coords['y1']
+                w = self._checker_coords['x2'] - self._checker_coords['x1']
+                h = self._checker_coords['y2'] - self._checker_coords['y1']
+                x_expanded = max(0, x - roi_expansion)
+                y_expanded = max(0, y - roi_expansion)
+                w_expanded = w + 2 * roi_expansion
+                h_expanded = h + 2 * roi_expansion
+                cv2.rectangle(
+                    mask_rois,
+                    (x_expanded, y_expanded),
+                    (x_expanded + w_expanded, y_expanded + h_expanded),
+                    255,
+                    -1,
+                )
 
             self.mask_fruit = cv2.bitwise_and(
                 self.mask_fruit, cv2.bitwise_not(mask_rois)
@@ -1048,10 +981,10 @@ class FruitInternalAnalyzer:
             CLAHE tile grid size. Used only when ``clip_limit`` is set.
             Default is 12.
         """
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
 
         if metadata:
-            self.parameters.enhance_locule_contrast_params = {
+            self._parameters.enhance_locule_contrast_params = {
                 "contrast_method": contrast_method,
                 "gamma": gamma if contrast_method == "gamma" else None,
                 "gain": gain if contrast_method == "sigmoid" else None,
@@ -1146,9 +1079,9 @@ class FruitInternalAnalyzer:
                 "(use contrast_method = 'none' if no transformation is requiered)"
             )
 
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
         if metadata:
-            self.parameters.generate_locule_mask_params = {
+            self._parameters.generate_locule_mask_params = {
                 "thresh_min": thresh_min,
                 "min_fruit_area": min_fruit_area,
                 "min_locule_area": min_locule_area,
@@ -1195,9 +1128,8 @@ class FruitInternalAnalyzer:
         verbose: bool = True,
         min_locule_area: int = 50,
         min_locule_per_fruit: int = 1,
-        min_fruit_area: int = 5000,
+        min_fruit_area: int = 1000,
         max_fruit_area: Optional[int] = None,
-        rescale_factor: Optional[float] = None,
         plot: bool = False,
         plot_size: Tuple[int, int] = (5, 5),
         contour_color: Tuple[int, int, int] = (0, 255, 0),
@@ -1207,6 +1139,7 @@ class FruitInternalAnalyzer:
         pericarp_int_color: Tuple[int, int, int] = (93, 238, 255),
         pericarp_int_thickness: int = 2,
         dilation_factor: Optional[float] = None,
+        rescale_factor: Optional[float] = None,
     ) -> None:
         """
         Detect individual fruits and their locules from the binary mask.
@@ -1234,8 +1167,6 @@ class FruitInternalAnalyzer:
         max_fruit_area : int or None, optional
             Maximum contour area in pixels to accept a fruit. If None, no
             upper bound is applied. Default is None.
-        rescale_factor : float or None, optional
-            Factor to rescale contours before detection. Default is None.
         plot : bool, optional
             If True, display detected fruit contours on the image. Default is
             False.
@@ -1245,6 +1176,10 @@ class FruitInternalAnalyzer:
             BGR color for drawing fruit contours. Default is ``(0, 255, 0)``.
         contour_thickness : int, optional
             Line thickness for contour drawing. Default is 2.
+        rescale_factor : float or None, optional
+            Factor in (0, 1] to downscale the mask before detection. Area
+            thresholds are adjusted automatically. If ``None`` or 1, no
+            rescaling is applied. Default is ``None``.
 
         Raises
         ------
@@ -1256,15 +1191,15 @@ class FruitInternalAnalyzer:
         if self.mask_fruit is None:
             raise ValueError("No mask available. Run generate_fruit_mask() first.")
 
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
         if metadata:
-            self.parameters.detect_fruits_params = {
+            self._parameters.detect_fruits_params = {
                 "min_fruit_area": min_fruit_area,
                 "max_fruit_area": max_fruit_area,
                 "min_fruit_circularity": min_fruit_circularity,
                 "min_locule_area": min_locule_area,
                 "min_locule_per_fruit": min_locule_per_fruit,
-                "rescale_factor": rescale_factor,
+                "rescale_factor":rescale_factor
             }
 
         if self.mask_locules is not None:
@@ -1279,7 +1214,7 @@ class FruitInternalAnalyzer:
             min_circularity=min_fruit_circularity,
             min_locule_area=min_locule_area,
             min_locules_per_fruit=min_locule_per_fruit,
-            rescale_factor=rescale_factor,
+            rescale_factor=rescale_factor
         )
 
         if self.fruit_locule_map is not None:
@@ -1291,7 +1226,6 @@ class FruitInternalAnalyzer:
             optional_config = {
                 "min_fruit_area": min_fruit_area,
                 "max_fruit_area": max_fruit_area,
-                "rescale_factor": rescale_factor,
             }
             print("\n" + "=" * 37)
             print(
@@ -1310,9 +1244,9 @@ class FruitInternalAnalyzer:
 
         if plot:
             if dilation_factor is not None:
-                self.dilation_factor = dilation_factor
+                self._dilation_factor = dilation_factor
 
-            img_copy = self.img_rgb.copy()
+            img_copy = self._img_rgb.copy()
             for fruit_id, locule_ids in self.fruit_locule_map.items():
                 # Fruits
                 cv2.drawContours(
@@ -1432,7 +1366,7 @@ class FruitInternalAnalyzer:
             mask = self.mask_fruit
 
         if dilation_factor is not None:
-            self.dilation_factor = dilation_factor
+            self._dilation_factor = dilation_factor
 
         get_single_fruit_masks(
             img=self.img,
@@ -1447,7 +1381,7 @@ class FruitInternalAnalyzer:
             overlay_legend=overlay_legend,
             plot=True,
             only_fruit=only_fruit,
-            dilation_factor=self.dilation_factor,
+            dilation_factor=self._dilation_factor,
         )
 
     ##########################################################################################
@@ -1593,21 +1527,21 @@ class FruitInternalAnalyzer:
         if self.label_text is None:
             self.label_text = "No label detected"
 
-        if self.img_copy is None:
-            self.img_copy = self.img.copy()
+        if self._img_copy is None:
+            self._img_copy = self.img.copy()
 
         saved_color_results = getattr(self.results, "color_results", None)
         saved_color_image = getattr(self.results, "color_image", None)
 
         if dilation_factor is not None:
-            self.dilation_factor = dilation_factor
+            self._dilation_factor = dilation_factor
 
         # For color results
-        self.is_morphology_results = True
+        self._is_morphology_results = True
 
         self.results = analyze_fruits_morphology(
             # Image
-            img=self.img_copy,
+            img=self._img_copy,
             path=self.input_path,
             contours=self.contours,
             fruit_locule_map=self.fruit_locule_map,
@@ -1626,7 +1560,7 @@ class FruitInternalAnalyzer:
             # Pericarp thickness
             num_rays=num_rays,
             # Internal pericarp contour
-            dilation_factor=self.dilation_factor,
+            dilation_factor=self._dilation_factor,
             img_shape=self.img_shape,
             # Plot annotated image
             plot=plot,
@@ -1658,9 +1592,9 @@ class FruitInternalAnalyzer:
         if saved_color_image is not None:
             self.results.color_image = saved_color_image
 
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
         if metadata:
-            self.parameters.analyze_morphology_params = {
+            self._parameters.analyze_morphology_params = {
                 "contour_mode": contour_mode,
                 "epsilon": epsilon if contour_mode == "approx" else None,
                 "min_locule_area": min_locule_area,
@@ -1683,7 +1617,7 @@ class FruitInternalAnalyzer:
                 "centroid_locule_color": centroid_locule_color,
                 "centroid_locule_thickness": centroid_locule_thickness,
                 "is_locule": is_locule,
-                "dilation_factor": self.dilation_factor,
+                "dilation_factor": self._dilation_factor,
             }
 
         self.results.morphology_results = pd.DataFrame(self.results.morphology_results)
@@ -1725,6 +1659,7 @@ class FruitInternalAnalyzer:
             [
                 "locules_mean_area",
                 "locules_std_area",
+                'locules_std_log_area',
                 "locules_cv_area",
                 "locules_mean_circularity",
                 "locules_std_circularity",
@@ -1760,39 +1695,8 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     # OPTIONAL: Save all the parameters used in the session
     ##########################################################################################
-    def save_parameters(self, output_path: Optional[str] = None) -> None:
-        """
-        Save the analysis parameters used in the current session to disk.
-
-        Writes both a ``.txt`` and a ``.json`` file named after the loaded
-        image, via :meth:`~traitly.fruit_phenotyping.analysis_parameters.AnalysisParameters.save_to_file`
-        and :meth:`~traitly.fruit_phenotyping.analysis_parameters.AnalysisParameters.save_to_json`.
-
-        Parameters
-        ----------
-        output_path : str or None, optional
-            Directory where parameter files are saved. If None, files are
-            saved in the same directory as :attr:`img_path`. Default is None.
-        """
-        if output_path is None:
-            output_path = os.path.dirname(self.input_path)
-
-        output_path = os.path.abspath(output_path)
-        base_name = os.path.splitext(os.path.basename(self.input_path))[0]
-
-        # Save as .txt
-        txt_path = os.path.join(output_path, f"{base_name}_parameters.txt")
-        self.parameters.save_to_file(txt_path)
-
-        # Save as .json
-        json_path = os.path.join(output_path, f"{base_name}_parameters.json")
-        self.parameters.save_to_json(json_path)
-
-        print("\n> Parameters saved at:")
-        print(f"  - TXT:  {txt_path}")
-        print(f"  - JSON: {json_path}")
-
-        return None
+    def save_parameters(self, output_path=None):
+        _save_parameters(self.input_path, self._parameters, output_path)
 
     ##########################################################################################
     #                                     COLOR ANALYSIS
@@ -1914,14 +1818,14 @@ class FruitInternalAnalyzer:
             self.label_text = "No label detected"
 
         if dilation_factor is not None:
-            self.dilation_factor = dilation_factor
+            self._dilation_factor = dilation_factor
 
-        if self.img_copy is None:
-            self.img_copy = self.img_rgb.copy()
+        if self._img_copy is None:
+            self._img_copy = self.img.copy()
 
-        metadata = self.is_metadata_saved
+        metadata = self._is_metadata_saved
         if metadata:
-            self.parameters.analyze_color_params = {
+            self._parameters.analyze_color_params = {
                 "stat": stat,
                 "tissue": tissue,
                 "color_space": color_space,
@@ -1938,16 +1842,17 @@ class FruitInternalAnalyzer:
                 "label_color": label_color,
                 "label_opacity": label_opacity,
                 "get_color_histogram": get_color_histogram,
-                "dilation_factor": self.dilation_factor,
+                "dilation_factor": self._dilation_factor,
                 "dark_thresh": dark_thresh,
             }
 
-        if self.is_morphology_results is None:
+        # Initialize ResultsImage if
+        if self._is_morphology_results is None:
             self.results = ResultsImage(
-                bgr_img=self.img_copy, morphology_results=[], path=self.input_path
+                res_img=self._img_copy, morphology_results=[], path=self.input_path
             )
 
-        self.results.color_image = self.img_copy.copy()
+        self.results.color_image = self._img_copy.copy()
 
         # Annotate independent image for color results
         annotate_all_fruits(
@@ -1967,7 +1872,7 @@ class FruitInternalAnalyzer:
             text_color=font_color,
             label_background_color=label_color,
             label_opacity=label_opacity,
-            dilation_factor=self.dilation_factor,
+            dilation_factor=self._dilation_factor,
         )
 
         if plot:
@@ -1985,7 +1890,7 @@ class FruitInternalAnalyzer:
         if get_color_histogram:
             color_results = get_fruit_color_histograms(
                 img=self.img,
-                hsv_img=self.img_hsv,
+                hsv_img=self._img_hsv,
                 label=self.label_text,
                 contours=self.contours,
                 mask=mask,
@@ -2009,7 +1914,7 @@ class FruitInternalAnalyzer:
                 tissue=tissue,
                 renumber=True,
                 color_space=color_space,
-                dilation_factor=self.dilation_factor,
+                dilation_factor=self._dilation_factor,
                 dark_threshold=dark_thresh,
             )
 
@@ -2037,7 +1942,6 @@ class FruitInternalAnalyzer:
         plot: bool = False,
         plot_size: Tuple[int, int] = (5, 5),
         verbose: bool = True,
-        scale_factor: float = 0.5,
     ) -> None:
         """
         Detect a Macbeth color checker card and store its bounding coordinates.
@@ -2057,9 +1961,6 @@ class FruitInternalAnalyzer:
             Figure size for the color checker plot. Default is (5, 5).
         verbose : bool, optional
             If True, print detection results and coordinates. Default is True.
-        scale_factor : float, optional
-            Downscaling factor applied before detection for speed. Recommended
-            range is [0.2, 0.5]. Default is 0.5.
 
         Notes
         -----
@@ -2067,132 +1968,19 @@ class FruitInternalAnalyzer:
         :attr:`checker_coords` are set to ``None`` and a ``UserWarning`` is
         issued. This does not raise an exception so the pipeline can continue.
         """
-        # Reduce the image size for faster detection
-        h_orig, w_orig = self.img_rgb.shape[:2]
-        img_small = cv2.resize(
-            self.img_rgb,
-            (int(w_orig * scale_factor), int(h_orig * scale_factor)),
-            interpolation=cv2.INTER_AREA,
-        )
+        metadata = self._is_metadata_saved
+        if metadata:
+            self._parameters.detect_color_checker_params = {
+                "detect_color_checker": True
+            }
 
-        try:
-            detector = cv2.mcc.CCheckerDetector.create()
-        except AttributeError:
-            warnings.warn(
-                "Color checker detection is not available with this version of OpenCV. "
-                "Install opencv-contrib-python>=4.9 to enable this feature.",
-                UserWarning
-            )
-            self.checker_roi = None
-            self.checker_coords = None
-            return
+        self._checker_coords, self._color_charts, self.img_copy = _detect_color_checker(
+                                                                    self.img,
+                                                                    plot = plot,
+                                                                    plot_size = plot_size,
+                                                                    verbose = verbose,
+                                                                )
 
-        detector.process(img_small, cv2.mcc.MCC24)
-        checkers = detector.getListColorChecker()
-
-        if not checkers:
-            if verbose:
-                warnings.warn(
-                    "No color checker detected in the image. "
-                    "Check that the color checker is visible and try adjusting scale_factor.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-            return None
-
-        checker = checkers[0]
-
-        # Draw color checker grid on the small image (coordinates are in small image space),
-        # then resize that drawn region back to full resolution and paste into img_copy.
-        # NOTE: img_small must be RGB since CCheckerDraw works in RGB space.
-        img_small_drawn = cv2.mcc.CCheckerDraw_create(checker).draw(img_small.copy())
-
-        # Get box points in small image space before scaling
-        box = checker.getBox()
-        box_points_small = np.int32(box)
-
-        # Compute tight bounding rect in small image space with a safety margin
-        x_s, y_s, w_s, h_s = cv2.boundingRect(box_points_small)
-        pad_s = 15  # px padding in small-image space
-        x_s1 = max(0, x_s - pad_s)
-        y_s1 = max(0, y_s - pad_s)
-        x_s2 = min(img_small.shape[1], x_s + w_s + pad_s)
-        y_s2 = min(img_small.shape[0], y_s + h_s + pad_s)
-
-        # Corresponding region in full resolution image
-        x_f1 = int(x_s1 / scale_factor)
-        y_f1 = int(y_s1 / scale_factor)
-        x_f2 = min(w_orig, int(x_s2 / scale_factor))
-        y_f2 = min(h_orig, int(y_s2 / scale_factor))
-
-        # Crop the drawn checker region from small image, resize to full res patch size
-        patch_small = img_small_drawn[y_s1:y_s2, x_s1:x_s2]
-        patch_full = cv2.resize(
-            patch_small, (x_f2 - x_f1, y_f2 - y_f1), interpolation=cv2.INTER_LINEAR
-        )
-
-        # Convert RGB patch to BGR to match self.img_copy
-        patch_full_bgr = cv2.cvtColor(patch_full, cv2.COLOR_RGB2BGR)
-
-        # Paste the drawn grid patch into img_copy at the correct location
-        self.img_copy[y_f1:y_f2, x_f1:x_f2] = patch_full_bgr
-
-        # Scale box_points to fullres for bounding rect / ROI extraction
-        box_points = (box_points_small / scale_factor).astype(np.int32)
-
-        # Get bounding rectangle
-        x, y, w, h = cv2.boundingRect(box_points)
-
-        # Add margin (0.1 = 10%)
-        margin_x = int(w * 0.1)
-        margin_y = int(h * 0.1)
-        x_expanded = max(0, x - margin_x)
-        y_expanded = max(0, y - margin_y)
-        w_expanded = min(self.img_rgb.shape[1] - x_expanded, w + 2 * margin_x)
-        h_expanded = min(self.img_rgb.shape[0] - y_expanded, h + 2 * margin_y)
-
-        # Store coordinates as tuple (x, y, w, h) for mask removal
-        self.checker_coords = (x_expanded, y_expanded, w_expanded, h_expanded)
-
-        # Extract ROI image
-        checker_img = self.img_copy[
-            y_expanded : y_expanded + h_expanded, x_expanded : x_expanded + w_expanded
-        ]
-
-        # Draw rectangle on image copy for visualization
-        cv2.rectangle(
-            self.img_copy,
-            (x_expanded, y_expanded),
-            (x_expanded + w_expanded, y_expanded + h_expanded),
-            (0, 255, 0),
-            3,
-        )
-
-        # Add label
-        cv2.putText(
-            self.img_copy,
-            "Color Checker",
-            (x_expanded, y_expanded - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1.5,
-            (0, 255, 0),
-            2,
-        )
-
-        if verbose:
-            print("\n" + "=" * 55)
-            print("★ COLOR CARD:")
-            print("=" * 55)
-            print("> Color checker detected: ")
-            print(
-                f"    - Coordinates: x={x_expanded}, y={y_expanded}, w={w_expanded}, h={h_expanded}"
-            )
-
-        if plot:
-            plt.figure(figsize=plot_size)
-            plt.imshow(cv2.cvtColor(checker_img, cv2.COLOR_BGR2RGB))
-            plt.axis("off")
-            plt.show()
 
         return None
 
@@ -2202,7 +1990,7 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     # PRocess a single file (needed for analyze_folder)
     ##########################################################################################
-    def process_single_file(
+    def _process_single_file(
         self,
         config: Optional[Dict] = None,
         json_path: Optional[str] = None,
@@ -2262,21 +2050,7 @@ class FruitInternalAnalyzer:
             - ``annotated_img`` – annotated BGR image or ``None``.
         """
 
-        # Load parameters using json file
-        if json_path is not None and os.path.exists(json_path):
-            with open(json_path, "r", encoding="utf-8") as f:
-                params = json.load(f)
-        elif config is not None:
-            params = config
-        else:
-            params = {}
-
-        def _get(section: str) -> Dict:
-            return params.get(section, {}) or {}
-
-        def _clean(d: Dict) -> Dict:
-            """Remove None values to avoid overriding defaults."""
-            return {k: v for k, v in d.items() if v is not None}
+        config = config or {}
 
         error_dict = None
         n_fruits = 0
@@ -2289,39 +2063,49 @@ class FruitInternalAnalyzer:
             # 1. setup_measurements
             try:
                 self.setup_measurements(
-                    verbose=False, **_clean(_get("setup_measurements_params"))
+                    verbose=False, **_clean_params(_get_params(config, "setup_measurements_params"))
                 )
             except Exception as e:
                 raise RuntimeError(f"[setup_measurements] {e}")
 
+            # opt: detect_color_checker
+
+            elc = _get_params(config, "detect_color_checker_params")
+            if elc:
+                try:
+                    self.detect_color_checker(plot=False, verbose=False)
+                except Exception as e:
+                    raise RuntimeError(f"[detect_color_checker] {e}")
+
             # 2. generate_fruit_mask
             try:
                 self.generate_fruit_mask(
-                    plot=False, **_clean(_get("generate_fruit_mask_params"))
+                    plot=False, **_clean_params(_get_params(config, "generate_fruit_mask_params"))
                 )
             except Exception as e:
                 raise RuntimeError(f"[generate_fruit_mask] {e}")
 
+
             # 3. enhance_locule_contrast (optional)
-            elc = _get("enhance_locule_contrast_params")
+            elc = _get_params(config, "enhance_locule_contrast_params")
             if elc:
                 try:
-                    self.enhance_locule_contrast(plot=False, **_clean(elc))
+                    self.enhance_locule_contrast(plot=False, **_clean_params(elc))
                 except Exception as e:
                     raise RuntimeError(f"[enhance_locule_contrast] {e}")
 
                 # 4. generate_locule_mask (only if enhance was run)
-                glm = _get("generate_locule_mask_params")
+                glm = _get_params(config, "generate_locule_mask_params")
                 if glm:
                     try:
-                        self.generate_locule_mask(plot=False, **_clean(glm))
+                        self.generate_locule_mask(plot=False, **_clean_params(glm))
                     except Exception as e:
                         raise RuntimeError(f"[generate_locule_mask] {e}")
 
             # 5. detect_fruits
             try:
                 self.detect_fruits(
-                    verbose=False, **_clean(_get("detect_fruits_params"))
+                    verbose=False, **_clean_params(_get_params(config, "detect_fruits_params"))
                 )
             except Exception as e:
                 raise RuntimeError(f"[detect_fruits] {e}")
@@ -2339,7 +2123,7 @@ class FruitInternalAnalyzer:
                     self.analyze_morphology(
                         plot=False,
                         display_table=False,
-                        **_clean(_get("analyze_morphology_params")),
+                        **_clean_params(_get_params(config, "analyze_morphology_params")),
                     )
                     if self.results and self.results.morphology_results is not None:
                         df_morph = (
@@ -2354,7 +2138,7 @@ class FruitInternalAnalyzer:
             if analyze_color:
                 try:
                     self.analyze_color(
-                        display_table=False, **_clean(_get("analyze_color_params"))
+                        display_table=False, **_clean_params(_get_params(config, "analyze_color_params"))
                     )
                     if self.results and self.results.color_results is not None:
                         df_color = (
@@ -2373,11 +2157,11 @@ class FruitInternalAnalyzer:
                     annotated_img = self.results.color_image
 
             # 9. Save image if requested
-            if save_image and annotated_img is not None:
-                out_dir = output_path or os.path.dirname(self.input_path)
-                base = os.path.splitext(os.path.basename(self.input_path))[0]
-                out_img = os.path.join(out_dir, f"{base}_annotated.jpg")
-                cv2.imwrite(out_img, annotated_img)
+            if save_image and self.results is not None:
+                self.results.save_img(
+                    output_path=output_path,
+                    output_message=False,
+                )
 
         except Exception as e:
             error_dict = {"filename": os.path.basename(self.input_path), "status": str(e)}
@@ -2397,6 +2181,7 @@ class FruitInternalAnalyzer:
         output_path: Optional[str] = None,
         num_cores: int = 1,
         verbose: bool = True,
+
         # setup_measurements
         width_cm: Optional[float] = None,
         length_cm: Optional[float] = None,
@@ -2405,8 +2190,9 @@ class FruitInternalAnalyzer:
         skip_qr: Optional[bool] = None,
         detect_label: Optional[bool] = None,
         confidence: Optional[float] = None,
+        # detect color card
         detect_color_checker: Optional[bool] = None,
-        scale_factor: Optional[float] = None,
+
         # generate_fruit_mask
         stamp: Optional[bool] = None,
         lower_hsv: Optional[Tuple[int,int,int]] = None,
@@ -2475,632 +2261,170 @@ class FruitInternalAnalyzer:
         color_space: Optional[str] = None,
         label_opacity: Optional[float] = None,
         get_color_histogram: Optional[bool] = None,
-    ) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
-        """
-        Process all images in the folder passed to :class:`FruitInternalAnalyzer`.
+    ) -> None:
 
-        Collects valid images from the input folder, builds a unified
-        configuration from ``json_path``, ``config``, and individual parameter
-        arguments (individual params always take priority), and runs the full
-        pipeline on each image via :meth:`process_single_file`. Supports
-        parallel execution via :func:`_process_image_worker` when
-        ``num_cores > 1``. Saves merged CSV results, a session report, and an
-        error report to ``output_path``.
-
-        Parameters
-        ----------
-        analyze_morphology : bool, optional
-            If True, run morphology analysis on each image. Default is True.
-        analyze_color : bool, optional
-            If True, run color analysis on each image. Default is True.
-        json_path : str or None, optional
-            Path to a JSON configuration file. Merged with ``config`` if both
-            are provided. Default is None.
-        config : dict or None, optional
-            Base configuration dictionary. Individual parameter arguments
-            override matching keys. Default is None.
-        output_path : str or None, optional
-            Directory where results are saved. Defaults to a ``Results/``
-            subfolder inside the input folder.
-        num_cores : int, optional
-            Number of parallel worker processes. Clamped to available CPUs.
-            Default is 1 (sequential).
-        verbose : bool, optional
-            If True, print progress and summary information. Default is True.
-        width_cm : float or None, optional
-            Known reference width in centimetres for scale calibration.
-        length_cm : float or None, optional
-            Known reference length in centimetres for scale calibration.
-        diameter_cm : float or None, optional
-            Known reference diameter in centimetres for scale calibration.
-        skip_yolo : bool or None, optional
-            If True, use geometric calibration without YOLO detection.
-        skip_qr : bool or None, optional
-            If True, skip QR code detection.
-        detect_label : bool or None, optional
-            If True, run full label detection including OCR.
-        confidence : float or None, optional
-            Minimum detection confidence for reference objects.
-        detect_color_checker : bool or None, optional
-            If True, detect and remove a color checker from the mask.
-        scale_factor : float or None, optional
-            Downscaling factor for color checker detection.
-        lower_hsv : list of int or None, optional
-            Lower HSV threshold for fruit segmentation.
-        upper_hsv : list of int or None, optional
-            Upper HSV threshold for fruit segmentation.
-        background_color : str or None, optional
-            Expected background color hint for segmentation.
-        n_iteration : int or None, optional
-            Number of morphological iterations for mask refinement.
-        kernel_blur : int or None, optional
-            Gaussian blur kernel size.
-        kernel_open : int or None, optional
-            Morphological opening kernel size.
-        kernel_close : int or None, optional
-            Morphological closing kernel size.
-        canny_min : int or None, optional
-            Minimum Canny edge threshold.
-        canny_max : int or None, optional
-            Maximum Canny edge threshold.
-        fill_holes : bool or None, optional
-            If True, fill holes in the binary mask.
-        apply_convex_hull : bool or None, optional
-            If True, apply convex hull to each fruit region.
-        remove_roi : bool or None, optional
-            If True, remove reference and label regions from the mask.
-        roi_expansion : int or None, optional
-            Pixel margin around ROIs before removal.
-        stamp : bool or None, optional
-            If True, invert image colors before masking.
-        contrast_method : str or None, optional
-            Contrast enhancement method for locule visibility.
-        gamma : float or None, optional
-            Gamma exponent for ``contrast_method='gamma'``.
-        gain : float or None, optional
-            Sigmoid gain for ``contrast_method='sigmoid'``.
-        cutoff : float or None, optional
-            Sigmoid cutoff for ``contrast_method='sigmoid'``.
-        c : float or None, optional
-            Exponential factor for ``contrast_method='exponential'``.
-        kernel_blur_contrast : int or None, optional
-            Blur kernel applied before contrast enhancement.
-        clip_limit : int or None, optional
-            CLAHE clip limit for contrast enhancement.
-        tile_grid_size : int or None, optional
-            CLAHE tile grid size.
-        thresh_min : int or None, optional
-            Minimum threshold for locule mask binarization.
-        thresh_max : int or None, optional
-            Maximum threshold for locule mask binarization.
-        min_fruit_area_locule : int or None, optional
-            Minimum fruit area used during locule mask fusion.
-        kernel_close_locule : int or None, optional
-            Closing kernel for locule mask.
-        kernel_open_locule : int or None, optional
-            Opening kernel for locule mask.
-        invert_locule : bool or None, optional
-            If True, invert the locule mask before fusion.
-        min_fruit_area : int or None, optional
-            Minimum contour area to accept as a fruit.
-        max_fruit_area : int or None, optional
-            Maximum contour area to accept as a fruit.
-        min_fruit_circularity : float or None, optional
-            Minimum circularity to accept as a fruit.
-        min_locule_area : int or None, optional
-            Minimum locule area for fruit detection.
-        min_locule_per_fruit : int or None, optional
-            Minimum locules required per fruit.
-        rescale_factor : float or None, optional
-            Contour rescaling factor before detection.
-        contour_mode : str or None, optional
-            Contour mode for morphology analysis.
-        epsilon : float or None, optional
-            Approximation factor for contour simplification.
-        min_locule_area_morph : int or None, optional
-            Minimum locule area for morphology analysis.
-        max_locule_area : int or None, optional
-            Maximum locule area for morphology analysis.
-        angle_shifts : int or None, optional
-            Number of angle steps for symmetry computation.
-        num_rays : int or None, optional
-            Number of rays for pericarp thickness estimation.
-        stat : str or None, optional
-            Color summary statistic: ``'mean'`` or ``'median'``.
-        tissue : str or None, optional
-            Tissue region for color analysis.
-        color_space : str or None, optional
-            Color spaces to extract.
-        label_opacity : float or None, optional
-            Opacity of annotation label backgrounds.
-        get_color_histogram : bool or None, optional
-            If True, compute pixel-level color histograms.
-
-        Raises
-        ------
-        ValueError
-            If the instance was not initialized with a directory path, or if
-            no valid images are found in the folder.
-        """
-
-        # Validate output directory
-        if not self.is_directory:
-            raise ValueError(
-                "analyze_folder() requires a directory path. "
-                "Pass a folder to FruitInternalAnalyzer(), not a single file."
-            )
-
+        # 1. Valdate analyze conditions first
         if not analyze_color and not analyze_morphology:
             raise ValueError(
                 "analyze_color=False and analyze_morphology=False.\n"
                 "analyze_folder() requires that at least one of them is True."
             )
 
-        folder_path = self.input_path
-
-        # Validate number of cores (num_cores)
-        num_cores_message = None
-        if num_cores <= 0:
-            num_cores_message = f"    > num_cores: {num_cores} must be at least 1. Using num_cores=1 instead."
-            num_cores = 1
-
-        max_cores = mp.cpu_count()
-        if num_cores > max_cores:
-            num_cores_message = f"    > num_cores: {num_cores} exceeds system cores ({max_cores}). Using {max_cores} instead."
-            num_cores = max_cores
-
-        # Check valid images in the folder
-        img_paths = sorted(
-            [
-                os.path.join(folder_path, f)
-                for f in os.listdir(folder_path)
-                if Path(f).suffix.lower() in valid_extensions
-            ]
+        folder_path, output_path, num_cores, num_cores_message, img_paths = _setup_batch(
+            is_directory=self._is_directory,
+            input_path=self.input_path,
+            output_path=output_path,
+            num_cores=num_cores,
         )
 
-        if not img_paths:
-            raise ValueError(
-                f"No valid images found in: {folder_path}. Valid image extensions include: {valid_extensions}"
-            )
-
-        # Validate output_path, if doesn't exist, create one
-        if output_path is None:
-            output_path = os.path.join(folder_path, "Results")
-        os.makedirs(output_path, exist_ok=True)
-
-        # Build config: json/dict base → override with individual params ─
-        import copy
-
+        # 2. create config for internal analysis
         config = copy.deepcopy(config) if config else {}
 
-        if json_path is not None and os.path.exists(json_path):
-            with open(json_path, "r", encoding="utf-8") as f:
-                json_cfg = json.load(f) or {}
-            config.update(json_cfg)
+        _config_from_json(json_path, config)
 
-        # Helper: merge non-None individual params into a config section
         def _apply(section: str, mapping: Dict):
             overrides = {k: v for k, v in mapping.items() if v is not None}
             if overrides:
                 config.setdefault(section, {})
                 config[section].update(overrides)
 
-        _apply(
-            "setup_measurements_params",
-            dict(
-                width_cm=width_cm,
-                length_cm=length_cm,
-                diameter_cm=diameter_cm,
-                skip_yolo=skip_yolo,
-                skip_qr=skip_qr,
-                detect_label=detect_label,
-                confidence=confidence,
-                detect_color_checker=detect_color_checker,
-                scale_factor=scale_factor,
-            ),
-        )
-        _apply(
-            "generate_fruit_mask_params",
-            dict(
-                stamp=stamp,
-                lower_hsv=lower_hsv,
-                upper_hsv=upper_hsv,
-                n_iteration=n_iteration,
-                kernel_blur=kernel_blur,
-                kernel_open=kernel_open,
-                kernel_close=kernel_close,
-                canny_min=canny_min,
-                canny_max=canny_max,
-                remove_roi=remove_roi,
-                roi_expansion=roi_expansion,
-                background_color=background_color,
-                fill_holes=fill_holes,
-                apply_convex_hull=apply_convex_hull,
-                erosion_px = erosion_px
-            ),
-        )
-        _apply(
-            "enhance_locule_contrast_params",
-            dict(
-                contrast_method=contrast_method,
-                gamma=gamma,
-                gain=gain,
-                cutoff=cutoff,
-                c=c,
-                kernel_blur=kernel_blur_contrast,
-                clip_limit=clip_limit,
-                tile_grid_size=tile_grid_size,
-            ),
-        )
-        _apply(
-            "generate_locule_mask_params",
-            dict(
-                thresh_min=thresh_min,
-                thresh_max=thresh_max,
-                min_fruit_area=min_fruit_area_locule,
-                kernel_close=kernel_close_locule,
-                kernel_open=kernel_open_locule,
-                invert_locule=invert_locule
-            ),
-        )
-        _apply(
-            "detect_fruits_params",
-            dict(
-                min_fruit_area=min_fruit_area,
-                max_fruit_area=max_fruit_area,
-                min_fruit_circularity=min_fruit_circularity,
-                min_locule_area=min_locule_area,
-                min_locule_per_fruit=min_locule_per_fruit,
-                rescale_factor=rescale_factor,
-            ),
-        )
-        _apply(
-            "analyze_morphology_params",
-            dict(
-                contour_mode=contour_mode,
-                epsilon=epsilon,
-                min_locule_area=min_locule_area_morph,
-                max_locule_area=max_locule_area,
-                angle_shifts=angle_shifts,
-                num_rays=num_rays,
-                font_size=font_size,
-                font_thickness=font_thickness,
-                font_color=font_color,
-                label_position=label_position,
-                label_color=label_color,
-                pericarp_ext_color=pericarp_ext_color,
-                pericarp_ext_thickness=pericarp_ext_thickness,
-                centroid_fruit_color=centroid_fruit_color,
-                centroid_fruit_thickness=centroid_fruit_thickness,
-                pericarp_int_color=pericarp_int_color,
-                pericarp_int_thickness=pericarp_int_thickness,
-                locule_color=locule_color,
-                locule_thickness=locule_thickness,
-                centroid_locule_color=centroid_locule_color,
-                centroid_locule_thickness=centroid_locule_thickness,
-                dilation_factor=dilation_factor,
-            ),
-        )
-        _apply(
-            "analyze_color_params",
-            dict(
-                stat=stat,
-                tissue=tissue,
-                color_space=color_space,
-                label_opacity=label_opacity,
-                get_color_histogram=get_color_histogram,
-                dilation_factor=dilation_factor,
-                pericarp_int_color=pericarp_int_color,
-                pericarp_int_thickness=pericarp_int_thickness,
-            ),
-        )
+        _apply("setup_measurements_params", dict(
+            width_cm=width_cm, length_cm=length_cm, diameter_cm=diameter_cm,
+            skip_yolo=skip_yolo, skip_qr=skip_qr, detect_label=detect_label,
+            confidence=confidence,
+        ))
 
-        # Sync to self.parameters for session report
-        _param_keys = [
-            "setup_measurements_params",
+        _apply("detect_color_checker_params", dict(
+            detect_color_checker=detect_color_checker
+        ))
+
+        _apply("generate_fruit_mask_params", dict(
+            stamp=stamp, lower_hsv=lower_hsv, upper_hsv=upper_hsv,
+            n_iteration=n_iteration, kernel_blur=kernel_blur, kernel_open=kernel_open,
+            kernel_close=kernel_close, canny_min=canny_min, canny_max=canny_max,
+            remove_roi=remove_roi, roi_expansion=roi_expansion,
+            background_color=background_color, fill_holes=fill_holes,
+            apply_convex_hull=apply_convex_hull, erosion_px=erosion_px,
+        ))
+        _apply("enhance_locule_contrast_params", dict(
+            contrast_method=contrast_method, gamma=gamma, gain=gain,
+            cutoff=cutoff, c=c, kernel_blur=kernel_blur_contrast,
+            clip_limit=clip_limit, tile_grid_size=tile_grid_size,
+        ))
+        _apply("generate_locule_mask_params", dict(
+            thresh_min=thresh_min, thresh_max=thresh_max,
+            min_fruit_area=min_fruit_area_locule, kernel_close=kernel_close_locule,
+            kernel_open=kernel_open_locule, invert_locule=invert_locule,
+        ))
+        _apply("detect_fruits_params", dict(
+            min_fruit_area=min_fruit_area, max_fruit_area=max_fruit_area,
+            min_fruit_circularity=min_fruit_circularity, rescale_factor = rescale_factor,
+            min_locule_area=min_locule_area, min_locule_per_fruit=min_locule_per_fruit,
+        ))
+        _apply("analyze_morphology_params", dict(
+            contour_mode=contour_mode, epsilon=epsilon,
+            min_locule_area=min_locule_area_morph, max_locule_area=max_locule_area,
+            angle_shifts=angle_shifts, num_rays=num_rays,
+            font_size=font_size, font_thickness=font_thickness, font_color=font_color,
+            label_position=label_position, label_color=label_color,
+            pericarp_ext_color=pericarp_ext_color, pericarp_ext_thickness=pericarp_ext_thickness,
+            centroid_fruit_color=centroid_fruit_color, centroid_fruit_thickness=centroid_fruit_thickness,
+            pericarp_int_color=pericarp_int_color, pericarp_int_thickness=pericarp_int_thickness,
+            locule_color=locule_color, locule_thickness=locule_thickness,
+            centroid_locule_color=centroid_locule_color, centroid_locule_thickness=centroid_locule_thickness,
+            dilation_factor=dilation_factor,
+        ))
+        _apply("analyze_color_params", dict(
+            stat=stat, tissue=tissue, color_space=color_space,
+            label_opacity=label_opacity, get_color_histogram=get_color_histogram,
+            dilation_factor=dilation_factor,
+            pericarp_int_color=pericarp_int_color, pericarp_int_thickness=pericarp_int_thickness,
+        ))
+
+        # 3. Syncronize config to self._parameters for the session report
+        for key in (
+            "setup_measurements_params", "detect_color_checker_params",
             "generate_fruit_mask_params",
-            "enhance_locule_contrast_params",
-            "generate_locule_mask_params",
-            "detect_fruits_params",
-            "analyze_morphology_params",
-            "analyze_color_params",
-        ]
-        for key in _param_keys:
+            "enhance_locule_contrast_params", "generate_locule_mask_params",
+            "detect_fruits_params", "analyze_morphology_params", "analyze_color_params",
+        ):
             if key in config and config[key]:
-                setattr(self.parameters, key, config[key])
+                setattr(self._parameters, key, config[key])
 
-        # Print header message:
+        # 4. Verbose header
         session_start = datetime.now()
-        if verbose:
-            print("=" * 60)
-            print(" Traitly running ⋆✧｡٩(ˊᗜˋ )و✧*｡   ")
-            print("=" * 60)
-            print(f"    > Input folder: {folder_path}")
-            print(f"    > Image(s) detected: {len(img_paths)}")
-            print(f"    > analyze_morphology: {analyze_morphology}")
-            print(f"    > analyze_color: {analyze_color}")
-            if num_cores_message is not None:
-                print(num_cores_message)
-            else:
-                print(f"    > num_cores: {num_cores}\n")
-            if json_path is not None:
-                print(f"    > Parameters loaded from: {os.path.abspath(json_path)}\n")
 
-        # Create lists to save results
-        all_morphology: List[pd.DataFrame] = []
-        all_color: List[pd.DataFrame] = []
-        errors: List[Dict] = []
-        total_fruits = 0
-        per_image_times: List[Dict] = []
+        _print_batch_header(
+            folder_path = folder_path,
+            img_paths = img_paths,
+            num_cores = num_cores,
+            num_cores_message = num_cores_message,
+            verbose = verbose,
+            json_path = json_path,
+            extra_lines = [
+                f"    > analyze_morphology: {analyze_morphology}",
+                f"    > analyze_color: {analyze_color}",
+            ],
+        )
 
-        def _run_one(img_path: str):
-            t0 = time.time()
-            try:
-                worker = FruitInternalAnalyzer(img_path)
-                worker.load_image(plot=False)
-                df_m, df_c, err, n, ann_img = worker.process_single_file(
+        # 5. Process loop:
+        try:
+            all_morphology, all_color, errors, total_fruits, _ = _run_fruit_batch_loop(
+                img_paths=img_paths,
+                worker_fn=_process_internal_image_worker,
+                num_cores=num_cores,
+                config=config,
+                analyze_morphology=analyze_morphology,
+                analyze_color=analyze_color,
+                output_path=output_path,
+                verbose=verbose,
+            )
+        except Exception as e:
+            if "spawn" in str(e) or "fork" in str(e) or "bootstrapping" in str(e) or "CUDA" in str(e):
+                if verbose:
+                    print("\n> Multiprocessing with CUDA failed (missing the required `if __name__ == '__main__':` block)")
+                    print("     - Falling back to single-core processing (num_cores=1)...\n")
+
+                all_morphology, all_color, errors, total_fruits, _ = _run_fruit_batch_loop(
+                    img_paths=img_paths,
+                    worker_fn=_process_internal_image_worker,
+                    num_cores=1, # 'deactivate' multiprocessing
                     config=config,
-                    json_path=None,
                     analyze_morphology=analyze_morphology,
                     analyze_color=analyze_color,
-                    save_image=True,
                     output_path=output_path,
+                    verbose=verbose,
                 )
-                return (
-                    df_m,
-                    df_c,
-                    err,
-                    n,
-                    ann_img,
-                    os.path.basename(img_path),
-                    time.time() - t0,
-                )
-            except Exception as e:
-                return (
-                    None,
-                    None,
-                    {
-                        "filename": os.path.basename(img_path),
-                        "status": f"Error: {str(e)}",
-                    },
-                    0,
-                    None,
-                    os.path.basename(img_path),
-                    time.time() - t0,
-                )
-
-        # Run parallel analysis if num_cores > 1, else run sequential analysis
-        if num_cores == 1:
-            for img_path in tqdm(
-                img_paths, desc="Processing images", unit="img", disable=not verbose
-            ):
-                df_m, df_c, err, n, _, fname, elapsed = _run_one(img_path)
-
-                per_image_times.append(
-                    {
-                        "filename": fname,
-                        "time_s": round(elapsed, 2),
-                        "status": "error" if err else "ok",
-                        "fruits": n,
-                    }
-                )
-
-                if err:
-                    errors.append(err)
-                else:
-                    if df_m is not None:
-                        all_morphology.append(df_m)
-                    if df_c is not None:
-                        all_color.append(df_c)
-                    total_fruits += n
-
-        else:
-            with ProcessPoolExecutor(max_workers=num_cores) as executor:
-                futures = {
-                    executor.submit(
-                        _process_image_worker,
-                        img_path,
-                        config,
-                        analyze_morphology,
-                        analyze_color,
-                    ): img_path
-                    for img_path in img_paths
-                }
-                for future in tqdm(
-                    as_completed(futures),
-                    total=len(futures),
-                    desc="Processing images",
-                    unit="img",
-                    disable=not verbose,
-                ):
-                    result = future.result()
-                    df_m, df_c, err, n, ann_img, fname = result[:6]
-                    elapsed = result[6] if len(result) > 6 else 0.0
-
-                    per_image_times.append(
-                        {
-                            "filename": fname,
-                            "time_s": round(elapsed, 2),
-                            "status": "error" if err else "ok",
-                            "fruits": n,
-                        }
-                    )
-
-                    if err:
-                        errors.append(err)
-                    else:
-                        if ann_img is not None:
-                            base = os.path.splitext(fname)[0]
-                            out_img = os.path.join(output_path, f"{base}_annotated.jpg")
-                            cv2.imwrite(out_img, ann_img)
-                        if df_m is not None:
-                            all_morphology.append(df_m)
-                        if df_c is not None:
-                            all_color.append(df_c)
-                        total_fruits += n
-
-        # Merge all the results in a single df
-        df_morphology_all = (
-            pd.concat(all_morphology, ignore_index=True) if all_morphology else None
-        )
-        df_color_all = pd.concat(all_color, ignore_index=True) if all_color else None
-
-        # Save csv files
-        morph_csv = None
-        color_csv = None
-
-        if df_morphology_all is not None:
-            morph_csv = os.path.join(output_path, "morphology_results.csv")
-            df_morphology_all.to_csv(morph_csv, index=False)
-
-        if df_color_all is not None:
-            color_csv = os.path.join(output_path, "color_results.csv")
-            df_color_all.to_csv(color_csv, index=False)
-
-        # Save session report
-        session_end = datetime.now()
-        total_time = (session_end - session_start).total_seconds()
-        avg_time = total_time / len(img_paths) if img_paths else 0
-
-        if total_time < 60:
-            time_str = f"{total_time:.1f}s"
-        else:
-            time_str = f"{total_time / 60:.1f}min"
-
-        def _filter_params(p: Dict) -> Dict:
-            return {
-                k: v
-                for k, v in p.items()
-                if "plot" not in k.lower() and "color" not in k.lower()
-            }
-
-        if json_path is not None:
-            json_report = os.path.abspath(json_path)
-        else:
-            json_report = "No JSON file provided"
-
-        session_lines = [
-            "=" * 70,
-            "SESSION REPORT",
-            "=" * 70,
-            f"traitly              : v{__version__}",
-            f"run date             : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"image folder         : {folder_path}",
-            f"results folder       : {output_path}",
-            f"images found         : {len(img_paths)}",
-            f"images ok            : {len(img_paths) - len(errors)}",
-            f"images failed        : {len(errors)}",
-            f"total fruits         : {total_fruits}",
-            f"analyze_morphology   : {analyze_morphology}",
-            f"analyze_color        : {analyze_color}",
-            f"JSON path            : {json_report}",
-            f"num_cores            : {num_cores}",
-            f"total time           : {time_str}",
-            f"avg per image        : {avg_time:.1f}s",
-            "",
-            "=" * 70,
-            "ANALYSIS PARAMETERS",
-            "=" * 70,
-        ]
-
-        param_sections = {
-            "SETUP_MEASUREMENTS": "setup_measurements_params",
-            "GENERATE_FRUIT_MASK": "generate_fruit_mask_params",
-            "ENHANCE_LOCULE_CONTRAST": "enhance_locule_contrast_params",
-            "GENERATE_LOCULE_MASK": "generate_locule_mask_params",
-            "DETECT_FRUITS": "detect_fruits_params",
-            "ANALYZE_MORPHOLOGY": "analyze_morphology_params",
-            "ANALYZE_COLOR": "analyze_color_params",
-        }
-
-        for title, attr in param_sections.items():
-            raw = getattr(self.parameters, attr, {}) or {}
-            filtered = _filter_params(raw)
-            if filtered:
-                session_lines.append(f"\n{title}:")
-                for k, v in filtered.items():
-                    session_lines.append(f"   - {k}: {v}")
-
-        session_lines += [
-            "",
-            "=" * 70,
-            "DEPENDENCIES",
-            "=" * 70,
-        ] + [
-            f"   - {pkg:<30} {ver}"
-            for pkg, ver in self.parameters.get_package_versions().items()
-        ]
-
-        # Create session report
-        session_txt = os.path.join(output_path, "session_report.txt")
-        with open(session_txt, "w", encoding="utf-8") as f:
-            f.write("\n".join(session_lines))
-
-        # Error report table format
-        error_txt = None
-        if errors:
-            col1_w = max(len("IMAGE"), max(len(e["filename"]) for e in errors)) + 2
-            col2_w = max(len("ERROR"), max(len(e["status"]) for e in errors)) + 2
-            sep = f"+{'-' * col1_w}+{'-' * col2_w}+"
-            header = f"| {'IMAGE':<{col1_w - 2}} | {'ERROR':<{col2_w - 2}} |"
-
-            error_lines = (
-                [
-                    "=" * 70,
-                    "ERROR REPORT",
-                    "=" * 70,
-                    f"run date   : {session_start.strftime('%Y-%m-%d %H:%M:%S')}",
-                    f"folder     : {folder_path}",
-                    f"failed     : {len(errors)}/{len(img_paths)} images",
-                    "",
-                    sep,
-                    header,
-                    sep,
-                ]
-                + [
-                    f"| {e['filename']:<{col1_w - 2}} | {e['status']:<{col2_w - 2}} |"
-                    for e in errors
-                ]
-                + [sep]
-            )
-
-            error_txt = os.path.join(output_path, "error_report.txt")
-            with open(error_txt, "w", encoding="utf-8") as f:
-                f.write("\n".join(error_lines))
-
-        # Final message
-        if verbose:
-            total_img_processed = len(img_paths) - len(errors)
-            if len(errors) == len(img_paths):
-                print("\n( ദ്ദി ༎ຶ‿༎ຶ ) Task failed successfully " + "=" * 37)
-                print("    > Image(s) processed:")
-                print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
-                print(
-                    f"    > For more details, check error_report.txt saved in: {output_path}"
-                )
-
             else:
-                print("\n( ദ്ദി ˙ᗜ˙ ) Finished " + "=" * 47)
-                print("    > Image(s) processed:")
-                print(
-                    f"        - Successfully: {total_img_processed}/{len(img_paths)} img(s)"
-                )
-                if errors:
-                    print(f"        - Errors: {len(errors)}/{len(img_paths)} img(s)")
-                print(f"        - Total fruits: {total_fruits}")
-                print(
-                    f"        - Total time: {time_str}  (avg {avg_time:.1f}s/img)"
-                )
-                print("    > Files saved:")
-                print(f"        - {total_img_processed} annotated image(s)")
-                if morph_csv:
-                    print(f"        - {os.path.basename(morph_csv)}")
-                if color_csv:
-                    print(f"        - {os.path.basename(color_csv)}")
-                print(f"        - {os.path.basename(session_txt)}")
-                if error_txt:
-                    print(f"        - {os.path.basename(error_txt)}")
-                print(f"        - Results folder: {output_path}")
+                raise
+
+        # 6. Save results
+        _save_fruit_batch_results(
+            all_morphology=all_morphology,
+            all_color=all_color,
+            errors=errors,
+            output_path=output_path,
+            folder_path=folder_path,
+            img_paths=img_paths,
+            total_fruits=total_fruits,
+            num_cores=num_cores,
+            analyze_morphology=analyze_morphology,
+            analyze_color=analyze_color,
+            json_path=json_path,
+            session_start=session_start,
+            parameters=self._parameters,
+            param_sections={
+                "SETUP_MEASUREMENTS": "setup_measurements_params",
+                "DETECT_COLOR_CHECKER": "detect_color_checker_params",
+                "GENERATE_FRUIT_MASK": "generate_fruit_mask_params",
+                "ENHANCE_LOCULE_CONTRAST": "enhance_locule_contrast_params",
+                "GENERATE_LOCULE_MASK": "generate_locule_mask_params",
+                "DETECT_FRUITS": "detect_fruits_params",
+                "ANALYZE_MORPHOLOGY": "analyze_morphology_params",
+                "ANALYZE_COLOR": "analyze_color_params",
+            },
+            verbose=verbose,
+        )
 
         return None
 
@@ -3134,11 +2458,11 @@ class FruitInternalAnalyzer:
                 print(
                     "Warning: No annotated image, showing original image instead. Run analyze_color() or analyze_morphology() first."
                 )
-                img = self.img_rgb
+                img = self._img_rgb
             else:
                 img = self.results.morphology_image
         else:
-            img = self.img_rgb
+            img = self._img_rgb
 
         plt.figure(figsize=plot_size)
         plt.imshow(img)

@@ -70,7 +70,7 @@ def cranberry_blue():
 
 def test_cranberry_blue_bg(cranberry_blue):
     cranberry_blue.setup_measurements()
-    assert cranberry_blue.ref_roi
+    assert cranberry_blue._ref_roi
     cranberry_blue.generate_fruit_mask(plot=False, background_color="blue")
     cranberry_blue.detect_fruits(plot=False)
     cranberry_blue.analyze_color(display_table = False, get_color_histogram = True)
@@ -86,13 +86,13 @@ def test_cranberry_blue_bg(cranberry_blue):
 
 def test_detect_label(cranberry_blue):
     cranberry_blue.setup_measurements(detect_label=True)
-    assert cranberry_blue.label_roi
+    assert cranberry_blue._label_roi
     assert cranberry_blue.label_text
     assert cranberry_blue.img.any()
     assert cranberry_blue.img_name
-    assert cranberry_blue.img_copy.any()
-    assert cranberry_blue.img_rgb.any()
-    assert cranberry_blue.img_hsv.any()
+    assert cranberry_blue._img_copy.any()
+    assert cranberry_blue._img_rgb.any()
+    assert cranberry_blue._img_hsv.any()
     assert cranberry_blue.l_transformed is None
 
 def test_L_contrast(cranberry_blue):
@@ -122,16 +122,11 @@ def test_analyze_color_channels(cranberry_blue):
 
 def test_setup_measurements_attributes(cranberry_blue):
     cranberry_blue.setup_measurements(detect_label = True,
-                                       detect_color_checker = True,
                                        skip_yolo = False)
     assert cranberry_blue.label_text
-    assert cranberry_blue.label_roi
-    assert cranberry_blue.ref_roi
+    assert cranberry_blue._label_roi
+    assert cranberry_blue._ref_roi
     assert cranberry_blue.px_per_cm
-    if hasattr(cv2.mcc, 'CCheckerDetector'):
-        assert cranberry_blue.checker_coords
-    else:
-        pytest.skip("CCheckerDetector not available in this OpenCV version")
 
 
 def test_create_mask_attributes(cranberry_blue):

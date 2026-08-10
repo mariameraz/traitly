@@ -32,34 +32,15 @@ from .constants import valid_extensions, valid_cv2_extensions
 # Load an image
 ##############################################################################
 
-@lru_cache(maxsize=128)
-def _load_img_cached(path: str) -> np.ndarray:
+def _patch_imread(path: str) -> np.ndarray:
     """
-    Load an image from disk into BGR format with LRU caching.
-
-    Parameters
-    ----------
-    path : str
-        Absolute path to the image file. Extension must be in
-        ``valid_extensions``.
-
-    Returns
-    -------
-    np.ndarray
-        Loaded BGR image.
-
-    Raises
-    ------
-    ValueError
-        If the file extension is unsupported or the image cannot be
-        loaded by ``cv2.imread``.
+    Try/except included for problem with ultralytics and cv2.imread on windows:
+    ultralytics raises FileNotFoundError instead of None when the file does not exist
     """
     path_obj = Path(path)
     if path_obj.suffix.lower() not in valid_extensions:
         raise ValueError(f"Unsupported image format: '{path_obj.suffix.lower()}'")
 
-    # Try/except included for problem with ultralytics and cv2.imread on windows:
-    # ultralytics raises FileNotFoundError instead of None when the file does not exist
     try:
         img = cv2.imread(str(path_obj), cv2.IMREAD_COLOR)
     except (FileNotFoundError, OSError):
@@ -67,7 +48,6 @@ def _load_img_cached(path: str) -> np.ndarray:
 
     if img is None:
         raise ValueError(f"Cannot load image: {path_obj.name}")
-
     return img
 
 
@@ -82,10 +62,7 @@ def load_img(
     h: Optional[int] = None,
 ) -> Optional[np.ndarray]:
     """
-    Load an image via :func:`_load_img_cached` and optionally display it.
-
-    Returns a fresh copy of the cached array so callers can modify it
-    freely without invalidating the cache.
+    Load an image from disk and optionally display or crop it.
 
     Parameters
     ----------
@@ -105,40 +82,37 @@ def load_img(
         Width of the crop region in pixels.
     h : int, optional
         Height of the crop region in pixels.
-
-    Returns
-    -------
-    np.ndarray or None
-        BGR image array (cropped if x/y/w/h are provided), or ``None`` if loading fails.
+    Raises
+    ------
+    ValueError
+        If the file extension is unsupported, or if the image cannot be loaded.
     """
-    try:
-        img = _load_img_cached(path)
+    ext = Path(path).suffix.lower()
+    if ext not in valid_cv2_extensions:
+        raise ValueError(f"Unsupported image format: {ext}")
 
-        # Crop
-        if any(v is not None for v in (x, y, w, h)):
-            img_h, img_w = img.shape[:2]
+    img = _patch_imread(path)
+    if img is None:
+        raise ValueError(f"Cannot load image: {path}")
 
-            x0 = x if x is not None else 0
-            y0 = y if y is not None else 0
-            x1 = x0 + w if w is not None else img_w
-            y1 = y0 + h if h is not None else img_h
+    # Crop
+    if any(v is not None for v in (x, y, w, h)):
+        img_h, img_w = img.shape[:2]
+        x0 = x if x is not None else 0
+        y0 = y if y is not None else 0
+        x1 = x0 + w if w is not None else img_w
+        y1 = y0 + h if h is not None else img_h
+        img = img[y0:y1, x0:x1]
 
-            img = img[y0:y1, x0:x1]
+    # Plot
+    if plot:
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        plt.figure(figsize=plot_size)
+        plt.imshow(img_rgb)
+        plt.axis('on' if show_axis else 'off')
+        plt.show()
 
-        # Plot
-        if plot:
-            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            plt.figure(figsize=plot_size)
-            plt.imshow(img_rgb)
-            plt.axis('on' if show_axis else 'off')
-            plt.show()
-
-        return img.copy()
-
-    except Exception as e:
-        print(f"Error loading: {e}")
-        return None
-
+    return img.copy()
 
 ##############################################################################
 # Detect image name

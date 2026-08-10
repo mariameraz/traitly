@@ -446,7 +446,7 @@ button.action-button, a.action-button {
 }
 
 #step1_preview img {
-    max-height: 1500px;
+    max-height: 800px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -471,7 +471,7 @@ button.action-button, a.action-button {
 }
 
 #step2_results img {
-    max-height: 1500px;
+    max-height: 800px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -479,7 +479,7 @@ button.action-button, a.action-button {
 }
 
 #step3_results img {
-    max-height: 1500px;
+    max-height: 800px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -487,7 +487,7 @@ button.action-button, a.action-button {
 }
 
 #step4_results img {
-    max-height: 1500px;
+    max-height: 800px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -496,7 +496,7 @@ button.action-button, a.action-button {
 
 /* step 5 */
 #detect_results img {
-    max-height: 1500px;
+    max-height: 800px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -505,7 +505,7 @@ button.action-button, a.action-button {
 
 /* step 6 - morphology */
 #morph_results img {
-    max-height: 1500px;
+    max-height: 800px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -514,7 +514,7 @@ button.action-button, a.action-button {
 
 /* step 7 - color */
 #color_results img {
-    max-height: 1500px;
+    max-height: 800px;
     max-width: 100%;
     object-fit: contain;
     display: block;
@@ -691,7 +691,6 @@ body.dark-theme .irs--shiny .irs-bar {
     background: #3b82f6 !important;
 }
 
-
 .bslib-value-box { border-radius:10px !important; border:1px solid #e2e8f0 !important; }
 ::-webkit-scrollbar { width:5px; }
 ::-webkit-scrollbar-track { background:#f1f5f9; }
@@ -715,7 +714,7 @@ _HEADER = f"""
 
 <div class="traitly-header">
     <a class="t-brand">
-        Traitly <span class="ver">v{__version__}</span>
+        Traitly <span class="ver">{__version__}</span>
     </a>
 
     <nav class="t-nav" id="t-nav">
@@ -1338,7 +1337,7 @@ step_locule = _panel(
             ui.output_ui("otsu_ui"),
             ui.hr(),
             ui.input_numeric(
-                "min_fruit_area_lm", "Min fruit area (px)", 5000, min=100, step=100
+                "min_fruit_area_lm", "Min fruit area (px)", 1000, min=10, step=100
             ),
             ui.input_numeric(
                 "min_locule_area_lm", "Min locule area (px)", 0, min=0, step=10
@@ -1381,7 +1380,7 @@ step_detect = _panel(
                 "min_fruit_circularity", "Min circularity", 0.0, 1.0, 0.5, step=0.05
             ),
             ui.input_numeric(
-                "min_fruit_area_det", "Min fruit area (px)", 500, min=1, step=100
+                "min_fruit_area_det", "Min fruit area (px)", 1000, min=10, step=100
             ),
             ui.input_numeric(
                 "max_fruit_area_det", "Max fruit area (px)", 0, min=0, step=100
@@ -1402,10 +1401,10 @@ step_detect = _panel(
             """),
             ui.output_ui("detect_dilation_ui"),
             ui.input_numeric(
-                "rescale_factor_det", "Rescale factor", 0, min=0, step=0.1
+                "rescale_factor_det", "Rescale factor", 0, min=0, step=0.1, max=1
             ),
             ui.p(
-                "Set to 0 for no upper limit.",
+                "Set to 0 for no upper limit. Value range (0-1)",
                 style="font-size:1.4rem;color:#94a3b8;margin-top:-.5rem;",
             ),
             ui.hr(),
@@ -1650,7 +1649,6 @@ tab_home = ui.nav_panel(
                     <li style="margin-bottom:.4rem"><strong>Per-fruit measurements</strong>: each detected fruit receives a unique ID and is measured independently.</li>
                     <li style="margin-bottom:.4rem"><strong>Fully automated</strong>: detection, segmentation, calibration, and trait extraction without manual measurements.</li>
                     <li style="margin-bottom:.4rem"><strong>Pre-trained models included</strong>: automatic detection of size markers and sample labels.</li>
-                    <li style="margin-bottom:.4rem"><strong>Color correction</strong>: Macbeth Color Checker detection to standardize color across experiments.</li>
                     <li style="margin-bottom:.4rem"><strong>Automatic sample identification</strong>: detection of QR codes and text labels.</li>
                     <li style="margin-bottom:.4rem"><strong>PDF support</strong>: direct conversion of scanned PDF files to images.</li>
                     <li style="margin-bottom:.4rem"><strong>Session reports</strong>: automatically saves parameters, dependency versions, and metadata for every run.</li>
@@ -1732,7 +1730,7 @@ tab_bg = ui.nav_panel(
         ui.div(
             ui.HTML('<p class="panel-title">Background Color Helper</p>'),
             ui.p(
-                "⋆˙⟡ Upload an image to inspect its HSV pixel distribution, then tune thresholds to isolate the background.",
+                "⋆˙⟡ Upload an image to inspect its HSV pixel distribution, then tune thresholds to segmentate the background.",
                 style="font-size: 2rem; margin-bottom: 1rem",
             ),
             ui.HTML("<br>"),
@@ -1834,7 +1832,7 @@ tab_batch = ui.nav_panel(
             ),
             # ui.output_ui("batch_file_info"),
             ui.hr(),
-            ui.HTML('<div class="sb-label">Analysis Mode</div>'),
+            ui.HTML('<div class="sb-label">Analysis Type</div>'),
             ui.input_radio_buttons(
                 "batch_mode",
                 None,
@@ -1928,6 +1926,31 @@ tab_pdf = ui.nav_panel(
     value="tab_pdf",
 )
 
+# ## Color correction
+# tab_cc = ui.nav_panel(
+#     "Color Correction",
+#     ui.layout_columns(
+#         ui.div(
+#             ui.HTML('<p class="panel-title">Batch Correction</p>'),
+#             ui.input_file(
+#                 "cc_files",
+#                 "Select images",
+#                 accept=[".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"],
+#                 multiple=True,
+#             ),
+#             ui.hr(),
+#             ui.input_action_button(
+#                 "run_cc",
+#                 "▶  Run Color Correction",
+#                 class_="btn btn-primary",
+#                 style="font-size:2rem;padding:.8rem 1.5rem;",
+#             ),
+#         ),
+#         ui.div(ui.output_ui("cc_results")),
+#         col_widths=[3, 9],
+#     ),
+#     value="tab_cc",
+# )
 # side bar config
 sidebar_ui = ui.sidebar(
     ui.output_ui("sidebar_content"),
@@ -1959,12 +1982,14 @@ app_ui = ui.page_sidebar(
         tab_bg,
         tab_batch,
         tab_pdf,
+        #tab_cc,
         id="main_tab",
         selected="tab_home",
     ),
     title="Traitly",
     fillable=False,
 )
+
 
 
 # servers
@@ -2040,10 +2065,11 @@ def server(input: Inputs, output: Outputs, session: Session):
     @reactive.event(input.js_main_tab)
     def _on_main_tab():
         tab = input.js_main_tab()
-        ui.update_navs("main_tab", selected=tab, session=session)
+        ui.update_navset("main_tab", selected=tab, session=session)
 
         if tab == "tab_analysis" and r_mode.get() is None:
             session.send_custom_message("get_current_mode", {})
+
 
     @reactive.effect
     @reactive.event(input.js_mode)
@@ -2069,13 +2095,13 @@ def server(input: Inputs, output: Outputs, session: Session):
             r_mask_points.set([])
             r_mask_history.set([])
             r_mask_mode.set("white")
-            ui.update_navs("pipeline_step", selected="step_setup", session=session)
+            ui.update_navset("pipeline_step", selected="step_setup", session=session)
 
     @reactive.effect
     @reactive.event(input.js_step_click)
     def _on_step():
         sid = input.js_step_click()
-        ui.update_navs("pipeline_step", selected=sid, session=session)
+        ui.update_navset("pipeline_step", selected=sid, session=session)
         r_cur_step.set(sid)
 
     @render.ui
@@ -2149,7 +2175,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         r_img_ready.set(False)
         r_upload_key.set(r_upload_key.get() + 1)
         r_step1_result.set(ui.div())
-        ui.update_navs("pipeline_step", selected="step_setup", session=session)
+        ui.update_navset("pipeline_step", selected="step_setup", session=session)
 
     @render.ui
     def upload_input_ui():
@@ -2323,8 +2349,8 @@ def server(input: Inputs, output: Outputs, session: Session):
         if az is None:
             return ui.div()
         display_img = (
-            cv2.cvtColor(az.img_copy, cv2.COLOR_BGR2RGB)
-            if (hasattr(az, "img_copy") and az.img_copy is not None)
+            cv2.cvtColor(az._img_copy, cv2.COLOR_BGR2RGB)
+            if (hasattr(az, "_img_copy") and az._img_copy is not None)
             else cv2.cvtColor(az.img, cv2.COLOR_BGR2RGB)
         )
 
@@ -2361,22 +2387,25 @@ def server(input: Inputs, output: Outputs, session: Session):
                 detect_label=input.detect_label(),
                 confidence=input.confidence(),
                 skip_qr=input.skip_qr(),
-                detect_color_checker=input.detect_color_checker(),
                 width_cm=input.width_cm() if input.use_dimensions() else None,
                 length_cm=input.length_cm() if input.use_dimensions() else None,
                 diameter_cm=input.diameter_cm(),
                 verbose=False,
             )
+
+            if input.detect_color_checker():
+                az.detect_color_checker()
+
             mark_done(0)
             h, w = az.img.shape[:2] if az.img is not None else (0, 0)
-            n_refs = len(az.ref_roi) if az.ref_roi else 0
+            n_refs = len(az._ref_roi) if az._ref_roi else 0
             r_step1_result.set(
                 ui.div(
-                    ui.p(
-                        "Setup complete!",
-                        style="font-size:3.4rem; text-align:center; max-width:700px; "
-                        "margin:0 auto; color: #97c8ec; font-weight:700; background-color:rgba(49,63,65,0.8);",
-                    ),
+                    # ui.p(
+                    #     "Process completed!",
+                    #     style="font-size:3.4rem; text-align:center; max-width:700px; "
+                    #     "margin:0 auto; color: #97c8ec; font-weight:700; background-color:rgba(49,63,65,0.8);",
+                    # ),
                     ui.div(
                         ui.layout_columns(
                             ui.value_box(
@@ -2536,7 +2565,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         )
 
         # right panel (overlay)
-        orig_rgb = az.img_rgb if az.img_rgb is not None else None
+        orig_rgb = az._img_rgb if az._img_rgb is not None else None
 
         if orig_rgb is not None:
             orig_rgb_correct = cv2.cvtColor(orig_rgb, cv2.COLOR_BGR2RGB)
@@ -3110,7 +3139,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     def detect_dilation_ui():
         if r_mode.get() == "internal":
             return ui.input_numeric(
-                "dilation_factor", "Dilation factor", 0, min=0, step=0.1
+                "_dilation_factor", "Dilation factor", 0, min=0, step=0.1
             )
         return ui.div()
 
@@ -3219,7 +3248,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 kw["min_locule_per_fruit"] = input.min_locule_per_fruit()
                 kw["locule_thickness"] = input.locule_thickness_det()
                 kw["locule_color"] = _parse_color(input.locule_color_det())
-                kw["dilation_factor"] = input.dilation_factor() or None
+                kw["dilation_factor"] = input._dilation_factor() or None
                 kw["pericarp_int_color"] = _parse_color(input.pericarp_int_color_det())
                 kw["pericarp_int_thickness"] = input.pericarp_int_thickness_det()
             az.detect_fruits(**kw)
@@ -3720,7 +3749,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         hi = np.array(
             [input.bg_h_hi(), input.bg_s_hi(), input.bg_v_hi()], dtype=np.uint8
         )
-        mask = cv2.inRange(az.img_hsv, lo, hi)
+        mask = cv2.inRange(az._img_hsv, lo, hi)
         orig = az.img.copy()
         fruit_mask = cv2.bitwise_not(mask)
         pct = 100 * mask.sum() / 255 / mask.size
@@ -3768,7 +3797,6 @@ def server(input: Inputs, output: Outputs, session: Session):
         )
 
     ## batch analysis
-
     @render.ui
     @reactive.event(input.run_batch)
     def batch_results():
@@ -4109,9 +4137,15 @@ def server(input: Inputs, output: Outputs, session: Session):
         if data:
             yield data
 
+    @render.ui
+    @reactive.event(input.run_cc)
+    def cc_results():
+        files = input.cc_files()
+        if not files:
+            return ui.p("Select images first.", class_="text-info")
+
 
 app = App(app_ui, server)
-
 
 # Run the app with CLI
 def run():

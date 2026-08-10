@@ -15,7 +15,7 @@ import numpy as np
 # ============================================================================
 # INTERNAL
 # ============================================================================
-from traitly.utils.basic_functions import load_img, _load_img_cached
+from traitly.utils.basic_functions import load_img
 
 ##########################
 # Image load and process #
@@ -25,31 +25,24 @@ from traitly.utils.basic_functions import load_img, _load_img_cached
 invalid_paths = ["/img.txt", "/img.pdf", "/img.gif", "/img"]
 
 @pytest.mark.parametrize("bad_paths", invalid_paths)
-def test_extension_invalida(bad_paths):
-    assert load_img(bad_paths) is None
+def test_load_img_invalid_extension_raises(bad_paths):
     with pytest.raises(ValueError, match="Unsupported image format"):
-            _load_img_cached(bad_paths)
+        load_img(bad_paths)
 
 @pytest.mark.parametrize("bad_paths", invalid_paths)
-def test_load_img_cached_invalid_extension_raises(bad_paths):
-    _load_img_cached.cache_clear() # clean lru after every test
+def test_load_img_invalid_extension_raises(bad_paths):
     with pytest.raises(ValueError, match="Unsupported image format"):
-        _load_img_cached(bad_paths)
+        load_img(bad_paths)
 
 ## 2. Empty file
-def test_load_img_cached_cannot_load_img():
+def test_load_img_cannot_load_img():
     with pytest.raises(ValueError, match="Cannot load image"):
-        _load_img_cached("nonexistent.jpg")
+        load_img("nonexistent.jpg")
 
 ## 3. Import color image and cut ROI
 
 img_path = Path(__file__).parent.parent / "data" / "external" / "blue_bg" / "cranberry_blue_bg.jpg"
 
-@pytest.fixture(autouse=True)
-def clear_cache():
-    _load_img_cached.cache_clear()
-    yield
-    _load_img_cached.cache_clear()
 
 def test_load_img_shape():
     img = load_img(img_path)
@@ -80,38 +73,3 @@ img_path_2 = Path(__file__).parent.parent / "data" / "external" / "white_bg" / "
 # misses = how many paths are being loaded and going to the disk
 # maxsize= entry max size (128 in this case)
 # currsize = how many entries do we have saved in the cache
-
-def test_lru_cache_hits():
-    _load_img_cached.cache_clear()
-
-    _load_img_cached(str(img_path))
-    info = _load_img_cached.cache_info()
-    assert info.hits == 0 # First call, so cache is empty
-    assert info.misses == 1
-
-    _load_img_cached(str(img_path))
-    info = _load_img_cached.cache_info()
-    assert info.hits == 1 # second call, find the previous read image
-    assert info.misses == 1
-
-    _load_img_cached(str(img_path))
-    info = _load_img_cached.cache_info()
-    assert info.hits == 2 # third call, cache hit it again
-    assert info.misses == 1
-
-def test_lru_cache_different_paths():
-    _load_img_cached.cache_clear()
-
-    # two different paths
-    _load_img_cached(str(img_path))
-    _load_img_cached(str(img_path_2))
-    info = _load_img_cached.cache_info()
-    assert info.misses == 2
-    assert info.hits == 0
-
-def test_lru_cache_clear():
-    _load_img_cached(str(img_path))
-    _load_img_cached.cache_clear()
-
-    info = _load_img_cached.cache_info()
-    assert info.currsize == 0   # empty cache

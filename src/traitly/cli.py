@@ -13,6 +13,8 @@ Usage
 
     traitly --fruit_internal -i PATH [-o PATH] [--json PATH] [--num_cores N]
     traitly --fruit_external -i PATH [-o PATH] [--json PATH] [--num_cores N]
+    traitly --info
+    traitly --version
 
 For folder inputs, delegates to
 :meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.analyze_folder`
@@ -20,18 +22,32 @@ or
 :meth:`~traitly.fruit_phenotyping.external_analysis.FruitExternalAnalyzer.analyze_folder`.
 For single images, delegates to
 :meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.process_single_file`.
+or
+:meth:`~traitly.fruit_phenotyping.external_analysis.FruitExternalAnalyzer.process_single_file`.
 """
 
+# ============================================================================
+# STANDARD LIBRARY
+# ============================================================================
 import argparse
 import sys
 import os
 from pathlib import Path
+import importlib.metadata
 from rich_argparse import RawDescriptionRichHelpFormatter
-from traitly import __version__
 
 # ============================================================================
-# Parser
+# INTERNAL
 # ============================================================================
+from traitly.utils.environment import (
+    get_session_metadata,
+    get_package_versions,
+    get_system_metadata
+)
+
+###########
+# Parser ##
+###########
 
 def _fmt_examples(rows):
     return "\n".join(f"  {r[0]}" for r in rows)
@@ -60,90 +76,97 @@ def create_parser() -> argparse.ArgumentParser:
             "",
             "Examples:",
             _fmt_examples([
+                ("  # Get traitly fruit_internal and fruit_external parameters info",),
+                ("  traitly fruit_internal ---help",),
+                ("  traitly fruit_external ---help",),
+                ("",),
                 ("  # Internal structure analysis (single image or folder)",),
-                ("  traitly --fruit_internal -i tests/sample_data/",),
-                ("  traitly --fruit_internal -i tests/sample_data/ -o results/ --num_cores 4",),
-                ("  traitly --fruit_internal -i tests/sample_data/ --json config.json",),
+                ("  traitly fruit_internal -i tests/sample_data/",),
+                ("  traitly fruit_internal -i tests/sample_data/ -o results/ --num_cores 4",),
+                ("  traitly fruit_internal -i tests/sample_data/ --json config.json",),
                 ("",),
                 ("  # External analysis (single image or folder)",),
-                ("  traitly --fruit_external -i tests/sample_data/",),
-                ("  traitly --fruit_external -i tests/sample_data/ -o results/ --json config.json --num_cores 4",),
+                ("  traitly fruit_external -i tests/sample_data/",),
+                ("  traitly fruit_external -i tests/sample_data/ -o results/ --json config.json --num_cores 4",),
+                ("",),
+                ("  # Get traitly and system metadata",),
+                ("  traitly info",),
+                ("",),
+                ("  # Get traitly version",),
+                ("  traitly --version",),
             ]),
             "",
             "="*70,
             "For more details ->",
             "   - GitHub Repository: https://github.com/mariameraz/traitly \n"
             "   - Documentation: https://traitly.readthedocs.io/ ",
+            "   - Contact: ma.torresmeraz@gmail.com",
             "="*70,
             "",
         ])
     )
 
-    # Mode (mutually exclusive)
-    mode_group = parser.add_mutually_exclusive_group(required=True)
-    mode_group.add_argument(
-        '--fruit_internal',
-        action='store_true',
-        help='Analyze internal fruit structure (locules, pericarp, symmetry)'
-    )
-    mode_group.add_argument(
-        '--fruit_external',
-        action='store_true',
-        help='Analyze external fruit structure (morphology, color)'
-    )
+    subparsers = parser.add_subparsers(dest='command', required=True)
 
-    # Required
-    parser.add_argument(
-        '-i', '--input',
-        type=str,
-        required=True,
-        metavar='PATH',
-        help='Path to image file or folder'
-    )
+    def _add_common_args(subparser):
+        subparser.add_argument(
+            '-i', '--input',
+            type=str,
+            required=True,
+            metavar='PATH',
+            help='Path to image file or folder'
+        )
+        subparser.add_argument(
+            '-o', '--output',
+            type=str,
+            default=None,
+            metavar='PATH',
+            help='Output directory (default: <input>/Results/)'
+        )
+        subparser.add_argument(
+            '--json',
+            type=str,
+            default=None,
+            metavar='PATH',
+            help='Path to JSON config file with analysis parameters'
+        )
+        subparser.add_argument(
+            '--num_cores',
+            type=int,
+            default=1,
+            metavar='N',
+            help='Number of CPU cores for parallel processing (default: 1)'
+        )
+        subparser.add_argument(
+            '--no_morphology',
+            action='store_true',
+            help='Skip morphology analysis'
+        )
+        subparser.add_argument(
+            '--no_color',
+            action='store_true',
+            help='Skip color analysis'
+        )
 
-    # Optional
-    parser.add_argument(
-        '-o', '--output',
-        type=str,
-        default=None,
-        metavar='PATH',
-        help='Output directory (default: <input>/Results/)'
+    fruit_internal = subparsers.add_parser(
+        'fruit_internal',
+        help='Analyze internal fruit structure (locules, pericarp, symmetry)',
+        formatter_class=RawDescriptionRichHelpFormatter,
     )
+    _add_common_args(fruit_internal)
 
-    parser.add_argument(
-        '--json',
-        type=str,
-        default=None,
-        metavar='PATH',
-        help='Path to JSON config file with analysis parameters'
+    fruit_external = subparsers.add_parser(
+        'fruit_external',
+        help='Analyze external fruit structure (morphology, color)',
+        formatter_class=RawDescriptionRichHelpFormatter,
     )
+    _add_common_args(fruit_external)
 
-    parser.add_argument(
-        '--num_cores',
-        type=int,
-        default=1,
-        metavar='N',
-        help='Number of CPU cores for parallel processing (default: 1)'
+    subparsers.add_parser(
+        'info',
+        help='Print traitly and system metadata',
+        formatter_class=RawDescriptionRichHelpFormatter,
     )
-
-    parser.add_argument(
-        '--no_morphology',
-        action='store_true',
-        help='Skip morphology analysis'
-    )
-
-    parser.add_argument(
-        '--no_color',
-        action='store_true',
-        help='Skip color analysis'
-    )
-
-    parser.add_argument(
-        '--version',
-        action='version',
-        version=f'%(prog)s {__version__}'
-    )
-
     return parser
 
 
@@ -371,14 +394,22 @@ def main() -> None:
     parser = create_parser()
     args   = parser.parse_args()
 
-    if args.fruit_internal:
+    if args.command == 'fruit_internal':
         run_internal(args)
-    elif args.fruit_external:
+    elif args.command == 'fruit_external':
         run_external(args)
+    elif args.command == 'info':
+        for line in get_session_metadata():
+            print(line)
+        print("\nsystem:")
+        for line in get_system_metadata():
+            print(f"    {line}")
+        print("\ndependencies:")
+        for pkg, version in get_package_versions().items():
+            print(f"    {pkg}: {version}")
     else:
         parser.print_help()
         sys.exit(0)
-
 
 if __name__ == '__main__':
     main()

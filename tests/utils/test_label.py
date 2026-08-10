@@ -1,19 +1,26 @@
 #tests/utils/test_label.py
 
-from traitly.utils.label import detect_qr
-import traitly.utils.label as _mod
-
+# ============================================================================
+# STANDARD LIBRARY
+# ============================================================================
 import types
 import sys
 import textwrap
 from unittest.mock import MagicMock, patch
+from pathlib import Path
 
+# ============================================================================
+# THIRD-PARTY
+# ============================================================================
 import cv2
 import numpy as np
 import pytest
 
-from pathlib import Path
-
+# ============================================================================
+# INTERNAL
+# ============================================================================
+from traitly.utils.label import detect_qr
+import traitly.utils.label as _mod
 
 # Define input image
 img_path = Path(__file__).parent.parent / "data" / "internal" / "img_test_1.jpg"

@@ -7,7 +7,8 @@ __pycache__/
 .Python
 
 # python environments
-.traitly_test/*
+traitly_test/*
+dev_venv
 
 # Cache
 .cache/
@@ -25,14 +26,23 @@ requirements.txt
 requirements-dev.txt
 
 # test results
-tests/**/Results
+
 tests/**/Images_from_PDF/
 tests/**/*.txt
-
+tests/color_correction/18-26*
+tests/data/**/*.json
+tests/data/external/**/*.json
 .coverage
+
 
 # notebooks
 Untitled*
 
 # HF files
-./traitly/
+.traitly/
+
+# Notes
+scripts/
+
+# Logs
+*.log
