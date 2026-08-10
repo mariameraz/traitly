@@ -17,7 +17,8 @@ authors = [
 ]
 
 dependencies = [
-  "opencv-contrib-python",
+  "opencv-contrib-python==4.13.0.92",
+  "opencv-python-headless==4.13.0.92",
   "numpy",
   "pandas",
   "scipy",
