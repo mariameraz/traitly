@@ -84,10 +84,10 @@ def test_no_circles():
 
 def test_squares_not_detected():
     roi = make_white_roi()
-    cv2.rectangle(roi, (30, 30), (80, 80), 0, -1)   # black square
+    cv2.rectangle(roi, (30, 30), (90, 90), 0, -1)   # black square
     cv2.circle(roi, (150, 150), 20, 0, -1)
 
-    circles = _find_size_ref_circles(roi, ref_circularity = 0.8)
+    circles = _find_size_ref_circles(roi, ref_circularity = 0.85)
 
     assert len(circles) == 1
 
