@@ -46,8 +46,6 @@ from traitly.utils import _GPU_AVAILABLE
 
 # Verify torch is installed and the hardware have cuda
 
-
-
 def get_easyocr_reader(
     languages: List[str] = ['en', 'es'],
     gpu: bool = False,
@@ -202,11 +200,11 @@ def detect_label_text(
 ##############################################################################
 # Detect QR and extract text
 ##############################################################################
-
+#
 # Load models only once
 _MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "package_data", "models", "cv2_wechat_qr")
 _MODEL_DIR = os.path.normpath(_MODEL_DIR)
-
+_detector = None
 try:
     _detector = cv2.wechat_qrcode_WeChatQRCode(
         os.path.join(_MODEL_DIR, "detect.prototxt"),
