@@ -2,6 +2,27 @@
 
 *All notable changes to Traitly are documented here:*
 
+## v.0.2.0 – Unrelease
+
+### Fixed
+
+- In `setup_label` from both `FruitInternalAnalyzer` and `FruitExternalAnalyzer`:
+    - If a QR code was detected, the label ROI detection step was skipped, and `label_roi = None`
+    - Now, label ROI detection runs independently of QR detection
+
+### Changed
+
+- Encapsulate attributes only relevant for internal processing in  `FruitExternalAnalyzer` and `FruitInternalAnalyzer` for cleaner user interface. 
+- Move `detect_color_checker` from `FruitInternalAnalyzer` to dedicated `color_correction` module
+- `setup_measurements` no longer accepts `detect_color_checker` and `scale_factor` arguments.
+  Use `detect_color_checker()` method instead.
+
+### Added
+- New `traitly.utils.metadata` module with `get_package_versions()` to retrieve installed versions of all package dependencies and Python version.
+- New `traitly.color_correction` module with `ColorCorrection` class for color-correcting images or entire folders using a Macbeth Color Checker (24 patches) card.
+
+---
+
 ## v0.1.2 – 2026-05-18
 
 ### Fixed
@@ -21,6 +42,8 @@
 - Improve QR detection with two additions:
   - Add `cv2.wechat_qrcode_WeChatQRCode` detector as primary method for more robust detection of small QR codes
   - Add `cv2.detectAndDecodeCurved` as fallback when standard `cv2.detectAndDecode` fails
+
+Documentation: https://traitly.readthedocs.io/en/v0.1.2/
 
 ----
 
@@ -50,6 +73,8 @@
 ### Docs
 - Pin dependency versions
 
+Documentation: https://traitly.readthedocs.io/en/v0.1.1/
+
 ----
 
 ## v0.1.0 — 2026-04-07
@@ -71,3 +96,5 @@ Initial release.
 
 ### Outputs
 - Annotated images, CSV results, session and error reports, and parameter files
+
+Documentation: https://traitly.readthedocs.io/en/v0.1.0/

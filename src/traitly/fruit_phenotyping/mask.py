@@ -1144,7 +1144,7 @@ def create_mask_locules(
     erosion_px: int = 0,
     use_otsu: bool = False,
     otsu_offset: int = 0,
-    min_fruit_area: int = 5000,
+    min_fruit_area: int = 1000,
     min_locule_area: int = 50,
     invert_locules: bool = False,
     plot: bool = False,
@@ -1449,7 +1449,7 @@ def interactive_mask_editor(mask: np.ndarray, original_img: Optional[np.ndarray]
     - Enter : apply current polygon
     - Z : undo last edit
     - C : clear current polygon points
-    - \+ / - : zoom in / out
+    - \\+ / - : zoom in / out
     - T : toggle overlay opacity
     - Q : quit and save changes
     - ESC : quit and discard all changes

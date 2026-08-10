@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "traitly"
-version = "0.1.2"
+version = "0.2.0"
 description = "Computer vision toolkit for high-throughput fruit phenotyping."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -17,7 +17,8 @@ authors = [
 ]
 
 dependencies = [
-  "opencv-contrib-python",
+  "opencv-contrib-python==4.13.0.92",
+  "opencv-python-headless==4.13.0.92",
   "numpy",
   "pandas",
   "scipy",
@@ -27,7 +28,9 @@ dependencies = [
   "easyocr",
   "ultralytics",
   "rich-argparse",
-  "ipython"
+  "ipython",
+  "scikit-learn",
+  "colour-science"
 ]
 
 

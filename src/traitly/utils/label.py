@@ -38,25 +38,13 @@ import easyocr
 # INTERNAL
 # ===========================================================================
 from .calibration import _get_package_model_path, _get_yolo_model
-
+from traitly.utils import _GPU_AVAILABLE
 
 ##############################################################################
 # Detect label text with OCR
 ##############################################################################
 
 # Verify torch is installed and the hardware have cuda
-try:
-    import torch
-    _GPU_AVAILABLE = torch.cuda.is_available()
-    if not _GPU_AVAILABLE:
-        torch.backends.mps.enabled = False
-except ImportError: # In case torch is not installed
-    torch = None
-    _GPU_AVAILABLE = False
-except Exception: # Or torch is installed but there is something wrong with the import
-    _GPU_AVAILABLE = False
-    torch.backends.mps.enabled = False
-
 
 def get_easyocr_reader(
     languages: List[str] = ['en', 'es'],
@@ -212,11 +200,11 @@ def detect_label_text(
 ##############################################################################
 # Detect QR and extract text
 ##############################################################################
-
+#
 # Load models only once
 _MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "package_data", "models", "cv2_wechat_qr")
 _MODEL_DIR = os.path.normpath(_MODEL_DIR)
-
+_detector = None
 try:
     _detector = cv2.wechat_qrcode_WeChatQRCode(
         os.path.join(_MODEL_DIR, "detect.prototxt"),
