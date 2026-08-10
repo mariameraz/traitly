@@ -71,7 +71,7 @@ def test_pass_params():
 
     df = pd.read_csv(color_res)
     assert "fruit_id" in df.columns, "color_results.csv doesn't include 'fruit_id' column"
-    assert len(df) == 45, f"Expectin 45 fruits detected, but obtain: {len(df)}"
+    assert len(df) == 57, f"Expectin 57 fruits detected, but obtain: {len(df)}"
 
 def test_json():
     json_blue = Path(external_folder_blue) / "cranberry_blue_bg.json"
