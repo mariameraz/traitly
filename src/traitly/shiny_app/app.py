@@ -724,7 +724,6 @@ _HEADER = f"""
         <a id="hn-3" onclick="goMainTab('tab_bg',3)">Background Helper</a>
         <a id="hn-4" onclick="goMainTab('tab_batch',4)">Batch Analysis</a>
         <a id="hn-5" onclick="goMainTab('tab_pdf',5)">PDF Extractor</a>
-        <a id="hn-6" onclick="goMainTab('tab_cc',6)">Color Correction</a>
     </nav>
 
     <div class="t-right">
@@ -1650,7 +1649,6 @@ tab_home = ui.nav_panel(
                     <li style="margin-bottom:.4rem"><strong>Per-fruit measurements</strong>: each detected fruit receives a unique ID and is measured independently.</li>
                     <li style="margin-bottom:.4rem"><strong>Fully automated</strong>: detection, segmentation, calibration, and trait extraction without manual measurements.</li>
                     <li style="margin-bottom:.4rem"><strong>Pre-trained models included</strong>: automatic detection of size markers and sample labels.</li>
-                    <li style="margin-bottom:.4rem"><strong>Color correction</strong>: Macbeth Color Checker detection to standardize color across experiments.</li>
                     <li style="margin-bottom:.4rem"><strong>Automatic sample identification</strong>: detection of QR codes and text labels.</li>
                     <li style="margin-bottom:.4rem"><strong>PDF support</strong>: direct conversion of scanned PDF files to images.</li>
                     <li style="margin-bottom:.4rem"><strong>Session reports</strong>: automatically saves parameters, dependency versions, and metadata for every run.</li>
@@ -1928,31 +1926,31 @@ tab_pdf = ui.nav_panel(
     value="tab_pdf",
 )
 
-## Color correction
-tab_cc = ui.nav_panel(
-    "Color Correction",
-    ui.layout_columns(
-        ui.div(
-            ui.HTML('<p class="panel-title">Batch Correction</p>'),
-            ui.input_file(
-                "cc_files",
-                "Select images",
-                accept=[".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"],
-                multiple=True,
-            ),
-            ui.hr(),
-            ui.input_action_button(
-                "run_cc",
-                "▶  Run Color Correction",
-                class_="btn btn-primary",
-                style="font-size:2rem;padding:.8rem 1.5rem;",
-            ),
-        ),
-        ui.div(ui.output_ui("cc_results")),
-        col_widths=[3, 9],
-    ),
-    value="tab_cc",
-)
+# ## Color correction
+# tab_cc = ui.nav_panel(
+#     "Color Correction",
+#     ui.layout_columns(
+#         ui.div(
+#             ui.HTML('<p class="panel-title">Batch Correction</p>'),
+#             ui.input_file(
+#                 "cc_files",
+#                 "Select images",
+#                 accept=[".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"],
+#                 multiple=True,
+#             ),
+#             ui.hr(),
+#             ui.input_action_button(
+#                 "run_cc",
+#                 "▶  Run Color Correction",
+#                 class_="btn btn-primary",
+#                 style="font-size:2rem;padding:.8rem 1.5rem;",
+#             ),
+#         ),
+#         ui.div(ui.output_ui("cc_results")),
+#         col_widths=[3, 9],
+#     ),
+#     value="tab_cc",
+# )
 # side bar config
 sidebar_ui = ui.sidebar(
     ui.output_ui("sidebar_content"),
@@ -1984,7 +1982,7 @@ app_ui = ui.page_sidebar(
         tab_bg,
         tab_batch,
         tab_pdf,
-        tab_cc,
+        #tab_cc,
         id="main_tab",
         selected="tab_home",
     ),
