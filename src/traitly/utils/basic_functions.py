@@ -62,10 +62,7 @@ def load_img(
     h: Optional[int] = None,
 ) -> Optional[np.ndarray]:
     """
-    Load an image via :func:`_load_img_cached` and optionally display it.
-
-    Returns a fresh copy of the cached array so callers can modify it
-    freely without invalidating the cache.
+    Load an image from disk and optionally display or crop it.
 
     Parameters
     ----------
