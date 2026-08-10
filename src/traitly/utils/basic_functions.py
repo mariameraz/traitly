@@ -82,40 +82,37 @@ def load_img(
         Width of the crop region in pixels.
     h : int, optional
         Height of the crop region in pixels.
-
-    Returns
-    -------
-    np.ndarray or None
-        BGR image array (cropped if x/y/w/h are provided), or ``None`` if loading fails.
+    Raises
+    ------
+    ValueError
+        If the file extension is unsupported, or if the image cannot be loaded.
     """
-    try:
-        img = _patch_imread(path)
+    ext = Path(path).suffix.lower()
+    if ext not in valid_cv2_extensions:
+        raise ValueError(f"Unsupported image format: {ext}")
 
-        # Crop
-        if any(v is not None for v in (x, y, w, h)):
-            img_h, img_w = img.shape[:2]
+    img = _patch_imread(path)
+    if img is None:
+        raise ValueError(f"Cannot load image: {path}")
 
-            x0 = x if x is not None else 0
-            y0 = y if y is not None else 0
-            x1 = x0 + w if w is not None else img_w
-            y1 = y0 + h if h is not None else img_h
+    # Crop
+    if any(v is not None for v in (x, y, w, h)):
+        img_h, img_w = img.shape[:2]
+        x0 = x if x is not None else 0
+        y0 = y if y is not None else 0
+        x1 = x0 + w if w is not None else img_w
+        y1 = y0 + h if h is not None else img_h
+        img = img[y0:y1, x0:x1]
 
-            img = img[y0:y1, x0:x1]
+    # Plot
+    if plot:
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        plt.figure(figsize=plot_size)
+        plt.imshow(img_rgb)
+        plt.axis('on' if show_axis else 'off')
+        plt.show()
 
-        # Plot
-        if plot:
-            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            plt.figure(figsize=plot_size)
-            plt.imshow(img_rgb)
-            plt.axis('on' if show_axis else 'off')
-            plt.show()
-
-        return img.copy()
-
-    except Exception as e:
-        print(f"Error loading: {e}")
-        return None
-
+    return img.copy()
 
 ##############################################################################
 # Detect image name
