@@ -9,9 +9,6 @@
 - In `setup_label` from both `FruitInternalAnalyzer` and `FruitExternalAnalyzer`:
     - If a QR code was detected, the label ROI detection step was skipped, and `label_roi = None`
     - Now, label ROI detection runs independently of QR detection
-- Restore QR code detection (`detect_qr`) on OpenCV >= 5.0:
-    - `cv2.wechat_qrcode_WeChatQRCode`'s legacy constructor no longer accepts custom Caffe model paths; added fallback to the new built-in WeChat detector, then to `cv2.QRCodeDetector`
-    - Removed Otsu binarization before the classic `cv2.QRCodeDetector` fallback, which was causing QR codes to go undetected
 - Fix `outer_pericarp_mean_thickness`: the internal/outer pericarp boundary was previously set at the first 255-valued pixel on the ray, which, since internal pericarp is also 255, always landed at the centroid, therefore measuring the fruit's radius, not the pericarp. Now the boundary uses the last 255-valued pixel, correctly marking the internal-> outer pericarp transition.
 - Fix memory leak during batch analysis: input images were previously cached via an LRU cache, keeping every processed image in RAM. This caused memory usage to grow uncontrollably when analyzing large batches. Removed the cache entirely, so each image is now loaded, processed, and released independently per worker.
 - Fix `mcc` and `wechat_qrcode` module incompatibilities with OpenCV >= 5.0:
