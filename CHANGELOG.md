@@ -2,24 +2,37 @@
 
 *All notable changes to Traitly are documented here:*
 
-## v.0.2.0 – Unrelease
+## v0.2.0 - Unreleased
 
 ### Fixed
 
 - In `setup_label` from both `FruitInternalAnalyzer` and `FruitExternalAnalyzer`:
     - If a QR code was detected, the label ROI detection step was skipped, and `label_roi = None`
     - Now, label ROI detection runs independently of QR detection
+- Restore QR code detection (`detect_qr`) on OpenCV >= 5.0:
+    - `cv2.wechat_qrcode_WeChatQRCode`'s legacy constructor no longer accepts custom Caffe model paths; added fallback to the new built-in WeChat detector, then to `cv2.QRCodeDetector`
+    - Removed Otsu binarization before the classic `cv2.QRCodeDetector` fallback, which was causing QR codes to go undetected
+- Fix `outer_pericarp_mean_thickness`: the internal/outer pericarp boundary was previously set at the first 255-valued pixel on the ray, which, since internal pericarp is also 255, always landed at the centroid, therefore measuring the fruit's radius, not the pericarp. Now the boundary uses the last 255-valued pixel, correctly marking the internal-> outer pericarp transition.
+- Fix memory leak during batch analysis: input images were previously cached via an LRU cache, keeping every processed image in RAM. This caused memory usage to grow uncontrollably when analyzing large batches. Removed the cache entirely, so each image is now loaded, processed, and released independently per worker.
+- Fix `mcc` and `wechat_qrcode` module incompatibilities with OpenCV >= 5.0:
+    - `cv2.mcc.CCheckerDetector.process()` moved the chart type argument to a new `setColorChartType()` method; add version detection to call the correct API depending on availability
+    - `cv2.mcc.CCheckerDraw` was removed; the draw method moved onto `CCheckerDetector` itself; add fallback accordingly
+    - `cv2.wechat_qrcode_WeChatQRCode`'s legacy constructor no longer accepts custom Caffe model paths; add fallback to the new built-in WeChat detector, then to `cv2.QRCodeDetector`
+- Remove Otsu binarization before the classic `cv2.QRCodeDetector` fallback, which was causing QR codes to go undetected on labels
+
 
 ### Changed
-
+- **Breaking:** CLI mode selection changed from mutually exclusive flags to subcommands:
+  - Old: `traitly --fruit_internal -i PATH` / `traitly --fruit_external -i PATH`
+  - New: `traitly fruit_internal -i PATH` / `traitly fruit_external -i PATH`
 - Encapsulate attributes only relevant for internal processing in  `FruitExternalAnalyzer` and `FruitInternalAnalyzer` for cleaner user interface. 
-- Move `detect_color_checker` from `FruitInternalAnalyzer` to dedicated `color_correction` module
-- `setup_measurements` no longer accepts `detect_color_checker` and `scale_factor` arguments.
-  Use `detect_color_checker()` method instead.
+- **Breaking:** Move `detect_color_checker` from `FruitInternalAnalyzer` to dedicated `color_correction` module. Therefore, `setup_measurements` no longer accepts `detect_color_checker` and `scale_factor` arguments. Use `detect_color_checker()` method instead.
 
 ### Added
+- New `traitly info` CLI command to print package, system, and dependency metadata
 - New `traitly.utils.metadata` module with `get_package_versions()` to retrieve installed versions of all package dependencies and Python version.
 - New `traitly.color_correction` module with `ColorCorrection` class for color-correcting images or entire folders using a Macbeth Color Checker (24 patches) card.
+
 
 ---
 
