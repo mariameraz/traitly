@@ -290,7 +290,7 @@ def detect_qr(
         if not qr_text:
             qr_text, bbox, _ = detector.detectAndDecodeCurved(gray)
 
-    return qr_text
+    return qr_text if qr_text else None
 
 
 ##############################################################################
