@@ -22,11 +22,14 @@
 
 
 ### Changed
-- **Breaking:** CLI mode selection changed from mutually exclusive flags to subcommands:
+- Encapsulate attributes only relevant for internal processing in  `FruitExternalAnalyzer` and `FruitInternalAnalyzer` for cleaner user interface. 
+
+#### *Breaking:*
+- Drop support for Python 3.9; Python 3.10+ is now required.
+- CLI mode selection changed from mutually exclusive flags to subcommands:
   - Old: `traitly --fruit_internal -i PATH` / `traitly --fruit_external -i PATH`
   - New: `traitly fruit_internal -i PATH` / `traitly fruit_external -i PATH`
-- Encapsulate attributes only relevant for internal processing in  `FruitExternalAnalyzer` and `FruitInternalAnalyzer` for cleaner user interface. 
-- **Breaking:** Move `detect_color_checker` from `FruitInternalAnalyzer` to dedicated `color_correction` module. Therefore, `setup_measurements` no longer accepts `detect_color_checker` and `scale_factor` arguments. Use `detect_color_checker()` method instead.
+- Move `detect_color_checker` from `FruitInternalAnalyzer` to dedicated `color_correction` module. Therefore, `setup_measurements` no longer accepts `detect_color_checker` and `scale_factor` arguments -> To detect a color checker, use `detect_color_checker()` method instead.
 
 ### Added
 - New `traitly info` CLI command to print package, system, and dependency metadata
