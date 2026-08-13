@@ -205,6 +205,7 @@ def detect_label_text(
 _MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "package_data", "models", "cv2_wechat_qr")
 _MODEL_DIR = os.path.normpath(_MODEL_DIR)
 _detector = None
+_new_wechat_detector = None
 try:
     _detector = cv2.wechat_qrcode_WeChatQRCode(
         os.path.join(_MODEL_DIR, "detect.prototxt"),
@@ -214,6 +215,12 @@ try:
     _WECHAT_AVAILABLE = True
 except Exception:
     _WECHAT_AVAILABLE = False
+    # OpenCV >=5.0: legacy constructor with custom Caffe models no longer
+    # works. Try the new built-in WeChat detector (internal models).
+    try:
+        _new_wechat_detector = cv2.wechat_qrcode_WeChatQRCode()
+    except Exception:
+        _new_wechat_detector = None
 
 
 def detect_qr(
@@ -224,10 +231,11 @@ def detect_qr(
     Detect and decode a QR code from an image.
 
     Accepts either a file path or a numpy array (BGR or grayscale).
-    Internally applies Otsu binarization before detection.
 
-    Uses `cv2.wechat_qrcode_WeChatQRCode` if available, otherwise falls back to `cv2.QRCodeDetector` and
-    `cv2.QRCodeDetectorCurved`.
+    Tries, in order: the legacy `cv2.wechat_qrcode_WeChatQRCode` with custom
+    Caffe models (OpenCV <5.0), the new built-in WeChat detector with
+    internal models (OpenCV >=5.0), and finally `cv2.QRCodeDetector` /
+    `cv2.QRCodeDetectorCurved` as a classic fallback.
 
     Parameters
     ----------
@@ -256,27 +264,31 @@ def detect_qr(
     if img is None:
         raise ValueError(f"Could not load image: {img_path}")
 
+    # 1. WeChat caffe models, only available in OpenCV <5.0
     if _WECHAT_AVAILABLE:
         texts, points = _detector.detectAndDecode(img)
-        qr_text = texts[0] if texts else None # only keep the first detected QR
+        qr_text = texts[0] if texts else None
+    # 2. New built-in WeChat detector (OpenCV >=5.0, internal models)
+    elif _new_wechat_detector is not None:
+        texts, points = _new_wechat_detector.detectAndDecode(img)
+        qr_text = texts[0] if texts else None
     else:
-        # Ensure gray image format
+        qr_text = None
+
+    # 3. Classic fallback if nothing was detected yet
+    if not qr_text:
         dim = img.shape
         if len(dim) == 3:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         else:
             gray = img
 
-        # Apply otsu binarization to enhance QR/background contrast
-        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-
-        # Detect QR
         detector = cv2.QRCodeDetector()
-        qr_text, bbox, _ = detector.detectAndDecode(binary)
+        qr_text, bbox, _ = detector.detectAndDecode(gray)
 
         # if the previous detection fails, try again with a more robust function
         if not qr_text:
-            qr_text, bbox, _ = detector.detectAndDecodeCurved(binary)
+            qr_text, bbox, _ = detector.detectAndDecodeCurved(gray)
 
     return qr_text
 
