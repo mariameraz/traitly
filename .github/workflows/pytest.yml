@@ -10,8 +10,11 @@ on:
       - "src/traitly/**"
       - "tests/**"
       - "pyproject.toml"
-  workflow_dispatch:
 
+  schedule:
+    - cron: '0 14 * * 1'
+
+  workflow_dispatch:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
