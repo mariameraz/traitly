@@ -33,9 +33,18 @@ from traitly.utils.validation import _validate_color_image
 #############################################################
 ## Detect color checker
 #############################################################
-## First, verify cv2 mcc detector is available
+## First, verify cv2 mcc detector is available.
 try:
     detector = cv2.mcc.CCheckerDetector.create()
+    # OpenCV >=5.0 moved chartType selection to setColorChartType();
+    # OpenCV <5.0 takes chartType as a positional arg to process().
+    _MCC_SUPPORTS_SET_CHART_TYPE = hasattr(detector, "setColorChartType")
+
+    if _MCC_SUPPORTS_SET_CHART_TYPE:
+        detector.setColorChartType(cv2.mcc.MCC24)
+
+    _MCC_HAS_CCHECKERDRAW = hasattr(cv2.mcc, "CCheckerDraw")
+    _MCC_DETECTOR_HAS_DRAW = hasattr(detector, "draw")
     _MCC_AVAILABLE = True
 except AttributeError:
     warnings.warn(
@@ -43,13 +52,19 @@ except AttributeError:
         "Install opencv-contrib-python>=4.9 to enable this feature.",
         UserWarning
     )
+    _MCC_HAS_CCHECKERDRAW = False
+    _MCC_DETECTOR_HAS_DRAW = False
     _MCC_AVAILABLE = False
+    _MCC_SUPPORTS_SET_CHART_TYPE = False
 except Exception as e:
     warnings.warn(
         f"Color checker detection could not be initialized due to an unexpected error: {e}",
         UserWarning
     )
+    _MCC_HAS_CCHECKERDRAW = False
+    _MCC_DETECTOR_HAS_DRAW = False
     _MCC_AVAILABLE = False
+    _MCC_SUPPORTS_SET_CHART_TYPE = False
 
 ## TypedDic for _detect_color_checker docstring
 class CheckerCoords(TypedDict):
@@ -83,11 +98,13 @@ def _detect_color_checker(
 
     Returns
     -------
-    Tuple[dict, np.ndarray] or None
+    Tuple[dict, np.ndarray, np.ndarray] or None
         - checker_coords : dict with keys 'x1', 'y1', 'x2', 'y2' in original
-          image coordinates.
+            image coordinates.
         - chart : np.ndarray of shape (72, 5) with color data for each patch (24 patches).
-          Columns are [n_pixels, mean, std, min, max].
+            Columns are [n_pixels, mean, std, min, max].
+        - img_copy : np.ndarray, a copy of the input image with the detected
+            checker patches drawn on it.
         Returns None if the checker is not detected or MCC is not available.
 
     Warns
@@ -106,7 +123,10 @@ def _detect_color_checker(
 
     # Working only for MCC 24 patches card for now
     # Important: detector expects a BGR image according with cv2 docs
-    detector.process(img, cv2.mcc.MCC24)
+    if _MCC_SUPPORTS_SET_CHART_TYPE:
+        detector.process(img, nc=1)
+    else:
+        detector.process(img, cv2.mcc.MCC24, 1)
     checkers = detector.getListColorChecker()
 
     # Check if we detected valid checkers
@@ -116,8 +136,20 @@ def _detect_color_checker(
 
     #Draw color patches detected
     img_copy = img.copy()
-    cdrawer = cv2.mcc.CCheckerDraw.create(checkers[0])
-    cdrawer.draw(img_copy)
+
+    if _MCC_HAS_CCHECKERDRAW:
+        # OpenCV <5.0 (opencv_contrib)
+        cdrawer = cv2.mcc.CCheckerDraw.create(checkers[0])
+        cdrawer.draw(img_copy)
+    elif _MCC_DETECTOR_HAS_DRAW:
+        # In OpenCV >=5.0 (objdetect), draw() moved onto the detector itself
+        detector.draw(checkers, img_copy)
+    else:
+        warnings.warn(
+            "Neither cv2.mcc.CCheckerDraw nor CCheckerDetector.draw() is "
+            "available; checker patches will not be drawn on the image.",
+            UserWarning
+        )
 
     checker = checkers[0]
 
