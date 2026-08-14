@@ -47,12 +47,12 @@ img_path = Path(__file__).parent.parent / "data" / "external" / "blue_bg" / "cra
 def test_load_img_shape():
     img = load_img(img_path)
     assert img is not None
-    assert img.shape == (3456, 5184, 3) # loaded as BGR
+    assert img.shape == (2073, 3110, 3) # loaded as BGR
 
 @pytest.mark.parametrize("x, y, w, h, expected_shape", [
     (0, 0, 500, 300, (300, 500, 3)),
     (100, 200, 800, 400, (400, 800, 3)),
-    (0, 0, 5184, 3456, (3456, 5184, 3)),
+    (0, 0, 3110, 2073, (2073, 3110, 3)),
 ])
 
 def test_load_img_crop_shape(x, y, w, h, expected_shape):
@@ -60,16 +60,12 @@ def test_load_img_crop_shape(x, y, w, h, expected_shape):
     assert img is not None
     assert img.shape == expected_shape
 
+def test_load_img_crop_clips_when_out_of_bounds():
+    # what happens if we ask for a higher dimension ?
+    img = load_img(img_path, x=0, y=0, w=2073, h=3110)
+    assert img.shape == (2073, 2073, 3)
+
 def test_load_img_crop_still_color():
     img = load_img(img_path, x=0, y=0, w=500, h=300)
     assert img is not None
     assert img.shape[2] == 3 #still bgr
-
-# 4. Check how the cache is working
-
-img_path_2 = Path(__file__).parent.parent / "data" / "external" / "white_bg" / "cranberry_white_bg.jpg"
-
-# hits = how many times it founds the image in the cache (no in the disk)
-# misses = how many paths are being loaded and going to the disk
-# maxsize= entry max size (128 in this case)
-# currsize = how many entries do we have saved in the cache
