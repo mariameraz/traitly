@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import matplotlib
 matplotlib.use("Agg")  # headless backend, no windows popping up during tests
 
+from unittest.mock import patch
 # ============================================================================
 # INTERNAL
 # ============================================================================
@@ -457,6 +458,204 @@ class TestCreateMaskLocules:
         # so the fused mask should equal the original fruit_mask.
         assert np.array_equal(out_small_thresh, f_mask)
 
+# ===========================================================================
+# gamma_contrast: plot=True
+# ===========================================================================
+class TestGammaContrastPlot:
+    def test_plot_true_runs_without_error(self):
+        L = np.linspace(0, 255, 20).astype(np.uint8).reshape(4, 5)
+        with patch("matplotlib.pyplot.show"):
+            out = mask.gamma_contrast(L, gamma=1.5, plot=True)
+        assert out.dtype == np.uint8
+
+# ===========================================================================
+# generate_scatter_plot
+# ===========================================================================
+class TestGenerateScatterPlot:
+    def test_runs_without_error(self):
+        img = make_hsv_image()
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
+        with patch("matplotlib.pyplot.show"):
+            result = mask.generate_scatter_plot(img, img_rgb, sample_size=50)
+        assert result is None
+
+# ===========================================================================
+# find_fruits: remaining validation + filtering branches
+# ===========================================================================
+
+class TestFindFruitsExtra:
+
+    def test_non_positive_min_fruit_area_raises(self):
+        m = make_fruit_with_locules()
+        with pytest.raises(ValueError):
+            mask.find_fruits(m, min_fruit_area=0)
+
+    def test_non_positive_max_fruit_area_raises(self):
+        m = make_fruit_with_locules()
+        with pytest.raises(ValueError):
+            mask.find_fruits(m, max_fruit_area=0)
+
+    def test_max_fruit_area_filters_out_large_fruit(self):
+        m = make_fruit_with_locules(n_locules=2, fruit_r=100)
+        _, fruit_map = mask.find_fruits(m, min_locule_area=10,
+                                         max_fruit_area=100)
+        assert fruit_map == {}
+
+    def test_empty_mask_no_locule_filter_returns_empty(self):
+        """Hits the RETR_EXTERNAL branch's own empty-contours early return
+        (min_locules_per_fruit=0 -> needs_locules=False)."""
+        m = np.zeros((100, 100), dtype=np.uint8)
+        contours, fruit_map = mask.find_fruits(m, min_locules_per_fruit=0)
+        assert contours == []
+        assert fruit_map == {}
+
+# ===========================================================================
+# create_mask: optional-processing branches (kernel_open/close/blur, canny,
+# plot=True)
+# ===========================================================================
+
+class TestCreateMaskOptionalBranches:
+
+    def test_kernel_open_is_applied(self):
+        img = make_hsv_image()
+        out = mask.create_mask(img, kernel_open=3, plot=False)
+        assert out.dtype == np.uint8
+
+    def test_kernel_close_is_applied(self):
+        img = make_hsv_image()
+        out = mask.create_mask(img, kernel_close=3, plot=False)
+        assert out.dtype == np.uint8
+
+    def test_kernel_blur_is_applied(self):
+        img = make_hsv_image()
+        out = mask.create_mask(img, kernel_blur=3, plot=False)
+        assert out.dtype == np.uint8
+
+    def test_canny_edges_are_or_combined(self):
+        img = make_hsv_image()
+        out = mask.create_mask(img, canny_min=50, canny_max=150, plot=False)
+        assert out.dtype == np.uint8
+        assert out.shape == img.shape[:2]
+
+    def test_canny_without_prior_blur_still_blurs_internally(self):
+        """When canny_min/max are given but kernel_blur is None, the
+        function should internally blur before running Canny."""
+        img = make_hsv_image()
+        out = mask.create_mask(img, canny_min=50, canny_max=150,
+                                kernel_blur=None, plot=False)
+        assert out.dtype == np.uint8
+
+    def test_plot_true_runs_without_error(self):
+        img = make_hsv_image()
+        with patch("matplotlib.pyplot.show"):
+            out = mask.create_mask(img, plot=True)
+        assert out.dtype == np.uint8
+
+# ===========================================================================
+# create_mask: extra validation branches
+# ===========================================================================
+class TestCreateMaskExtraValidation:
+
+    def test_invalid_n_iteration_raises(self):
+        img = make_hsv_image()
+        with pytest.raises(RuntimeError):
+            mask.create_mask(img, n_iteration=0, plot=False)
+
+    def test_even_kernel_close_raises(self):
+        img = make_hsv_image()
+        with pytest.raises(RuntimeError):
+            mask.create_mask(img, kernel_close=4, plot=False)
+
+    def test_even_kernel_blur_raises(self):
+        img = make_hsv_image()
+        with pytest.raises(RuntimeError):
+            mask.create_mask(img, kernel_blur=4, plot=False)
+
+    def test_non_integer_canny_bounds_raises(self):
+        img = make_hsv_image()
+        with pytest.raises(RuntimeError):
+            mask.create_mask(img, canny_min=10.5, canny_max=100, plot=False)
+
+    def test_lower_hsv_wrong_shape_raises(self):
+        img = make_hsv_image()
+        with pytest.raises(RuntimeError):
+            mask.create_mask(img, lower_hsv=(0, 0), plot=False)
+
+    def test_upper_hsv_wrong_shape_raises(self):
+        img = make_hsv_image()
+        with pytest.raises(RuntimeError):
+            mask.create_mask(img, upper_hsv=(180, 250), plot=False)
+
+    def test_generic_exception_is_wrapped_as_runtime_error(self, monkeypatch):
+        """Any unexpected (non cv2.error) exception raised inside the try
+        block should be wrapped into a RuntimeError with 'Unexpected error'."""
+        img = make_hsv_image()
+
+        def boom(*args, **kwargs):
+            raise ValueError("boom")
+
+        monkeypatch.setattr(mask, "fill_holes_to_mask", boom)
+        with pytest.raises(RuntimeError, match="Unexpected error"):
+            mask.create_mask(img, fill_holes=True, plot=False)
+
+# ===========================================================================
+# create_mask_locules: optional branches (otsu, kernel_open/close/blur,
+# erosion, invert_locules, plot=True)
+# ===========================================================================
+class TestCreateMaskLoculesExtra:
+    def _fruit_with_dark_locules(self, size=200):
+        l_channel = np.full((size, size), 40, dtype=np.uint8)
+        cv2.circle(l_channel, (size // 2, size // 2), 80, 200, -1)
+        cv2.circle(l_channel, (size // 2 - 20, size // 2), 12, 30, -1)
+        cv2.circle(l_channel, (size // 2 + 20, size // 2), 12, 30, -1)
+
+        fruit_mask = np.zeros((size, size), dtype=np.uint8)
+        cv2.circle(fruit_mask, (size // 2, size // 2), 80, 255, -1)
+        return l_channel, fruit_mask
+
+    def test_use_otsu_default(self):
+        l_ch, f_mask = self._fruit_with_dark_locules()
+        out = mask.create_mask_locules(l_ch, f_mask, use_otsu=True,
+                                        min_fruit_area=1000, min_locule_area=10,
+                                        plot=False)
+        assert out.dtype == np.uint8
+
+    def test_use_otsu_with_offset(self):
+        l_ch, f_mask = self._fruit_with_dark_locules()
+        out = mask.create_mask_locules(l_ch, f_mask, use_otsu=True,
+                                        otsu_offset=5, min_fruit_area=1000,
+                                        min_locule_area=10, plot=False)
+        assert out.dtype == np.uint8
+
+    def test_kernel_open_and_close_and_blur_applied(self):
+        l_ch, f_mask = self._fruit_with_dark_locules()
+        out = mask.create_mask_locules(l_ch, f_mask, thresh_min=100,
+                                        kernel_close=3, kernel_open=3,
+                                        kernel_blur=3, min_fruit_area=1000,
+                                        min_locule_area=10, plot=False)
+        assert out.dtype == np.uint8
+
+    def test_erosion_px_applied(self):
+        l_ch, f_mask = self._fruit_with_dark_locules()
+        out = mask.create_mask_locules(l_ch, f_mask, thresh_min=100,
+                                        erosion_px=3, min_fruit_area=1000,
+                                        min_locule_area=10, plot=False)
+        assert out.dtype == np.uint8
+
+    def test_invert_locules(self):
+        l_ch, f_mask = self._fruit_with_dark_locules()
+        out = mask.create_mask_locules(l_ch, f_mask, thresh_min=100,
+                                        invert_locules=True, min_fruit_area=1000,
+                                        min_locule_area=10, plot=False)
+        assert out.dtype == np.uint8
+
+    def test_plot_true_runs_without_error(self):
+        l_ch, f_mask = self._fruit_with_dark_locules()
+        with patch("matplotlib.pyplot.show"):
+            out = mask.create_mask_locules(l_ch, f_mask, thresh_min=100,
+                                            min_fruit_area=1000,
+                                            min_locule_area=10, plot=True)
+        assert out.dtype == np.uint8
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
