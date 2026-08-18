@@ -26,7 +26,7 @@
 - CLI mode selection changed from mutually exclusive flags to subcommands:
   - Old: `traitly --fruit_internal -i PATH` / `traitly --fruit_external -i PATH`
   - New: `traitly fruit_internal -i PATH` / `traitly fruit_external -i PATH`
-- Move `detect_color_checker` from `FruitInternalAnalyzer` to dedicated `color_correction` module. Therefore, `setup_measurements` no longer accepts `detect_color_checker` and `scale_factor` arguments -> To detect a color checker, use `detect_color_checker()` method instead.
+- Includes a dedicated method (`detect_color_checker()`) on `FruitInternalAnalyzer` and `FruitExternalAnalyzer` to detect color cards on an image. Therefore, `setup_measurements()` no longer accepts `detect_color_checker` and `scale_factor` arguments.
 
 ### Added
 - New `traitly info` CLI command to print package, system, and dependency metadata

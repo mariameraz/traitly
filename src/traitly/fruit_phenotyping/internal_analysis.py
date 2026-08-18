@@ -1017,7 +1017,6 @@ class FruitInternalAnalyzer:
     def generate_locule_mask(
         self,
         thresh_min: int = 120,
-        thresh_max: Optional[int] = None,
         kernel_close: Optional[int] = None,
         kernel_open: Optional[int] = None,
         kernel_blur: Optional[int] = None,
@@ -1042,9 +1041,6 @@ class FruitInternalAnalyzer:
         thresh_min : int, optional
             Minimum threshold value for L-channel binarization. Default is
             120.
-        thresh_max : int, optional
-            Maximum threshold value for L-channel binarization. Default is
-            255.
         kernel_close : int or None, optional
             Kernel size for morphological closing applied to the locule mask.
             Default is None.
@@ -1102,7 +1098,6 @@ class FruitInternalAnalyzer:
             l_transformed=self.l_transformed,
             fruit_mask=self.mask_fruit,
             thresh_min=thresh_min,
-            thresh_max=thresh_max,
             kernel_close=kernel_close,
             kernel_open=kernel_open,
             kernel_blur=kernel_blur,
@@ -2220,7 +2215,6 @@ class FruitInternalAnalyzer:
         tile_grid_size: Optional[int] = None,
         # generate_locule_mask
         thresh_min: Optional[int] = None,
-        thresh_max: Optional[int] = None,
         min_fruit_area_locule: Optional[int] = None,
         kernel_close_locule: Optional[int] = None,
         kernel_open_locule: Optional[int] = None,
@@ -2312,7 +2306,7 @@ class FruitInternalAnalyzer:
             clip_limit=clip_limit, tile_grid_size=tile_grid_size,
         ))
         _apply("generate_locule_mask_params", dict(
-            thresh_min=thresh_min, thresh_max=thresh_max,
+            thresh_min=thresh_min,
             min_fruit_area=min_fruit_area_locule, kernel_close=kernel_close_locule,
             kernel_open=kernel_open_locule, invert_locule=invert_locule,
         ))
