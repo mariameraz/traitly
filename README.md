@@ -55,6 +55,7 @@ Traitly can be used from Python, the command line (CLI), or as a web application
 Posters related to Traitly can be found in this folder:
 
 - [Posters](https://drive.google.com/drive/folders/1AvlHWKcDvoE9m9QcmCJ5o-ma9W-LNQMe?usp=share_link) ★ˎˊ˗
+- [Presentations](https://drive.google.com/file/d/1OwLi9_24Be9-VKDPo0dshGsbO3_rUtUb/view?usp=sharing) ★ˎˊ˗
 
 These materials provide additional methodological details and results from research derived from our package.
 
