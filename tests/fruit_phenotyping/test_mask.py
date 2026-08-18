@@ -602,6 +602,7 @@ class TestCreateMaskExtraValidation:
 # create_mask_locules: optional branches (otsu, kernel_open/close/blur,
 # erosion, invert_locules, plot=True)
 # ===========================================================================
+#
 class TestCreateMaskLoculesExtra:
     def _fruit_with_dark_locules(self, size=200):
         l_channel = np.full((size, size), 40, dtype=np.uint8)
@@ -656,6 +657,137 @@ class TestCreateMaskLoculesExtra:
                                             min_fruit_area=1000,
                                             min_locule_area=10, plot=True)
         assert out.dtype == np.uint8
+
+class TestFindFruitsMoreValidation:
+    def test_non_positive_min_locule_area_raises(self):
+        m = make_fruit_with_locules()
+        with pytest.raises(ValueError):
+            mask.find_fruits(m, min_locule_area=0)
+
+    def test_negative_min_locules_per_fruit_raises(self):
+        m = make_fruit_with_locules()
+        with pytest.raises(ValueError):
+            mask.find_fruits(m, min_locules_per_fruit=-1)
+
+
+class TestCreateMaskErrorWrapping:
+    def test_cv2_error_is_wrapped(self, monkeypatch):
+        img = make_hsv_image()
+
+        def boom(*args, **kwargs):
+            raise cv2.error("forced cv2 failure")
+
+        monkeypatch.setattr(mask.cv2, "bitwise_not", boom)
+        with pytest.raises(RuntimeError, match="OpenCV error"):
+            mask.create_mask(img, plot=False)
+
+    def test_none_background_mask_raises(self, monkeypatch):
+        img = make_hsv_image()
+
+        def fake_inrange(*args, **kwargs):
+            return None
+
+        monkeypatch.setattr(mask.cv2, "inRange", fake_inrange)
+        with pytest.raises(RuntimeError):
+            mask.create_mask(img, plot=False)
+
+
+class TestMergeLoculesFuncExtra:
+    def _circle_contour(self, center, r, size=300):
+        img = np.zeros((size, size), dtype=np.uint8)
+        cv2.circle(img, center, r, 255, -1)
+        contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        return contours[0]
+
+    def test_single_valid_locule_returns_original_contour(self):
+        c0 = self._circle_contour((50, 50), 10)
+        result = mask.merge_locules_func([0], [c0], min_area=5)
+        assert len(result) == 1
+        assert np.array_equal(result[0], c0)
+
+    def test_degenerate_centroid_still_processed(self, monkeypatch):
+        c0 = self._circle_contour((50, 50), 10)
+        c1 = self._circle_contour((65, 50), 10)
+
+        real_moments = cv2.moments
+        call_count = {"n": 0}
+
+        def fake_moments(contour, *args, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                return {"m00": 0.0, "m10": 0.0, "m01": 0.0}
+            return real_moments(contour, *args, **kwargs)
+
+        monkeypatch.setattr(mask.cv2, "moments", fake_moments)
+
+        result = mask.merge_locules_func([0, 1], [c0, c1],
+                                          min_distance=0, max_distance=20,
+                                          min_area=5)
+        assert len(result) >= 1
+
+    def test_j_less_or_equal_i_candidates_are_skipped(self):
+        c0 = self._circle_contour((50, 50), 10)
+        c1 = self._circle_contour((85, 50), 10)
+        c2 = self._circle_contour((120, 50), 10)
+
+        result = mask.merge_locules_func([0, 1, 2], [c0, c1, c2],
+                                          min_distance=0, max_distance=25,
+                                          min_area=5)
+        assert 1 <= len(result) <= 3
+
+    def test_merge_failure_falls_back_to_original_contour(self, monkeypatch):
+        c0 = self._circle_contour((50, 50), 10)
+        c1 = self._circle_contour((60, 50), 10)
+
+        def boom(*args, **kwargs):
+            raise cv2.error("forced failure")
+
+        monkeypatch.setattr(mask.cv2, "approxPolyDP", boom)
+
+        result = mask.merge_locules_func([0, 1], [c0, c1],
+                                          min_distance=0, max_distance=20,
+                                          min_area=5)
+        assert len(result) == 1
+        assert np.array_equal(result[0], c0)
+
+
+class TestApplyContrastExtra:
+    def _bgr_image(self):
+        rng = np.random.default_rng(0)
+        return rng.integers(0, 255, size=(40, 40, 3), dtype=np.uint8)
+
+    def test_sigmoid_method(self):
+        img = self._bgr_image()
+        out = mask.apply_contrast(img, contrast_method='sigmoid', plot=False)
+        assert out.dtype == np.uint8
+
+    def test_exp_method(self):
+        img = self._bgr_image()
+        out = mask.apply_contrast(img, contrast_method='exp', plot=False)
+        assert out.dtype == np.uint8
+
+    def test_median_blur_applied_when_kernel_blur_gt_one(self):
+        img = self._bgr_image()
+        out_no_blur = mask.apply_contrast(img, kernel_blur=1, plot=False)
+        out_blur = mask.apply_contrast(img, kernel_blur=5, plot=False)
+        assert not np.array_equal(out_no_blur, out_blur)
+
+    def test_plot_true_and_compare_false_runs(self):
+        img = self._bgr_image()
+        with patch("matplotlib.pyplot.show"):
+            out = mask.apply_contrast(img, plot=True, compare=False)
+        assert out.dtype == np.uint8
+
+
+class TestGenerateLChannelHistogram:
+    def test_runs_without_error(self):
+        size = 100
+        l_ch = np.random.default_rng(0).integers(0, 255, size=(size, size)).astype(np.uint8)
+        fruit_mask = np.zeros((size, size), dtype=np.uint8)
+        cv2.circle(fruit_mask, (size // 2, size // 2), 40, 255, -1)
+        with patch("matplotlib.pyplot.show"):
+            result = mask.generate_l_channel_histogram(l_ch, fruit_mask)
+        assert result is None
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
