@@ -199,3 +199,14 @@ def test_setup_measurements_attributes(cranberry_blue_full_yolo):
     assert cranberry_blue_full_yolo._label_roi
     assert cranberry_blue_full_yolo._ref_roi
     assert cranberry_blue_full_yolo.px_per_cm
+
+
+def test_color_only_creates_results_without_morphology(cranberry_blue):
+    cranberry_blue.generate_fruit_mask(plot=False, background_color="blue")
+    cranberry_blue.detect_fruits(plot=False)
+    assert cranberry_blue.results is None
+    cranberry_blue.analyze_color(plot=False, display_table=False)
+    assert cranberry_blue.results is not None
+    assert cranberry_blue.results.color_results is not None
+    assert len(cranberry_blue.results.color_results) > 0
+    assert cranberry_blue.results.morphology_results == []
