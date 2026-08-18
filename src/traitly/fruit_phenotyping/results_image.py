@@ -68,6 +68,9 @@ class ResultsImage:
         path: Optional[str] = None,
         processing_metadata: Optional[Dict[str, Any]] = None,
     ):
+        if res_img is None:
+            raise ValueError("res_img cannot be None when creating a ResultsImage instance.")
+
         self.morphology_image = res_img
         self.color_image = res_img.copy()
         self.morphology_results = morphology_results if morphology_results else []
