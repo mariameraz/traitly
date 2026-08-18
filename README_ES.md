@@ -57,6 +57,8 @@ Traitly puede usarse desde Python, línea de comandos (CLI) o como aplicación w
 Los pósters relacionados con Traitly pueden encontrarse en esta carpeta:
 
 - [Pósters](https://drive.google.com/drive/folders/1AvlHWKcDvoE9m9QcmCJ5o-ma9W-LNQMe?usp=share_link) ★ˎˊ˗
+- [Presentaciones](https://drive.google.com/file/d/1OwLi9_24Be9-VKDPo0dshGsbO3_rUtUb/view?usp=sharing) ★ˎˊ˗
+
 
 Estos materiales proporcionan detalles metodológicos adicionales y resultados de investigaciones derivadas de nuestro paquete.
 
