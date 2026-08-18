@@ -309,5 +309,47 @@ class TestDetectFruitsPlot:
         with patch("matplotlib.pyplot.show"):
             cranberry_valid.detect_fruits(plot=True)
 
+class TestColorOnlyPath:
+    def _fresh_cranberry(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.setup_measurements(skip_yolo=True)
+        c.generate_fruit_mask(plot=False)
+        c.detect_fruits(plot=False)
+        return c
+
+    def test_results_is_none_before_color(self):
+        c = self._fresh_cranberry()
+        assert c.results is None
+
+    def test_results_created_after_color_only(self):
+        c = self._fresh_cranberry()
+        c.analyze_color(plot=False, display_table=False, tissue="OUTER_PERICARP", color_space="rgb")
+        assert c.results is not None
+
+    def test_color_image_is_annotated_without_morphology(self):
+        c = self._fresh_cranberry()
+        c.analyze_color(plot=False, display_table=False, tissue="OUTER_PERICARP", color_space="rgb")
+        assert c.results.color_image is not None
+        assert not (c.results.color_image == c._img_copy).all()
+
+    def test_color_df_populated_without_morphology(self):
+        c = self._fresh_cranberry()
+        c.analyze_color(plot=False, display_table=False, tissue="OUTER_PERICARP", color_space="rgb")
+        df = c.results.color_results
+        assert df is not None
+        assert len(df) > 0
+
+    def test_morphology_results_stay_empty_when_only_color_run(self):
+        c = self._fresh_cranberry()
+        c.analyze_color(plot=False, display_table=False, tissue="OUTER_PERICARP", color_space="rgb")
+        assert c.results.morphology_results == []
+
+    def test_save_all_works_with_color_only(self, tmp_path):
+        c = self._fresh_cranberry()
+        c.analyze_color(plot=False, display_table=False, tissue="OUTER_PERICARP", color_space="rgb")
+        c.results.save_all(output_dir=tmp_path, base_name="color_only")
+        assert (tmp_path / "color_only_color_results.csv").exists()
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
