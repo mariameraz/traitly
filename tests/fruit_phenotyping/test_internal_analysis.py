@@ -9,11 +9,18 @@ import os
 # THIRD-PARTY
 # ============================================================================
 import pytest
+from unittest.mock import patch
 
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+import matplotlib
+matplotlib.use("Agg")  # headless backend, no windows popping up during tests
 # ============================================================================
 # INTERNAL
 # ============================================================================
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
+import traitly.fruit_phenotyping.internal_analysis as internal_analysis_mod
+
 
 ##########################################################################
 # Valid cranberry image
@@ -155,3 +162,152 @@ def test_no_negative_measurements(cranberry_valid):
         assert bad.empty, (
             f"Column '{col}' has {len(bad)} negative value(s):\n{bad.to_string()}"
         )
+
+class TestSetupCalibration:
+    def test_only_width_cm_raises(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        with pytest.raises(ValueError):
+            c.setup_calibration(width_cm=5, verbose=False)
+
+    def test_width_and_length_cm_fast_mode(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.setup_calibration(width_cm=5, length_cm=7, verbose=True)
+        assert c.px_per_cm is not None
+        assert c._ref_roi is None
+
+    def test_setup_measurements_raises_without_image(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        with pytest.raises(ValueError):
+            c.setup_measurements()
+
+    @pytest.mark.slow
+    def test_setup_measurements_plot_true(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.setup_measurements(plot=True)
+
+
+class TestGenerateFruitMaskExtra:
+    def test_raises_without_image(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        with pytest.raises(ValueError):
+            c.generate_fruit_mask(plot=False)
+
+    def test_stamp_mode(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.generate_fruit_mask(plot=False, stamp=True)
+        assert c.mask_fruit is not None
+
+    def test_erosion_px_applied(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.generate_fruit_mask(plot=False)
+        no_erosion = c.mask_fruit.copy()
+        c.generate_fruit_mask(plot=False, erosion_px=3)
+        assert c.mask_fruit.sum() <= no_erosion.sum()
+
+    def test_plot_true(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        with patch("matplotlib.pyplot.show"):
+            c.generate_fruit_mask(plot=True)
+
+    def test_remove_roi_with_checker_coords(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c._checker_coords = {"x1": 5, "y1": 5, "x2": 30, "y2": 30}
+        c.generate_fruit_mask(plot=False, remove_roi=True)
+        assert c.mask_fruit is not None
+
+
+class TestGenerateLoculeMaskValidation:
+    def test_raises_without_fruit_mask(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        with pytest.raises(ValueError):
+            c.generate_locule_mask(plot=False)
+
+    def test_raises_without_l_transformed(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.generate_fruit_mask(plot=False)
+        with pytest.raises(ValueError):
+            c.generate_locule_mask(plot=False)
+
+
+class TestGenerateLChannelHistogramMethod:
+
+    def test_raises_without_fruit_mask(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        with pytest.raises(ValueError):
+            c.generate_l_channel_histogram()
+
+    def test_raises_without_l_transformed(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.generate_fruit_mask(plot=False)
+        with pytest.raises(ValueError):
+            c.generate_l_channel_histogram()
+
+
+class TestEditMask:
+    def test_raises_without_any_mask(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        with pytest.raises(ValueError):
+            c.edit_mask(verbose=False)
+
+    def test_edits_fruit_mask(self, monkeypatch):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.generate_fruit_mask(plot=False)
+        fake = c.mask_fruit.copy()
+        monkeypatch.setattr(internal_analysis_mod, "interactive_mask_editor",
+                             lambda mask_in, original_img, verbose: fake)
+        c.edit_mask(verbose=False)
+        assert c.mask_fruit is fake
+
+    def test_edits_locule_mask(self, monkeypatch):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.setup_measurements(skip_yolo=True)
+        c.generate_fruit_mask(plot=False)
+        c.enhance_locule_contrast(plot=False)
+        c.generate_locule_mask(plot=False)
+        fake = c.mask_locules.copy()
+        monkeypatch.setattr(internal_analysis_mod, "interactive_mask_editor",
+                             lambda mask_in, original_img, verbose: fake)
+        c.edit_mask(verbose=False)
+        assert c.mask_locules is fake
+
+
+class TestGenerateColorScatterplot:
+    def test_raises_without_image(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        with pytest.raises(ValueError):
+            c.generate_color_scatterplot()
+
+    def test_raises_invalid_sample_size(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        with pytest.raises(ValueError):
+            c.generate_color_scatterplot(sample_size=0)
+
+    def test_runs_successfully(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        with patch("matplotlib.pyplot.show"):
+            c.generate_color_scatterplot(sample_size=100)
+
+
+class TestDetectFruitsPlot:
+    def test_plot_true_with_locules(self, cranberry_valid):
+        with patch("matplotlib.pyplot.show"):
+            cranberry_valid.detect_fruits(plot=True)
+
+if __name__ == "__main__":
+    sys.exit(pytest.main([__file__, "-v"]))
