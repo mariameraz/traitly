@@ -20,7 +20,7 @@ matplotlib.use("Agg")  # headless backend, no windows popping up during tests
 # ============================================================================
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
 import traitly.fruit_phenotyping.internal_analysis as internal_analysis_mod
-
+from traitly.fruit_phenotyping.internal_analysis import _process_internal_image_worker
 
 ##########################################################################
 # Valid cranberry image
@@ -350,6 +350,159 @@ class TestColorOnlyPath:
         c.analyze_color(plot=False, display_table=False, tissue="OUTER_PERICARP", color_space="rgb")
         c.results.save_all(output_dir=tmp_path, base_name="color_only")
         assert (tmp_path / "color_only_color_results.csv").exists()
+
+class TestWorkerException:
+    def test_worker_returns_error_tuple_on_bad_path(self):
+        result = _process_internal_image_worker(
+            img_path="nonexistent_img_999.jpg",
+            config={},
+            analyze_morphology=True,
+            analyze_color=True,
+        )
+        df_morph, df_color, error_dict, n_fruits, annotated_img, filename, elapsed = result
+        assert df_morph is None
+        assert df_color is None
+        assert error_dict["filename"] == "nonexistent_img_999.jpg"
+        assert error_dict["status"].startswith("Error:")
+        assert n_fruits == 0
+        assert annotated_img is None
+        assert filename == "nonexistent_img_999.jpg"
+        assert elapsed >= 0
+
+class TestLoadImageNoInputPath:
+    def test_raises_when_input_path_none(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.input_path = None
+        with pytest.raises(ValueError):
+            c.load_image(plot=False)
+
+class TestSetupLabelBranches:
+    def _fresh(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        return c
+
+    def test_reuses_existing_label_text(self, capsys):
+        c = self._fresh()
+        c.label_text = "ALREADY_DETECTED"
+        c.setup_label(verbose=True, detect_label=True)
+        captured = capsys.readouterr()
+        assert c.label_text == "ALREADY_DETECTED"
+        assert "ALREADY_DETECTED" in captured.out
+
+    def test_skip_qr_true_prints_skipped(self, monkeypatch, capsys):
+        c = self._fresh()
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_box_yolo", lambda **kw: None)
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_box", lambda **kw: None)
+        c.setup_label(verbose=True, detect_label=True, skip_qr=True, skip_label_roi=True)
+        captured = capsys.readouterr()
+        assert "QR detection: SKIPPED" in captured.out
+
+    def test_skip_qr_false_calls_detect_qr(self, monkeypatch):
+        c = self._fresh()
+        monkeypatch.setattr(internal_analysis_mod, "detect_qr", lambda img: "QR_TEXT")
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_box_yolo", lambda **kw: None)
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_box", lambda **kw: None)
+        c.setup_label(verbose=False, detect_label=True, skip_qr=False, skip_label_roi=True)
+        assert c.label_text == "QR_TEXT"
+
+    def test_label_roi_fallback_when_yolo_returns_none(self, monkeypatch):
+        c = self._fresh()
+        monkeypatch.setattr(internal_analysis_mod, "detect_qr", lambda img: None)
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_box_yolo", lambda **kw: None)
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_box", lambda **kw: [{"x": 1, "y": 1, "width": 5, "height": 5}])
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_text", lambda **kw: None)
+        c.setup_label(verbose=False, detect_label=True, skip_qr=False, skip_label_roi=False)
+        assert c._label_roi == [{"x": 1, "y": 1, "width": 5, "height": 5}]
+
+    def test_skip_label_roi_sets_none(self, monkeypatch):
+        c = self._fresh()
+        monkeypatch.setattr(internal_analysis_mod, "detect_qr", lambda img: None)
+        c._label_roi = [{"x": 1, "y": 1, "width": 5, "height": 5}]
+        c.setup_label(verbose=False, detect_label=True, skip_qr=True, skip_label_roi=True)
+        assert c._label_roi is None
+
+    def test_no_label_detected_final_message(self, monkeypatch, capsys):
+        c = self._fresh()
+        monkeypatch.setattr(internal_analysis_mod, "detect_qr", lambda img: None)
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_box_yolo", lambda **kw: None)
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_box", lambda **kw: None)
+        c.setup_label(verbose=True, detect_label=True, skip_qr=False, skip_label_roi=False)
+        captured = capsys.readouterr()
+        assert c.label_text == "No label detected"
+        assert "No label detected." in captured.out
+
+
+class TestSetupMeasurementsPlotLandscape:
+    def test_plot_landscape_orientation(self, monkeypatch):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        h, w = c.img.shape[:2]
+        if h > w:
+            pytest.skip("test image is portrait; landscape branch needs w >= h")
+        with patch("matplotlib.pyplot.show"):
+            c.setup_measurements(plot=True, width_cm=5, length_cm=7)
+
+
+class TestGenerateLChannelHistogramSuccess:
+    def test_runs_successfully(self, monkeypatch):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.generate_fruit_mask(plot=False)
+        c.enhance_locule_contrast(plot=False, contrast_method="none")
+        called = {}
+        def fake_hist(**kwargs):
+            called["ok"] = True
+        monkeypatch.setattr(internal_analysis_mod, "generate_l_channel_histogram", fake_hist)
+        c.generate_l_channel_histogram(otsu_offset=5)
+        assert called.get("ok") is True
+
+
+class TestGenerateLoculeMaskOtsu:
+    def _prepared(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.generate_fruit_mask(plot=False)
+        c.enhance_locule_contrast(plot=False, contrast_method="none")
+        return c
+
+    def test_use_otsu_true_when_offset_given(self, monkeypatch):
+        c = self._prepared()
+        captured = {}
+        def fake_create_mask_locules(**kwargs):
+            captured["use_otsu"] = kwargs.get("use_otsu")
+            return c.mask_fruit.copy()
+        monkeypatch.setattr(internal_analysis_mod, "create_mask_locules", fake_create_mask_locules)
+        c.generate_locule_mask(plot=False, otsu_offset=10)
+        assert captured["use_otsu"] is True
+
+    def test_use_otsu_false_when_offset_none(self, monkeypatch):
+        c = self._prepared()
+        captured = {}
+        def fake_create_mask_locules(**kwargs):
+            captured["use_otsu"] = kwargs.get("use_otsu")
+            return c.mask_fruit.copy()
+        monkeypatch.setattr(internal_analysis_mod, "create_mask_locules", fake_create_mask_locules)
+        c.generate_locule_mask(plot=False, otsu_offset=None)
+        assert captured["use_otsu"] is False
+
+
+class TestDetectFruitsValidationAndZeroCount:
+    def test_raises_without_mask(self):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        with pytest.raises(ValueError):
+            c.detect_fruits(plot=False)
+
+    def test_n_fruits_detected_zero_when_map_none(self, monkeypatch, capsys):
+        c = FruitInternalAnalyzer(path=valid_img)
+        c.load_image(plot=False)
+        c.generate_fruit_mask(plot=False)
+        monkeypatch.setattr(internal_analysis_mod, "find_fruits", lambda *a, **kw: (None, None))
+        c.detect_fruits(plot=False, verbose=True)
+        captured = capsys.readouterr()
+        assert c.fruit_locule_map is None
+        assert "Detected fruits: 0" in captured.out
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
