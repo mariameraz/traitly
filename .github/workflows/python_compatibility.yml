@@ -5,8 +5,8 @@ permissions:
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 9 1 * *' # run every month at 9am UTC
-
+    - cron: '0 12 1 * *' # runs every first day of every month at 12 PM
+    - timezone: 'America/Chicago'
 
 jobs:
   test:
