@@ -13,7 +13,7 @@ on:
 
   schedule:
     - cron: '0 12 * * 1' # runs every Monday at 12 PM
-    - timezone: 'America/Chicago'
+      timezone: 'America/Chicago'
 
   workflow_dispatch:
 jobs:
