@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 12 1 * *' # runs every first day of every month at 12 PM
-    - timezone: 'America/Chicago'
+      timezone: 'America/Chicago'
 
 jobs:
   test:
