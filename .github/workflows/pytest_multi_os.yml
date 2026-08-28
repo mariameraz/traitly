@@ -4,6 +4,8 @@ permissions:
   pull-requests: write
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 9 1 * *' # run every month at 9am UTC
 
 jobs:
   test:
