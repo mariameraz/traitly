@@ -10,17 +10,20 @@ import os
 # ============================================================================
 import pytest
 from unittest.mock import patch
+import numpy as np
 
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import matplotlib
 matplotlib.use("Agg")  # headless backend, no windows popping up during tests
+
 # ============================================================================
 # INTERNAL
 # ============================================================================
 from traitly.fruit_phenotyping import FruitInternalAnalyzer
 import traitly.fruit_phenotyping.internal_analysis as internal_analysis_mod
 from traitly.fruit_phenotyping.internal_analysis import _process_internal_image_worker
+
 
 ##########################################################################
 # Valid cranberry image
@@ -284,7 +287,6 @@ class TestEditMask:
         c.edit_mask(verbose=False)
         assert c.mask_locules is fake
 
-
 class TestGenerateColorScatterplot:
     def test_raises_without_image(self):
         c = FruitInternalAnalyzer(path=valid_img)
@@ -486,7 +488,6 @@ class TestGenerateLoculeMaskOtsu:
         c.generate_locule_mask(plot=False, otsu_offset=None)
         assert captured["use_otsu"] is False
 
-
 class TestDetectFruitsValidationAndZeroCount:
     def test_raises_without_mask(self):
         c = FruitInternalAnalyzer(path=valid_img)
@@ -504,5 +505,280 @@ class TestDetectFruitsValidationAndZeroCount:
         assert c.fruit_locule_map is None
         assert "Detected fruits: 0" in captured.out
 
-if __name__ == "__main__":
-    sys.exit(pytest.main([__file__, "-v"]))
+
+def _make_analyzer(monkeypatch, tmp_path):
+    """Create an FruitInternalAnalyzer instance"""
+    monkeypatch.setattr(
+        internal_analysis_mod, "_validate_path_exists", lambda p: None
+    )
+    fake_path = tmp_path / "fake.jpg"
+    fake_path.touch()
+    c = FruitInternalAnalyzer(str(fake_path))
+    c.img = np.zeros((20, 20, 3), dtype=np.uint8)
+    c._img_rgb = c.img.copy()
+    c._img_copy = c.img.copy()
+    c._img_hsv = c.img.copy()
+    return c
+
+class TestSetupLabelQRBranch:
+    def test_qr_detected_sets_label_text_and_prints(self, monkeypatch, tmp_path, capsys):
+        c = _make_analyzer(monkeypatch, tmp_path)
+        monkeypatch.setattr(internal_analysis_mod, "detect_qr", lambda img: "ABC123")
+
+        c.setup_label(verbose=True, detect_label=True, skip_qr=False, skip_label_roi=True)
+
+        assert c.label_text == "ABC123"
+        captured = capsys.readouterr()
+        assert "QR Code detected" in captured.out
+        assert "ABC123" in captured.out
+
+    def test_qr_skip_qr_true_does_not_call_detect_qr(self, monkeypatch, tmp_path):
+        c = _make_analyzer(monkeypatch, tmp_path)
+        called = {"count": 0}
+
+        def fake_detect_qr(img):
+            called["count"] += 1
+            return "should-not-be-used"
+
+        monkeypatch.setattr(internal_analysis_mod, "detect_qr", fake_detect_qr)
+
+        c.setup_label(verbose=False, detect_label=True, skip_qr=True, skip_label_roi=True)
+
+        assert called["count"] == 0
+        assert c.label_text != "should-not-be-used"
+
+    def test_qr_returns_none_does_not_print_qr_line(self, monkeypatch, tmp_path, capsys):
+        c = _make_analyzer(monkeypatch, tmp_path)
+        monkeypatch.setattr(internal_analysis_mod, "detect_qr", lambda img: None)
+
+        c.setup_label(verbose=True, detect_label=True, skip_qr=False, skip_label_roi=True)
+
+        captured = capsys.readouterr()
+        assert "QR Code detected" not in captured.out
+
+class TestSetupMeasurementsPlotOrientation:
+    def _prep_common(self, monkeypatch, tmp_path):
+        c = _make_analyzer(monkeypatch, tmp_path)
+        monkeypatch.setattr(c, "setup_label", lambda **kwargs: None)
+        monkeypatch.setattr(
+            internal_analysis_mod.plt, "figure", lambda figsize=None: figsize
+        )
+        monkeypatch.setattr(internal_analysis_mod.plt, "show", lambda: None)
+        monkeypatch.setattr(internal_analysis_mod.plt, "imshow", lambda *a, **k: None)
+        monkeypatch.setattr(internal_analysis_mod.plt, "axis", lambda *a, **k: None)
+        monkeypatch.setattr(internal_analysis_mod.plt, "title", lambda *a, **k: None)
+        monkeypatch.setattr(internal_analysis_mod.cv2, "boundingRect", lambda c_: (0, 0, 2, 2))
+        monkeypatch.setattr(internal_analysis_mod.cv2, "rectangle", lambda *a, **k: None)
+        monkeypatch.setattr(internal_analysis_mod.cv2, "putText", lambda *a, **k: None)
+        return c
+
+    def test_landscape_image_uses_single_row_multi_col(self, monkeypatch, tmp_path):
+        c = self._prep_common(monkeypatch, tmp_path)
+        c.img = np.zeros((10, 40, 3), dtype=np.uint8)  # width > heigth -> landscape
+        c._img_rgb = c.img.copy()
+
+        # simulate setup_calibration with 2 ref_roi (n=2)
+        def fake_setup_calibration(**kwargs):
+            c._ref_roi = [np.array([[0, 0]]), np.array([[1, 1]])]
+
+        monkeypatch.setattr(c, "setup_calibration", fake_setup_calibration)
+
+        figsizes = []
+        monkeypatch.setattr(
+            internal_analysis_mod.plt,
+            "figure",
+            lambda figsize=None: figsizes.append(figsize),
+        )
+
+        c.setup_measurements(plot=True, plot_size=(5, 5), verbose=False)
+
+        assert figsizes[0] == (5, 5)  # else-branch: figsize=(plot_size[0], plot_size[1])
+
+    def test_portrait_image_uses_multi_row_single_col(self, monkeypatch, tmp_path):
+        c = self._prep_common(monkeypatch, tmp_path)
+        c.img = np.zeros((40, 10, 3), dtype=np.uint8)  # length > width -> Portrait
+        c._img_rgb = c.img.copy()
+
+        def fake_setup_calibration(**kwargs):
+            c._ref_roi = [np.array([[0, 0]]), np.array([[1, 1]])]
+
+        monkeypatch.setattr(c, "setup_calibration", fake_setup_calibration)
+
+        figsizes = []
+        monkeypatch.setattr(
+            internal_analysis_mod.plt,
+            "figure",
+            lambda figsize=None: figsizes.append(figsize),
+        )
+
+        c.setup_measurements(plot=True, plot_size=(5, 5), verbose=False)
+
+        # if-branch (portrait): figsize=(plot_size[0], plot_size[1] * n) con n=2
+        assert figsizes[0] == (5, 10)
+
+class TestDetectFruitsBranches:
+    def _prep(self, monkeypatch, tmp_path, fruit_map):
+        c = _make_analyzer(monkeypatch, tmp_path)
+        c.mask_fruit = np.ones((10, 10), dtype=np.uint8)
+
+        monkeypatch.setattr(
+            internal_analysis_mod,
+            "find_fruits",
+            lambda mask, **kwargs: (["contour1"], fruit_map),
+        )
+        monkeypatch.setattr(internal_analysis_mod.plt, "figure", lambda *a, **k: None)
+        monkeypatch.setattr(internal_analysis_mod.plt, "show", lambda: None)
+        monkeypatch.setattr(internal_analysis_mod.plt, "imshow", lambda *a, **k: None)
+        monkeypatch.setattr(internal_analysis_mod.plt, "axis", lambda *a, **k: None)
+        monkeypatch.setattr(internal_analysis_mod.plt, "title", lambda *a, **k: None)
+        monkeypatch.setattr(internal_analysis_mod.cv2, "drawContours", lambda *a, **k: None)
+        return c
+
+    def test_uses_mask_locules_when_available(self, monkeypatch, tmp_path):
+        c = self._prep(monkeypatch, tmp_path, {1: [1]})
+        c.mask_locules = np.full((10, 10), 7, dtype=np.uint8)
+
+        used_masks = []
+
+        def fake_find_fruits(mask, **kwargs):
+            used_masks.append(mask)
+            return ["contour1"], {1: [1]}
+
+        monkeypatch.setattr(internal_analysis_mod, "find_fruits", fake_find_fruits)
+
+        c.detect_fruits(verbose=False, plot=False)
+
+        assert used_masks[0] is c.mask_locules
+
+    def test_uses_mask_fruit_when_locules_none(self, monkeypatch, tmp_path):
+        c = self._prep(monkeypatch, tmp_path, {1: [1]})
+        c.mask_locules = None
+
+        used_masks = []
+
+        def fake_find_fruits(mask, **kwargs):
+            used_masks.append(mask)
+            return ["contour1"], {1: [1]}
+
+        monkeypatch.setattr(internal_analysis_mod, "find_fruits", fake_find_fruits)
+
+        c.detect_fruits(verbose=False, plot=False)
+
+        assert used_masks[0] is c.mask_fruit
+
+    def test_plot_true_updates_dilation_factor(self, monkeypatch, tmp_path):
+        c = self._prep(monkeypatch, tmp_path, {0: []})
+        c._dilation_factor = None
+
+        c.detect_fruits(verbose=False, plot=True, dilation_factor=2.5)
+
+        assert c._dilation_factor == 2.5
+
+    def test_plot_false_does_not_update_dilation_factor(self, monkeypatch, tmp_path):
+        c = self._prep(monkeypatch, tmp_path, {0: []})
+        c._dilation_factor = None
+
+        c.detect_fruits(verbose=False, plot=False, dilation_factor=2.5)
+        assert c._dilation_factor is None
+
+    def test_plot_true_dilation_factor_none_keeps_previous_value(self, monkeypatch, tmp_path):
+        c = self._prep(monkeypatch, tmp_path, {0: []})
+        c._dilation_factor = 1.0
+
+        c.detect_fruits(verbose=False, plot=True, dilation_factor=None)
+
+        assert c._dilation_factor == 1.0
+
+class TestGenerateSingleFruitMasksValidation:
+    def _prep_valid(self, monkeypatch, tmp_path):
+        c = _make_analyzer(monkeypatch, tmp_path)
+        c.mask_fruit = np.ones((10, 10), dtype=np.uint8)
+        c.contours = ["contour1"]
+        c.fruit_locule_map = {1: [1]}
+        monkeypatch.setattr(internal_analysis_mod, "get_single_fruit_masks", lambda **kwargs: None)
+        return c
+
+    def test_raises_when_mask_fruit_is_none(self, monkeypatch, tmp_path):
+        c = self._prep_valid(monkeypatch, tmp_path)
+        c.mask_fruit = None
+        with pytest.raises(ValueError, match="No mask available"):
+            c.generate_single_fruit_masks()
+
+    def test_raises_when_contours_is_none(self, monkeypatch, tmp_path):
+        c = self._prep_valid(monkeypatch, tmp_path)
+        c.contours = None
+        with pytest.raises(ValueError, match="No contours available"):
+            c.generate_single_fruit_masks()
+
+    def test_raises_when_fruit_locule_map_is_none(self, monkeypatch, tmp_path):
+        c = self._prep_valid(monkeypatch, tmp_path)
+        c.fruit_locule_map = None
+        with pytest.raises(ValueError, match="No fruit-locule mapping available"):
+            c.generate_single_fruit_masks()
+
+    def test_raises_when_fruit_locule_map_is_empty(self, monkeypatch, tmp_path):
+        c = self._prep_valid(monkeypatch, tmp_path)
+        c.fruit_locule_map = {}
+        with pytest.raises(ValueError, match="No fruits detected"):
+            c.generate_single_fruit_masks()
+
+    def test_uses_mask_locules_when_available(self, monkeypatch, tmp_path):
+        c = self._prep_valid(monkeypatch, tmp_path)
+        c.mask_locules = np.full((10, 10), 9, dtype=np.uint8)
+
+        used_masks = []
+
+        def fake_get_single_fruit_masks(**kwargs):
+            used_masks.append(kwargs["mask"])
+
+        monkeypatch.setattr(internal_analysis_mod, "get_single_fruit_masks", fake_get_single_fruit_masks)
+
+        c.generate_single_fruit_masks()
+
+        assert used_masks[0] is c.mask_locules
+
+    def test_uses_mask_fruit_when_locules_none(self, monkeypatch, tmp_path):
+        c = self._prep_valid(monkeypatch, tmp_path)
+        c.mask_locules = None
+
+        used_masks = []
+
+        def fake_get_single_fruit_masks(**kwargs):
+            used_masks.append(kwargs["mask"])
+
+        monkeypatch.setattr(internal_analysis_mod, "get_single_fruit_masks", fake_get_single_fruit_masks)
+
+        c.generate_single_fruit_masks()
+
+        assert used_masks[0] is c.mask_fruit
+
+    def test_dilation_factor_provided_updates_attribute(self, monkeypatch, tmp_path):
+        c = self._prep_valid(monkeypatch, tmp_path)
+        c._dilation_factor = None
+
+        c.generate_single_fruit_masks(dilation_factor=3.0)
+
+        assert c._dilation_factor == 3.0
+
+    def test_dilation_factor_none_keeps_previous_value(self, monkeypatch, tmp_path):
+        c = self._prep_valid(monkeypatch, tmp_path)
+        c._dilation_factor = 1.5
+
+        c.generate_single_fruit_masks(dilation_factor=None)
+
+        assert c._dilation_factor == 1.5
+
+    def test_passes_dilation_factor_through_to_get_single_fruit_masks(self, monkeypatch, tmp_path):
+        c = self._prep_valid(monkeypatch, tmp_path)
+        c._dilation_factor = 4.2
+
+        received = {}
+
+        def fake_get_single_fruit_masks(**kwargs):
+            received.update(kwargs)
+
+        monkeypatch.setattr(internal_analysis_mod, "get_single_fruit_masks", fake_get_single_fruit_masks)
+
+        c.generate_single_fruit_masks()
+
+        assert received["dilation_factor"] == 4.2
