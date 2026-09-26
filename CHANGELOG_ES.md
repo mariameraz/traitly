@@ -2,21 +2,39 @@
 
 *Todos los cambios significativos de Traitly están documentados aquí.*
 
-## v.0.1.3 – En desarrollo
+## v0.2.0 – En desarrollo
 
 ### Correcciones
 
-- En `setup_label`:
-    - Si el código QR era detectado, la dtection de la región de interés (ROI) de la etiqueta era saltada, y `label_roi = None`
-    - Ahora, la detecctión del ROI de la etiqueta y la detección del código QR son dos pasos independientes
+- En `setup_label` de `FruitInternalAnalyzer` y `FruitExternalAnalyzer`:
+    - Si el código QR era detectado, la detección de la región de interés (ROI) de la etiqueta era saltada, y `label_roi = None`
+    - Ahora, la detección del ROI de la etiqueta se ejecuta de forma independiente a la detección del código QR
+- Se corrigió `outer_pericarp_mean_thickness`: el límite entre el pericarpio interno y externo se establecía previamente en el primer píxel con valor 255 sobre el rayo, el cual, dado que el pericarpio interno también es 255, siempre coincidía con el centroide, midiendo así el radio del fruto en lugar del pericarpio. Ahora el límite utiliza el último píxel con valor 255, marcando correctamente la transición de pericarpio interno a externo.
+- Se corrigió una fuga de memoria durante el análisis por lote: las imágenes de entrada se almacenaban previamente en una caché LRU, manteniendo en RAM cada imagen procesada. Esto provocaba que el uso de memoria creciera sin control al analizar lotes grandes. Se eliminó la caché por completo, de modo que cada imagen ahora se carga, procesa y libera de forma independiente por cada proceso trabajador.
+- Se corrigieron incompatibilidades de los módulos `mcc` y `wechat_qrcode` con OpenCV >= 5.0:
+    - `cv2.mcc.CCheckerDetector.process()` movió el argumento de tipo de tabla de color (color chart) al nuevo método `setColorChartType()`; se añadió detección de versión para invocar la API correcta según la disponibilidad
+    - `cv2.mcc.CCheckerDraw` fue eliminado; el método de dibujo se movió al propio `CCheckerDetector`; se añadió una alternativa acorde a esto
+    - El constructor heredado de `cv2.wechat_qrcode_WeChatQRCode` ya no acepta rutas personalizadas de modelos Caffe; se añadió una alternativa al nuevo detector WeChat integrado y, en su defecto, a `cv2.QRCodeDetector`
+- Se eliminó la binarización de Otsu previa a la alternativa clásica `cv2.QRCodeDetector`, la cual causaba que los códigos QR en las etiquetas no fueran detectados
 
 ### Cambios
 
-- Se encapsularon atributos que solo son relevantes para procesos internos en `FruitExternalAnalyzer` y `FruitInternalAnalyzer` para mantener más limpia la interfáz del usuario.
-- Se movió `detect_color_checker` de `FruitInternalAnalyzer` al nuevo módulo `color_correction`
-- `setup_measurements` ya no acepta los argumentos `detect_color_checker` and `scale_factor`. Usar el método `detect_color_checker()` en su lugar.
+- Se encapsularon atributos que solo son relevantes para procesos internos en `FruitExternalAnalyzer` y `FruitInternalAnalyzer` para mantener más limpia la interfaz del usuario.
 
+#### *Cambios que rompen compatibilidad:*
 
+- Se eliminó el soporte para Python 3.9; ahora se requiere Python 3.10 o superior.
+- La selección de modo en la CLI cambió de banderas mutuamente excluyentes a subcomandos:
+  - Antes: `traitly --fruit_internal -i PATH` / `traitly --fruit_external -i PATH`
+  - Ahora: `traitly fruit_internal -i PATH` / `traitly fruit_external -i PATH`
+- Se incluyó un método dedicado (`detect_color_checker()`) en `FruitInternalAnalyzer` y `FruitExternalAnalyzer` para detectar tarjetas de color en una imagen. Por lo tanto, `setup_measurements()` ya no acepta los argumentos `detect_color_checker` y `scale_factor`.
+
+### Nuevo
+
+- Se añadió el nuevo comando de CLI `traitly info` para imprimir metadatos del paquete, el sistema y las dependencias
+- Se añadió el nuevo módulo `traitly.utils.metadata` con `get_package_versions()` para obtener las versiones instaladas de todas las dependencias del paquete y la versión de Python
+- Se añadió el nuevo módulo `traitly.color_correction` con la clase `ColorCorrection` para corregir el color de imágenes o carpetas completas utilizando una tarjeta Macbeth Color Checker (24 parches)
+ 
 ## v0.1.2 – 2026-05-18
 
 ### Correcciones
