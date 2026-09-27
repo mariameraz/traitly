@@ -2,7 +2,7 @@
 
 # Installing Traitly ⊹ ࣪ ˖
 
-*Last updated: March 2026 - Traitly v0.1.0*
+*Last updated: September 2026 - Traitly v0.2.0*
 
 ---
 
@@ -14,7 +14,7 @@ For this tutorial, we'll create a **Python virtual environment (venv)**, but you
 
 ## Requirements
 
-- Python 3.9 or higher ([download here](https://www.python.org/downloads/))
+- Python 3.10 or higher ([download here](https://www.python.org/downloads/))
 - RAM: 4 GB (8 GB recommended)
 - Free disk space: ~2 GB for full installation
 
@@ -69,48 +69,6 @@ my-project/
 
 === ":fontawesome-solid-terminal: macOS and Linux"
 
-    ??? warning "Intel-based Mac (pre-2020) users"
-          
-        PyTorch (required by EasyOCR) no longer publishes pre-built packages for 
-        Intel-based Macs, and recent OpenCV versions require macOS 14 or later. 
-        As a result, the standard installation won't work on older Intel-based Macs.
-
-        ??? tip "Not sure if you have Intel?"
-            *To check if you have an Intel-based Mac, run in the terminal:*
-            ```
-            uname -m
-            ```
-            or click  -> **About This Mac**. If it prints `x86_64`, or it says **Intel** under Processor, follow these steps instead of the default installation.
-    
-        **1. Create the environment with Python 3.11**
-
-        Make sure Python 3.11 is installed ([download here](https://www.python.org/downloads/release/python-3111/)). Then run:
-        ```bash
-        python3.11 -m venv traitly-env
-        source traitly-env/bin/activate
-        ```
-        
-        **2. Install dependencies in order:**
-        ```bash
-        pip install torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cpu
-        pip install opencv-python==4.8.1.78
-        pip install opencv-python-headless==4.8.1.78
-        pip install opencv-contrib-python==4.9.0.80
-        pip install "numpy<2"
-        ```
-
-        **3. Install traitly**
-
-        Get the latest version:
-        ```bash
-        pip install traitly
-        ```
-
-        Or a specific one:
-        ```bash
-        pip install traitly==0.1.1
-        ```
-
     **1. Create a new Python environment:**
 
     You can replace `traitly-env` with any name you prefer.
@@ -134,10 +92,9 @@ my-project/
 
     Or a specific one:
     ```bash
-    pip install traitly==0.1.1
+    pip install traitly==0.2.0
     ```
     
-
 === ":fontawesome-brands-windows:{.icon-blue} Windows"
 
     **1. Create a new Python environment:**
@@ -163,7 +120,7 @@ my-project/
 
     Or a specific one:
     ```bash
-    pip install traitly==0.1.1
+    pip install traitly==0.2.0
     ```
 
 === ":simple-googlecolab:{.icon-orange} Google Colab"
@@ -188,7 +145,7 @@ my-project/
 
     Or a specific one:
     ```bash
-    !pip install traitly==0.1.1
+    !pip install traitly==0.2.0
     ```
 
 ---
@@ -201,6 +158,8 @@ Depending on your use case, you might need to install additional dependencies:
 |-------|----------------------------|-----------------------------------|
 | `pdf` | PDF to image conversion    | `pip install "traitly[pdf]"` |
 | `app` | PDF conversion + Shiny app | `pip install "traitly[app]"` |
+| `dev` | Pytest + PytestCov         | `pip install "traitly[dev]"` |
+
 
 !!! tip "Not sure which to choose?"
     If you're unsure, we recommend installing `app`, since it includes everything you need to use Traitly's full functionality, including the interactive app.
@@ -215,7 +174,6 @@ Depending on your use case, you might need to install additional dependencies:
 ## Verify Installation
 
 Once installed, you can confirm everything is working correctly by running:
-
 
 **In the terminal:**
 ```bash
