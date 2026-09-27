@@ -77,8 +77,8 @@ def create_parser() -> argparse.ArgumentParser:
             "Examples:",
             _fmt_examples([
                 ("  # Get traitly fruit_internal and fruit_external parameters info",),
-                ("  traitly fruit_internal ---help",),
-                ("  traitly fruit_external ---help",),
+                ("  traitly fruit_internal --help",),
+                ("  traitly fruit_external --help",),
                 ("",),
                 ("  # Internal structure analysis (single image or folder)",),
                 ("  traitly fruit_internal -i tests/sample_data/",),
