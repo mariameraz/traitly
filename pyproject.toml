@@ -32,8 +32,6 @@ dependencies = [
   "colour-science"
 ]
 
-
-
 keywords = [
   "plant-phenotyping",
   "fruit-morphology",
