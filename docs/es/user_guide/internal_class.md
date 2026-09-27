@@ -93,7 +93,7 @@ Después de ejecutar los métodos, el analizador guarda los resultados en atribu
 | `input_path` | Ruta de la imagen que estás analizando |
 | `img_name` | Nombre de la imagen |
 | `img_shape` | Tamaño de la imagen |
-| `img`, `img_rgb`, `img_hsv` | La imagen en diferentes formatos de color |
+| `img` | Imagen en formato de color BGR |
 | `mask_fruit` | Máscara donde los frutos aparecen en blanco y el fondo en negro |
 | `mask_locules` | Máscara donde los lóculos aparecen en negro y el resto del fruto en blanco (si corriste `generate_locule_mask()`) |
 | `contours` | Lista de contornos de todos los frutos detectados |

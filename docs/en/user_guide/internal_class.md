@@ -93,7 +93,7 @@ After running the methods, the analyzer stores results in attributes you can ins
 | `input_path` | Path of the image being analyzed |
 | `img_name` | Image name |
 | `img_shape` | Image size |
-| `img`, `img_rgb`, `img_hsv` | The image in different color formats |
+| `img` | Image in BGR color format |
 | `mask_fruit` | Mask where fruits appear white and the background is black |
 | `mask_locules` | Mask where locules appear black and the rest of the fruit is white (if `generate_locule_mask()` was run) |
 | `contours` | List of contours for all detected fruits |
