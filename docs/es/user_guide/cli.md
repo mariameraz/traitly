@@ -68,12 +68,12 @@ La entrada (`-i`) puede ser una imagen individual o una carpeta con múltiples i
 # Argumentos generales
 traitly --help
 
-# Argumentos especificos para ambos métodos:
+# Argumentos especificos para cada métodos:
 traitly fruit_internal --help
 traitly fruit_external --help
 ```
 
-**Análisis interno sobre una carpeta, usando parámetros guardados:**
+**Análisis interno sobre una carpeta, usando parámetros guardados en un archivo JSON:**
 ```bash
 traitly fruit_internal -i datos/frutos_cortes/ --json config.json
 ```
@@ -121,6 +121,12 @@ Todos los archivos se guardan en el directorio indicado por `-o`, o en una subca
 
 ## Shiny App
 
+!!! warning ""
+    Requiere tener previamente instaladas las dependencias de la app. Consulta la sección de [Instalación](../installation.md#dependencias-opcionales) para más detalles.
+
+</div>
+
+
 Para iniciar la aplicación interactiva de Traitly desde la terminal, ejecuta:
 
 ```bash
@@ -138,7 +144,3 @@ Opcionalmente, puedes especificar el host y el puerto:
 ```bash
 traitly-app --host 127.0.0.1 --port 8000
 ```
-!!! warning ""
-    Requiere tener instaladas las dependencias de la app. Consulta la sección de [Instalación](../installation.md#dependencias-opcionales) para más detalles.
-
-</div>

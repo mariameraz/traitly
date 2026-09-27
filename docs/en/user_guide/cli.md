@@ -75,7 +75,7 @@ traitly fruit_internal --help
 traitly fruit_external --help
 ```
 
-**Internal analysis on a folder, using saved parameters:**
+**Internal analysis on a folder, using saved parameters in a JSON file:**
 ```bash
 traitly fruit_internal -i data/fruit_slices/ --json config.json
 ```
@@ -122,6 +122,11 @@ All files are saved to the directory specified with `-o`, or to a `Results/` sub
 
 ## Shiny App
 
+!!! warning ""
+    Requires the app dependencies to be previously installed. See the [Installation](../installation.md#optional-dependencies) section for details.
+    
+</div>
+
 To launch the Traitly interactive app from the terminal, run:
 ```bash
 traitly-app
@@ -137,8 +142,3 @@ Optionally, you can specify the host and port:
 ```bash
 traitly-app --host 127.0.0.1 --port 8000
 ```
-
-!!! warning ""
-    Requires the app dependencies to be installed. See the [Installation](../installation.md#optional-dependencies) section for details.
-    
-</div>
