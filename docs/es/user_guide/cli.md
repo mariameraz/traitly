@@ -9,13 +9,13 @@ Traitly incluye una interfaz de línea de comandos que permite ejecutar los aná
 ## Uso básico
 
 ```bash
-traitly --fruit_internal -i RUTA [-o RUTA] [--json RUTA] [--num_cores N]
-traitly --fruit_external -i RUTA [-o RUTA] [--json RUTA] [--num_cores N]
+traitly fruit_internal -i RUTA [-o RUTA] [--json RUTA] [--num_cores N]
+traitly fruit_external -i RUTA [-o RUTA] [--json RUTA] [--num_cores N]
 ```
 
-La entrada (`-i`) puede ser una imagen individual o una carpeta con múltiples imágenes. En ambos casos, se delega automáticamente al método correspondiente (`process_single_file` o `analyze_folder`).
+La entrada (`-i`) puede ser una imagen individual o una carpeta con múltiples imágenes.
 
-!!! tip "Un archivo JSON es requerido para configurar el análisis"
+!!! tip "Un archivo JSON es **requerido** para configurar el análisis"
     
     **Toda la configuración del análisis debe pasarse mediante un archivo `.json` con `--json`.** 
 
@@ -43,19 +43,19 @@ La entrada (`-i`) puede ser una imagen individual o una carpeta con múltiples i
 
 | Argumento | Tipo | Default | Descripción |
 |-----------|------|---------|-------------|
-| `--fruit_internal` | `flag` | — | Activa el análisis de estructura interna (`FruitInternalAnalyzer`) |
-| `--fruit_external` | `flag` | — | Activa el análisis de apariencia externa (`FruitExternalAnalyzer`) |
+| `fruit_internal` | `flag` | — | Activa el análisis de estructura interna (`FruitInternalAnalyzer`) |
+| `fruit_external` | `flag` | — | Activa el análisis de apariencia externa (`FruitExternalAnalyzer`) |
+| `info`           | `flag` | — | Imprime en pantalla los metadatos de traitly y el sistema |
 | `-i`, `--input` | `str` | — | Ruta a la imagen o carpeta a analizar (**requerido**) |
 | `-o`, `--output` | `str` | `None` | Directorio de salida; si `None`, se crea una subcarpeta `Results/` dentro de la carpeta de entrada |
 | `--json` | `str` | `None` | Ruta al archivo `.json` de parámetros generado por `save_parameters()` |
 | `--num_cores` | `int` | `1` | Número de núcleos de CPU para procesamiento en paralelo |
 | `--no_morphology` | `flag` | — | Omite el análisis morfológico |
 | `--no_color` | `flag` | — | Omite el análisis de color |
-| `--version` | `flag` | — | Muestra la versión instalada de Traitly |
-| `--help` | `flag` | — | Muestra información sobre los parámetros disponibles y ejemplos de uso |
+| `--help` | `flag` | — | Muestra información sobre los argumentos disponibles y ejemplos de uso |
 
 !!! warning "Importante"
-    `--fruit_internal` y `--fruit_external` son mutuamente excluyentes, solo puede usarse uno por llamada.
+    `fruit_internal` y `fruit_external` son mutuamente excluyentes, **solo puede usarse uno por llamada.**
 
 <br>
 
@@ -63,34 +63,39 @@ La entrada (`-i`) puede ser una imagen individual o una carpeta con múltiples i
 
 ## Ejemplos
 
+**Ver argumentos disponibles:**
+```bash
+# Argumentos generales
+traitly --help
+
+# Argumentos especificos para ambos métodos:
+traitly fruit_internal --help
+traitly fruit_external --help
+```
+
 **Análisis interno sobre una carpeta, usando parámetros guardados:**
 ```bash
-traitly --fruit_internal -i datos/frutos_cortes/ --json config.json
+traitly fruit_internal -i datos/frutos_cortes/ --json config.json
 ```
 
 **Análisis externo con salida personalizada y procesamiento en paralelo:**
 ```bash
-traitly --fruit_external -i datos/frutos_enteros/ -o resultados/ --num_cores 4
+traitly fruit_external -i datos/frutos_enteros/ -o resultados/ --num_cores 4
 ```
 
 **Análisis sobre una imagen individual:**
 ```bash
-traitly --fruit_internal -i datos/imagen_001.jpg --json config.json
+traitly fruit_internal -i datos/imagen_001.jpg --json config.json
 ```
 
 **Solo morfología, sin color:**
 ```bash
-traitly --fruit_internal -i datos/cortes/ --json config.json --no_color
+traitly fruit_internal -i datos/cortes/ --json config.json --no_color
 ```
 
 **Verificar versión instalada:**
 ```bash
-traitly --version
-```
-
-**Ver parámetros disponibles:**
-```bash
-traitly --help
+traitly info
 ```
 
 <br>
