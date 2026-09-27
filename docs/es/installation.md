@@ -8,7 +8,7 @@ hide:
 
 #  Instalando Traitly ⊹ ࣪ ˖
 
-*Última actualización: Marzo 2026 - Traitly v0.1.0*
+*Última actualización: Septiembre 2026 - Traitly v0.2.0*
 
 ---
 
@@ -20,7 +20,7 @@ Para los propósitos de este tutorial, crearemos un **entorno virtual de Python 
 
 ## Requisitos
 
-- Python 3.9 o superior ([descargar aquí](https://www.python.org/downloads/))
+- Python 3.10 o superior ([descargar aquí](https://www.python.org/downloads/))
 - RAM: 4 GB (recomendado 8 GB)
 - Espacio libre en el disco: ~2 GB para la instalación completa
 
@@ -76,20 +76,6 @@ mi-proyecto/
 ## Instalación
 
 === ":fontawesome-solid-terminal: MacOS y Linux"
-
-    ??? warning "Usuarios con Mac Intel (anteriores a 2020)"
-              
-        PyTorch (requerido por EasyOCR) ya no publica paquetes precompilados para 
-        Macs con procesador Intel, y las versiones recientes de OpenCV requieren 
-        macOS 14 o superior. Por esta razón, la instalación estándar no funcionará en Macs con Intel más antiguos.
-    
-        ??? tip "¿No sabes si tienes Intel?"
-            *Para verificar si tienes una Mac con procesador Intel, ejecuta en la terminal:*
-
-            ```bash
-            uname -m 
-            ```
-            o haz click en  -> **Acerca de esta Mac**. Si imprime `x86_64` o dice **Intel** en Procesador, sigue estos pasos en lugar de la instalación estándar.
             
         **1. Crea el ambiente con Python 3.11**
     
@@ -118,7 +104,7 @@ mi-proyecto/
     
         O una versión específica:
         ```bash
-        pip install traitly==0.1.1
+        pip install traitly==0.2.0
         ```
 
     **1. Crear un nuevo entorno de Python:**
@@ -144,7 +130,7 @@ mi-proyecto/
 
     O una versión específica:
     ```bash
-    pip install traitly==0.1.1
+    pip install traitly==0.2.0
     ```
 
 === ":fontawesome-brands-windows:{.icon-blue} Windows"
@@ -172,7 +158,7 @@ mi-proyecto/
 
     O una versión específica:
     ```bash
-    pip install traitly==0.1.1
+    pip install traitly==0.2.0
     ```
 
 === ":simple-googlecolab:{.icon-orange} Google Colab"
@@ -196,7 +182,7 @@ mi-proyecto/
 
     O una versión específica:
     ```bash
-    !pip install traitly==0.1.1
+    !pip install traitly==0.2.0
     ```
 
 ---
@@ -209,6 +195,7 @@ Por defecto, Traitly instalará únicamente el **paquete base**. Dependiendo de 
 |-------|-------------------------------------|-----------------------------------|
 | `pdf` | Convertir archivos PDF a imágenes   | `pip install "traitly[pdf]"` |
 | `app` | Convertir PDF + Shiny app           | `pip install "traitly[app]"` |
+| `dev` | Pytest + PytestCov       | `pip install "traitly[dev]"` |
 
 !!! tip "¿No sabes cuál elegir?"
     Si tienes dudas, te recomendamos instalar todas las dependencias con `app`, con las cuales puedes hacer uso de todas las funcionalidades de Traitly.
