@@ -34,7 +34,6 @@ tests/data/**/*.json
 tests/data/external/**/*.json
 .coverage
 
-
 # notebooks
 Untitled*
 
@@ -46,3 +45,7 @@ scripts/
 
 # Logs
 *.log
+
+tests/data/external/blue_bg/Results/color_results.csv
+tests/data/external/blue_bg/Results/morphology_results.csv
+tests/data/external/blue_bg/hist_color_results.csv
