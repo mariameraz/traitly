@@ -433,28 +433,33 @@ def get_internal_pericarp_contour(
 ) -> np.ndarray:
 
     if not locules:
-        return np.array([])
+        return np.array([]) # avoid analysing fruits with no locules (impossible to get the internal pericarp contour)
 
-    all_points = np.vstack([contours[i] for i in locules])
+    all_points = np.vstack([contours[i] for i in locules]) # take all the points from all the locule contours
 
-    if dilation_factor: # option 1, dilated mask
+    # OPTION 1, dilated mask
+    if dilation_factor:
         if img_shape is None:
             raise ValueError("img_shape is required when dilation_factor is provided")
 
+        # For each fruit, crop the binary mask around its bounding box to optimize the process
         ref = contours[fruit_id] if fruit_id is not None else all_points
         x, y, w, h = cv2.boundingRect(ref)
-        pad = 5
+        pad = 5 # add extra space between the box and the contour boundary
         x1, y1 = max(x - pad, 0), max(y - pad, 0)
         x2, y2 = min(x + w + pad, img_shape[1]), min(y + h + pad, img_shape[0])
 
+        # Generarate a new mask of the locules using the previous info
         roi_mask = np.zeros((y2 - y1, x2 - x1), dtype=np.uint8)
         shifted = [contours[i] - np.array([[[x1, y1]]]) for i in locules]
+
         for c in shifted:
             cv2.drawContours(roi_mask, [c], -1, 255, -1)
 
+        # Get the average area of all locule
         areas = [cv2.contourArea(contours[i]) for i in locules]
-        mean_radius = int(np.sqrt(np.mean(areas) / np.pi) * dilation_factor)
-        mean_radius = max(mean_radius, 3)
+        mean_radius = int(np.sqrt(np.mean(areas) / np.pi) * dilation_factor)# and scale it by the dilation factor
+        mean_radius = max(mean_radius, 3) # Ensure min value is at least 3
 
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (mean_radius * 2 + 1,) * 2)
         dilated = cv2.dilate(roi_mask, kernel, iterations=2)
