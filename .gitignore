@@ -9,9 +9,11 @@ __pycache__/
 # python environments
 traitly_test/*
 dev_venv
+venv_traitly
 
 # Cache
 .cache/
+.DS_Store
 
 # Build
 build/
@@ -26,13 +28,14 @@ requirements.txt
 requirements-dev.txt
 
 # test results
-
 tests/**/Images_from_PDF/
 tests/**/*.txt
 tests/color_correction/18-26*
-tests/data/**/*.json
-tests/data/external/**/*.json
 .coverage
+<<<<<<< HEAD
+=======
+tests/data
+>>>>>>> 6be5fa7 (chore: ignore models)
 
 # notebooks
 Untitled*
@@ -46,6 +49,14 @@ scripts/
 # Logs
 *.log
 
+<<<<<<< HEAD
 tests/data/external/blue_bg/Results/color_results.csv
 tests/data/external/blue_bg/Results/morphology_results.csv
 tests/data/external/blue_bg/hist_color_results.csv
+=======
+# extra files
+*.jpg
+*.png
+*.pt
+*.ipynb
+>>>>>>> 6be5fa7 (chore: ignore models)
