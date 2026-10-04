@@ -1968,7 +1968,7 @@ class FruitInternalAnalyzer:
                 "detect_color_checker": True
             }
 
-        self._checker_coords, self._color_charts, self.img_copy = _detect_color_checker(
+        self._checker_coords, self._color_charts, self._img_copy = _detect_color_checker(
                                                                     self.img,
                                                                     plot = plot,
                                                                     plot_size = plot_size,
