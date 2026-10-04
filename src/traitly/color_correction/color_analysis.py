@@ -27,7 +27,7 @@ from sklearn.cross_decomposition import PLSRegression
 # ============================================================================
 # INTERNAL
 # ============================================================================
-from traitly.color_correction.color_charts import CHECKER_LAB_D50, CHECKER_PATCH_NAMES
+from traitly.color_correction.color_charts import CHECKER_LAB_D65, CHECKER_PATCH_NAMES
 from traitly.utils.validation import _validate_color_image
 
 #############################################################
@@ -231,7 +231,7 @@ def _img_bgr_to_lab(img: np.ndarray) -> np.ndarray:
 
 def _fit_plsr_models(
     detected_lab: np.ndarray,
-    reference_lab: np.ndarray = CHECKER_LAB_D50,
+    reference_lab: np.ndarray = CHECKER_LAB_D65,
     degree: int = 3,
     num_components: int = 11,
     max_iterations: int = 1000,
@@ -292,7 +292,7 @@ def _apply_color_correction(
 ##########################################################################
 def _delta_e(
     detected_lab: np.ndarray,
-    reference_lab: np.ndarray = CHECKER_LAB_D50,
+    reference_lab: np.ndarray = CHECKER_LAB_D65,
 ) -> np.ndarray:
     """
     Get Delta E  for each patch between the detected and the reference LAB values.
@@ -302,7 +302,7 @@ def _delta_e(
     detected_lab : np.ndarray
         LAB values of shape (24, 3).
     reference_lab : np.ndarray
-        Reference LAB values of shape (24, 3). Default is CHECKER_LAB_D50.
+        Reference LAB values of shape (24, 3). Default is CHECKER_LAB_D65.
 
     Returns
     -------
@@ -316,7 +316,7 @@ def _delta_e_stats(
     detected_lab: Optional[np.ndarray] = None,
     original_img: Optional[np.ndarray] = None,
     verbose: bool = True,
-    reference_lab: np.ndarray = CHECKER_LAB_D50,
+    reference_lab: np.ndarray = CHECKER_LAB_D65,
 ) -> None:
     # Delta E before the correction
     if detected_lab is not None:
