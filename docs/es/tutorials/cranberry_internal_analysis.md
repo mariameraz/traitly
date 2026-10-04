@@ -47,7 +47,7 @@ cranberry.load_image()
     
 
 
-A continuación, ejecutamos `setup_measurements()` para establecer el diámetro de las referencias de tamaño (círculos negros) y, opcionalmente, extraer la información del código QR de la etiqueta. Activando `plot_reference=True` podemos inspeccionar en detalle la detección de la referencia y el diámetro en píxeles de cada círculo.
+A continuación, ejecutamos `setup_measurements()` para establecer el diámetro de las referencias de tamaño (círculos negros) y, opcionalmente, extraer la información del código QR de la etiqueta. Activando `plot=True` podemos inspeccionar en detalle la detección de la referencia y el diámetro en píxeles de cada círculo.
 
 Como indican los resultados, se detectó una tira de círculos (`Ref 1`) compuesta por 6 círculos. Antes de calcular el promedio, `setup_measurements()` elimina los círculos cuya desviación estándar es mayor a 2, para evitar ruido por círculos mal detectados o muy diferentes al resto. En este caso, se usaron 5 de los 6 círculos para obtener un diámetro promedio de 218 px. Este valor se divide entre el diámetro real promedio en centímetros para obtener la densidad de píxeles por cm, que se usará para convertir píxeles a centímetros en análisis posteriores.
 
@@ -55,7 +55,7 @@ Como indican los resultados, se detectó una tira de círculos (`Ref 1`) compues
 ```python
 cranberry.setup_measurements(detect_label = True,
                             diameter_cm = 1.7, 
-                            plot_reference = True)
+                            plot = True)
 ```
 
     

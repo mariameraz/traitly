@@ -182,11 +182,10 @@ analyzer.setup_measurements(
 | `confidence` | `float` | `0.6` | Confianza mínima para detección YOLO de la referencia |
 | `skip_qr` | `bool` | `False` | Si `True`, omite detección de QR e intenta OCR directamente |
 | `gpu` | `bool` | `False` | Si `True`, usa GPU para OCR; solo compatible con NVIDIA. Si falla, continua con CPU |
-| `scale_factor` | `float` | `0.5` | Factor de reducción de imagen para detección de carta de color; debe estar entre 0.1 y 1.0, donde 1.0 utiliza el tamaño real de la imagen (0% de reducción) y 0.1 aplica una reducción del 90% |
+| `scale_factor` | `float` | `0.5` | Factor de reducción de imagen para detección de tarjeta de color; debe estar entre 0.1 y 1.0, donde 1.0 utiliza el tamaño real de la imagen (0% de reducción) y 0.1 aplica una reducción del 90% |
 | `language_label` | `list` | `["es", "en"]` | Idiomas para OCR |
 | `font_size` | `int` | `3` | Tamaño de fuente para anotaciones sobre los circulos de la referencia |
-| `plot_reference` | `bool` | `False` | Si `True`, muestra recorte de la referencia de tamaño detectada y anotada |
-| `plot_color_checker` | `bool` | `False` | Si `True`, muestra recorte de la tarjeta de color detectada y anotada |
+| `plot` | `bool` | `False` | Si `True`, muestra recorte de la referencia de tamaño detectada y anotada |
 | `plot_size` | `tuple` | `(5, 5)` | Tamaño de figura para los plots |
 | `verbose` | `bool` | `True` | Si `True`, imprime resultados en consola |
 
@@ -211,6 +210,43 @@ analyzer.generate_color_scatterplot(sample_size=10000)
 | `sample_size` | `int` | `10000` | Número de píxeles a muestrear para el plot |
 | `plot_size` | `tuple` | `(18, 5)` | Tamaño de la figura |
 
+
+<br>
+
+### `detect_color_checker`
+
+*Opcional*
+
+Detecta una tarjeta de color (Macbeth) en la imagen y guarda sus coordenadas, para poder excluirla de la máscara de los frutos.
+
+La detección usa el módulo `mcc` de OpenCV (`cv2.mcc.CCheckerDetector`). Si encuentra una tarjeta, dibuja una cuadrícula a su al rededor en la imagen.
+
+Cuando `generate_fruit_mask()` se ejecuta con `remove_roi=True` (valor por defecto), la región de la tarjeta se rellena de negro en la máscara binaria, igual que la etiqueta y la referencia de tamaño. El margen alrededor del area cubierta se controla con `roi_expansion`. 
+
+??? note "Notas"
+
+    - Si no se encuentra ninguna tarjeta de color, se emite un `UserWarning` y el pipeline continúa sin remover ninguna región. No se lanza ninguna excepción.
+
+    - Este método requiere el módulo `mcc` de `opencv-contrib-python`, que no está disponible en la [instalación para Mac Intel / macOS antiguo](../installation.md). En esos sistemas la detección de la tarjeta de color no es compatible.
+
+```python
+# Detectar la tarjeta de color y mostrar la tarjeta detectada
+analyzer.detect_color_checker(plot=True)
+
+# Ejecutar sin mensajes
+analyzer.detect_color_checker(verbose=False)
+```
+
+<br>
+
+| Parámetro | Tipo | Valor por defecto | Descripción |
+|-----------|------|-------------------|-------------|
+| `plot` | `bool` | `False` | Si es `True`, muestra un recorte de la tarjeta de color detectada |
+| `plot_size` | `tuple[int, int]` | `(5, 5)` | Tamaño de la figura (solo si `plot=True`) |
+| `verbose` | `bool` | `True` | Si es `True`, imprime el resultado de la detección y las coordenadas |
+
+!!! warning "Importante"
+    Ejecútalo **antes** de `generate_fruit_mask()`. De lo contrario, la tarjeta no se removerá de la máscara.
 
 <br>
 
@@ -250,7 +286,7 @@ analyzer.generate_fruit_mask(background_color = 'white')
 | `kernel_close` | `int` | `None` | Tamaño de kernel cierre morfológico |
 | `canny_min` | `int` | `None` | Umbral mínimo Canny |
 | `canny_max` | `int` | `None` | Umbral máximo Canny |
-| `remove_roi` | `bool` | `True` | Si `True`, elimina regiones de etiqueta, referencia y carta de color de la máscara |
+| `remove_roi` | `bool` | `True` | Si `True`, elimina regiones de etiqueta, referencia y tarjeta de color de la máscara |
 | `roi_expansion` | `int` | `10` | Margen en píxeles alrededor de las ROIs antes de eliminarlas |
 | `fill_holes` | `bool` | `False` | Si `True`, rellena huecos cerrados en la máscara binaria |
 | `apply_convex_hull` | `bool` | `False` | Si `True`, aplica convex hull solo a los contornos externos del fruto; no se aplica a lóculos u otras regiones internas |
@@ -837,7 +873,7 @@ analyzer.analyze_folder(json_path="imagen_parameters.json")
 | `skip_qr` | `bool` | `None` | Si `True`, omite detección de QR -> `setup_measurements` |
 | `detect_label` | `bool` | `None` | Si `True`, activa detección de etiqueta con OCR -> `setup_measurements` |
 | `confidence` | `float` | `None` | Confianza mínima para detección YOLO -> `setup_measurements` |
-| `scale_factor` | `float` | `None` | Factor de reducción para detección de carta de color -> `setup_measurements` |
+| `scale_factor` | `float` | `None` | Factor de reducción para detección de tarjeta de color -> `setup_measurements` |
 | `lower_hsv` | `list[int]` | `None` | Umbral HSV inferior para segmentación -> `generate_fruit_mask` |
 | `upper_hsv` | `list[int]` | `None` | Umbral HSV superior para segmentación -> `generate_fruit_mask` |
 | `background_color` | `str` | `None` | Color de fondo predefinido -> `generate_fruit_mask` |
