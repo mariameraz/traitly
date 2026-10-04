@@ -42,15 +42,14 @@ cranberry.load_image()
 
 ![png](../../en/tutorials/cranberry_internal_analysis_files/cranberry_internal_analysis_4_0.png)
 
-Next, we run `setup_measurements()` to define the diameter of the size references (black circles) and, optionally, read the QR code on the label. Setting `plot_reference=True` allows us to inspect the reference detection and the pixel diameter of each circle in detail.
-
+Next, we run `setup_measurements()` to define the diameter of the size references (black circles) and, optionally, read the QR code on the label. Setting `plot=True` allows us to inspect the reference detection and the pixel diameter of each circle in detail.
 
 As shown in the output, a strip of circles (`Ref 1`) composed of 6 circles was detected. Before computing the average, `setup_measurements()` removes any circles whose standard deviation exceeds 2, to avoid noise from poorly detected or atypical circles. In this case, 5 out of 6 circles were used, yielding a mean diameter of 218 px. This value is divided by the actual mean diameter in centimeters to obtain the pixel-per-cm density, which will be used to convert pixels to centimeters in subsequent analyses.
 
 ```python
 cranberry.setup_measurements(detect_label = True,
                             diameter_cm = 1.7, 
-                            plot_reference = True)
+                            plot = True)
 ```
 
     =======================================================

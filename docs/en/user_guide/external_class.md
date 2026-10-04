@@ -179,8 +179,7 @@ analyzer.setup_measurements(
 | `scale_factor` | `float` | `0.5` | Image downscaling factor for color checker detection; must be between 0.1 and 1.0 |
 | `language_label` | `list` | `["es", "en"]` | Languages for OCR |
 | `font_size` | `int` | `3` | Font size for annotations on reference circles |
-| `plot_reference` | `bool` | `False` | If `True`, displays a cropped and annotated view of the detected size reference |
-| `plot_color_checker` | `bool` | `False` | If `True`, displays a cropped and annotated view of the detected color card |
+| `plot` | `bool` | `False` | If `True`, displays a cropped and annotated view of the detected size reference |
 | `plot_size` | `tuple` | `(5, 5)` | Figure size for plots |
 | `verbose` | `bool` | `True` | If `True`, prints results to the console |
 
@@ -208,6 +207,43 @@ analyzer.generate_color_scatterplot(sample_size=10000)
 
 <br>
 
+### `detect_color_checker`
+
+*Optional*
+
+Detects a color checker card (Macbeth chart) in the image and stores its bounding coordinates, so the card can be excluded from the fruit mask.
+
+Detection uses OpenCV's `mcc` module (`cv2.mcc.CCheckerDetector`). The detected grid is drawn on the working copy of the image.
+
+When `generate_fruit_mask()` runs with `remove_roi=True` (default), the card region is set to black in the mask, along with the label and size reference. The margin around it is controlled by `roi_expansion`. 
+
+??? note "Notes"
+
+    - If no color checker is found, a `UserWarning` is issued and the pipeline continues without removing any region. No exception is raised.
+
+    - This method requires the `mcc` module from `opencv-contrib-python`, which is not available in the [Intel Mac / older macOS setup](../installation.md). On those systems, color checker detection is not supported.
+
+```python
+# Detect the color checker and display the detected card
+analyzer.detect_color_checker(plot=True)
+
+# Run silently
+analyzer.detect_color_checker(verbose=False)
+```
+
+<br>
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `plot` | `bool` | `False` | If `True`, displays a cropped view of the detected color checker |
+| `plot_size` | `tuple[int, int]` | `(5, 5)` | Figure size (only if `plot=True`) |
+| `verbose` | `bool` | `True` | If `True`, prints the detection result and the coordinates |
+
+!!! warning "Important"
+    Run it **before** `generate_fruit_mask()`. Otherwise the card will not be removed from the mask.
+
+<br>
+    
 ---
 
 ### `generate_fruit_mask`
