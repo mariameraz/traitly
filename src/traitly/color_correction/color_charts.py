@@ -3,37 +3,42 @@
 # ============================================================================
 import numpy as np
 
-# Reference Lab D65 and D50 values for the X-Rite ColorChecker Classic 24 patches.
-# Original X-Rite D50 data (after November 2014):
-# https://www.xrite.com/service-support/new_color_specifications_for_colorchecker_sg_and_classic_charts
-# D65 obtained converting from Lab D50 -> XYZ -> Lab D65 (Brandford adaptation using `colours-science` Python library)
+# Reference Lab D65 values for the X-Rite ColorChecker Classic 24 patches.
+# Obtained from the X-Rite D50 data (after November 2014) by converting
+# Lab D50 -> XYZ (D50) -> Bradford chromatic adaptation to D65 -> Lab D65
+# with (colour-science 0.4.7). Cols order: L, a, b:
+#
+#    cs = colour.CCS_ILLUMINANTS['CIE 1931 2 Degree Standard Observer']
+#    xyz = colour.Lab_to_XYZ(CHECKER_LAB_D50, cs['D50'])
+#    xyz = colour.adaptation.chromatic_adaptation_VonKries(
+#    xyz, colour.xy_to_XYZ(cs['D50']), colour.xy_to_XYZ(cs['D65']), transform='Bradford')
+#    CHECKER_LAB_D65 = colour.XYZ_to_Lab(xyz, cs['D65'])
 
-# Cols order: L, a, b
 CHECKER_LAB_D65 = np.array([
- [ 37.54, 15.5541, 21.7589], # A1: dark skin
- [ 64.66, 21.0425, 28.2429], # B1: light skin
- [ 49.32, -2.4785, -10.5961], # C1: blue sky
- [ 43.46, -11.5636, 29.7716], # D1: foliage
- [ 54.94, 11.1334, -11.7910], # E1: blue flower
- [ 70.48, -30.6153, 12.8387], # F1: bluish green
- [ 62.73, 37.6423, 63.5024], # A2: orange
- [ 39.43, 11.9560, -32.7331], # B2: purplish blue
- [ 50.57, 50.2610, 25.3395], # C2: moderate red
- [ 30.10, 23.6087, -12.0020], # D2: purple
- [ 71.77, -22.4191, 66.4204], # E2: yellow green
- [ 71.51, 20.1501, 74.7496], # F2: orange yellow
- [ 28.37, 16.4183, -38.6391], # A3: blue
- [ 54.38, -38.4465, 40.1414], # B3: green
- [ 42.43, 52.5131, 34.9933], # C3: red
- [ 81.80, 4.7191, 88.2050], # D3: yellow
- [ 50.63, 52.9150, -2.7205], # E3: magenta
- [ 49.57, -28.4883, -15.8272], # F3: cyan
- [ 95.19, 1.2801, 19.6119], # A4: white
- [ 81.29, 1.4529, 15.2242], # B4: neutral 80
- [ 66.89, 0.9722, 12.5744], # C4: neutral 65
- [ 50.76, 1.2593, 10.2991], # D4: neutral 50
- [ 35.63, 0.6127, 7.4287], # E4: neutral 35
- [ 20.64, 0.8332, 5.1631], # F4: black
+ [ 37.31, 13.37, 14.58], # A1: dark skin
+ [ 64.37, 18.03, 17.05], # B1: light skin
+ [ 49.62, -1.18, -22.17], # C1: blue sky
+ [ 43.35, -14.64, 22.86], # D1: foliage
+ [ 55.18, 12.14, -24.57], # E1: blue flower
+ [ 70.67, -31.94, 0.08], # F1: bluish green
+ [ 62.11, 33.38, 55.76], # A2: orange
+ [ 40.06, 16.25, -44.37], # B2: purplish blue
+ [ 50.06, 48.10, 15.60], # C2: moderate red
+ [ 30.21, 24.39, -20.88], # D2: purple
+ [ 71.52, -28.42, 58.85], # E2: yellow green
+ [ 70.96, 14.75, 67.25], # F2: orange yellow
+ [ 29.15, 21.66, -48.74], # A3: blue
+ [ 54.35, -42.68, 32.87], # B3: green
+ [ 41.82, 50.33, 27.36], # C3: red
+ [ 81.30, -1.87, 80.91], # D3: yellow
+ [ 50.40, 52.49, -14.82], # E3: magenta
+ [ 50.10, -24.99, -27.52], # F3: cyan
+ [ 95.17, -1.30, 2.92], # A4: white
+ [ 81.29, -0.61, 0.44], # B4: neutral 80
+ [ 66.90, -0.74, -0.05], # C4: neutral 65
+ [ 50.76, -0.14, 0.14], # D4: neutral 50
+ [ 35.64, -0.41, -0.47], # E4: neutral 35
+ [ 20.64, 0.11, -0.46], # F4: black
 ], dtype=np.float32)
 
 CHECKER_LAB_D50 = np.array([
