@@ -116,6 +116,7 @@ plugins:
                     - Python:
                         - Internal Analysis: en/user_guide/internal_class.md
                         - External Analysis: en/user_guide/external_class.md
+                        - Color Correction: en/user_guide/color_correction.md
                     - CLI: en/user_guide/cli.md
                 - Results:
                     - Overview: en/user_guide/results/overview.md
@@ -164,6 +165,7 @@ plugins:
                     - Python:
                         - Internal Analysis: es/user_guide/internal_class.md
                         - External Analysis: es/user_guide/external_class.md
+                        - Color Correction: es/user_guide/color_correction.md
                     - CLI: es/user_guide/cli.md
                 - Results:
                     - Overview: es/user_guide/results/overview.md
@@ -205,6 +207,7 @@ plugins:
             How to Use Traitly: Cómo Usar Traitly
             Internal Analysis: Análisis Interno
             External Analysis: Análisis Externo
+            Color Correction: Corrección de Color
             Results: Resultados
             Measurements: Mediciones
 
