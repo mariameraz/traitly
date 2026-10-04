@@ -176,7 +176,6 @@ analyzer.setup_measurements(
 | `confidence` | `float` | `0.6` | Minimum confidence for YOLO reference detection |
 | `skip_qr` | `bool` | `False` | If `True`, skips QR detection and attempts OCR directly |
 | `gpu` | `bool` | `False` | If `True`, uses GPU for OCR; NVIDIA only. Falls back to CPU on failure |
-| `scale_factor` | `float` | `0.5` | Image downscaling factor for color checker detection; must be between 0.1 and 1.0 |
 | `language_label` | `list` | `["es", "en"]` | Languages for OCR |
 | `font_size` | `int` | `3` | Font size for annotations on reference circles |
 | `plot` | `bool` | `False` | If `True`, displays a cropped and annotated view of the detected size reference |
@@ -641,7 +640,6 @@ analyzer.analyze_folder(json_path="image_parameters.json")
 | `skip_qr` | `bool` | `None` | If `True`, skips QR detection -> `setup_measurements` |
 | `detect_label` | `bool` | `None` | If `True`, enables label detection with OCR -> `setup_measurements` |
 | `confidence` | `float` | `None` | Minimum confidence for YOLO detection -> `setup_measurements` |
-| `scale_factor` | `float` | `None` | Downscaling factor for color checker detection -> `setup_measurements` |
 | `lower_hsv` | `list[int]` | `None` | Lower HSV threshold for segmentation -> `generate_fruit_mask` |
 | `upper_hsv` | `list[int]` | `None` | Upper HSV threshold for segmentation -> `generate_fruit_mask` |
 | `background_color` | `str` | `None` | Preset background color -> `generate_fruit_mask` |

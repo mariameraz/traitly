@@ -182,7 +182,6 @@ analyzer.setup_measurements(
 | `confidence` | `float` | `0.6` | Confianza mínima para detección YOLO de la referencia |
 | `skip_qr` | `bool` | `False` | Si `True`, omite detección de QR e intenta OCR directamente |
 | `gpu` | `bool` | `False` | Si `True`, usa GPU para OCR; solo compatible con NVIDIA. Si falla, continua con CPU |
-| `scale_factor` | `float` | `0.5` | Factor de reducción de imagen para detección de tarjeta de color; debe estar entre 0.1 y 1.0, donde 1.0 utiliza el tamaño real de la imagen (0% de reducción) y 0.1 aplica una reducción del 90% |
 | `language_label` | `list` | `["es", "en"]` | Idiomas para OCR |
 | `font_size` | `int` | `3` | Tamaño de fuente para anotaciones sobre los circulos de la referencia |
 | `plot` | `bool` | `False` | Si `True`, muestra recorte de la referencia de tamaño detectada y anotada |
@@ -873,7 +872,6 @@ analyzer.analyze_folder(json_path="imagen_parameters.json")
 | `skip_qr` | `bool` | `None` | Si `True`, omite detección de QR -> `setup_measurements` |
 | `detect_label` | `bool` | `None` | Si `True`, activa detección de etiqueta con OCR -> `setup_measurements` |
 | `confidence` | `float` | `None` | Confianza mínima para detección YOLO -> `setup_measurements` |
-| `scale_factor` | `float` | `None` | Factor de reducción para detección de tarjeta de color -> `setup_measurements` |
 | `lower_hsv` | `list[int]` | `None` | Umbral HSV inferior para segmentación -> `generate_fruit_mask` |
 | `upper_hsv` | `list[int]` | `None` | Umbral HSV superior para segmentación -> `generate_fruit_mask` |
 | `background_color` | `str` | `None` | Color de fondo predefinido -> `generate_fruit_mask` |
