@@ -15,6 +15,7 @@ Here you will find the complete reference for all modules, classes, and function
 Traitly is organized in the following modules:
 
 - **fruit_phenotyping/** — core analysis logic: morphology, color, and segmentation of fruit images.
+- **color_correction/** — color checker detection and image color correction using a 24-patch reference chart.
 - **shiny_app/** — interactive web application built with Shiny.
 - **pdf/** — utilities for extracting images from PDF.
 - **utils/** — shared helper functions and constants used across modules.
@@ -23,49 +24,60 @@ Traitly is organized in the following modules:
 
 ??? tree-diagram "Project Structure"
     ```
-    src/traitly/
-    │
-    ├── fruit_phenotyping/
-    │   │
-    │   ├── __init__.py
-    │   ├── analysis_parameters.py
-    │   ├── color_analysis.py
-    │   ├── color_plot.py
-    │   ├── external_analysis.py
-    │   ├── fruit_config.py
-    │   ├── geometry.py
-    │   ├── internal_analysis.py
-    │   ├── mask.py
-    │   ├── processing.py
-    │   ├── results_image.py
-    │   └── symmetry.py
-    │
-    ├── package_data/
-    │   │
-    │   └── models/
-    │       ├── label.pt
-    │       └── size_reference.pt
-    │
-    ├── pdf/
-    │   ├── __init__.py
-    │   └── convert_pdf.py
-    │
-    ├── shiny_app/
-    │   │
-    │   ├── www/
-    │   │   └── parameters.json
-    │   └── app.py
-    │
-    ├── utils/
-    │   │
-    │   ├── __init__.py
-    │   ├── basic_functions.py
-    │   ├── calibration.py
-    │   ├── constants.py
-    │   └── label.py
-    │
-    ├── __init__.py
-    └── cli.py
+    src
+    └── traitly
+        │
+        ├── cli.py
+        │
+        ├── color_correction
+        │   ├── color_analysis.py
+        │   ├── color_charts.py
+        │   ├── color_correction.py
+        │   └── correction_parameters.py
+        │
+        ├── fruit_phenotyping
+        │   ├── analysis_parameters.py
+        │   ├── color_analysis.py
+        │   ├── color_plot.py
+        │   ├── external_analysis.py
+        │   ├── fruit_config.py
+        │   ├── geometry.py
+        │   ├── internal_analysis.py
+        │   ├── mask.py
+        │   ├── processing.py
+        │   ├── results_image.py
+        │   └── symmetry.py
+        │
+        ├── package_data
+        │   └── models
+        │       ├── cv2_wechat_qr
+        │       │   ├── LICENSE.md
+        │       │   ├── REAME.md
+        │       │   ├── detect.caffemodel
+        │       │   └── detect.prototxt
+        │       ├── label.pt
+        │       └── size_reference.pt
+        │
+        ├── pdf
+        │   └── convert_pdf.py
+        │
+        ├── shiny_app
+        │   ├── app.py
+        │   └── www
+        │       └── parameters.json
+        │
+        └── utils
+            ├── basic_functions.py
+            ├── batch.py
+            ├── calibration.py
+            ├── constants.py
+            ├── environment.py
+            ├── label.py
+            ├── logs.py
+            ├── manage_params.py
+            ├── save_results.py
+            ├── session_report.py
+            └── validation.py
     
     ```
 </div>
