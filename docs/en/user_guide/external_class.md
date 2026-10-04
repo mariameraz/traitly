@@ -147,7 +147,6 @@ Handles label detection and size reference detection, then calculates the pixel/
 
     - When using the size reference for calibration, the px/cm factor is derived from the average diameter of all detected circles. By default, circles whose diameter deviates more than 2 standard deviations from the mean are excluded to prevent bias in the scale estimate.
 
-    - When `detect_color_checker=True`, the color card is detected using OpenCV's MCC module (cv2.mcc), compatible with standard 24-color cards (Macbeth-style). Detection is performed on a downscaled version of the image based on `scale_factor`, which speeds things up but may affect the accuracy of the detected area for each color patch. You can review the detection in detail with `plot_color_checker=True`.
 
 ```python
 # Using physical dimensions and detecting label
@@ -177,7 +176,6 @@ analyzer.setup_measurements(
 | `confidence` | `float` | `0.6` | Minimum confidence for YOLO reference detection |
 | `skip_qr` | `bool` | `False` | If `True`, skips QR detection and attempts OCR directly |
 | `gpu` | `bool` | `False` | If `True`, uses GPU for OCR; NVIDIA only. Falls back to CPU on failure |
-| `detect_color_checker` | `bool` | `False` | If `True`, detects a color checker (24-color Macbeth-style card) after calibration |
 | `scale_factor` | `float` | `0.5` | Image downscaling factor for color checker detection; must be between 0.1 and 1.0 |
 | `language_label` | `list` | `["es", "en"]` | Languages for OCR |
 | `font_size` | `int` | `3` | Font size for annotations on reference circles |
@@ -607,7 +605,6 @@ analyzer.analyze_folder(json_path="image_parameters.json")
 | `skip_qr` | `bool` | `None` | If `True`, skips QR detection -> `setup_measurements` |
 | `detect_label` | `bool` | `None` | If `True`, enables label detection with OCR -> `setup_measurements` |
 | `confidence` | `float` | `None` | Minimum confidence for YOLO detection -> `setup_measurements` |
-| `detect_color_checker` | `bool` | `None` | If `True`, detects and removes color checker -> `setup_measurements` |
 | `scale_factor` | `float` | `None` | Downscaling factor for color checker detection -> `setup_measurements` |
 | `lower_hsv` | `list[int]` | `None` | Lower HSV threshold for segmentation -> `generate_fruit_mask` |
 | `upper_hsv` | `list[int]` | `None` | Upper HSV threshold for segmentation -> `generate_fruit_mask` |

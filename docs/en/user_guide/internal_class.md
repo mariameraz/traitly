@@ -184,7 +184,6 @@ analyzer.setup_measurements(
 | `confidence` | `float` | `0.6` | Minimum confidence for YOLO reference detection |
 | `skip_qr` | `bool` | `False` | If `True`, skips QR detection and attempts OCR directly |
 | `gpu` | `bool` | `False` | If `True`, uses GPU for OCR; NVIDIA only. Falls back to CPU on failure |
-| `detect_color_checker` | `bool` | `False` | If `True`, detects a color checker (24-color Macbeth-style card) after calibration |
 | `scale_factor` | `float` | `0.5` | Image downscaling factor for color checker detection; must be between 0.1 and 1.0, where 1.0 uses the full image size and 0.1 applies a 90% reduction |
 | `language_label` | `list` | `["es", "en"]` | Languages for OCR |
 | `font_size` | `int` | `3` | Font size for annotations on reference circles |
@@ -839,7 +838,6 @@ analyzer.analyze_folder(json_path="image_parameters.json")
 | `skip_qr` | `bool` | `None` | If `True`, skips QR detection -> `setup_measurements` |
 | `detect_label` | `bool` | `None` | If `True`, enables label detection with OCR -> `setup_measurements` |
 | `confidence` | `float` | `None` | Minimum confidence for YOLO detection -> `setup_measurements` |
-| `detect_color_checker` | `bool` | `None` | If `True`, detects and removes color checker -> `setup_measurements` |
 | `scale_factor` | `float` | `None` | Downscaling factor for color checker detection -> `setup_measurements` |
 | `lower_hsv` | `list[int]` | `None` | Lower HSV threshold for segmentation -> `generate_fruit_mask` |
 | `upper_hsv` | `list[int]` | `None` | Upper HSV threshold for segmentation -> `generate_fruit_mask` |

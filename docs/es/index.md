@@ -15,6 +15,7 @@ Traitly apuesta por la **ciencia abierta y reproducible**: cada análisis genera
 !!! tip ""
     Puedes encontrar nuestra documentación tanto en **inglés** como en **español** :fontawesome-regular-face-smile-beam:. Cambia entre lenguajes mediante el ícono que se encuentra a un lado de la barra de búsqueda :fontawesome-regular-hand-point-up:.
 
+
 ---
 
 ## Primeros pasos ⊹ ࣪ ˖
@@ -147,7 +148,7 @@ Este diseño prioriza la **robustez, interpretabilidad y reproducibilidad**, y p
 
 ## Proyecto en crecimiento y colaboraciones
 
-Traitly es un **proyecto en desarrollo**, diseñado para crecer junto con la comunidad científica que lo utiliza. Su arquitectura modular facilita la incorporación de nuevas ideas sin comprometer la consistencia ni la reproducibilidad del análisis.
+Traitly es un **proyecto en desarrollo**, diseñado para crecer junto con la comunidad. 
 
 Todas las contribuciones son bienvenidas, incluyendo:
 
@@ -164,13 +165,5 @@ Todas las contribuciones son bienvenidas, incluyendo:
   Adaptaciones a otros tejidos, especies o contextos.
 
 Nuestra meta es que Traitly crezca como una herramienta colaborativa, flexible y científicamente sólida, guiada por el uso real en investigación.
-
----
-
-## Construido sobre bases sólidas
-
-Traitly se apoya en librerías consolidadas del ecosistema científico de Python. El procesamiento principal utiliza **OpenCV (contrib)**, **NumPy**, **SciPy**, **pandas** y **matplotlib**, todas con backends en C/C++ que garantizan un alto rendimiento incluso en análisis por lotes de gran escala.
-
-Esto hace que Traitly sea especialmente adecuado para **experimentos de fenotipado masivo** en mejoramiento vegetal y genética, donde es común analizar grandes poblaciones.
 
 </div>
