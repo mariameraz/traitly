@@ -25,9 +25,27 @@
   },
   {
     "type": "Class",
-    "name": "AnalysisParameters",
+    "name": "CheckerCoords",
+    "module": "traitly.color_correction.color_analysis",
+    "description": "-"
+  },
+  {
+    "type": "Class",
+    "name": "ColorCorrection",
+    "module": "traitly.color_correction.color_correction",
+    "description": "-"
+  },
+  {
+    "type": "Class",
+    "name": "ColorCorrectionParameters",
+    "module": "traitly.color_correction.correction_parameters",
+    "description": "-"
+  },
+  {
+    "type": "Class",
+    "name": "FruitAnalyzerParameters",
     "module": "traitly.fruit_phenotyping.analysis_parameters",
-    "description": "Save and report processing parameters for each analysis step."
+    "description": "-"
   },
   {
     "type": "Function",
@@ -339,7 +357,7 @@
     "type": "Function",
     "name": "load_img",
     "module": "traitly.utils.basic_functions",
-    "description": "Load an image via :func:`_load_img_cached` and optionally display it."
+    "description": "Load an image from disk and optionally display or crop it."
   },
   {
     "type": "Function",
@@ -367,12 +385,6 @@
   },
   {
     "type": "Function",
-    "name": "img_px_per_cm",
-    "module": "traitly.utils.calibration",
-    "description": "Calculate pixel density from an image and known physical dimensions."
-  },
-  {
-    "type": "Function",
     "name": "diameter_px_per_cm",
     "module": "traitly.utils.calibration",
     "description": "Estimate pixel-to-centimetre density from detected circle diameters."
@@ -385,15 +397,21 @@
   },
   {
     "type": "Function",
-    "name": "find_size_ref_circles",
-    "module": "traitly.utils.calibration",
-    "description": "Detect dark circular objects in a grayscale ROI."
+    "name": "get_package_versions",
+    "module": "traitly.utils.environment",
+    "description": "-"
   },
   {
     "type": "Function",
-    "name": "detect_size_ref_yolo",
-    "module": "traitly.utils.calibration",
-    "description": "Detect size reference circles in an image using a YOLOv8 model."
+    "name": "get_session_metadata",
+    "module": "traitly.utils.environment",
+    "description": "-"
+  },
+  {
+    "type": "Function",
+    "name": "get_system_metadata",
+    "module": "traitly.utils.environment",
+    "description": "-"
   },
   {
     "type": "Function",
@@ -430,5 +448,11 @@
     "name": "detect_label_box_yolo",
     "module": "traitly.utils.label",
     "description": "Detect label ROIs using a YOLOv8 model."
+  },
+  {
+    "type": "Class",
+    "name": "AnalysisParameters",
+    "module": "traitly.utils.session_report",
+    "description": "Base class for analysis parameter tracking and reporting."
   }
 ]
