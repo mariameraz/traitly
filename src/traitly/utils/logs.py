@@ -1,7 +1,7 @@
 # traitly/utils/logs.py
 import logging
 
-def setup_logging(
+def _setup_logging(
     level=logging.INFO,
     log_file="traitly.log",
     to_console=False
