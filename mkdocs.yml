@@ -200,8 +200,8 @@ plugins:
 
             User Guide: Guía de Uso
             Image Specifications: Especificaciones de Imágenes
-            Fruit Internal Image: Imagen interna del fruto
-            Fruit External Image: Imagen externa del fruto
+            Fruit Internal Images: Imagen interna del fruto
+            Fruit External Images: Imagen externa del fruto
             How to Use Traitly: Cómo Usar Traitly
             Internal Analysis: Análisis Interno
             External Analysis: Análisis Externo
@@ -216,7 +216,7 @@ plugins:
 
             Changelog: Registro de Cambios
 
-            Traitly Architecture: Arquitectura de Traitly
+            Traitly Structure: Estructura de Traitly
             Classes: Clases
             Modules: Módulos
             About: Acerca de
