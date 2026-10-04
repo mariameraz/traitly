@@ -144,7 +144,6 @@ Realiza la detección de etiqueta y la referencia de tamaño y calcula el factor
 
     - Cuando se utiliza la referencia de tamaño para la calibración, el factor píxel/cm se calcula a partir del diámetro promedio de todos los círculos detectados. Por defecto, se descartan los círculos cuyo diámetro se desvía más de 2 desviaciones estándar respecto al promedio, con el fin de evitar sesgos en la estimación de la escala.
 
-    - Cuando `detect_color_checker=True`, la carta de color se detecta usando el módulo MCC de OpenCV (cv2.mcc), compatible con tarjetas estándar de 24 colores (estilo Macbeth). La detección se realiza sobre una versión reducida de la imagen según `scale_factor`, lo que acelera el proceso pero puede afectar la precisión del área detectada para cada cuadro de color. Puedes revisar la detección a detalle con `plot_color_checker=True`.
 
 ```python
 # Usando medidas físicas y detectando etiqueta
@@ -174,7 +173,6 @@ analyzer.setup_measurements(
 | `confidence` | `float` | `0.6` | Confianza mínima para detección YOLO de la referencia |
 | `skip_qr` | `bool` | `False` | Si `True`, omite detección de QR e intenta OCR directamente |
 | `gpu` | `bool` | `False` | Si `True`, usa GPU para OCR; solo compatible con NVIDIA. Si falla, continúa con CPU |
-| `detect_color_checker` | `bool` | `False` | Si `True`, detecta carta de color (24 colores, estilo Macbeth) después de la calibración |
 | `scale_factor` | `float` | `0.5` | Factor de reducción de imagen para detección de carta de color; debe estar entre 0.1 y 1.0 |
 | `language_label` | `list` | `["es", "en"]` | Idiomas para OCR |
 | `font_size` | `int` | `3` | Tamaño de fuente para anotaciones sobre los círculos de la referencia |
@@ -604,8 +602,7 @@ analyzer.analyze_folder(json_path="imagen_parameters.json")
 | `skip_yolo` | `bool` | `None` | Si `True`, omite YOLO y calibra con dimensiones físicas -> `setup_measurements` |
 | `skip_qr` | `bool` | `None` | Si `True`, omite detección de QR -> `setup_measurements` |
 | `detect_label` | `bool` | `None` | Si `True`, activa detección de etiqueta con OCR -> `setup_measurements` |
-| `confidence` | `float` | `None` | Confianza mínima para detección YOLO -> `setup_measurements` |
-| `detect_color_checker` | `bool` | `None` | Si `True`, detecta y elimina carta de color -> `setup_measurements` |
+| `confidence` | `float` | `None` | Confianza mínima para detección YOLO -> `setup_measurements` 
 | `scale_factor` | `float` | `None` | Factor de reducción para detección de carta de color -> `setup_measurements` |
 | `lower_hsv` | `list[int]` | `None` | Umbral HSV inferior para segmentación -> `generate_fruit_mask` |
 | `upper_hsv` | `list[int]` | `None` | Umbral HSV superior para segmentación -> `generate_fruit_mask` |

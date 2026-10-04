@@ -146,7 +146,7 @@ This design choice prioritizes **robustness, interpretability, and reproducibili
 
 ## A growing project and collaborations
 
-Traitly is a **project under active development**, designed to grow alongside the scientific community. Its modular architecture makes it easy to incorporate new ideas without compromising the consistency or reproducibility of the analysis.
+Traitly is a **project under active development**, designed to grow alongside the community. 
 
 Contributions are welcome and appreciated across different areas, including:
 
@@ -163,13 +163,5 @@ Contributions are welcome and appreciated across different areas, including:
   Adaptations to other tissues, species, or experimental contexts.
 
 Our goal is for Traitly to grow into a collaborative, flexible, and scientifically robust tool, driven by real research use.
-
----
-
-## Built on solid foundations
-
-Traitly relies on well-established libraries from the Python scientific ecosystem. Core processing uses **OpenCV (contrib)**, **NumPy**, **SciPy**, **pandas**, and **matplotlib**, all with C/C++ backends that guarantee high performance even in large-scale batch analyses.
-
-This makes Traitly particularly well-suited for **high-throughput phenotyping experiments** in plant breeding and genetics, where analyzing large populations is common.
 
 </div>
