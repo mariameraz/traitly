@@ -10,6 +10,7 @@ __pycache__/
 traitly_test/*
 dev_venv
 venv_traitly
+docs_tests
 
 # Cache
 .cache/
