@@ -2,7 +2,7 @@
 
 *All notable changes to Traitly are documented here:*
 
-## [0.2.2] - 2026-10-06
+## v0.2.2 - 2026-10-06
 
 Quick patch release.
 
