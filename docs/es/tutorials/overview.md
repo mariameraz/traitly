@@ -3,6 +3,8 @@
 
 Aquí encontrarás tutoriales paso a paso sobre los principales flujos de trabajo de Traitly, desde cargar tu primera imagen hasta extraer rasgos de morfología, color y simetría.
 
+</div>
+
 ---
 
 ## 1. Inicio rápido
@@ -46,4 +48,9 @@ Aquí encontrarás tutoriales paso a paso sobre los principales flujos de trabaj
 |----------|-------------|
 | [PDF a imágenes](./pdf_extraction.md) | Extrae imágenes desde un archivo PDF. |
 
-</div>
+
+## 6. Corrección de color
+
+| Tutorial | Descripción |
+|----------|-------------|
+| [Corrigiendo color](./color_correction.md) | Ajusta el color de una imagen usando una tarjeta de color de referencia |
