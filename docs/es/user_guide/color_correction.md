@@ -41,7 +41,7 @@ cc = ColorCorrection(path = "ruta/a/mi/carpeta/con/imagenes/")
 
 ### Cómo funciona la corrección
 
-La tarjeta tiene 24 parches de color cuyos [valores de referencia bajo luz de día](https://www.xrite.com/service-support/new_color_specifications_for_colorchecker_sg_and_classic_charts) son conocidos. La clase mide el color de cada parche en tu imagen, lo compara con su valor de referencia y construye un modelo que describe cómo la cámara y la iluminación alteraron esos colores. Después, ese modelo se aplica a **todos los píxeles de la imagen**.
+La tarjeta tiene 24 parches de color cuyos [valores de referencia bajo luz de día](https://www.xrite.com/service-support/new_color_specifications_for_colorchecker_sg_and_classic_charts) son conocidos. La clase mide el color de cada parche en tu imagen, lo compara con su valor de referencia y construye un modelo (PLSR) que describe cómo la cámara y la iluminación alteraron esos colores. Después, ese modelo se aplica a **todos los píxeles de la imagen**.
 
 <br>
 
@@ -70,7 +70,7 @@ cc.save_csv()                   # (Opcional) Guarda el error de color por parche
 cc.save_parameters()            # (Opcional) Guarda los parámetros usados en la sesión
 ```
 
-Si trabajas con lotes de imágenes, no necesitas ejecutar cada paso por separado: `analyze_folder()` se encarga de todo automáticamente:
+Si trabajas con multiples imágenes, no necesitas ejecutar cada paso por separado: `analyze_folder()` se encarga de todo automáticamente:
 
 ```python
 # Corregir varias imágenes
@@ -82,7 +82,7 @@ cc.analyze_folder(json_path = 'ruta/a/mis/parametros.json')         # Ejecuta la
 
 ---
 
-## 3. Qué puedes obtener del corrector
+## 3. Qué puedes obtener del objeto creado
 
 Después de ejecutar los métodos, `cc` guarda resultados en atributos que puedes consultar:
 
@@ -159,7 +159,7 @@ cc.detect_color_checker(verbose=False)
 
 Corrige los colores de toda la imagen usando la tarjeta de color detectada por `detect_color_checker()`. La imagen corregida se guarda en `cc.corrected_img`.
 
-Los valores por defecto funcionan bien en la mayoría de los casos. Si cambias `degree` o `num_components`, ten en cuenta que el modelo se construye con solo 24 parches: los ajustes más complejos pueden hacer que la tarjeta se vea perfecta mientras el resto de la imagen se distorsiona. Cuando los modifiques, revisa siempre el resultado a simple vista y con `calculate_delta_e_stats()`.
+Los valores por defecto funcionan bien en la mayoría de los casos. Si cambias `degree` o `num_components`, ten en cuenta que el modelo se construye con solo 24 parches: los ajustes más complejos pueden hacer que la tarjeta se vea mejor mientras el resto de la imagen se distorsiona. Cuando los modifiques, revisa siempre el resultado a simple vista y con `calculate_delta_e_stats()`.
 
 ??? note "Cómo elegir `degree` y `num_components`"
 
@@ -217,7 +217,7 @@ cc.calculate_delta_e_stats(verbose=True)
 
 | Parámetro | Tipo | Valor por defecto | Descripción |
 |-----------|------|-------------------|-------------|
-| `verbose` | `bool` | `False` | Si es `True`, imprime en consola el ΔE medio y una tabla por parche |
+| `verbose` | `bool` | `True` | Si es `True`, imprime en consola el ΔE medio y una tabla por parche |
 
 !!! warning "Importante"
     **Requiere** haber ejecutado `apply_color_correction()` antes.
@@ -349,7 +349,6 @@ cc.analyze_folder(json_path="parametros_imagen.json")
 |-----------|------|-------------------|-------------|
 | `delta_e` | `bool` | `True` | Si es `True`, calcula las diferencias de color (ΔE) de cada imagen y las guarda en `delta_e_results.csv` |
 | `json_path` | `str` | `None` | Ruta de un archivo de parámetros `.json` generado con `save_parameters()` |
-| `config` | `dict` | `None` | Configuración base como diccionario; los parámetros individuales tienen prioridad |
 | `output_path` | `str` | `None` | Carpeta de salida. Si es `None`, se crea una subcarpeta `Results/` dentro de la carpeta de entrada |
 | `num_cores` | `int` | `1` | Número de procesos en paralelo. Se limita automáticamente a los núcleos disponibles |
 | `verbose` | `bool` | `True` | Si es `True`, imprime el progreso y el resumen de la sesión |

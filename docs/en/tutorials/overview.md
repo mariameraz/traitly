@@ -3,6 +3,8 @@
 
 Here you will find step-by-step tutorials on the main Traitly workflows, from loading your first image to extracting morphology, color, and symmetry traits.
 
+</div>
+
 ---
 
 ## 1. Quick Start
@@ -46,4 +48,7 @@ Here you will find step-by-step tutorials on the main Traitly workflows, from lo
 | [PDF to Images](./pdf_extraction.md) | Extract images from a PDF file. |
 
 
-</div>
+## 6. Color Correction
+| Tutorial | Description |
+|----------|-------------|
+| [Correcting color](./color_correction.md) |  Adjust the color of an image using the `ColorCorrection` class and a reference color card. |
