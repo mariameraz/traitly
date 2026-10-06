@@ -13,9 +13,8 @@
     "confidence": 0.6,
     "gpu": false,
     "font_size": 3,
-    "detect_color_checker": false,
-    "scale_factor": 0.5
   },
+  "detect_color_checker_params": {},
   "generate_fruit_mask_params": {
     "stamp": false,
     "lower_hsv": null,
