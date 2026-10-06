@@ -2,7 +2,7 @@
 
 *Todos los cambios significativos de Traitly están documentados aquí.*
 
-## v0.2.0 – En desarrollo
+## v0.2.0 – 2026-10-05
 
 ### Correcciones
 
