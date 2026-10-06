@@ -76,7 +76,7 @@ Estamos trabajando en un manuscrito que describe este trabajo y su uso, y se esp
 
 Para preguntas o comentarios sobre el proyecto, puedes escribirnos a:
 
-* [ma.meraz@proton.me](mailto:ma.meraz@proton.me)
+* [ma.torresmeraz@gmail.com](mailto:ma.torresmeraz@gmail.com)
 * [torresmeraz@wisc.edu](mailto:torresmeraz@wisc.edu)
 
 Estamos abiertos a colaboraciones, incluyendo la incorporación de nuevos rasgos creación de tutoriales o flujos de trabajo para cultivos o tejidos vegetales específicos.

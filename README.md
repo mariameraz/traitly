@@ -74,7 +74,7 @@ We are working on a manuscript describing this software and its applications, ex
 
 For questions or comments about the project, feel free to reach out to:
 
-* [ma.meraz@proton.me](mailto:ma.meraz@proton.me)
+* [ma.torresmeraz@gmail.com](mailto:ma.torresmeraz@gmail.com)
 * [torresmeraz@wisc.edu](mailto:torresmeraz@wisc.edu)
 
 We are open to collaborations, including adding new traits, and creating tutorials or workflows for specific crops or plant tissues.
