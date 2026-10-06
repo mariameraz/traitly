@@ -15,6 +15,9 @@ hide:
 <p style="margin: 0;" markdown>
 [![GitHub](https://img.shields.io/badge/View%20on-GitHub-181717?logo=github&logoColor=white){ style="height: 28px;" }](https://github.com/mariameraz/traitly-tutorials/tree/main/fruit_phenotyping/ext_analysis_ind_img_sample)
 
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg){ style="height: 28px;" }](https://colab.research.google.com/drive/1ecZf03DUeHF-4GBEcw3MQVxjR9tqG67t?usp=sharing)
+
+
 </div>
 
 !!! info "Method and parameter reference"
