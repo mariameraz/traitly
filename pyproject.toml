@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "traitly"
-version = "0.2.1"
+version = "0.2.2"
 description = "Computer vision toolkit for high-throughput fruit phenotyping."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -72,12 +72,15 @@ Demo = "https://huggingface.co/spaces/mariameraz/traitly"
 [tool.hatch.build.targets.wheel]
 packages = ["src/traitly"]
 
+
+
 [tool.hatch.build]
 include = [
     "src/traitly/**",
     "README.md",
     "LICENSE*"
 ]
+artifacts = ["src/traitly/package_data/models/*.pt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
