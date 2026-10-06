@@ -170,8 +170,8 @@ def create_mask(
                 lower_hsv = np.array([90, 100, 80], dtype=np.uint8)
                 upper_hsv = np.array([130, 255, 255], dtype=np.uint8)
             elif background_color == 'white':
-                lower_hsv = np.array([0, 0, 165], dtype=np.uint8)
-                upper_hsv = np.array([180, 57, 255], dtype=np.uint8)
+                lower_hsv = np.array([0, 0, 110], dtype=np.uint8)
+                upper_hsv = np.array([180, 40, 255], dtype=np.uint8)
             elif background_color == 'black':
                 lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
                 upper_hsv = np.array([180, 250, 50], dtype=np.uint8)
