@@ -2,7 +2,7 @@
 
 *All notable changes to Traitly are documented here:*
 
-## v0.2.0 - Unreleased
+## v0.2.0 - 2026-10-05
 
 ### Fixed
 
