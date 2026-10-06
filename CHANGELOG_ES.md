@@ -7,6 +7,8 @@
 ### Correcciones
 - `apply_color_correction` regresa error porque `PolynomialFeatures` no estaba siendo importado, y es necesario para la parte de la regresión polinomial.
 
+Documentación: https://traitly.readthedocs.io/en/v0.2.1/
+
 ----
 
 ## v0.2.0 – 2026-10-05
@@ -41,7 +43,11 @@
 - Se añadió el nuevo comando de CLI `traitly info` para imprimir metadatos del paquete, el sistema y las dependencias
 - Se añadió el nuevo módulo `traitly.utils.metadata` con `get_package_versions()` para obtener las versiones instaladas de todas las dependencias del paquete y la versión de Python
 - Se añadió el nuevo módulo `traitly.color_correction` con la clase `ColorCorrection` para corregir el color de imágenes o carpetas completas utilizando una tarjeta Macbeth Color Checker (24 parches)
- 
+
+Documentación: https://traitly.readthedocs.io/en/v0.2.0/
+
+----
+
 ## v0.1.2 – 2026-05-18
 
 ### Correcciones
@@ -61,6 +67,8 @@
 - Se mejoró la detección de QR con dos nuevas funciones:
   - Se añadió `cv2.wechat_qrcode_WeChatQRCode` como método principal para una detección mas robusta de códigos QR pequeños o inclinados
   - Se añadió `detectAndDecodeCurved` como alternativa cuando la función estandar `detectAndDecode` falla
+
+Documentación: https://traitly.readthedocs.io/en/v0.1.2/
 
 ---
 
@@ -90,6 +98,8 @@
 ### Documentación
 - Se fijaron las versiones de las dependencias
 
+Documentación: https://traitly.readthedocs.io/en/v0.1.1/
+
 ---
 
 ## v0.1.0 – 2026-04-07
@@ -110,3 +120,5 @@ Lanzamiento inicial.
 
 ### Salidas
 - Imágenes anotadas, resultados en CSV, reportes de sesión y errores, y archivos de parámetros
+
+Documentación: https://traitly.readthedocs.io/en/v0.1.0/

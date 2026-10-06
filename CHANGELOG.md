@@ -7,6 +7,8 @@
 ### Fixed
 - `apply_color_correction` raised an error because `PolynomialFeatures` was not imported, which is required for the regression step.
 
+Documentation: https://traitly.readthedocs.io/en/v0.2.1/
+
 ----
 
 ## v0.2.0 - 2026-10-05
@@ -40,6 +42,7 @@
 - New `traitly.utils.metadata` module with `get_package_versions()` to retrieve installed versions of all package dependencies and Python version.
 - New `traitly.color_correction` module with `ColorCorrection` class for color-correcting images or entire folders using a Macbeth Color Checker (24 patches) card.
 
+Documentation: https://traitly.readthedocs.io/en/v0.2.0/
 
 ---
 
