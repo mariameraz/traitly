@@ -16,10 +16,10 @@ import matplotlib.pyplot as plt
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import (
     StandardScaler,
-    RobustScaler,
-    MinMaxScaler,
-    MaxAbsScaler,
-    PolynomialFeatures
+    # RobustScaler,
+    # MinMaxScaler,
+    # MaxAbsScaler,
+    # PolynomialFeatures
 )
 
 from sklearn.cross_decomposition import PLSRegression
