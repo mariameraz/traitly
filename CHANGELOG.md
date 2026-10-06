@@ -2,6 +2,20 @@
 
 *All notable changes to Traitly are documented here:*
 
+## [0.2.2] - 2026-10-06
+
+Quick patch release.
+
+### Fixed
+- Include bundled YOLO model weights (`size_reference.pt`, `label.pt`) in the wheel and sdist. They were excluded by `*.pt` in `.gitignore`, so PyPI installs could not load them and measurements silently fell back to pixels.
+    - Affected versions: `0.2.0` and `0.2.1`. Upgrading to `0.2.2` is recommended.
+
+Documentation: unchanged from [v0.2.1](https://traitly.readthedocs.io/en/v0.2.1/)
+
+----
+
+
+
 ## v0.2.1 - 2026-10-06
 
 ### Fixed
