@@ -18,6 +18,8 @@ hide:
 <p style="margin: 0;" markdown>
 [![GitHub](https://img.shields.io/badge/View%20on-GitHub-181717?logo=github&logoColor=white){ style="height: 28px;" }](https://github.com/mariameraz/traitly-tutorials/tree/main/fruit_phenotyping/segmentate_locules)
 
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg){ style="height: 28px;" }](https://colab.research.google.com/drive/14oStflN_CUu0uhrXeWDUgVqsbkXdyoV8?usp=sharing)
+
 </div>
 
 <iframe src="../html/segmentate_locules_ES.html" width="100%" height="800" style="border:1;"></iframe>

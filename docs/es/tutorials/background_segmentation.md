@@ -14,7 +14,8 @@ hide:
 
 <p style="margin: 0;" markdown>
 [![GitHub](https://img.shields.io/badge/View%20on-GitHub-181717?logo=github&logoColor=white){ style="height: 28px;" }](https://github.com/mariameraz/traitly-tutorials/tree/main/fruit_phenotyping/background_segmentation)
-[![Colab](https://colab.research.google.com/assets/colab-badge.svg){ style="height: 28px;" }](https://drive.google.com/file/d/1fKnRorbnQ4W8JgmjOlFIDUE3Mw4KoUbc/view?usp=sharing)
+
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg){ style="height: 28px;" }](https://colab.research.google.com/drive/10DS7A2WAC_taX9DZm58nAwA50L5lShEo?usp=sharing)
 </p>
 
 </div>
