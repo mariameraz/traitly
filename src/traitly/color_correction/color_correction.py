@@ -19,10 +19,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import (
     StandardScaler,
-    RobustScaler,
-    MinMaxScaler,
-    MaxAbsScaler,
-    PolynomialFeatures
+    # RobustScaler,
+    # MinMaxScaler,
+    # MaxAbsScaler,
+    # PolynomialFeatures
 )
 
 # ============================================================================
@@ -185,13 +185,15 @@ class ColorCorrection:
         degree: int = 3,
         num_components: int = 11,
         max_iterations: int = 1000,
-        scaler = StandardScaler(),
+        scaler = None,
         plot: bool = True,
         plot_size: Tuple = (8,5),
         verbose: bool = True
     ) -> None:
 
         # Save the parameters used
+        if scaler is None:
+            scaler = StandardScaler()
 
         self._parameters.apply_color_correction_params = {
             "degree": degree,
@@ -248,7 +250,7 @@ class ColorCorrection:
 
     def calculate_delta_e_stats(
         self,
-        verbose: bool = False
+        verbose: bool = True
     )-> None:
         self._include_delta_e_stats = True
 
