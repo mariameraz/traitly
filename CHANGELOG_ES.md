@@ -2,6 +2,13 @@
 
 *Todos los cambios significativos de Traitly están documentados aquí.*
 
+## 0.2.1 - 2026-10-06
+
+### Fixed
+- `apply_color_correction` raised an error because `PolynomialFeatures` was not imported, which is required for the regression step.
+
+----
+
 ## v0.2.0 – 2026-10-05
 
 ### Correcciones
