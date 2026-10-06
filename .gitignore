@@ -54,3 +54,5 @@ scripts/
 *.png
 *.pt
 *.ipynb
+
+traitly_app_hf
