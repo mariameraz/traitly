@@ -14,6 +14,10 @@ hide:
 
 <p style="margin: 0;" markdown>
 [![GitHub](https://img.shields.io/badge/View%20on-GitHub-181717?logo=github&logoColor=white){ style="height: 28px;" }](https://github.com/mariameraz/traitly-tutorials/tree/main/fruit_phenotyping/cranberry_internal_analysis)
+
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg){ style="height: 28px;" }](https://colab.research.google.com/drive/1NsgtH3vXNefehxVP8YGOElKMmLlepv_T?usp=sharing)
+
+
 </p>
 
 </div>

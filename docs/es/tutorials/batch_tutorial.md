@@ -15,8 +15,7 @@ hide:
 <p style="margin: 0;" markdown>
 [![GitHub](https://img.shields.io/badge/View%20on-GitHub-181717?logo=github&logoColor=white){ style="height: 28px;" }](https://github.com/mariameraz/traitly-tutorials/tree/main/fruit_phenotyping/ext_analysis_batch_sample)
 
-[![Colab](https://colab.research.google.com/assets/colab-badge.svg){ style="height: 28px;" }](https://colab.research.google.com/drive/1vt8iJwFJ3zF08Wc-zeQjYEd1OUdzG3_W?usp=sharing)
-
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg){ style="height: 28px;" }](https://colab.research.google.com/drive/18zSa-ogx1DCi62A4AoWMPE6Tg_KW_nFW?usp=sharing)
 
 </div>
 
