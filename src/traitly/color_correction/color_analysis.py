@@ -19,7 +19,7 @@ from sklearn.preprocessing import (
     # RobustScaler,
     # MinMaxScaler,
     # MaxAbsScaler,
-    # PolynomialFeatures
+    PolynomialFeatures
 )
 
 from sklearn.cross_decomposition import PLSRegression
