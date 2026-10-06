@@ -7,7 +7,7 @@
 ### Correcciones
 - `apply_color_correction` regresa error porque `PolynomialFeatures` no estaba siendo importado, y es necesario para la parte de la regresión polinomial.
 
-Documentación: https://traitly.readthedocs.io/en/v0.2.1/
+Documentación: [https://traitly.readthedocs.io/en/v0.2.1/](https://traitly.readthedocs.io/en/v0.2.1/)
 
 ----
 
@@ -44,7 +44,7 @@ Documentación: https://traitly.readthedocs.io/en/v0.2.1/
 - Se añadió el nuevo módulo `traitly.utils.metadata` con `get_package_versions()` para obtener las versiones instaladas de todas las dependencias del paquete y la versión de Python
 - Se añadió el nuevo módulo `traitly.color_correction` con la clase `ColorCorrection` para corregir el color de imágenes o carpetas completas utilizando una tarjeta Macbeth Color Checker (24 parches)
 
-Documentación: https://traitly.readthedocs.io/en/v0.2.0/
+Documentación: [https://traitly.readthedocs.io/en/v0.2.0/](https://traitly.readthedocs.io/en/v0.2.0/)
 
 ----
 
@@ -68,7 +68,7 @@ Documentación: https://traitly.readthedocs.io/en/v0.2.0/
   - Se añadió `cv2.wechat_qrcode_WeChatQRCode` como método principal para una detección mas robusta de códigos QR pequeños o inclinados
   - Se añadió `detectAndDecodeCurved` como alternativa cuando la función estandar `detectAndDecode` falla
 
-Documentación: https://traitly.readthedocs.io/en/v0.1.2/
+Documentación: [https://traitly.readthedocs.io/en/v0.1.2/](https://traitly.readthedocs.io/en/v0.1.2/)
 
 ---
 
@@ -98,7 +98,7 @@ Documentación: https://traitly.readthedocs.io/en/v0.1.2/
 ### Documentación
 - Se fijaron las versiones de las dependencias
 
-Documentación: https://traitly.readthedocs.io/en/v0.1.1/
+Documentación: [https://traitly.readthedocs.io/en/v0.1.1/](https://traitly.readthedocs.io/en/v0.1.1/)
 
 ---
 
@@ -121,4 +121,4 @@ Lanzamiento inicial.
 ### Salidas
 - Imágenes anotadas, resultados en CSV, reportes de sesión y errores, y archivos de parámetros
 
-Documentación: https://traitly.readthedocs.io/en/v0.1.0/
+Documentación: [https://traitly.readthedocs.io/en/v0.1.0/](https://traitly.readthedocs.io/en/v0.1.0/)
