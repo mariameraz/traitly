@@ -1,6 +1,8 @@
 
 # Contributor Covenant 3.0 Code of Conduct
 
+**Disponible en español [aquí](./CODE_OF_CONDUCT_ES.md)**
+
 ## Our Pledge
 
 We pledge to make our community welcoming, safe, and equitable for all.
