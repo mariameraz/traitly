@@ -407,7 +407,7 @@ def _find_size_ref_circles(
     return_debug: bool = False,
     ref_circularity: float = 0.8,
     min_area: int = 50,
-    threshold_value: int = 200,
+    threshold_value: int = 180,
 ) -> Union[
     List[Tuple[int, int, int]],
     Tuple[List[Tuple[int, int, int]], Dict],
@@ -415,7 +415,7 @@ def _find_size_ref_circles(
     """
     Detect dark circular objects using pixel intensity threshold.
 
-    Expects white background (>200) and black dots.
+    Expects white background (>180) and black dots.
     """
     h, w = roi_gray.shape
 
