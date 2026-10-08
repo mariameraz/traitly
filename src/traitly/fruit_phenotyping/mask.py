@@ -407,8 +407,7 @@ def find_fruits(
         negative.
     """
 
-    min_aspect_ratio = 0.3
-    max_aspect_ratio = 3
+
 
     # Validation
     if not isinstance(binary_mask, np.ndarray) or binary_mask.dtype != np.uint8:
@@ -436,8 +435,6 @@ def find_fruits(
     if not (0 <= min_circularity <= max_circularity <= 1):
         raise ValueError("Circularity: 0 ≤ min ≤ max ≤ 1")
 
-    if not (0 < min_aspect_ratio <= max_aspect_ratio):
-        raise ValueError("Aspect ratio: 0 < min ≤ max")
 
     # rescale image (if requested)
     should_rescale = rescale_factor is not None and rescale_factor < 1
@@ -531,7 +528,6 @@ def find_fruits(
         filters &= (areas <= adjusted_max_fruit_area)
 
     filters &= (circularities >= min_circularity) & (circularities <= max_circularity)
-    filters &= (aspect_ratios >= min_aspect_ratio) & (aspect_ratios <= max_aspect_ratio)
 
     valid_fruit_indices = np.where(filters)[0]
 
