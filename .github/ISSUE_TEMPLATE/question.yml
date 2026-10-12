@@ -1,0 +1,32 @@
+name: Question / Pregunta
+description: Ask how to use Traitly / Pregunta sobre cómo usar Traitly
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the documentation first. / Por favor revisa primero la documentación.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question / Tu pregunta
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Code you are using (if any) / Código que estás usando (si aplica)
+      render: python
+    validations:
+      required: false
+
+  - type: textarea
+    id: system-info
+    attributes:
+      label: System information (optional) / Información del sistema (opcional)
+      description: Output of `traitly info`. / Resultado de `traitly info`.
+      render: shell
+    validations:
+      required: false

@@ -1,0 +1,30 @@
+name: Other / Otro
+description: Anything that doesn't fit the other options / Cualquier otro tema
+
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for anything that is not a bug, a feature request, or a question about usage.
+        / Usa este formulario para cualquier tema que no sea un error, una sugerencia o una duda de uso.
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details / Detalles
+    validations:
+      required: truename: Other / Otro
+      description: Anything that doesn't fit the other options / Cualquier otro tema
+      body:
+        - type: markdown
+          attributes:
+            value: |
+              Describe your toppic below / Describe el tema aquí
+
+        - type: textarea
+          id: details
+          attributes:
+            label: Details / Detalles
+          validations:
+            required: true
