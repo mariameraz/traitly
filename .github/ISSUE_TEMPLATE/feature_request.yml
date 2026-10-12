@@ -19,6 +19,6 @@ body:
     id: use-case
     attributes:
       label: Why do you need it? / ¿Para qué lo necesitas?
-      description: Describe your use case (e.g. the fruit or trait you work with). / Describe tu caso de uso.
+      description: Describe your use case (e.g. the fruit or trait you work with). / Describe tu caso y para que lo usarias (ejemplo, tipo de fruta o trait)
     validations:
       required: false
