@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation / Documentación
+    url: https://traitly.readthedocs.io
+    about: If you have questions about Traitly, check the docs first. / Si tienes preguntas sobre Traitly, revisa primero la documentación.
