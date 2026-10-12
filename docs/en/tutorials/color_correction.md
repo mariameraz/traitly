@@ -21,7 +21,7 @@ hide:
 </div>
 
 !!! warning
-    **Important**: Card detection relies on the `mcc` module of `opencv-contrib-python`, which is not available in the [Intel Mac / older macOS setup](../installation.md). On those systems, **color correction is not supported**.
+    **Important**: Card detection relies on the `mcc` module of `opencv-contrib-python`, which is not available in the [Intel Mac / older macOS setup](https://github.com/mariameraz/traitly/blob/main/requirements-macos-intel.txt). On those systems, **color correction is not supported**.
 
 <iframe src="../html/color_correction.html" width="100%" height="800" style="border:1;"></iframe>
 
