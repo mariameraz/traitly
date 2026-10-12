@@ -20,7 +20,7 @@ hide:
 </div>
 
 !!! warning
-    **Importante:** La detección de la tarjeta depende del módulo `mcc` de `opencv-contrib-python`, que no está disponible en la [instalación para Mac Intel / macOS antiguo](../installation.md). En esos sistemas, **la corrección de color no es compatible**.
+    **Importante:** La detección de la tarjeta depende del módulo `mcc` de `opencv-contrib-python`, que no está disponible en la [instalación para Mac Intel / macOS antiguo](https://github.com/mariameraz/traitly/blob/main/requirements-macos-intel.txt). En esos sistemas, **la corrección de color no es compatible**.
 
 <iframe src="../html/color_correction_ES.html" width="100%" height="800" style="border:1;"></iframe>
 
