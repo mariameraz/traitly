@@ -27,7 +27,9 @@ body:
     id: description
     attributes:
       label: What happened? / ¿Qué pasa?
-      description: Describe the problem / Describe el problema
+      description: |
+        Please describe the problem, what you are trying to achieve, and the image(s) you are analyzing (attach it here if possible).
+        / Por favor describe el problema, lo que intentas lograr y la(s) imagen(es) que estas analizando (adjúntala aquí si es posible).
     validations:
       required: true
 

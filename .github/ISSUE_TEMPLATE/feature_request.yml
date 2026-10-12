@@ -1,0 +1,24 @@
+name: Feature request / Sugerencia
+description: Suggest a new idea or improvement / Sugiere una nueva idea o mejora
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The more details you give us, the better we can evaluate it, thank you!!
+        / Entre más detalles nos des, mejor podremos evaluarla, muchas gracias!!
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to see? / ¿Qué te gustaría ver?
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Why do you need it? / ¿Para qué lo necesitas?
+      description: Describe your use case (e.g. the fruit or trait you work with). / Describe tu caso de uso.
+    validations:
+      required: false
