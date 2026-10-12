@@ -57,18 +57,20 @@ body:
     attributes:
       label: System information / Información del sistema
       description: |
-        Run `traitly info` in your terminal and paste the output here.
+        Run `traitly info` in your terminal and paste the output here (replace the template below).
 
-        If your version is older than 0.2.0 (the command does not exist), write your
-        Traitly version, Python version, operating system, and architecture
-        (e.g. macOS Intel, Windows, Linux).
+        If your version is older than 0.2.0 (the command does not exist), fill in the template below instead.
 
         ----
 
-        Ejecuta `traitly info` en tu terminal y pega el resultado aquí.
+        Ejecuta `traitly info` en tu terminal y pega el resultado aquí (reemplaza la plantilla de abajo).
 
-        Si tu versión es anterior a 0.2.0 (el comando no existe), escribe tu versión
-        de Traitly, de Python, tu sistema operativo y arquitectura (ejemplo, macOS intel, Windows, Linux)
+        Si tu versión es anterior a 0.2.0 (el comando no existe), completa la plantilla de abajo.
+      value: |
+        Traitly version / Versión de Traitly:
+        Python version / Versión de Python:
+        Operating system / Sistema operativo (macOS, Windows, Linux):
+        Architecture / Arquitectura (Intel, Apple Silicon, etc.):
       render: shell
     validations:
       required: true

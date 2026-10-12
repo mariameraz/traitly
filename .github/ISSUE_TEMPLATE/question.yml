@@ -26,7 +26,12 @@ body:
     id: system-info
     attributes:
       label: System information (optional) / Información del sistema (opcional)
-      description: Output of `traitly info`. / Resultado de `traitly info`.
+      description: |
+        You can get it by running `traitly info` in the terminal (available from version 0.2.0). If you have an older version, please fill in the list below.
+        / Puedes obtenerla ejecutando `traitly info` en la terminal (disponible desde la versión 0.2.0). Si tienes una versión anterior, completa la lista de abajo.
+      value: |
+        - Traitly version / Versión de Traitly:
+        - Python version / Versión de Python:
+        - Operating system / Sistema operativo:
+        - Architecture (Intel, Apple Silicon, etc.) / Arquitectura:
       render: shell
-    validations:
-      required: false
