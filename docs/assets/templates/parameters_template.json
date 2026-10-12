@@ -29,8 +29,6 @@
     "fill_holes": false,
     "apply_convex_hull": false,
     "roi_expansion": 10,
-    "remove_roi": true,
-    "detect_color_checker": false,
     "erosion_px": 0
   },
   "enhance_locule_contrast_params": {},
