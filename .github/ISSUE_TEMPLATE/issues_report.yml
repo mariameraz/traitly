@@ -1,0 +1,67 @@
+name: Issues report / Reporte de errores
+description: Report a problem / Reporta un problema
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill in all fields so we can help you faster, thank you!
+        / Llena todos los campos para poder ayudarte más rápido, gracias!
+
+  - type: dropdown
+    id: problem-type
+    attributes:
+      label: Type of problem / Tipo de problema
+      options:
+        - Installation / Instalación
+        - Internal analysis / Análisis interno
+        - External analysis / Análisis externo
+        - Color correction / Corrección de color
+        - CLI
+        - Documentation / Documentación
+        - Other / Otro
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened? / ¿Qué pasa?
+      description: Describe the problem / Describe el problema
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Code you are using / Código que estás corriendo
+      description: Copy the exact code you ran / Copia el código con el que estas trabajando
+      render: python
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message / Mensaje de error
+      description: Copy the complete error / Copia el error completo
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: system-info
+    attributes:
+      label: System information / Información del sistema
+      description: |
+        Run `traitly info` in your terminal and paste the output here.
+        / Ejecuta `traitly info` en tu terminal y pega el resultado aquí.
+
+        If your version is older than 0.2.0 (the command does not exist), write your
+        Traitly version, Python version, operating system, and architecture
+        (e.g. macOS Intel, Windows, Linux).
+        / Si tu versión es anterior a 0.2.0 (el comando no existe), escribe tu versión
+        de Traitly, de Python, tu sistema operativo y arquitectura.
+      render: shell
+    validations:
+      required: true
