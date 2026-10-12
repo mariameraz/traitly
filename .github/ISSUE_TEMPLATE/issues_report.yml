@@ -29,7 +29,8 @@ body:
       label: What happened? / ¿Qué pasa?
       description: |
         Please describe the problem, what you are trying to achieve, and the image(s) you are analyzing (attach it here if possible).
-        / Por favor describe el problema, lo que intentas lograr y la(s) imagen(es) que estas analizando (adjúntala aquí si es posible).
+
+        Por favor describe el problema, lo que intentas lograr y la(s) imagen(es) que estas analizando (adjúntala aquí si es posible).
     validations:
       required: true
 
@@ -57,13 +58,17 @@ body:
       label: System information / Información del sistema
       description: |
         Run `traitly info` in your terminal and paste the output here.
-        / Ejecuta `traitly info` en tu terminal y pega el resultado aquí.
 
         If your version is older than 0.2.0 (the command does not exist), write your
         Traitly version, Python version, operating system, and architecture
         (e.g. macOS Intel, Windows, Linux).
-        / Si tu versión es anterior a 0.2.0 (el comando no existe), escribe tu versión
-        de Traitly, de Python, tu sistema operativo y arquitectura.
+
+        ----
+
+        Ejecuta `traitly info` en tu terminal y pega el resultado aquí.
+
+        Si tu versión es anterior a 0.2.0 (el comando no existe), escribe tu versión
+        de Traitly, de Python, tu sistema operativo y arquitectura (ejemplo, macOS intel, Windows, Linux)
       render: shell
     validations:
       required: true
