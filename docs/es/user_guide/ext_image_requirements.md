@@ -154,7 +154,7 @@ Evitar:   TOM-00I      CHlLE-02       MANZ-I23   <- I/l/1 ambiguos
 - Usar fondo mate, sin textura, que contraste con el color del fruto
 - Incluir referencia circular para calibración precisa
 - Incluir QR para identificación de muestras
-- En caso de usar OCR, crear etiquetas con alto contraste y fuentes claras
+- En caso de usar OCR, crear etiquetas con un alto contraste y fuentes claras
 - Mantener misma resolución y distancia de captura en todo el experimento
 
 :octicons-x-circle-fill-24:{ .icon-red } **Evitar:**
