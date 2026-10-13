@@ -2,6 +2,12 @@
 
 *All notable changes to Traitly are documented here:*
 
+## v0.2.3 - Unreleased
+
+### Added
+
+- Add `background_color="gray"` to the predefined color thresholds in `generate_fruit_mask()` for both `FruitInternalAnalyzer` and `FruitExternalAnalyzer`
+
 ## v0.2.2 - 2026-10-06
 
 Quick patch release.

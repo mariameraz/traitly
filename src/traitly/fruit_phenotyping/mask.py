@@ -175,8 +175,11 @@ def create_mask(
             elif background_color == 'black':
                 lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
                 upper_hsv = np.array([180, 250, 50], dtype=np.uint8)
+            elif background_color == 'gray':
+                lower_hsv = np.array([0,0,103], dtype=np.uint8)
+                upper_hsv = np.array([125,40,225], dtype=np.uint8)
             else:
-                raise ValueError(f"Invalid background_color: {background_color}. Use: {{'blue', 'white', 'black'}}")
+                raise ValueError(f"Invalid background_color: {background_color}. Use: {{'blue', 'white', 'black', 'gray'}}")
 
         if lower_hsv is None:
             lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
