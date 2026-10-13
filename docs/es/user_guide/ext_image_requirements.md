@@ -52,8 +52,8 @@ La elección del fondo es especialmente importante en el análisis externo, ya q
          style="height: 400px; width: auto;">
     <figcaption><em>Mora sobre distintos fondos. En frutos oscuros, el fondo negro no genera suficiente contraste para una segmentación confiable</em></figcaption>
   </figure>
-  
 </div>
+
 
 Traitly soporta los fondos predefinidos `'black'`, `'white'`, `'blue'` y `'gray'`, o permite definir rangos HSV personalizados para cualquier otro color.
 
