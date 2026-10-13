@@ -6,9 +6,7 @@ hide:
 
 <div class="animate" markdown>
 
-#  Instalando Traitly ⊹ ࣪ ˖
-
-*Última actualización: Septiembre 2026 - Traitly v0.2.0*
+#  Instalación ⊹ ࣪ ˖
 
 ---
 
