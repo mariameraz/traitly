@@ -270,6 +270,7 @@ def _lab_to_bgr(img_lab: np.ndarray) -> np.ndarray:
 ############################################
 # Adjust color correction using the models #
 ############################################
+#
 
 def _apply_color_correction(
     img_lab: np.ndarray,

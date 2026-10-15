@@ -218,15 +218,18 @@ class ColorCorrection:
         )
 
         if plot:
+
+            fontsize = float(np.clip(plot_size[0] * 1.2, 10, 40))
+
             plt.figure(figsize = plot_size)
             plt.subplot(1,2,1)
             plt.imshow(cv2.cvtColor(self.original_img, cv2.COLOR_BGR2RGB))
-            plt.title("Before")
+            plt.title("Before", fontsize = fontsize)
             plt.axis('off')
 
             plt.subplot(1,2,2)
             plt.imshow(cv2.cvtColor(self.corrected_img, cv2.COLOR_BGR2RGB))
-            plt.title("After")
+            plt.title("After", fontsize = fontsize)
             plt.axis('off')
 
             plt.tight_layout()
