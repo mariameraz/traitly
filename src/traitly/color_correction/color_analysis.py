@@ -16,9 +16,9 @@ import matplotlib.pyplot as plt
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import (
     StandardScaler,
-    # RobustScaler,
-    # MinMaxScaler,
-    # MaxAbsScaler,
+    RobustScaler,
+    MinMaxScaler,
+    MaxAbsScaler,
     PolynomialFeatures
 )
 
@@ -235,8 +235,9 @@ def _fit_plsr_models(
     degree: int = 3,
     num_components: int = 11,
     max_iterations: int = 1000,
-    scaler=StandardScaler(),
+    scaler=None,
 ):
+    scaler = _get_scaler(scaler)
 
     pre = make_pipeline(scaler, PolynomialFeatures(degree=degree))
     feats = pre.fit_transform(detected_lab)
@@ -355,3 +356,28 @@ def _delta_e_stats(
             delta_e_before - delta_e_after
         ])
     return df
+
+##############################
+## Auxiliar: scaler selection
+##############################
+
+_SCALERS = {
+    "standard": StandardScaler, # default
+    "robust": RobustScaler,
+    "minmax": MinMaxScaler,
+    "maxabs": MaxAbsScaler,
+ }
+
+def _get_scaler(scaler: Optional[str] = None):
+
+    if scaler is None:
+        return StandardScaler()
+
+    if not isinstance(scaler, str):
+        raise TypeError(f"scaler must be None or one of this list: {list(_SCALERS)}")
+
+    key = scaler.lower().replace("scaler", "").replace("_", "").strip()
+    try:
+        return _SCALERS[key]()
+    except KeyError:
+        raise ValueError(f"Invalid scaler '{scaler}'. Options: {list(_SCALERS)}") from None

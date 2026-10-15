@@ -17,13 +17,7 @@ import pandas as pd
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import (
-    StandardScaler,
-    # RobustScaler,
-    # MinMaxScaler,
-    # MaxAbsScaler,
-    # PolynomialFeatures
-)
+
 
 # ============================================================================
 # INTERNAL
@@ -192,21 +186,18 @@ class ColorCorrection:
     ) -> None:
 
         # Save the parameters used
-        if scaler is None:
-            scaler = StandardScaler()
-
         self._parameters.apply_color_correction_params = {
             "degree": degree,
             "num_components": num_components,
             "max_iterations": max_iterations,
-            "scaler": scaler,
+            "scaler": scaler if not None else "standard",
         }
 
         # Fit a PLSR model per LAB channel
         logger.debug("Adjusting PLSR models (degree=%s, num_components=%s)", degree, num_components)
         self._models = _fit_plsr_models(
             self._detected_lab,
-            scaler = StandardScaler(),
+            scaler = scaler,
             degree = degree,
             num_components = num_components,
             max_iterations = max_iterations
@@ -230,12 +221,12 @@ class ColorCorrection:
             plt.figure(figsize = plot_size)
             plt.subplot(1,2,1)
             plt.imshow(cv2.cvtColor(self.original_img, cv2.COLOR_BGR2RGB))
-            plt.title("Original Image")
+            plt.title("Before")
             plt.axis('off')
 
             plt.subplot(1,2,2)
             plt.imshow(cv2.cvtColor(self.corrected_img, cv2.COLOR_BGR2RGB))
-            plt.title("Corrected Image")
+            plt.title("After")
             plt.axis('off')
 
             plt.tight_layout()
