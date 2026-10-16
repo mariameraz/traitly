@@ -30,6 +30,6 @@ straw.analyze_morphology(
 
 <div style="text-align: center;" markdown>
 
-[← Regresar a la Galería](../overview.md){ .md-button }
+[← Regresar a la Galería](./overview.md){ .md-button }
 
 </div>

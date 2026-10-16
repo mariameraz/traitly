@@ -33,6 +33,6 @@ References:
 
 <div style="text-align: center;" markdown>
 
-[← Back to Gallery](../overview.md){ .md-button }
+[← Back to Gallery](./overview.md){ .md-button }
 
 </div>
