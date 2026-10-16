@@ -30,6 +30,6 @@ cc.analyze_morphology(contour_mode = "hull")
 
 <div style="text-align: center;" markdown>
 
-[← Regresar a la Galería](../overview.md){ .md-button }
+[← Regresar a la Galería](./overview.md){ .md-button }
 
 </div>

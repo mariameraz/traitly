@@ -31,6 +31,6 @@ straw.analyze_morphology(pericarp_ext_thickness=5,
 
 <div style="text-align: center;" markdown>
 
-[← Back to Gallery](../overview.md){ .md-button }
+[← Back to Gallery](./overview.md){ .md-button }
 
 </div>
