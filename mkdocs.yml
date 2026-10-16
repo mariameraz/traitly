@@ -176,7 +176,7 @@ plugins:
             - Tutorials:
                 - Overview: es/tutorials/overview.md
 
-            - Gallery: en/gallery/overview.md
+            - Gallery: es/gallery/overview.md
 
             - API:
               - Index: es/api/index.md
