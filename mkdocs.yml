@@ -125,6 +125,8 @@ plugins:
             - Tutorials:
                 - Overview: en/tutorials/overview.md
 
+            - Gallery: en/gallery/overview.md
+
             - API:
                 - Index: en/api/index.md
                 - Modules:
@@ -174,6 +176,8 @@ plugins:
             - Tutorials:
                 - Overview: es/tutorials/overview.md
 
+            - Gallery: en/gallery/overview.md
+
             - API:
               - Index: es/api/index.md
               - Modules:
@@ -212,6 +216,7 @@ plugins:
             Measurements: Mediciones
 
             Tutorials: Tutoriales
+            Gallery: Galería
             Overview: Descripción General
             Quickstart: Inicio Rápido
 
