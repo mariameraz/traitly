@@ -35,6 +35,11 @@ Traitly processes fruit images to measure:
 * **Pericarp structure**: Thickness, uniformity (CV), and surface irregularity (lobedness)
 * **Color phenotypes**: Multi-channel analysis (RGB, HSV, Lab) across different fruit regions
 
+Traitly also provides:
+
+* **Color correction**: Correct image color using a reference color card
+* **PDF extraction**: Extract images from a PDF file
+
 </br>
 
 ## Usage
