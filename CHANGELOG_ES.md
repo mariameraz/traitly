@@ -2,6 +2,15 @@
 
 *Todos los cambios significativos de Traitly están documentados aquí.*
 
+## v0.2.3 - En desarrollo
+
+### Nuevo
+
+- Se anadió `background_color="gray"` a los colores de fondo predefinidos en `generate_fruit_mask()`, tanto para `FruitInternalAnalyzer` como para `FruitExternalAnalyzer`
+- Ahora se pueden configurar scalers durante la correción de color, pasando: `'minmax'`, `'robust'`, `'maxabs'` ó '`standard'`
+
+---
+
 ## v0.2.2 - 2026-10-06
 
 Parche rápido

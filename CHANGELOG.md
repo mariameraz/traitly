@@ -7,6 +7,7 @@
 ### Added
 
 - Add `background_color="gray"` to the predefined color thresholds in `generate_fruit_mask()` for both `FruitInternalAnalyzer` and `FruitExternalAnalyzer`
+- Allow configurable scalers in color correction by accepting scaler names as strings: `'minmax'`, `'robust'`, `'maxabs'` and '`standard'`
 
 ## v0.2.2 - 2026-10-06
 
