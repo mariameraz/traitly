@@ -67,39 +67,39 @@ Aquí encontraras ejemplos de imagenes analizadas con Traitly. Haz click en el t
 
     ---
 
-    [Análisis morfológico de frijoles](./scripts/bean.md){ .card-title-big }
+    [Análisis morfológico de frijoles](../scripts/bean.md){ .card-title-big }
 
 -   ![Gehler dataset](https://i.swiftimg.com/variants/GpMXfYll/display.webp)
 
     ---
 
-    [Corrección de color de una imagen del dataset Gehler](./scripts/color_correction.md){ .card-title-big }
+    [Corrección de color de una imagen del dataset Gehler](../scripts/color_correction.md){ .card-title-big }
 
 
 -   ![Strawberry color analysis](https://i.swiftimg.com/variants/q1pzqApz/display.webp)
 
     ---
 
-    [Análisis de color de fresas](./scripts/strawberry.md){ .card-title-big }
+    [Análisis de color de fresas](../scripts/strawberry.md){ .card-title-big }
 
 
 -   ![Potato](https://i.swiftimg.com/originals/1Yo0vcOW.png)
 
     ---
 
-    [Análisis morfológico de papas](./scripts/potato.md){ .card-title-big }
+    [Análisis morfológico de papas](../scripts/potato.md){ .card-title-big }
 
 -   ![Cucumber](https://i.swiftimg.com/variants/lofO2pit/display.webp)
 
     ---
 
-    [Análisis de rodajas de pepinos](./scripts/cucumber.md){ .card-title-big }
+    [Análisis de rodajas de pepinos](../scripts/cucumber.md){ .card-title-big }
 
 
 -   ![Gehler dataset 2](https://i.swiftimg.com/variants/H3V1qXRj/display.webp)
 
     ---
 
-    [Corrección de color de una imagen del dataset Gehler](./scripts/color_correction_photo2.md){ .card-title-big }
+    [Corrección de color de una imagen del dataset Gehler](../scripts/color_correction_photo2.md){ .card-title-big }
 
 </div>
