@@ -355,7 +355,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         font_color: Tuple[int, int, int] = (0, 0, 0),
         label_position: str = "top",
         label_color: Tuple[int, int, int] = (255, 255, 255),
-        pericarp_ext_color: Tuple[int, int, int] = (0, 240, 240),
+        pericarp_ext_color: Tuple[int, int, int] = (66, 228, 240),
         pericarp_ext_thickness: int = 2,
     ):
         """
