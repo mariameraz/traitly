@@ -93,7 +93,7 @@ Aquí encontraras ejemplos de imagenes analizadas con Traitly. Haz click en el t
 
     ---
 
-    [Análisis de rodajas de pepinos](./cucumber.md){ .card-title-big }
+    [Análisis de rodajas de pepinos](../../es/gallery/cucumber.md){ .card-title-big }
 
 
 -   ![Gehler dataset 2](https://i.swiftimg.com/variants/H3V1qXRj/display.webp)
