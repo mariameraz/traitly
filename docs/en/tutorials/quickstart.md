@@ -8,7 +8,7 @@ hide:
 # Quick Start: complete cranberry analysis running in minutes.
 <p style="color:gray; margin-top: -35px; margin-bottom: -10px;" markdown>**Created by: María A. Torres-Meraz; March, 2026**</p>
 
-[![PyPI](https://img.shields.io/badge/PyPI-v0.1.0-blue?logo=pypi&logoColor=white)](https://pypi.org/project/traitly/)
+[![PyPI](https://img.shields.io/pypi/v/traitly?logo=pypi&logoColor=white&cacheSeconds=300)](https://pypi.org/project/traitly)
 
 </div>
 
