@@ -1969,7 +1969,7 @@ class FruitInternalAnalyzer:
             }
 
         result = _detect_color_checker(
-            self._img_copy,
+            self._img_copy if self._img_copy is not None else self.img,
             plot=plot,
             plot_size=plot_size,
             verbose=verbose,
@@ -1982,16 +1982,6 @@ class FruitInternalAnalyzer:
             return None
 
         self._checker_coords, self._color_charts, checker_img = result
-
-        # If checker detected, only
-        if self._img_copy is None:
-            self._img_copy = checker_img
-        else:
-            drawn = np.any(checker_img != self.img, axis=2)
-            self._img_copy[drawn] = checker_img[drawn]
-
-        return None
-
 
         return None
 
