@@ -4,6 +4,10 @@
 
 ## v0.2.3 - Unreleased
 
+### Fixed
+
+- In `FruitInternalAnalyzer`, `detect_color_checker` now draws on `_img_copy` instead of replacing it. Now, if it runs after `setup_measurements()`, the size-reference annotation is kept in the final image used by `analyze_morphology` and `analyze_color`.
+
 ### Added
 
 - Add `background_color="gray"` to the predefined color thresholds in `generate_fruit_mask()` for both `FruitInternalAnalyzer` and `FruitExternalAnalyzer`
