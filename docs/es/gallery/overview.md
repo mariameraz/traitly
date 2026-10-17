@@ -5,50 +5,6 @@ hide:
 
 ---
 
-<style>
-
-.md-typeset .grid.cards > ul {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important; /* two columns */
-    gap: 1rem;
-    align-items: stretch;
-}
-
-/* flexible cards */
-.md-typeset .grid.cards > ul > li {
-    display: flex;
-    flex-direction: column;
-    margin: 0 !important;
-    box-sizing: border-box;
-}
-
-/* Image ratio 16:9 */
-.md-typeset .grid.cards img {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    object-fit: contain;
-    display: block;
-}
-
-.md-typeset .grid.cards > ul > li > p:last-child {
-    margin-top: auto;
-}
-
-.md-typeset .grid.cards .card-title-big {
-    display: block;
-    text-align: center;
-    font-weight: 600;
-}
-
-/* Reduce cols to 1 in small windows */
-@media (max-width: 800px) {
-    .md-typeset .grid.cards > ul {
-        grid-template-columns: 1fr !important;
-    }
-}
-</style>
-
-
 <div class="animate" markdown>
 
 # Galería ⊹ ࣪ ˖
