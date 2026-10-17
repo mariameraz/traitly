@@ -32,6 +32,6 @@ hide:
 
 <div style="text-align: center;" markdown>
 
-[← Back to Tutorials](overview.md){ .md-button style="background-color: black; color: white; border-color: black;" }
+[← Back to Tutorials](overview.md){ .md-button }
 
 </div>

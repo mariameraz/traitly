@@ -9,8 +9,7 @@ hide:
 
 <p style="color:gray; margin-top: -35px;" markdown>**Creado por: María A. Torres Meraz; Marzo, 2026** </p>
 
-[![PyPI](https://img.shields.io/badge/PyPI-v0.1.0-blue?logo=pypi&logoColor=white)](https://pypi.org/project/traitly/)
-
+[![PyPI](https://img.shields.io/pypi/v/traitly?logo=pypi&logoColor=white&cacheSeconds=300)](https://pypi.org/project/traitly)
 
 </div>
 
