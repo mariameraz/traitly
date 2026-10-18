@@ -95,7 +95,7 @@ class FruitConfig:
         Pixel spacing between lines in multi-line annotations. Default is 15.
     label_position : str
         Position of fruit ID labels relative to the fruit bounding box.
-        One of ``'top'``, ``'bottom'``, ``'left'``, ``'right'``.
+        One of ``'top'``, ``'bottom'``, ``'left'``, ``'right'``, ``''none'``.
         Default is ``'top'``.
     pericarp_ext_color : Tuple[int, int, int]
         BGR color for the external pericarp contour. Default is (0, 255, 0).
@@ -1185,6 +1185,9 @@ def _annotate_fruit(
 
     # Calculate position based on label_position
     img_height, img_width = img_shape
+
+    if config.label_position == 'none':
+        return
 
     if config.label_position == 'top':
         text_x = max(10, x)

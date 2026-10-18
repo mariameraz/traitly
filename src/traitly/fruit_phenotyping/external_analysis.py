@@ -385,7 +385,7 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         font_color : Tuple[int, int, int], optional
             BGR color for annotation text. Default is black (0, 0, 0).
         label_position : str, optional
-            Position of fruit ID labels: ``'top'`` or ``'center'``.
+            Position of fruit ID labels: ``'top'``, ``'bottom'``, ``'left'``, ``'right'``, ``''none'``.
             Default is ``'top'``.
         label_color : Tuple[int, int, int], optional
             BGR background color for labels. Default is white (255, 255, 255).

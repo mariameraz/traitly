@@ -584,7 +584,7 @@ def annotate_all_fruits(
         BGR color for locule contours. Default is ``(255, 0, 255)``.
     label_position : str, optional
         Position of the text label relative to the fruit bounding box.
-        One of ``'top'``, ``'bottom'``, ``'left'``, ``'right'``.
+        One of ``'top'``, ``'bottom'``, ``'left'``, ``'right'``, ``'none'``.
         Default is ``'left'``.
     margin : int, optional
         Pixel padding around label backgrounds and boundary clamping.
@@ -684,6 +684,9 @@ def annotate_all_fruits(
 
         # Position of the label
         img_height, img_width = annotated_img.shape[:2]
+
+        if label_position == 'none':
+            return
 
         if label_position == 'top':
             text_x = max(10, x)
