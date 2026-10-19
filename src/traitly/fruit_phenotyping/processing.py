@@ -386,37 +386,32 @@ def calculate_pericarp_thickness_radial(
         if outer_r > inner_r:
             thicknesses_px.append(outer_r - inner_r)
 
+    convert_cm = bool(px_per_cm and isinstance(px_per_cm, (int, float)) and px_per_cm > 0)
+    prefix = 'cm' if convert_cm else 'px'
+
     if not thicknesses_px:
         return {
-            'outer_pericarp_mean_thickness_cm': np.nan,
-            'outer_pericarp_std_thickness_cm': np.nan,
+            f'outer_pericarp_mean_thickness_{prefix}': np.nan,
+            f'outer_pericarp_std_thickness_{prefix}': np.nan,
             'outer_pericarp_cv_thickness': np.nan,
-            'fruit_lobedness_cm': np.nan
+            f'fruit_lobedness_{prefix}': np.nan,
         }
 
     thicknesses_px = np.array(thicknesses_px)
     lobedness_px = float(np.std(outer_distances_px)) if outer_distances_px else np.nan
 
-    # Convert to cm if needed
-    convert_cm = px_per_cm and isinstance(px_per_cm, (int, float)) and px_per_cm > 0
-
-    if convert_cm:
-        inv = 1.0 / px_per_cm
-        thicknesses = thicknesses_px * inv
-        lobedness = lobedness_px * inv
-        prefix = 'cm'
-    else:
-        thicknesses = thicknesses_px
-        lobedness = lobedness_px
-        prefix = 'px'
+    scale = 1.0 / px_per_cm if convert_cm else 1.0
+    thicknesses = thicknesses_px * scale
+    lobedness = lobedness_px * scale
 
     mean_val = np.mean(thicknesses)
+    std_val = np.std(thicknesses)
 
     return {
         f'outer_pericarp_mean_thickness_{prefix}': float(mean_val),
-        f'outer_pericarp_std_thickness_{prefix}': float(np.std(thicknesses)),
-        'outer_pericarp_cv_thickness': float((np.std(thicknesses) / mean_val * 100) if mean_val > 0 else np.nan),
-        f'fruit_lobedness_{prefix}': float(lobedness)
+        f'outer_pericarp_std_thickness_{prefix}': float(std_val),
+        'outer_pericarp_cv_thickness': float(std_val / mean_val * 100) if mean_val > 0 else np.nan,
+        f'fruit_lobedness_{prefix}': float(lobedness),
     }
 
 
