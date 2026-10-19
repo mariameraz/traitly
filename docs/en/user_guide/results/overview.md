@@ -129,8 +129,8 @@ analyzer.analyze_folder(
 
 ```bash
 # CLI
-traitly --fruit_internal -i images/ --json parameters.json
-traitly --fruit_external -i images/ --json parameters.json
+traitly fruit_internal -i images/ --json parameters.json
+traitly fruit_external -i images/ --json parameters.json
 ```
 
 </div>
