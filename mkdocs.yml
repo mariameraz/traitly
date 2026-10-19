@@ -28,15 +28,17 @@ theme:
       primary: blue grey
       accent: blue gray # For headers, links, etc
       toggle:
-        icon: octicons/sun-16
-        name: Switch to dark mode
+        icon: material/weather-night
+        name: Switch to light mode
+
 
     - scheme: default # Dark theme
       primary: blue grey
       accent: light blue
       toggle:
-        icon: material/weather-night
-        name: Switch to light mode
+        icon: octicons/sun-16
+        name: Switch to dark mode
+
 
   features:
     - navigation.tabs
