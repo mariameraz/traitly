@@ -128,3 +128,20 @@ body.sidebar-hidden .md-content {
         grid-template-columns: 1fr !important;
     }
 }
+
+/*
+/* increase the size of social media icons in the footer */
+.md-social__link {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.md-social__link svg {
+  max-height: 1.2rem;  /* icons size (the default is ~0.8) */
+  width: 1.2rem;
+}
+
+/* space between icons*/
+.md-social {
+  gap: 0.4rem;
+}*/
