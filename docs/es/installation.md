@@ -73,37 +73,37 @@ mi-proyecto/
 
 ## Instalación
 
-=== ":fontawesome-solid-terminal: MacOS y Linux"
+=== ":material-console: macOS and Linux"
             
-        **1. Crea el ambiente con Python 3.11**
-    
-        Asegúrate de tener Python 3.11 instalado ([descárgalo aquí](https://www.python.org/downloads/release/python-3111/)). Luego ejecuta:
-        
-        ```bash
-        python3.11 -m venv traitly-env
-        source traitly-env/bin/activate
-        ```
-              
-        **2. Instala las dependencias en orden:**
-    
-        ```bash
-        pip install torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cpu
-        pip install opencv-python==4.8.1.78
-        pip install opencv-python-headless==4.8.1.78
-        pip install opencv-contrib-python==4.9.0.80
-        pip install "numpy<2"
-        ```
-        **3. Instala traitly**
-    
-        Obtén la última versión:
-        ```bash
-        pip install traitly
-        ```
-    
-        O una versión específica:
-        ```bash
-        pip install traitly==0.2.0
-        ```
+      **1. Crea el ambiente con Python 3.11**
+  
+      Asegúrate de tener Python 3.11 instalado ([descárgalo aquí](https://www.python.org/downloads/release/python-3111/)). Luego ejecuta:
+      
+      ```bash
+      python3.11 -m venv traitly-env
+      source traitly-env/bin/activate
+      ```
+            
+      **2. Instala las dependencias en orden:**
+  
+      ```bash
+      pip install torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cpu
+      pip install opencv-python==4.8.1.78
+      pip install opencv-python-headless==4.8.1.78
+      pip install opencv-contrib-python==4.9.0.80
+      pip install "numpy<2"
+      ```
+      **3. Instala traitly**
+  
+      Obtén la última versión:
+      ```bash
+      pip install traitly
+      ```
+  
+      O una versión específica:
+      ```bash
+      pip install traitly==0.2.0
+      ```
 
     **1. Crear un nuevo entorno de Python:**
 

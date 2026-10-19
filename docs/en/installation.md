@@ -65,7 +65,7 @@ my-project/
 
 ## Installation
 
-=== ":fontawesome-solid-terminal: macOS and Linux"
+=== ":material-console: macOS and Linux"
 
     **1. Create a new Python environment:**
 
