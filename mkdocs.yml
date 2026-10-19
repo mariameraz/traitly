@@ -248,7 +248,7 @@ plugins:
 
   - git-committers:
       repository: mariameraz/traitly
-      branch: main
+      branch: !ENV [READTHEDOCS_GIT_IDENTIFIER, main]
       token: !ENV MKDOCS_GIT_COMMITTERS_APIKEY
       exclude:
         - en/index.md
