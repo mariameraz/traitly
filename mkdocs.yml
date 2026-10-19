@@ -18,7 +18,7 @@ theme:
   icon:
     alternate: octicons/globe-24
     repo: fontawesome/brands/github-alt
-    # view: material/eye
+    view: material/eye
 
   font:
     text: Roboto
@@ -266,7 +266,7 @@ plugins:
 # Extra configuration ##
 #######################
 
-copyright: Copyright &copy; 2026 Maria Alejandra Torres Meraz
+copyright: Copyright &copy; 2026 Maria Meraz
 
 extra:
   alternate:
@@ -283,9 +283,9 @@ extra:
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/in/alemeraz
     - icon: fontawesome/brands/python
-      link: https://test.pypi.org/project/traitly/
+      link: https://pypi.org/project/traitly/
     - icon: fontawesome/solid/envelope
-      link: mailto:<ma.torresmeraz@gmail.com>
+      link: mailto:ma.torresmeraz@gmail.com
 
   version:
     provider: readthedocs
