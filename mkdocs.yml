@@ -16,23 +16,23 @@ repo_url: https://github.com/mariameraz/traitly
 theme:
   name: material
   icon:
-    alternate: octicons/globe-24
+    #alternate: octicons/globe-24
+    alternate: fontawesome/solid/earth-americas
     repo: fontawesome/brands/github-alt
     view: material/eye
-
   font:
     text: Roboto
     code: Roboto Mono
   palette:
     - scheme: default # Light theme
-      primary: black
+      primary: blue grey
       accent: blue gray # For headers, links, etc
       toggle:
-        icon: octicons/sun-24
+        icon: octicons/sun-16
         name: Switch to dark mode
 
     - scheme: slate # Dark theme
-      primary: white
+      primary: blue grey
       accent: light blue
       toggle:
         icon: material/weather-night
