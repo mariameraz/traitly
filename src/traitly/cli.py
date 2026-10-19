@@ -9,21 +9,11 @@ or entire folders.
 
 Usage
 -----
-.. code-block:: bash
 
-    traitly --fruit_internal -i PATH [-o PATH] [--json PATH] [--num_cores N]
-    traitly --fruit_external -i PATH [-o PATH] [--json PATH] [--num_cores N]
-    traitly --info
-    traitly --version
+    traitly fruit_internal -i PATH [-o PATH] [--json PATH] [--num_cores N]
+    traitly fruit_external -i PATH [-o PATH] [--json PATH] [--num_cores N]
+    traitly info
 
-For folder inputs, delegates to
-:meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.analyze_folder`
-or
-:meth:`~traitly.fruit_phenotyping.external_analysis.FruitExternalAnalyzer.analyze_folder`.
-For single images, delegates to
-:meth:`~traitly.fruit_phenotyping.internal_analysis.FruitInternalAnalyzer.process_single_file`.
-or
-:meth:`~traitly.fruit_phenotyping.external_analysis.FruitExternalAnalyzer.process_single_file`.
 """
 
 # ============================================================================
@@ -92,8 +82,6 @@ def create_parser() -> argparse.ArgumentParser:
                 ("  # Get traitly and system metadata",),
                 ("  traitly info",),
                 ("",),
-                ("  # Get traitly version",),
-                ("  traitly --version",),
             ]),
             "",
             "="*70,
