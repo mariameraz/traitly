@@ -56,8 +56,8 @@ def create_parser() -> argparse.ArgumentParser:
     """
     Build and return the CLI argument parser for Traitly.
 
-    Defines a mutually exclusive mode group (``--fruit_internal`` /
-    ``--fruit_external``), required and optional arguments, and a
+    Defines a mutually exclusive mode group (``fruit_internal`` /
+    ``fruit_external``), required and optional arguments, and a
     formatted epilog with usage examples.
 
     Returns
