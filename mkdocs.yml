@@ -24,14 +24,14 @@ theme:
     text: Roboto
     code: Roboto Mono
   palette:
-    - scheme: default # Light theme
+    - scheme: slate # Light theme
       primary: blue grey
       accent: blue gray # For headers, links, etc
       toggle:
         icon: octicons/sun-16
         name: Switch to dark mode
 
-    - scheme: slate # Dark theme
+    - scheme: default # Dark theme
       primary: blue grey
       accent: light blue
       toggle:
