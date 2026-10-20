@@ -3,7 +3,7 @@
 ###############
 
 site_name: Traitly
-site_url: https://traitly.readthedocs.io/en/latest/
+site_url: https://traitly.readthedocs.io/
 site_description: Fruit phenotyping tool for morphological, structural, and color analysis
 site_author: Maria Meraz
 repo_name: mariameraz/traitly
