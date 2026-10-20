@@ -6,11 +6,13 @@
 
 ### Changed
 
-- Optimize `angular_symmetry`, replacing the Hungarian method and the 500 sampled rotations with an exact search that uses the `n` locule deviations as candidate rotations. It is faster and returns the exact minimum, so results are very similar to previous versions (differences below ~ 0.01). 
+- Optimize `angular_symmetry()`, replacing the Hungarian algorithm and the 500 sampled rotations per fruit with an exact search that derives the candidate rotations from the `n` locule deviations. The new method is faster and returns the exact minimum. Expressed on the same scale, results are very similar to those of the previous method, with differences below 0.001.
 
 #### *Breaking:*
 
-- Remove the `angle_shifts` argument from `angular_symmetry`, since rotations are no longer sampled.
+- `angular_symmetry()` now returns the mean angular error as a fraction of the ideal spacing (`2π/n` dimensionless) instead of radians. This makes values comparable across fruits with different locule counts. All values change relative to previous versions, so they should not be compared **directly** with results from earlier versions. Values obtained with the old method (version < 0.2.3) can be converted to the new scale with `old_value / (2π / n_locules)`.
+
+- Remove the `angle_shifts` argument from `angular_symmetry()`, since the new method does not need a fixed number of rotations.
 
 ### Fixed
 

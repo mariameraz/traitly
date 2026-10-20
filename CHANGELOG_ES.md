@@ -6,10 +6,11 @@
 
 ### Cambios
 
-- Se optimizó `angular_symmetry()`, reemplazando el método húngaro (Hungarian algorithm) y las 500 rotaciones muestreadas por cada fruto, por una búsqueda exacta que obtiene las rotaciones candidatas mediante las `n` desviaciones de los lóculos. El nuevo método es más rápido y regresa el mínimo exacto, por lo que los resultados son muy similares a los del método anterior, aunque puede haber diferencias menores a 0.01. 
-
+- Se optimizó `angular_symmetry()`, reemplazando el método húngaro (Hungarian algorithm) y las 500 rotaciones muestreadas por cada fruto por una búsqueda exacta que obtiene las rotaciones candidatas a partir de las `n` desviaciones de los lóculos. El nuevo método es más rápido y devuelve el mínimo exacto. Expresados en la misma escala, los resultados son muy similares a los del método anterior, con diferencias menores a 0.001.
 
 #### *Cambios que rompen compatibilidad:*
+
+- `angular_symmetry()` ahora devuelve el error angular promedio como fracción del paso ideal (`2π/n` adimensional), en lugar de radianes. Esto hace comparables los valores entre frutos con distinto número de lóculos. Todos los valores cambian respecto a versiones anteriores, por lo que no deben compararse **directamente** con resultados de versiones pasadas. Los valores obtenidos con el método antiguo (version < 0.2.3) pueden convertirse a la nueva escala con `valor_antiguo / (2π / n_locules)`.
 
 - Se eliminó el argumento `angle_shifts` de `angular_symmetry()`, ya que el nuevo método no necesita un número fijo de rotaciones.
 
