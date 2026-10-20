@@ -37,12 +37,12 @@ Traitly asume por defecto que el **fondo es negro**. Para lograr esto:
 
 <div style="display: flex; gap: 16px; justify-content: center; align-items: flex-start;">
   <figure style="text-align: center; margin: 0;">
-      <img src="../../assets/images/scanner_box.jpg" alt="Black box and scanner setup"
+      <img src="../../../assets/images/scanner_box.jpg" alt="Black box and scanner setup"
            style="height: 600px; width: auto;">
     <figcaption><em>Ejemplo de caja negra y escáner</em></figcaption>
   </figure>
   <figure style="text-align: center; margin: 0;">
-      <img src="../../assets/images/slices_image.jpg" alt="Example of a scanned image"
+      <img src="../../../assets/images/slices_image.jpg" alt="Example of a scanned image"
            style="height: 600px; width: auto;">
     <figcaption><em>Ejemplo de imágen escaneada</em></figcaption>
   </figure>
