@@ -4,6 +4,14 @@
 
 ## v0.2.3 - Unreleased
 
+### Changed
+
+- Optimize `angular_symmetry`, replacing the Hungarian method and the 500 sampled rotations with an exact search that uses the `n` locule deviations as candidate rotations. It is faster and returns the exact minimum, so results are very similar to previous versions (differences below ~ 0.01). 
+
+#### *Breaking:*
+
+- Remove the `angle_shifts` argument from `angular_symmetry`, since rotations are no longer sampled.
+
 ### Fixed
 
 - In `FruitInternalAnalyzer`, `detect_color_checker` now draws on `_img_copy` instead of replacing it. Now, if it runs after `setup_measurements()`, the size-reference annotation is kept in the final image used by `analyze_morphology` and `analyze_color`.
