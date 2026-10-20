@@ -406,7 +406,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             plot=False,
             contour_mode=contour_mode,
             epsilon=epsilon,
-            angle_shifts=0,
             num_rays=0,
             font_size=font_size,
             font_thickness=font_thickness,
@@ -573,7 +572,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             "dilation_factor",
         ),
         "analyze_morphology_params": (
-            "angle_shifts",
             "num_rays",
             "min_locule_area",
             "max_locule_area",
@@ -682,7 +680,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
         # analyze_morphology
         contour_mode: Optional[str]=None,
         epsilon: Optional[float]=None,
-        angle_shifts: Optional[int]=None,
         num_rays: Optional[int]=None,
         # analyze_color
         stat: Optional[str]=None,
@@ -779,8 +776,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             Contour representation mode for morphology analysis.
         epsilon : float or None, optional
             Approximation factor for contour simplification.
-        angle_shifts : int or None, optional
-            Number of angle steps for symmetry computation.
         num_rays : int or None, optional
             Number of rays used to estimate pericarp thickness.
         stat : str or None, optional
@@ -864,7 +859,6 @@ class FruitExternalAnalyzer(FruitInternalAnalyzer):
             "analyze_morphology_params",
             dict(
                 contour_mode=contour_mode, epsilon=epsilon,
-                angle_shifts=angle_shifts, num_rays=num_rays,
                 font_size=font_size, font_thickness=font_thickness,
                 font_color=font_color, label_position=label_position,
                 label_color=label_color, pericarp_ext_color=pericarp_ext_color,
