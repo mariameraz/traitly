@@ -4,6 +4,15 @@
 
 ## v0.2.3 - En desarrollo
 
+### Cambios
+
+- Se optimizó `angular_symmetry()`, reemplazando el método húngaro (Hungarian algorithm) y las 500 rotaciones muestreadas por cada fruto, por una búsqueda exacta que obtiene las rotaciones candidatas mediante las `n` desviaciones de los lóculos. El nuevo método es más rápido y regresa el mínimo exacto, por lo que los resultados son muy similares a los del método anterior, aunque puede haber diferencias menores a 0.01. 
+
+
+#### *Cambios que rompen compatibilidad:*
+
+- Se eliminó el argumento `angle_shifts` de `angular_symmetry()`, ya que el nuevo método no necesita un número fijo de rotaciones.
+
 ### Correcciones
 
 - En `FruitInternalAnalyzer`, `detect_color_checker` ahora dibuja sobre `_img_copy` en lugar de remplazarla por una nueva copia. De esta manera, si se ejecuta despues de `setup_measurements()`, las anotaciones sobre la referencia de tamaño son incluidas en la imagen final guardada por `analyze_morphology` y `analyze_color`.
