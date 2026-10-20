@@ -591,13 +591,6 @@ En la imagen anotada se indica un **ID único para cada fruto**, su **número de
         <p><em>Efecto de <code>num_rays</code> en la densidad de rayos. Valores más altos capturan más detalle a lo largo del contorno del fruto.</em></p>
     </div>
 
-??? note "Notas sobre los pasos angulares"
-    `angle_shifts` controla cuántos desplazamientos rotacionales se evalúan al calcular `locules_angular_symmetry`. El algoritmo compara los ángulos observados de los lóculos contra una distribución ideal equiespaciada, probando `angle_shifts` rotaciones distintas de esa distribución para encontrar la que mejor coincide. Un valor más alto evalúa más rotaciones y produce una alineación más precisa, a costa de mayor tiempo de cómputo.
-    El valor por defecto de 500 es suficiente para la mayoría de los frutos. Valores muy bajos (p. ej., menores a 50) pueden producir resultados ligeramente imprecisos en frutos donde los lóculos están cerca pero no exactamente en posiciones ideales.
-    
-    !!! tip ""
-        Para más detalles sobre cómo se calcula la simetría angular, consulta la sección de [Mediciones](results/measurements.md#interpretacion-de-la-simetria).
-
 
 ```python
 analyzer.analyze_morphology(
@@ -613,7 +606,6 @@ analyzer.analyze_morphology(
 | --------------------------- | -------------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
 | `contour_mode`              | `str`                | `'raw'`           | Modo de contorno usado para las métricas: `'raw'`, `'hull'`, `'approx'`, `'ellipse'`, `'circle'` |
 | `epsilon`                   | `float`               | `0.001`           | Factor de aproximación (solo si `contour_mode='approx'`)                                         |
-| `angle_shifts`              | `int`                | `500`             | Pasos angulares usados para métricas de simetría                                                 |
 | `num_rays`                  | `int`                | `90`              | Número de rayos usados para estimación de grosor de pericarpio                                   |
 | `display_table`             | `bool`               | `True`            | Si `True`, retorna el `DataFrame` con los resultados                                             |
 | `plot`                      | `bool`               | `True`            | Si `True`, muestra la imagen anotada                                                             |
@@ -910,7 +902,6 @@ analyzer.analyze_folder(json_path="imagen_parameters.json")
 | `epsilon` | `float` | `None` | Factor de aproximación de contorno -> `analyze_morphology` |
 | `min_locule_area_morph` | `int` | `None` | Área mínima de lóculo para morfología -> `analyze_morphology` |
 | `max_locule_area` | `int` | `None` | Área máxima de lóculo -> `analyze_morphology` |
-| `angle_shifts` | `int` | `None` | Pasos angulares para simetría -> `analyze_morphology` |
 | `num_rays` | `int` | `None` | Rayos para estimación de grosor de pericarpio -> `analyze_morphology` |
 | `alpha` | `float` | `None` | Parámetro alpha para el contorno cóncavo del pericarpio interno -> `analyze_morphology`, `analyze_color` |
 | `stat` | `str` | `None` | Estadístico de color: `'mean'` o `'median'` -> `analyze_color` |

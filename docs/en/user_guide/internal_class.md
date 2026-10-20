@@ -594,14 +594,6 @@ The annotated image includes a **unique ID for each fruit**, its **locule count*
         <p><em>Effect of <code>num_rays</code> on ray density. Higher values capture more detail along the fruit contour.</em></p>
     </div>
 
-??? note "Notes on angle_shifts"
-    `angle_shifts` controls how many rotational offsets are tested when computing `locules_angular_symmetry`. The algorithm works by comparing the observed locule angles against an ideal equally-spaced arrangement, trying `angle_shifts` different rotations of that ideal to find the best match. A higher value tests more rotations and gives a more accurate alignment, at the cost of computation time.
-
-    The default value of 500 is sufficient for most fruits. Very low values (e.g., below 50) may produce slightly inaccurate results for fruits where the locules are close to but not exactly at ideal positions. 
-
-    !!! tip ""
-        For more details on how angular symmetry is calculated, see the [Measurements](results/measurements.md#symmetry-interpretation) section.
-
 ```python
 analyzer.analyze_morphology(
     contour_mode="hull",
@@ -616,7 +608,6 @@ analyzer.analyze_morphology(
 | --------------------------- | -------------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
 | `contour_mode`              | `str`                | `'raw'`           | Contour mode for metrics: `'raw'`, `'hull'`, `'approx'`, `'ellipse'`, `'circle'`                 |
 | `epsilon`                   | `float`              | `0.001`           | Approximation factor (only if `contour_mode='approx'`)                                           |
-| `angle_shifts`              | `int`                | `500`             | Angular steps used for symmetry metrics                                                          |
 | `num_rays`                  | `int`                | `90`              | Number of rays used for pericarp thickness estimation                                            |
 | `display_table`             | `bool`               | `True`            | If `True`, returns the `DataFrame` with results                                                  |
 | `plot`                      | `bool`               | `True`            | If `True`, displays the annotated image                                                          |
@@ -911,7 +902,6 @@ analyzer.analyze_folder(json_path="image_parameters.json")
 | `epsilon` | `float` | `None` | Contour approximation factor -> `analyze_morphology` |
 | `min_locule_area_morph` | `int` | `None` | Minimum locule area for morphology -> `analyze_morphology` |
 | `max_locule_area` | `int` | `None` | Maximum locule area -> `analyze_morphology` |
-| `angle_shifts` | `int` | `None` | Angular steps for symmetry -> `analyze_morphology` |
 | `num_rays` | `int` | `None` | Rays for pericarp thickness estimation -> `analyze_morphology` |
 | `alpha` | `float` | `None` | Alpha parameter for the inner pericarp concave hull -> `analyze_morphology`, `analyze_color` |
 | `stat` | `str` | `None` | Color statistic: `'mean'` or `'median'` -> `analyze_color` |

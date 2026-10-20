@@ -46,7 +46,6 @@
     "epsilon": null,
     "min_locule_area": 10,
     "max_locule_area": null,
-    "angle_shifts": 500,
     "num_rays": 90,
     "font_size": 1.5,
     "font_thickness": 2,

@@ -3160,9 +3160,6 @@ def server(input: Inputs, output: Outputs, session: Session):
                 "dilation_morph", "Dilation factor (int. pericarp)", 0, min=0, step=0.05
             ),
             ui.input_numeric(
-                "angle_shifts_morph", "Angle shifts (symmetry)", 500, min=0, step=50
-            ),
-            ui.input_numeric(
                 "num_rays_morph", "Num rays (pericarp thickness)", 90, min=0, step=10
             ),
             ui.HTML("</div></details>"),
@@ -3348,7 +3345,6 @@ def server(input: Inputs, output: Outputs, session: Session):
                 kw.update(
                     dict(
                         dilation_factor=dilation_val,
-                        angle_shifts=input.angle_shifts_morph(),
                         num_rays=input.num_rays_morph(),
                         min_locule_area=input.min_locule_area_morph(),
                         max_locule_area=max_loc,

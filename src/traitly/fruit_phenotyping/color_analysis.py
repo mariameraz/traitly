@@ -35,8 +35,8 @@ from traitly.fruit_phenotyping.processing import get_internal_pericarp_contour
 # Normalization functions for lab and hsv #
 ###########################################
 
-def normalize_lab_values(l_values: np.ndarray, 
-                         a_values: np.ndarray, 
+def normalize_lab_values(l_values: np.ndarray,
+                         a_values: np.ndarray,
                          b_values: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Normalize raw OpenCV Lab channel values to standard ranges.
@@ -60,17 +60,17 @@ def normalize_lab_values(l_values: np.ndarray,
     l_values = l_values.astype(np.float32)
     a_values = a_values.astype(np.float32)
     b_values = b_values.astype(np.float32)
-    
+
     # Rescale L to 0-100, a and b to -128 to 127
     l_normalized = (l_values * 100.0) / 255.0
     a_normalized = a_values - 128.0
     b_normalized = b_values - 128.0
-    
+
     return l_normalized, a_normalized, b_normalized
 
 
-def normalize_hsv_values(h_values: np.ndarray, 
-                         s_values: np.ndarray, 
+def normalize_hsv_values(h_values: np.ndarray,
+                         s_values: np.ndarray,
                          v_values: np.ndarray
                          ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -96,13 +96,13 @@ def normalize_hsv_values(h_values: np.ndarray,
     h_values = h_values.astype(np.float32)
     s_values = s_values.astype(np.float32)
     v_values = v_values.astype(np.float32)
-    
+
     # Convert H from 0-180 to 0-360
     h_normalized = h_values * 2.0
     # Convert S and V to 0-100 range
     s_normalized = (s_values / 255.0) * 100.0
     v_normalized = (v_values / 255.0) * 100.0
-    
+
     return h_normalized, s_normalized, v_normalized
 
 
@@ -137,7 +137,7 @@ def circular_mean_and_std_hue(hue_values: np.ndarray,
 
     if hue_values is None or len(hue_values) == 0:
         return np.nan, np.nan
-    # Ensure we are always working with [0, 360] degrees 
+    # Ensure we are always working with [0, 360] degrees
     hue_deg = hue_degree_values.astype(np.float32) if hue_degree_values is not None \
               else hue_values.astype(np.float32) * 2.0
 
@@ -157,7 +157,7 @@ def extract_color_features(img: np.ndarray,
                             color_space: str = 'all',
                             dark_thresh: int = 15
                         ) -> Dict[str, float]:
-    
+
     """
     Extract summary color statistics from masked pixels of an image.
 
@@ -262,7 +262,7 @@ def extract_color_features(img: np.ndarray,
     # Hue in degrees
     if 'hsv' in spaces_to_compute:
         hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        h_vals = hsv_img[:, :, 0][valid_mask].astype(np.float32)  
+        h_vals = hsv_img[:, :, 0][valid_mask].astype(np.float32)
         s_vals = hsv_img[:, :, 1][valid_mask].astype(np.float32)
         v_vals = hsv_img[:, :, 2][valid_mask].astype(np.float32)
 
@@ -345,14 +345,14 @@ def renumber_fruit_locule_map(fruit_locule_map: Dict[int, List[int]]
 
     # Get original fruit IDs sorted (optional, for consistency)
     original_ids = sorted(fruit_locule_map.keys())
-    
+
     renumbered_map = {}
     fruit_id_map = {}
 
     for new_id, original_id in enumerate(original_ids, start=1):
         renumbered_map[new_id] = fruit_locule_map[original_id]
         fruit_id_map[new_id] = original_id
-    
+
     return renumbered_map, fruit_id_map
 
 ########################################################
@@ -443,7 +443,7 @@ def analyze_all_fruits_color(img: np.ndarray,
         original_fruit_id = fruit_id_map[fruit_id]
 
         # Get fruit contour
-        
+
         if original_fruit_id >= len(contours):
             for t in tissues_to_extract:
                 fruit_results[t] = nan_dict.copy()
@@ -509,8 +509,8 @@ def analyze_all_fruits_color(img: np.ndarray,
             results[fruit_id] = fruit_results
             continue
 
-        internal_flesh_contour = get_internal_pericarp_contour(locule_indices, 
-                                                               contours, 
+        internal_flesh_contour = get_internal_pericarp_contour(locule_indices,
+                                                               contours,
                                                                dilation_factor = dilation_factor,
                                                                img_shape = img.shape[:2],
                                                                fruit_id = original_fruit_id)
@@ -645,7 +645,7 @@ def get_single_fruit_masks(img: np.ndarray,
                 break
         if fruit_id is None:
             fruit_id = list(iter_map.keys())[0]
-    
+
     # Work with the original ids
     original_fruit_id = fruit_id_map[fruit_id]
     if original_fruit_id >= len(contours):
@@ -685,8 +685,8 @@ def get_single_fruit_masks(img: np.ndarray,
         masks["locules"] = np.zeros((crop_h, crop_w), dtype=np.uint8)
 
     else:
-        inner_contour = get_internal_pericarp_contour(locule_indices, 
-                                                      contours, 
+        inner_contour = get_internal_pericarp_contour(locule_indices,
+                                                      contours,
                                                       fruit_id = original_fruit_id,
                                                       img_shape = img.shape[:2],
                                                       dilation_factor = dilation_factor
@@ -738,12 +738,12 @@ def get_single_fruit_masks(img: np.ndarray,
 
     if plot:
         if overlay:
-            visualize_single_fruit_overlay(masks=masks, 
+            visualize_single_fruit_overlay(masks=masks,
                                            plot_size=plot_size,
                                            overlay_legend = overlay_legend)
         else:
-            visualize_single_fruit_masks(masks=masks, 
-                                         plot_size=plot_size, 
+            visualize_single_fruit_masks(masks=masks,
+                                         plot_size=plot_size,
                                          only_fruit = only_fruit)
 
     return masks
@@ -771,28 +771,28 @@ def visualize_single_fruit_masks(masks: Dict[str, np.ndarray],
         If True, display only the total pericarp mask alongside the
         original image. Default is None (show all tissues).
     """
-    
+
     if only_fruit:
         tissue_display_names = {
         'total_pericarp': 'Total pericarp'
         }
 
         display_order = ['total_pericarp']
-    
+
         valid_masks = [m for m in display_order if m in masks]
 
         if not valid_masks:
             print("There are no masks to display.")
             return
-        
+
         n_masks = len(valid_masks)
-        
+
         fig, axes = plt.subplots(1, n_masks + 1, figsize=plot_size)
-        
+
         # Include a plot for the bgr image
         if n_masks + 1 == 1:
             axes = [axes]
-        
+
         if 'cropped_img' in masks:
             fontsize = int(plot_size[0] * 1.3)
             fontsize = max(0.5, min(40, fontsize))
@@ -802,21 +802,21 @@ def visualize_single_fruit_masks(masks: Dict[str, np.ndarray],
                 img_display = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2RGB)
             else:
                 img_display = cropped_img
-            
+
             axes[0].imshow(img_display)
             axes[0].set_title('Original Fruit', fontweight='bold', fontsize=fontsize)
             axes[0].axis('off')
-        
+
         for idx, mask_type in enumerate(valid_masks, 1):
             mask = masks[mask_type]
             axes[idx].imshow(mask, cmap='gray', interpolation = 'nearest')
             display_name = tissue_display_names.get(mask_type, mask_type.replace('_', ' ').title())
             axes[idx].set_title('Fruit Mask', fontweight='bold', fontsize=fontsize)
             axes[idx].axis('off')
-        
+
         plt.tight_layout()
         plt.show()
-    
+
     else:
         # Tissue names for visualization
         tissue_display_names = {
@@ -825,25 +825,25 @@ def visualize_single_fruit_masks(masks: Dict[str, np.ndarray],
             'internal_pericarp': 'Internal pericarp',
             'locules': 'Locules'
         }
-        
-        
+
+
         # Ensure plots are always shown in the same order
         display_order = ['total_pericarp', 'outer_pericarp', 'internal_pericarp', 'locules']
-        
+
         valid_masks = [m for m in display_order if m in masks]
-        
+
         if not valid_masks:
             print("There are no masks to display.")
             return
-        
+
         n_masks = len(valid_masks)
-        
+
         fig, axes = plt.subplots(1, n_masks + 1, figsize=plot_size)
-        
+
         # Include a plot for the bgr image
         if n_masks + 1 == 1:
             axes = [axes]
-        
+
         if 'cropped_img' in masks:
             fontsize = int(plot_size[0] * 1.3)
             fontsize = max(0.5, min(40, fontsize))
@@ -853,18 +853,18 @@ def visualize_single_fruit_masks(masks: Dict[str, np.ndarray],
                 img_display = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2RGB)
             else:
                 img_display = cropped_img
-            
+
             axes[0].imshow(img_display)
             axes[0].set_title('Original Fruit', fontweight='bold', fontsize=fontsize)
             axes[0].axis('off')
-        
+
         for idx, mask_type in enumerate(valid_masks, 1):
             mask = masks[mask_type]
             axes[idx].imshow(mask, cmap='gray')
             display_name = tissue_display_names.get(mask_type, mask_type.replace('_', ' ').title())
             axes[idx].set_title(display_name, fontweight='bold', fontsize=fontsize)
             axes[idx].axis('off')
-        
+
         plt.tight_layout()
         plt.show()
 
@@ -1073,9 +1073,9 @@ def get_fruit_color_histograms(
     Create pixel-level color histograms for all fruits.
 
     For each fruit, extracts the pixel distribution across each color
-    channel for the total pericarp region (or total fruit region if 
-    external analysis) only. 
-    
+    channel for the total pericarp region (or total fruit region if
+    external analysis) only.
+
     Each bin in the histogram corresponds to one integer intensity value
     within the channel's valid range.
 
@@ -1170,7 +1170,7 @@ def get_fruit_color_histograms(
         if normalize:
             counts /= n_pix
         return counts
-    
+
     if hsv_img is None:
         hsv_image = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     else:
@@ -1331,7 +1331,7 @@ def calculate_hue_index(
     ValueError
         If required hue histogram columns are missing from ``df``.
     """
-     
+
     h_cols_all = [f'H_{i}' for i in range(360)]
     missing = [c for c in h_cols_all if c not in df.columns]
     if missing:

@@ -26,7 +26,7 @@ from scipy.stats import circmean
 from scipy.optimize import linear_sum_assignment
 
 
-#################################################################################################   
+#################################################################################################
 # Precomputation utilities
 #################################################################################################
 
@@ -59,49 +59,13 @@ def get_unique_locule_counts(
 # Precompute ideal angles for locule counts
 ##################################################################################################
 
-def precompute_ideal_angles(
-    unique_locule_counts: np.ndarray,
-    angle_shifts: int = 500,
-) -> dict:
-    """
-    Precompute shifted ideal angle matrices for each unique locule count.
-
-    For each count ``n`` in ``unique_locule_counts``, generates ``n``
-    evenly spaced ideal angles in [0, 2π) and shifts them by
-    ``angle_shifts`` equally spaced offsets. The resulting matrix is
-    used directly by :func:`angular_symmetry` to avoid redundant
-    computation across fruits with the same locule count.
-
-    Counts below 2 are skipped because symmetry is undefined for fewer
-    than two locules.
-
-    Parameters
-    ----------
-    unique_locule_counts : np.ndarray
-        Sorted array of unique locule counts as returned by
-        :func:`get_unique_locule_counts`.
-    angle_shifts : int, optional
-        Number of angular offsets to test. Higher values improve
-        alignment accuracy at the cost of speed. Default is 500.
-
-    Returns
-    -------
-    dict of {int : np.ndarray}
-        Mapping from locule count ``n`` to a shifted ideal angle matrix
-        of shape ``(angle_shifts, n)``, where each row is a rotated
-        version of the ideal equally-spaced arrangement.
-    """
-    shifts = np.linspace(0, 2*np.pi, angle_shifts, endpoint=False)
+def precompute_ideal_angles(unique_locule_counts: np.ndarray):
     precomputed = {}
-    
     for n in unique_locule_counts:
+        n = int(n)
         if n < 2:
             continue
-
-        ideal_angles = np.linspace(0, 2*np.pi, n, endpoint=False)
-        shifted_ideals = (ideal_angles[None, :] + shifts[:, None]) % (2 * np.pi)
-        precomputed[n] = shifted_ideals
-    
+        precomputed[n] = np.arange(n) * (2*np.pi / n)
     return precomputed
 
 #################################################################################################
@@ -110,22 +74,10 @@ def precompute_ideal_angles(
 
 def angular_symmetry(
     locules_data: list,
-    angle_shifts: int = 500,
     precomputed_ideals: Optional[dict] = None,
 ) -> float:
     """
-    Calculate angular symmetry of locule arrangement around the fruit centroid.
-
-    Extracts the polar angle of each locule from ``locules_data``,
-    centers them by subtracting the circular mean, and finds the rotation
-    of an ideal equally-spaced arrangement that best matches the observed
-    angles. Optimal assignment at each rotation is solved with the
-    Hungarian algorithm via :func:`scipy.optimize.linear_sum_assignment`.
-    The best (minimum) mean angular error across all rotations is
-    returned.
-
-    Lower values indicate better angular symmetry. The result is in
-    radians and can be normalized externally if needed.
+    Calculate angular symmetry of the locule arrangement around the fruit centroid.
 
     Parameters
     ----------
@@ -135,52 +87,47 @@ def angular_symmetry(
         Each dict must contain ``'polar_coord'``, where
         ``polar_coord[0]`` is the locule angle in radians relative to
         the fruit centroid.
-    angle_shifts : int, optional
-        Number of angular offsets to test when ``precomputed_ideals``
-        is ``None`` or does not contain the required locule count.
-        Default is 500.
     precomputed_ideals : dict of {int : np.ndarray} or None, optional
-        Precomputed shifted ideal angle matrices from
+        Precomputed ideal angle vectors of shape ``(n,)`` from
         :func:`precompute_ideal_angles`, keyed by locule count. If
-        ``None`` or the current locule count is absent, ideal angles
-        are computed on the fly. Default is ``None``.
+        ``None`` or the current locule count is absent, the ideal angles
+        are computed internally. Default is ``None``.
 
     Returns
     -------
     float
-        Mean angular error in radians at the best-matching rotation,
-        or ``NaN`` if fewer than 2 locules are present.
+        Mean circular angular error at the best-matching rotation,
+        as a fraction of the ideal spacing ``2π / n`` for dimensionless.
+        A value of 0 indicates perfect angular symmetry and larger values indicate less symmetry.
+        Returns ``NaN`` if fewer than 2 locules are present.
+
     """
+
+    # Only process fruits with >= 2 locules
     if len(locules_data) < 2:
         return np.nan
-    
-    angles = np.array([d['polar_coord'][0] for d in locules_data]) % (2 * np.pi)
+
+    # Get all the locule angles and sort them
+    angles = np.sort(np.array([d['polar_coord'][0] for d in locules_data]) % (2*np.pi))
     n = len(angles)
-    
-    mean_angle = circmean(angles)
-    angles_centered = (angles - mean_angle) % (2 * np.pi)
-    
-    # Use precomputed ideals if available
+    step = 2*np.pi / n # get the ideal angle distance between n locules in radians [0, 2pi)
+
+    # Get the ideal angles array for a fruit of reuse a pre computed array
+    # it's included to avoid recalculate ideals for same n locules
     if precomputed_ideals is not None and n in precomputed_ideals:
-        shifted_ideals = precomputed_ideals[n]
+        ideal = precomputed_ideals[n]
     else:
-        ideal_angles = np.linspace(0, 2*np.pi, n, endpoint=False)
-        shifts = np.linspace(0, 2*np.pi, angle_shifts, endpoint=False)
-        shifted_ideals = (ideal_angles[None, :] + shifts[:, None]) % (2 * np.pi)
-    
-    # Compute cost matrices
-    diff = np.abs(angles_centered[None, :, None] - shifted_ideals[:, None, :])
-    cost_matrices = np.minimum(diff, 2*np.pi - diff)
-    
-    # Find best alignment
-    best_error = np.inf
-    for i in range(len(shifted_ideals)):
-        row_ind, col_ind = linear_sum_assignment(cost_matrices[i])
-        error = cost_matrices[i, row_ind, col_ind].mean()
-        if error < best_error:
-            best_error = error
-    
-    return best_error
+        ideal = np.arange(n) * step # in case the function is run in a different pipeline
+
+    d = (angles - ideal) % (2*np.pi) # compare real vs ideal angles
+    diff = np.abs(d[:, None] - d[None, :])  # rows are candidate rotations and cols are locule angles
+    diff = np.minimum(diff, 2*np.pi - diff)  # get circular distance (shortest way around the circle)
+
+    # keep the min distance and normalize the results by steps to make it comparable
+    # between fruits with different n locules
+    diff_norm = diff.mean(axis=1).min() / step
+
+    return diff_norm
 
 #################################################################################################
 # Radial locules symmetry
@@ -211,13 +158,12 @@ def radial_symmetry(locules_data: list) -> float:
         or ``NaN`` if fewer than 2 locules are present or the mean
         radius is zero.
     """
-    if not locules_data or len(locules_data) < 2: # If there is fewer than 2 locules, symettry is undefined (no symmetry) 
+    if not locules_data or len(locules_data) < 2: # If there is fewer than 2 locules, symettry is undefined (no symmetry)
         return np.nan
 
     # Extract precalculated radii for each locule's data
-    radii = [data['polar_coord'][1] for data in locules_data] 
-    
-    # Calculate the coefficient of variation (CV = standard deviation / mean)
-    radii_cv = (np.std(radii) / np.mean(radii) * 100) if np.mean(radii) > 0 else np.nan 
-    return radii_cv
+    radii = [data['polar_coord'][1] for data in locules_data]
 
+    # Calculate the coefficient of variation (CV = standard deviation / mean)
+    radii_cv = (np.std(radii) / np.mean(radii) * 100) if np.mean(radii) > 0 else np.nan
+    return radii_cv

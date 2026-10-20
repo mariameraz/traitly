@@ -1397,7 +1397,6 @@ class FruitInternalAnalyzer:
         epsilon: float = 0.001,
         min_locule_area: int = 10,
         max_locule_area: Optional[int] = None,
-        angle_shifts: int = 500,
         num_rays: int = 90,
         pericarp_int_color: Tuple[int, int, int] = (0, 240, 240),
         pericarp_int_thickness: int = 2,
@@ -1454,10 +1453,6 @@ class FruitInternalAnalyzer:
         max_locule_area : int or None, optional
             Maximum locule area in pixels. If None, no upper limit is applied.
             Default is None.
-        angle_shifts : int, optional
-            Number of angle steps for angular symmetry computation forwarded
-            to :func:`~traitly.fruit_phenotyping.symmetry.angular_symmetry`.
-            Default is 500.
         num_rays : int, optional
             Number of rays for radial pericarp thickness estimation forwarded
             to :func:`~traitly.fruit_phenotyping.processing.calculate_pericarp_thickness_radial`.
@@ -1549,8 +1544,6 @@ class FruitInternalAnalyzer:
             # Filter locules
             min_locule_area=min_locule_area,
             max_locule_area=max_locule_area,
-            # Angular symmetry
-            angle_shifts=angle_shifts,
             # Pericarp thickness
             num_rays=num_rays,
             # Internal pericarp contour
@@ -1593,7 +1586,6 @@ class FruitInternalAnalyzer:
                 "epsilon": epsilon if contour_mode == "approx" else None,
                 "min_locule_area": min_locule_area,
                 "max_locule_area": max_locule_area,
-                "angle_shifts": angle_shifts,
                 "num_rays": num_rays,
                 "font_size": font_size,
                 "font_thickness": font_thickness,
@@ -2237,7 +2229,6 @@ class FruitInternalAnalyzer:
         epsilon: Optional[float] = None,
         min_locule_area_morph: Optional[int] = None,
         max_locule_area: Optional[int] = None,
-        angle_shifts: Optional[int] = None,
         num_rays: Optional[int] = None,
         font_size: Optional[float] = None,
         font_thickness: Optional[int] = None,
@@ -2324,7 +2315,7 @@ class FruitInternalAnalyzer:
         _apply("analyze_morphology_params", dict(
             contour_mode=contour_mode, epsilon=epsilon,
             min_locule_area=min_locule_area_morph, max_locule_area=max_locule_area,
-            angle_shifts=angle_shifts, num_rays=num_rays,
+            num_rays=num_rays,
             font_size=font_size, font_thickness=font_thickness, font_color=font_color,
             label_position=label_position, label_color=label_color,
             pericarp_ext_color=pericarp_ext_color, pericarp_ext_thickness=pericarp_ext_thickness,

@@ -72,8 +72,6 @@ class FruitConfig:
         Minimum pixel distance between locules for merging. Default is 1.
     max_locule_distance : int
         Maximum pixel distance between locules for merging. Default is 10.
-    angle_shifts : int
-        Number of angle steps for angular symmetry calculation. Default is 500.
     num_rays : int
         Number of rays used to estimate pericarp thickness. Default is 180.
     plot : bool
@@ -126,9 +124,6 @@ class FruitConfig:
     merge_locules: bool = False
     min_locule_distance: int = 1
     max_locule_distance: int = 10
-
-    # Symmetry settings
-    angle_shifts: int = 500
 
     # Pericarp settings
     num_rays: int = 180
@@ -236,8 +231,7 @@ def analyze_fruits_morphology(
 
     # Precalculate angular symmetry data
     unique_counts = get_unique_locule_counts(fruit_locule_map)
-    precomputed_ideals = precompute_ideal_angles(unique_counts,
-                                                 angle_shifts=config.angle_shifts)
+    precomputed_ideals = precompute_ideal_angles(unique_counts)
 
     # Precalculate fruit centroids data
     fruit_centroids = calculate_fruit_centroids(contours)
@@ -991,9 +985,6 @@ def _calculate_symmetry_metrics(
         Per-locule data dicts as returned by :func:`precalculate_locules_data`.
         Must contain at minimum the angle and distance information consumed
         by :func:`angular_symmetry` and :func:`radial_symmetry`.
-    config : FruitConfig
-        Configuration forwarded to :func:`angular_symmetry` for
-        :attr:`~FruitConfig.angle_shifts`.
     precomputed_ideals : dict of {int : np.ndarray} or None, optional
         Precomputed ideal angle arrays keyed by locule count, forwarded to
         :func:`angular_symmetry` to avoid redundant computation across
@@ -1018,7 +1009,6 @@ def _calculate_symmetry_metrics(
 
     angular_sym = angular_symmetry(
         locules_data,
-        angle_shifts=config.angle_shifts,
         precomputed_ideals=precomputed_ideals
     )
 
