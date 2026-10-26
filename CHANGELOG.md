@@ -4,6 +4,8 @@
 
 ## v0.3.0 - 2026-10-25
 
+Documentation: [https://traitly.readthedocs.io/en/v0.3.0/](https://traitly.readthedocs.io/en/v0.3.0/)
+
 ### Changed
 
 - `detect_qr()` now runs internally the WeChat QR detector without the bundled Caffe models. Only its traditional detector is used (no CNN detector), with bicubic resizing instead of the super-resolution model. This avoids model format incompatibilities between OpenCV 5.x (ONNX) and earlier versions (Caffe) (more details: [opencv#29712](https://github.com/opencv/opencv/issues/29712#issuecomment-6406219990)). The traditional detector is sufficient for controlled images of fruits most of the time. The fallback to `cv2.QRCodeDetector` and then to `detectAndDecodeCurved` is unchanged.
@@ -30,26 +32,27 @@
 
 Quick patch release.
 
+Documentation: unchanged from [v0.2.0](https://traitly.readthedocs.io/en/v0.2.0/)
+
+
 ### Fixed
 - Include bundled YOLO model weights (`size_reference.pt`, `label.pt`) in the wheel and sdist. They were excluded by `*.pt` in `.gitignore`, so PyPI installs could not load them and measurements silently fell back to pixels.
     - Affected versions: `0.2.0` and `0.2.1`. Upgrading to `0.2.2` is recommended.
 
-Documentation: unchanged from [v0.2.1](https://traitly.readthedocs.io/en/v0.2.1/)
-
 ----
 
-
-
 ## v0.2.1 - 2026-10-06
+
+Documentation: unchanged from [v0.2.0](https://traitly.readthedocs.io/en/v0.2.0/)
 
 ### Fixed
 - `apply_color_correction` raised an error because `PolynomialFeatures` was not imported, which is required for the regression step.
 
-Documentation: [https://traitly.readthedocs.io/en/v0.2.1/](https://traitly.readthedocs.io/en/v0.2.1/)
-
 ----
 
 ## v0.2.0 - 2026-10-05
+
+Documentation: [https://traitly.readthedocs.io/en/v0.2.0/](https://traitly.readthedocs.io/en/v0.2.0/)
 
 ### Fixed
 
@@ -80,11 +83,11 @@ Documentation: [https://traitly.readthedocs.io/en/v0.2.1/](https://traitly.readt
 - New `traitly.utils.metadata` module with `get_package_versions()` to retrieve installed versions of all package dependencies and Python version.
 - New `traitly.color_correction` module with `ColorCorrection` class for color-correcting images or entire folders using a Macbeth Color Checker (24 patches) card.
 
-Documentation: [https://traitly.readthedocs.io/en/v0.2.0/](https://traitly.readthedocs.io/en/v0.2.0/)
-
 ---
 
 ## v0.1.2 – 2026-05-18
+
+Documentation: [https://traitly.readthedocs.io/en/v0.1.2/](https://traitly.readthedocs.io/en/v0.1.2/)
 
 ### Fixed
 
@@ -104,11 +107,12 @@ Documentation: [https://traitly.readthedocs.io/en/v0.2.0/](https://traitly.readt
   - Add `cv2.wechat_qrcode_WeChatQRCode` detector as primary method for more robust detection of small QR codes
   - Add `cv2.detectAndDecodeCurved` as fallback when standard `cv2.detectAndDecode` fails
 
-Documentation: [https://traitly.readthedocs.io/en/v0.1.2/](https://traitly.readthedocs.io/en/v0.1.2/)
 
 ----
 
 ## v0.1.1 – 2026-05-04
+
+Documentation: [https://traitly.readthedocs.io/en/v0.1.1/](https://traitly.readthedocs.io/en/v0.1.1/)
 
 ### Fixed
 - Rename `fast_calibration` to `skip_yolo` in JSON example files to match code parameters (reported by @Hector-LM)
@@ -134,13 +138,13 @@ Documentation: [https://traitly.readthedocs.io/en/v0.1.2/](https://traitly.readt
 ### Docs
 - Pin dependency versions
 
-Documentation: [https://traitly.readthedocs.io/en/v0.1.1/](https://traitly.readthedocs.io/en/v0.1.1/)
-
 ----
 
 ## v0.1.0 — 2026-04-07
 
 Initial release.
+
+Documentation: [https://traitly.readthedocs.io/en/v0.1.0/](https://traitly.readthedocs.io/en/v0.1.0/)
 
 ### Features
 - Internal fruit, locule, and stamp analysis with `FruitInternalAnalyzer` 
@@ -157,5 +161,3 @@ Initial release.
 
 ### Outputs
 - Annotated images, CSV results, session and error reports, and parameter files
-
-Documentation: [https://traitly.readthedocs.io/en/v0.1.0/](https://traitly.readthedocs.io/en/v0.1.0/)

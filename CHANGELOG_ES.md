@@ -4,6 +4,8 @@
 
 ## v0.3.0 - 2026-10-25
 
+Documentación: [https://traitly.readthedocs.io/en/v0.3.0/es/](https://traitly.readthedocs.io/en/v0.3.0/es/)
+
 ### Cambios
 
 - `detect_qr()` ahora ejecuta internamente el detector de QR de WeChat sin los modelos Caffe. Solo se usa su detector tradicional (sin detector CNN), con redimensionado bicúbico en lugar del modelo de super resolución. Esto evita problemas de compatibilidad de los formatos de los modelos entre OpenCV 5.x (ONNX) y versiones anteriores (Caffe) (más detalles: [opencv#29712](https://github.com/opencv/opencv/issues/29712#issuecomment-6406219990)). Para la mayoría de las imágenes de frutos en ambientes controlados, el detector tradicional es suficiente. El fallback a `cv2.QRCodeDetector` y luego a `detectAndDecodeCurved` no cambia.
@@ -32,6 +34,9 @@
 
 ## v0.2.2 - 2026-10-06
 
+Documentación: sin cambios respecto a [v0.2.0](https://traitly.readthedocs.io/en/v0.2.0/es/)
+
+
 Parche rápido
 
 ### Correcciones
@@ -39,20 +44,20 @@ Parche rápido
 - Se incluyen los pesos de los modelos YOLO (`size_reference.pt`, `label.pt`) en el wheel y el sdist. Estaban excluidos en el `.gitignore`, por lo que las instalaciones desde PyPI no podían cargarlos y las mediciones volvían silenciosamente a píxeles.
     - Versiones afectadas: `0.2.0` y `0.2.1`. Recomendamos actualizar a `0.2.2`. 
 
-Documentación: sin cambios respecto a [v0.2.1](https://traitly.readthedocs.io/en/v0.2.1/)
-
 ---
 
 ## v0.2.1 - 2026-10-06
 
+Documentación: sin cambios respecto a [v0.2.0](https://traitly.readthedocs.io/en/v0.2.0/es/)
+
 ### Correcciones
 - `apply_color_correction` regresa error porque `PolynomialFeatures` no estaba siendo importado, y es necesario para la parte de la regresión polinomial.
-
-Documentación: [https://traitly.readthedocs.io/en/v0.2.1/](https://traitly.readthedocs.io/en/v0.2.1/)
 
 ----
 
 ## v0.2.0 – 2026-10-05
+
+Documentación: [https://traitly.readthedocs.io/en/v0.2.0/es/](https://traitly.readthedocs.io/en/v0.2.0/es/)
 
 ### Correcciones
 
@@ -85,11 +90,11 @@ Documentación: [https://traitly.readthedocs.io/en/v0.2.1/](https://traitly.read
 - Se añadió el nuevo módulo `traitly.utils.metadata` con `get_package_versions()` para obtener las versiones instaladas de todas las dependencias del paquete y la versión de Python
 - Se añadió el nuevo módulo `traitly.color_correction` con la clase `ColorCorrection` para corregir el color de imágenes o carpetas completas utilizando una tarjeta Macbeth Color Checker (24 parches)
 
-Documentación: [https://traitly.readthedocs.io/en/v0.2.0/](https://traitly.readthedocs.io/en/v0.2.0/)
-
 ----
 
 ## v0.1.2 – 2026-05-18
+
+Documentación: [https://traitly.readthedocs.io/en/v0.1.2/es/](https://traitly.readthedocs.io/en/v0.1.2/es/)
 
 ### Correcciones
 - Se corrigió la salida de `edit_mask` en la terminal (antes solo funcionaba en Jupyter) (reportado por @AlvaroGuerrero)
@@ -109,11 +114,11 @@ Documentación: [https://traitly.readthedocs.io/en/v0.2.0/](https://traitly.read
   - Se añadió `cv2.wechat_qrcode_WeChatQRCode` como método principal para una detección mas robusta de códigos QR pequeños o inclinados
   - Se añadió `detectAndDecodeCurved` como alternativa cuando la función estandar `detectAndDecode` falla
 
-Documentación: [https://traitly.readthedocs.io/en/v0.1.2/](https://traitly.readthedocs.io/en/v0.1.2/)
-
 ---
 
 ## v0.1.1 – 2026-05-04
+
+Documentación: [https://traitly.readthedocs.io/en/v0.1.1/es/](https://traitly.readthedocs.io/en/v0.1.1/es/)
 
 ### Correcciones
 - Se renombró `fast_calibration` a `skip_yolo` en los archivos de ejemplo JSON para que coincida con los parámetros del código (reportado por @Hector-LM)
@@ -139,12 +144,12 @@ Documentación: [https://traitly.readthedocs.io/en/v0.1.2/](https://traitly.read
 ### Documentación
 - Se fijaron las versiones de las dependencias
 
-Documentación: [https://traitly.readthedocs.io/en/v0.1.1/](https://traitly.readthedocs.io/en/v0.1.1/)
-
 ---
 
 ## v0.1.0 – 2026-04-07
 Lanzamiento inicial.
+
+Documentación: [https://traitly.readthedocs.io/en/v0.1.0/es/](https://traitly.readthedocs.io/en/v0.1.0/es/)
 
 ### Funcionalidades
 - Análisis interno de frutos, lóculos y estampas con `FruitInternalAnalyzer`
@@ -161,5 +166,3 @@ Lanzamiento inicial.
 
 ### Salidas
 - Imágenes anotadas, resultados en CSV, reportes de sesión y errores, y archivos de parámetros
-
-Documentación: [https://traitly.readthedocs.io/en/v0.1.0/](https://traitly.readthedocs.io/en/v0.1.0/)
