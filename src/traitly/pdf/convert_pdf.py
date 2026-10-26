@@ -19,7 +19,7 @@ from typing import List, Optional
 # THIRD-PARTY LIBRARIES
 # ============================================================================
 try:
-    import fitz  # PyMuPDF
+    import pymupdf as fitz  # PyMuPDF
 
 except ImportError:
     raise RuntimeError(
@@ -162,7 +162,7 @@ def _process_folder(
 
     if verbose:
         print("=" * 65, flush=True)
-        print("Extracting images may take a few minutes... ⋆✧｡٩(ˊᗜˋ )و✧*｡", flush=True)
+        print("Extracting images may take a few minutes... ⋆✧｡٩(ˊᗜˋ ) و✧*｡", flush=True)
         print("=" * 65, flush=True)
         print(f"> Processing {len(pdf_files)} PDF file(s):", flush=True)
 
