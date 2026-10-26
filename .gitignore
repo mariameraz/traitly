@@ -7,10 +7,7 @@ __pycache__/
 .Python
 
 # python environments
-traitly_test/*
-dev_venv
-venv_traitly
-docs_tests
+.venv*
 
 # Cache
 .cache/
@@ -34,24 +31,17 @@ tests/**/*.txt
 tests/color_correction/18-26*
 .coverage
 tests/data
-
+tests/**/Results/
 
 # notebooks
 Untitled*
 
-# HF files
-./traitly/traitly
-
-
 # Logs
 *.log
-
+test_logs.py
 
 # extra files
 *.jpg
 *.png
 *.pt
 *.ipynb
-
-traitly_app_hf
-tests/**/Results/
