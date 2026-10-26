@@ -2,21 +2,24 @@
 
 *All notable changes to Traitly are documented here:*
 
-## v0.2.3 - Unreleased
+## v0.3.0 - 2026-25-06
 
 ### Changed
+
+- `detect_qr()` now runs internally the WeChat QR detector without the bundled Caffe models. Only its traditional detector is used (no CNN detector), with bicubic resizing instead of the super-resolution model. This avoids model format incompatibilities between OpenCV 5.x (ONNX) and earlier versions (Caffe) (more details: [opencv#29712](https://github.com/opencv/opencv/issues/29712#issuecomment-6406219990)). The traditional detector is sufficient for controlled images of fruits most of the time. The fallback to `cv2.QRCodeDetector` and then to `detectAndDecodeCurved` is unchanged.
 
 - Optimize `angular_symmetry()`, replacing the Hungarian algorithm and the 500 sampled rotations per fruit with an exact search that derives the candidate rotations from the `n` locule deviations. The new method is faster and returns the exact minimum. Expressed on the same scale, results are very similar to those of the previous method, with differences below 0.001.
 
 #### *Breaking:*
 
-- `angular_symmetry()` now returns the mean angular error as a fraction of the ideal spacing (`2π/n` dimensionless) instead of radians. This makes values comparable across fruits with different locule counts. All values change relative to previous versions, so they should not be compared **directly** with results from earlier versions. Values obtained with the old method (version < 0.2.3) can be converted to the new scale with `old_value / (2π / n_locules)`.
+- `angular_symmetry()` now returns the mean angular error as a fraction of the ideal spacing (`2π/n` dimensionless) instead of radians. This makes values comparable across fruits with different locule counts. All values change relative to previous versions, so they should not be compared **directly** with results from earlier versions. Values obtained with the old method (version < 0.3.0) can be converted to the new scale with `old_value / (2π / n_locules)`.
 
 - Remove the `angle_shifts` argument from `angular_symmetry()`, since the new method does not need a fixed number of rotations.
 
 ### Fixed
 
 - In `FruitInternalAnalyzer`, `detect_color_checker` now draws on `_img_copy` instead of replacing it. Now, if it runs after `setup_measurements()`, the size-reference annotation is kept in the final image used by `analyze_morphology` and `analyze_color`.
+- `get_easyocr_reader()` now passes the `gpu` argument to EasyOCR. Previously, `gpu=False` was ignored and EasyOCR chose its own device, so it could silently use a GPU. The default `gpu=False` now forces CPU. With `gpu=True`, the GPU is used, falling back to CPU with a logged warning if none is available.
 
 ### Added
 
