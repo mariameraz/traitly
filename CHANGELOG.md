@@ -2,7 +2,7 @@
 
 *All notable changes to Traitly are documented here:*
 
-## v0.3.0 - 2026-25-06
+## v0.3.0 - 2026-10-25
 
 ### Changed
 
