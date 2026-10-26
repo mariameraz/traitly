@@ -60,6 +60,7 @@ def get_unique_locule_counts(
 ##################################################################################################
 
 def precompute_ideal_angles(unique_locule_counts: np.ndarray):
+    "Precompute shifted ideal angle matrices for each unique locule count"
     precomputed = {}
     for n in unique_locule_counts:
         n = int(n)
