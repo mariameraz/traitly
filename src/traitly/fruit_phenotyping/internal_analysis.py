@@ -22,7 +22,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import copy
 
-
 # ============================================================================
 # THIRD-PARTY LIBRARIES
 # ============================================================================
@@ -45,20 +44,15 @@ from traitly.fruit_phenotyping.mask import (
 )
 
 from traitly.fruit_phenotyping.processing import annotate_all_fruits, get_internal_pericarp_contour
-
 from traitly.utils.basic_functions import detect_img_name, load_img
-
 from traitly.utils.manage_params import _get_params, _clean_params
-
 from traitly.utils.calibration import px_cm_density
-
 from traitly.utils.label import (
     detect_label_box,
     detect_label_box_yolo,
     detect_label_text,
     detect_qr,
 )
-
 from traitly.utils.batch import (
     _setup_batch,
     _print_batch_header,
@@ -66,27 +60,27 @@ from traitly.utils.batch import (
     _save_fruit_batch_results,
     _config_from_json,
 )
-
 from traitly.utils.validation import (
     _validate_path_exists,
     _validate_color_image,
     _validate_img_suffix,
 )
-
 from traitly.utils import _save_parameters
-
 from traitly.fruit_phenotyping.analysis_parameters import FruitAnalyzerParameters
-
 from traitly.fruit_phenotyping.results_image import ResultsImage
-
 from traitly.fruit_phenotyping.color_analysis import (
     analyze_all_fruits_color,
     get_fruit_color_histograms,
     get_single_fruit_masks,
 )
 from traitly.fruit_phenotyping.fruit_config import analyze_fruits_morphology
-
 from traitly.color_correction.color_analysis import _detect_color_checker
+
+# ===============
+# Logs
+# ===============
+import logging
+logger = logging.getLogger(__name__)
 
 ##########################################################################################
 # Ignore warnings from torch

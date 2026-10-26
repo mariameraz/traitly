@@ -172,7 +172,10 @@ def detect_label_text(
         First detected word from the label, or ``None`` if no valid ROI
         or text is found.
     """
+    logger.info("========= DETECTING LABEL TEXT: detect_label_text() =========")
+
     if not label_roi:
+        logger.debug("Empty label roi. Returning label text == None")
         return None
 
     # Keep only ROIs that are large enough and fit inside the image
@@ -317,7 +320,7 @@ def detect_qr(
 ##############################################################################
 
 def detect_label_box(
-    imagen_path: Optional[str] = None,
+    image_path: Optional[str] = None,
     img: Optional[np.ndarray] = None,
     verbose: Optional[bool] = False,
     plot: Optional[bool] = False,
@@ -333,11 +336,11 @@ def detect_label_box(
 
     Parameters
     ----------
-    imagen_path : str or None, optional
+    image_path : str or None, optional
         Path to the image file. Used if ``img`` is not provided.
         Default is ``None``.
     img : np.ndarray or None, optional
-        BGR image array. Takes precedence over ``imagen_path``. Default
+        BGR image array. Takes precedence over ``image_path``. Default
         is ``None``.
     verbose : bool or None, optional
         If True, print the number and details of detected boxes. Default
@@ -358,31 +361,26 @@ def detect_label_box(
     Raises
     ------
     ValueError
-        If neither ``imagen_path`` nor ``img`` is provided, or if the
+        If neither ``image_path`` nor ``img`` is provided, or if the
         image cannot be loaded.
     """
-    if imagen_path is not None:
-        img = cv2.imread(imagen_path)
-    elif img is not None:
-        img = img.copy()
-    else:
-        raise ValueError("Either imagen_path or img must be provided.")
-
+    logger.info("========= DETECTING LABEL BOX: detect_label_box()=========")
     if img is None:
-        #logger.error("Error loading YOLO model from %s: %s", model_path, e)
-        raise ValueError(f"Could not load image: {imagen_path}")
+        if image_path is None:
+            raise ValueError("Either image_path or img must be provided.")
+        img = cv2.imread(image_path)
+        if img is None:
+            raise ValueError(f"Could not load image: {image_path}")
 
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    logger.debug("Label contours detected: %d", len(contours))
 
     boxes = []
 
     for cnt in contours:
-        if len(boxes) >= max_boxes:
-            break
-
         x, y, w, h = cv2.boundingRect(cnt)
         area = w * h
 
@@ -392,18 +390,42 @@ def detect_label_box(
         aspect_ratio = w / h
 
         if 2 < aspect_ratio < 6:
-            box_info = {
+            boxes.append({
                 'x': x, 'y': y, 'width': w, 'height': h,
                 'area': area, 'aspect_ratio': aspect_ratio,
-            }
-            boxes.append(box_info)
+            })
 
-            if plot:
-                cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    total_candidates = len(boxes)
+
+    # Keep the largest boxes instead of the first ones openCV happened to find
+    boxes.sort(key=lambda b: b['area'], reverse=True)
+    boxes = boxes[:max_boxes]
+
+    logger.info(
+        "Boxes after filtering: %d candidates, %d returned (max_boxes=%d)",
+        total_candidates, len(boxes), max_boxes,
+    )
+
+    if not boxes:
+        logger.warning("No label boxes found.")
+    elif total_candidates > max_boxes:
+        logger.warning(
+            "%d boxes were descarted since it surpassed max_boxes=%d",
+            total_candidates - max_boxes, max_boxes,
+        )
 
     if plot:
+        img_copy = img.copy()
+        for b in boxes:
+            cv2.rectangle(
+                img_copy,
+                (b['x'], b['y']),
+                (b['x'] + b['width'], b['y'] + b['height']),
+                (0, 255, 0),
+                2,
+            )
         plt.figure(figsize=(8, 8))
-        plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        plt.imshow(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))
         plt.axis('off')
         plt.show()
 
@@ -453,12 +475,15 @@ def detect_label_box_yolo(
         ``'height'``, ``'area'``, ``'aspect_ratio'``, or ``None`` if no
         boxes are detected or the model fails to load.
     """
+    logger.info("========= DETECT LABEL BOX WITH YOLO: detect_label_box_yolo() =========")
     if model_path is None:
         model_path = _get_package_model_path('label.pt')
 
     try:
         model = _get_yolo_model(model_path)
+        logger.debug("Label YOLO model ready: %s", model_path)
     except Exception as e:
+        logger.warning("Error loading YOLO model", e)
         print(f"Error loading YOLO model from {model_path}: {e}")
         return None
 

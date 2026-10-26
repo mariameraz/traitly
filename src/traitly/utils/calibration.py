@@ -231,9 +231,10 @@ def _get_package_model_path(model_name: str) -> str:
     FileNotFoundError
         If the model file is not found in the expected package location.
     """
+    logger.info("========= RESOLVING MODELS PATH: _get_package_model_path() =========")
     try:
         model_path = files("traitly").joinpath("package_data", "models", model_name)
-        logger.debug(f"Resolved model path via importlib.resources: {model_path}")
+        logger.debug("Resolved model path via importlib.resources: %s",model_path)
 
         return str(model_path)
 
@@ -243,13 +244,13 @@ def _get_package_model_path(model_name: str) -> str:
         model_path = package_dir / "package_data" / "models" / model_name
 
         if not model_path.exists():
-            logger.error(f"Model not found at: {model_path}")
+            logger.error("Model not found at: %s", model_path)
             raise FileNotFoundError(
                 f"Model not found at: {model_path}\n"
                 f"Please ensure the model files are included in the package."
             )
 
-        logger.debug(f"Resolved model path via __file__ fallback: {model_path}")
+        logger.debug("Resolved model path via __file__ fallback: %s",model_path)
 
         return str(model_path)
 
@@ -327,7 +328,7 @@ def px_cm_density(
         Where ``px_cm`` is ``None`` if no calibration method succeeded
         and ``roi_contours`` is a list of contour arrays or ``None``.
     """
-    logger.info(f"Calculating px per cm ...")
+    logger.info("Calculating px per cm ...")
 
     # Method 1: circle detection via YOLO
     list_circles, img_annotated, roi_boxes = _detect_size_ref_yolo(
@@ -341,7 +342,7 @@ def px_cm_density(
     )
 
     if list_circles:
-        logger.info(f"Method 1 (YOLO): {len(list_circles)} circles detected")
+        logger.info("Method 1 (YOLO): %s circles detected", len(list_circles))
 
         px_cm = diameter_px_per_cm(
             list_circles,
@@ -349,7 +350,7 @@ def px_cm_density(
             diameter_cm=diameter_cm,
             std_threshold=2
         )
-        logger.info(f"px/cm density from circles: {px_cm:.2f}")
+        logger.info("px/cm density from circles: %s", px_cm)
 
         circle_coords = []
         for x1, y1, x2, y2 in roi_boxes:
@@ -362,12 +363,12 @@ def px_cm_density(
 
     # Method 2: predetermined paper size
     if physical_size is not None:
-        logger.info(f"Method 2 (Paper predetermined size): {physical_size}")
+        logger.info("Method 2 (Paper predetermined size): %s",physical_size)
 
         px_per_cm_width, px_per_cm_length, _, _ = _img_px_per_cm(img, size=physical_size)
         px_cm = float(np.sqrt(px_per_cm_width * px_per_cm_length))
 
-        logger.info(f"px/cm density for {physical_size}: {px_cm:.2f}")
+        logger.info("px/cm density for %d: %.2f", physical_size, px_cm)
 
         return (px_cm, img_annotated, None)
 
@@ -383,7 +384,7 @@ def px_cm_density(
 
         px_cm = float(np.sqrt(px_per_cm_width * px_per_cm_length))
 
-        logger.info(f"px/cm density for w={width_cm} and l={length_cm}: {px_cm:.2f}")
+        logger.info("px/cm density for w=%s and l=%s: %.2f", width_cm, length_cm, px_cm)
 
         if abs(px_per_cm_width - px_per_cm_length) / px_cm > 0.05: #warning msg if >5% differences
             msg = ( f"px/cm differs between axes: width={px_per_cm_width:.1f}, "
@@ -496,15 +497,16 @@ def _get_yolo_model(model_path: str) -> "YOLO":
     YOLO
         Loaded and cached YOLO model instance.
     """
+    logger.info("========= LOAD AND CACHE YOLO MODELS: _get_yolo_model() =========")
     if model_path not in _YOLO_MODEL_CACHE:
-        logger.debug(f"Loading YOLO model for the first time: {model_path}")
+        logger.debug("Loading models for the first time: %s", model_path)
         from ultralytics import YOLO
 
         _YOLO_MODEL_CACHE[model_path] = YOLO(model_path)
-        logger.info(f"YOLO model loaded successfully: {model_path}")
+        logger.info("Model loaded successfully: %s", model_path)
 
     else:
-        logger.debug(f"Using cached YOLO model: {model_path}")
+        logger.debug("Resolved model path: %s", model_path)
 
     return _YOLO_MODEL_CACHE[model_path]
 
