@@ -10,6 +10,8 @@ Documentation: [https://traitly.readthedocs.io/en/v0.3.0/](https://traitly.readt
 
 - `detect_qr()` now runs internally the WeChat QR detector without the bundled Caffe models. Only its traditional detector is used (no CNN detector), with bicubic resizing instead of the super-resolution model. This avoids model format incompatibilities between OpenCV 5.x (ONNX) and earlier versions (Caffe) (more details: [opencv#29712](https://github.com/opencv/opencv/issues/29712#issuecomment-6406219990)). The traditional detector is sufficient for controlled images of fruits most of the time. The fallback to `cv2.QRCodeDetector` and then to `detectAndDecodeCurved` is unchanged.
 
+- Removed the `min_aspect_ratio` and `max_aspect_ratio` thresholds from `find_fruits`, and the aspect ratio filter that `detect_fruits` applied internally, to prevent very oval contours from being discarded.
+
 - Optimize `angular_symmetry()`, replacing the Hungarian algorithm and the 500 sampled rotations per fruit with an exact search that derives the candidate rotations from the `n` locule deviations. The new method is faster and returns the exact minimum. Expressed on the same scale, results are very similar to those of the previous method, with differences below 0.001.
 
 #### *Breaking:*
@@ -39,7 +41,6 @@ Documentation: unchanged from [v0.2.0](https://traitly.readthedocs.io/en/v0.2.0/
 - Include bundled YOLO model weights (`size_reference.pt`, `label.pt`) in the wheel and sdist. They were excluded by `*.pt` in `.gitignore`, so PyPI installs could not load them and measurements silently fell back to pixels.
     - Affected versions: `0.2.0` and `0.2.1`. Upgrading to `0.2.2` is recommended.
 
-----
 
 ## v0.2.1 - 2026-10-06
 
@@ -48,7 +49,6 @@ Documentation: unchanged from [v0.2.0](https://traitly.readthedocs.io/en/v0.2.0/
 ### Fixed
 - `apply_color_correction` raised an error because `PolynomialFeatures` was not imported, which is required for the regression step.
 
-----
 
 ## v0.2.0 - 2026-10-05
 
@@ -108,7 +108,6 @@ Documentation: [https://traitly.readthedocs.io/en/v0.1.2/](https://traitly.readt
   - Add `cv2.detectAndDecodeCurved` as fallback when standard `cv2.detectAndDecode` fails
 
 
-----
 
 ## v0.1.1 – 2026-05-04
 
@@ -138,7 +137,6 @@ Documentation: [https://traitly.readthedocs.io/en/v0.1.1/](https://traitly.readt
 ### Docs
 - Pin dependency versions
 
-----
 
 ## v0.1.0 — 2026-04-07
 

@@ -10,6 +10,8 @@ Documentación: [https://traitly.readthedocs.io/en/v0.3.0/es/](https://traitly.r
 
 - `detect_qr()` ahora ejecuta internamente el detector de QR de WeChat sin los modelos Caffe. Solo se usa su detector tradicional (sin detector CNN), con redimensionado bicúbico en lugar del modelo de super resolución. Esto evita problemas de compatibilidad de los formatos de los modelos entre OpenCV 5.x (ONNX) y versiones anteriores (Caffe) (más detalles: [opencv#29712](https://github.com/opencv/opencv/issues/29712#issuecomment-6406219990)). Para la mayoría de las imágenes de frutos en ambientes controlados, el detector tradicional es suficiente. El fallback a `cv2.QRCodeDetector` y luego a `detectAndDecodeCurved` no cambia.
 
+- Se eliminaron los umbrales `min_aspect_ratio` y `max_aspect_ratio` de `find_fruits()`, y el filtro de relación de aspecto que `detect_fruits()` aplicaba internamente, para evitar que se descarten contornos muy ovalados.
+
 - Se optimizó `angular_symmetry()`, reemplazando el método húngaro (Hungarian algorithm) y las 500 rotaciones muestreadas por cada fruto por una búsqueda exacta que obtiene las rotaciones candidatas a partir de las `n` desviaciones de los lóculos. El nuevo método es más rápido y devuelve el mínimo exacto. Expresados en la misma escala, los resultados son muy similares a los del método anterior, con diferencias menores a 0.001.
 
 #### *Cambios que rompen compatibilidad:*
@@ -30,7 +32,7 @@ Documentación: [https://traitly.readthedocs.io/en/v0.3.0/es/](https://traitly.r
 
 - Ahora se pueden configurar scalers durante la correción de color, pasando: `'minmax'`, `'robust'`, `'maxabs'` ó '`standard'`
 
----
+
 
 ## v0.2.2 - 2026-10-06
 
@@ -44,7 +46,6 @@ Parche rápido
 - Se incluyen los pesos de los modelos YOLO (`size_reference.pt`, `label.pt`) en el wheel y el sdist. Estaban excluidos en el `.gitignore`, por lo que las instalaciones desde PyPI no podían cargarlos y las mediciones volvían silenciosamente a píxeles.
     - Versiones afectadas: `0.2.0` y `0.2.1`. Recomendamos actualizar a `0.2.2`. 
 
----
 
 ## v0.2.1 - 2026-10-06
 
@@ -53,7 +54,6 @@ Documentación: sin cambios respecto a [v0.2.0](https://traitly.readthedocs.io/e
 ### Correcciones
 - `apply_color_correction` regresa error porque `PolynomialFeatures` no estaba siendo importado, y es necesario para la parte de la regresión polinomial.
 
-----
 
 ## v0.2.0 – 2026-10-05
 
@@ -90,7 +90,6 @@ Documentación: [https://traitly.readthedocs.io/en/v0.2.0/es/](https://traitly.r
 - Se añadió el nuevo módulo `traitly.utils.metadata` con `get_package_versions()` para obtener las versiones instaladas de todas las dependencias del paquete y la versión de Python
 - Se añadió el nuevo módulo `traitly.color_correction` con la clase `ColorCorrection` para corregir el color de imágenes o carpetas completas utilizando una tarjeta Macbeth Color Checker (24 parches)
 
-----
 
 ## v0.1.2 – 2026-05-18
 
@@ -114,7 +113,6 @@ Documentación: [https://traitly.readthedocs.io/en/v0.1.2/es/](https://traitly.r
   - Se añadió `cv2.wechat_qrcode_WeChatQRCode` como método principal para una detección mas robusta de códigos QR pequeños o inclinados
   - Se añadió `detectAndDecodeCurved` como alternativa cuando la función estandar `detectAndDecode` falla
 
----
 
 ## v0.1.1 – 2026-05-04
 
@@ -144,7 +142,6 @@ Documentación: [https://traitly.readthedocs.io/en/v0.1.1/es/](https://traitly.r
 ### Documentación
 - Se fijaron las versiones de las dependencias
 
----
 
 ## v0.1.0 – 2026-04-07
 Lanzamiento inicial.
