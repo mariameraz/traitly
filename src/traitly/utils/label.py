@@ -93,7 +93,7 @@ def get_easyocr_reader(
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            reader = easyocr.Reader(languages, gpu=gpu, quantize=not gpu, verbose=False,
+            reader = easyocr.Reader(languages, gpu=gpu, quantize=False, verbose=False,
                                     download_enabled=True)
 
         logger.info("EasyOCR reader ready (device: %s).", "GPU" if gpu else "CPU")
