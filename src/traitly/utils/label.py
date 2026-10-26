@@ -15,18 +15,18 @@ Provides functions to:
 # ============================================================================
 # STANDARD LIBRARY
 # ============================================================================
-from typing import Optional, List, Tuple, Union, Dict
+from typing import Optional, List, Tuple, Dict
 import os
-from pathlib import Path
 from functools import lru_cache
 import sys
 from io import StringIO
 import warnings
+
 # ===========================================================================
 # THIRD-PARTY LIBRARIES
 # ===========================================================================
 os.environ["OPENCV_LOG_LEVEL"] = "OFF"
-import ssl, certifi
+import certifi
 os.environ.setdefault("SSL_CERT_FILE", certifi.where())
 os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
 import cv2
@@ -40,6 +40,18 @@ import easyocr
 from .calibration import _get_package_model_path, _get_yolo_model
 from traitly.utils import _GPU_AVAILABLE
 
+# ===============
+# Logs
+# ===============
+import logging
+logger = logging.getLogger(__name__)
+
+# For Pytorch warning
+warnings.filterwarnings(
+    "ignore",
+    message=".*pin_memory.*not supported on MPS.*",
+    category=UserWarning,
+)
 ##############################################################################
 # Detect label text with OCR
 ##############################################################################
@@ -74,12 +86,17 @@ def get_easyocr_reader(
 
     try:
         if gpu and not _GPU_AVAILABLE:
+            logger.warning("GPU requested but not available, falling back to CPU.")
             gpu = False
+
+        logger.debug("Initializing EasyOCR reader: languages=%s, gpu=%s", languages, gpu)
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            reader = easyocr.Reader(languages, quantize=gpu, verbose=False,
-                download_enabled=True)
+            reader = easyocr.Reader(languages, gpu=gpu, quantize=not gpu, verbose=False,
+                                    download_enabled=True)
+
+        logger.info("EasyOCR reader ready (device: %s).", "GPU" if gpu else "CPU")
 
     finally:
         sys.stdout, sys.stderr = old_stdout, old_stderr
@@ -166,6 +183,7 @@ def detect_label_text(
             valid_rois.append((i, x, y, w, h))
 
     if not valid_rois:
+        logger.debug("No valid ROIs: all %d filtered by size/bounds", len(label_roi))
         return None
 
     reader = get_cached_reader(tuple(language), gpu=gpu)
@@ -175,6 +193,7 @@ def detect_label_text(
     try:
         region = img[y:y + h, x:x + w]
         if region.size == 0:
+            logger.debug("Empty region for ROI %d", first_idx + 1)
             return None
 
         gray    = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
@@ -185,43 +204,38 @@ def detect_label_text(
             text = results[0][1].split()[0]
             if verbose:
                 print(f"Label text found in ROI {first_idx + 1}: '{text}'")
+
+            logger.debug("OCR result for ROI %d: %r (%d text fragments detected)", first_idx + 1, text, len(results))
             return text
 
         if verbose:
             print(f"No label text found in ROI {first_idx + 1}")
+
+        logger.debug("OCR found no text in ROI %d", first_idx + 1)
         return None
 
     except Exception as e:
+        logger.warning("Error processing ROI %d: %s", first_idx + 1, e)
+
         if verbose:
             print(f"Error processing ROI {first_idx + 1}: {e}")
         return None
 
 
+
 ##############################################################################
 # Detect QR and extract text
 ##############################################################################
-#
-# Load models only once
-_MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "package_data", "models", "cv2_wechat_qr")
-_MODEL_DIR = os.path.normpath(_MODEL_DIR)
-_detector = None
-_new_wechat_detector = None
-try:
-    _detector = cv2.wechat_qrcode_WeChatQRCode(
-        os.path.join(_MODEL_DIR, "detect.prototxt"),
-        os.path.join(_MODEL_DIR, "detect.caffemodel"),
-        "", ""
-    )
-    _WECHAT_AVAILABLE = True
-except Exception:
-    _WECHAT_AVAILABLE = False
-    # OpenCV >=5.0: legacy constructor with custom Caffe models no longer
-    # works. Try the new built-in WeChat detector (internal models).
-    try:
-        _new_wechat_detector = cv2.wechat_qrcode_WeChatQRCode()
-    except Exception:
-        _new_wechat_detector = None
 
+_detector = None
+_WECHAT_AVAILABLE = False
+
+try:
+    _detector = cv2.wechat_qrcode_WeChatQRCode()
+    _WECHAT_AVAILABLE = True
+    logger.debug("WeChat QR detector initialized (no models).")
+except Exception as e:
+    logger.warning("WeChat QR detector unavailable, using classic fallback: %s", e)
 
 def detect_qr(
     img_path: Optional[str] = None,
@@ -232,10 +246,8 @@ def detect_qr(
 
     Accepts either a file path or a numpy array (BGR or grayscale).
 
-    Tries, in order: the legacy `cv2.wechat_qrcode_WeChatQRCode` with custom
-    Caffe models (OpenCV <5.0), the new built-in WeChat detector with
-    internal models (OpenCV >=5.0), and finally `cv2.QRCodeDetector` /
-    `cv2.QRCodeDetectorCurved` as a classic fallback.
+    Tries, in order: 1. `cv2.wechat_qrcode_WeChatQRCode` (without Caffe models)
+    -> 2. `QRCodeDetector.QRCodeDetector` or -> 3. `QRCodeDetector.QRCodeDetectorCurved` as a classic fallback.
 
     Parameters
     ----------
@@ -264,33 +276,40 @@ def detect_qr(
     if img is None:
         raise ValueError(f"Could not load image: {img_path}")
 
-    # 1. WeChat caffe models, only available in OpenCV <5.0
+    # 1. Wechat detection
     if _WECHAT_AVAILABLE:
-        texts, points = _detector.detectAndDecode(img)
-        qr_text = texts[0] if texts else None
-    # 2. New built-in WeChat detector (OpenCV >=5.0, internal models)
-    elif _new_wechat_detector is not None:
-        texts, points = _new_wechat_detector.detectAndDecode(img)
-        qr_text = texts[0] if texts else None
+        try:
+            texts, _ = _detector.detectAndDecode(img)
+            if texts and texts[0]:
+                logger.debug("QR decoded successfully with WeChat.")
+                return texts[0]  # keep text from the first qr detected
+        except cv2.error as e:
+            logger.warning("WeChat detectAndDecode failed: %s", e)
+
+        logger.debug("WeChat found nothing, trying classic detectAndDecode detector.")
+
+    # 2. Classic fallback if nothing was detected yet
+    if len(img.shape) == 3:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     else:
-        qr_text = None
+        gray = img
 
-    # 3. Classic fallback if nothing was detected yet
+    detector = cv2.QRCodeDetector()
+    qr_text, _, _ = detector.detectAndDecode(gray)
+
+    # if the previous detection fails, try again with a more robust function
+    if not qr_text and hasattr(detector, "detectAndDecodeCurved"):
+        try:
+            logger.debug("detectAndDecode detector found nothing, trying detectAndDecodeCurved detector instead.")
+            qr_text, _, _ = detector.detectAndDecodeCurved(gray)
+        except cv2.error as e:
+            logger.warning("detectAndDecodeCurved failed: %s", e)
+            qr_text = "" # silent cv2 error message in case detectAndDecodeCurved failed to be imported
+
     if not qr_text:
-        dim = img.shape
-        if len(dim) == 3:
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        else:
-            gray = img
+        logger.info("No QR detected in %s", img_path or "<array>")
 
-        detector = cv2.QRCodeDetector()
-        qr_text, bbox, _ = detector.detectAndDecode(gray)
-
-        # if the previous detection fails, try again with a more robust function
-        if not qr_text:
-            qr_text, bbox, _ = detector.detectAndDecodeCurved(gray)
-
-    return qr_text if qr_text else None
+    return qr_text or None
 
 
 ##############################################################################
@@ -350,7 +369,9 @@ def detect_label_box(
         raise ValueError("Either imagen_path or img must be provided.")
 
     if img is None:
+        #logger.error("Error loading YOLO model from %s: %s", model_path, e)
         raise ValueError(f"Could not load image: {imagen_path}")
+
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
@@ -443,41 +464,40 @@ def detect_label_box_yolo(
 
     results = model(img, conf=conf, verbose=False)
 
-    for r in results:
-        if not results:
-            return None
-        r = results[0]
-        boxes = r.boxes
-        if not boxes:
-            return None
+    if not results:
+        logger.debug("YOLO returned no results.")
+        return None
 
-        label_boxes = []
+    boxes = results[0].boxes
+    if not boxes:
+        logger.debug("YOLO found no label boxes.")
+        return None
 
-        for box in boxes:
-            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
+    label_boxes = []
 
-            width        = x2 - x1
-            height       = y2 - y1
-            area         = width * height
-            aspect_ratio = width / height if height > 0 else 0
+    for box in boxes:
+        x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
 
-            label_boxes.append({
-                'x': x1, 'y': y1,
-                'width': width, 'height': height,
-                'area': area, 'aspect_ratio': aspect_ratio,
-            })
+        width        = x2 - x1
+        height       = y2 - y1
+        area         = width * height
+        aspect_ratio = width / height if height > 0 else 0
 
-        if plot:
-            plt.figure(figsize=(8, 8))
-            img_copy = img.copy()
-            for box in label_boxes:
-                x, y = box['x'], box['y']
-                w, h = box['width'], box['height']
-                cv2.rectangle(img_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            plt.imshow(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))
-            plt.axis('off')
-            plt.show()
+        label_boxes.append({
+            'x': x1, 'y': y1,
+            'width': width, 'height': height,
+            'area': area, 'aspect_ratio': aspect_ratio,
+        })
 
-        return label_boxes if label_boxes else None
+    if plot:
+        plt.figure(figsize=(8, 8))
+        img_copy = img.copy()
+        for box in label_boxes:
+            x, y = box['x'], box['y']
+            w, h = box['width'], box['height']
+            cv2.rectangle(img_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        plt.imshow(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))
+        plt.axis('off')
+        plt.show()
 
-    return None
+    return label_boxes if label_boxes else None
