@@ -333,13 +333,13 @@
     "type": "Function",
     "name": "precompute_ideal_angles",
     "module": "traitly.fruit_phenotyping.symmetry",
-    "description": "Precompute shifted ideal angle matrices for each unique locule count."
+    "description": "Precompute shifted ideal angle matrices for each unique locule count"
   },
   {
     "type": "Function",
     "name": "angular_symmetry",
     "module": "traitly.fruit_phenotyping.symmetry",
-    "description": "Calculate angular symmetry of locule arrangement around the fruit centroid."
+    "description": "Calculate angular symmetry of the locule arrangement around the fruit centroid."
   },
   {
     "type": "Function",
