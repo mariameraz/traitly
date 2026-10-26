@@ -50,11 +50,6 @@ Traitly is organized in the following modules:
         │
         ├── package_data
         │   └── models
-        │       ├── cv2_wechat_qr
-        │       │   ├── LICENSE.md
-        │       │   ├── REAME.md
-        │       │   ├── detect.caffemodel
-        │       │   └── detect.prototxt
         │       ├── label.pt
         │       └── size_reference.pt
         │
