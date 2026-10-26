@@ -61,8 +61,12 @@ def test_wechat_branch_returns_first_result(qr_bgr):
     detector_mock = MagicMock()
     detector_mock.detectAndDecode.return_value = ([qr_text, "other"], [])
     with patch.object(_mod, "_WECHAT_AVAILABLE", True), \
-         patch.object(_mod, "_detector", detector_mock):
+         patch.object(_mod, "_detector", detector_mock), \
+         patch("cv2.QRCodeDetector") as classic_cls:
         assert detect_qr(img=qr_bgr) == qr_text
+
+    detector_mock.detectAndDecode.assert_called_once()
+    classic_cls.assert_not_called()
 
 def test_wechat_branch_empty_list_returns_none(qr_bgr):
     detector_mock = MagicMock()
@@ -72,17 +76,24 @@ def test_wechat_branch_empty_list_returns_none(qr_bgr):
     classic_mock.detectAndDecodeCurved.return_value = ("", None, None)
     with patch.object(_mod, "_WECHAT_AVAILABLE", True), \
          patch.object(_mod, "_detector", detector_mock), \
-         patch.object(_mod, "_new_wechat_detector", None), \
          patch("cv2.QRCodeDetector", return_value=classic_mock):
         assert detect_qr(img=qr_bgr) is None
 
+    detector_mock.detectAndDecode.assert_called_once()
+    classic_mock.detectAndDecode.assert_called_once()
+    classic_mock.detectAndDecodeCurved.assert_called_once()
+
 def test_fallback_uses_curved_when_first_fails(qr_bgr):
     """If QRCodeDetector fails, call to detectAndDecodeCurved."""
+    expected = "hello"
+
     det_mock = MagicMock()
     det_mock.detectAndDecode.return_value = ("", None, None)
-    det_mock.detectAndDecodeCurved.return_value = (qr_text, None, None)
+    det_mock.detectAndDecodeCurved.return_value = (expected, None, None)
+
     with patch.object(_mod, "_WECHAT_AVAILABLE", False), \
-         patch.object(_mod, "_new_wechat_detector", None), \
          patch("cv2.QRCodeDetector", return_value=det_mock):
-        assert detect_qr(img=qr_bgr) == qr_text
+        result = _mod.detect_qr(img=qr_bgr)
+
+    assert result == expected
     det_mock.detectAndDecodeCurved.assert_called_once()
