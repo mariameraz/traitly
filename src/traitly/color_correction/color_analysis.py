@@ -229,6 +229,24 @@ def _img_bgr_to_lab(img: np.ndarray) -> np.ndarray:
 # Color correction (PLSR) #
 ###########################
 
+def _collapse_plsr(pre, models):
+    """
+    Returns
+    -------
+    W : np.ndarray, shape (n_features, 3)
+    b : np.ndarray, shape (3,)
+    """
+
+    nf = pre[-1].n_output_features_
+
+    E, Z = np.eye(nf), np.zeros((1, nf))
+
+    b = np.array([m.predict(Z).ravel()[0] for m in models])
+
+    W = np.stack([m.predict(E).ravel() - b[i] for i, m in enumerate(models)], axis=1)
+
+    return W, b
+
 def _fit_plsr_models(
     detected_lab: np.ndarray,
     reference_lab: np.ndarray = CHECKER_LAB_D65,
@@ -248,7 +266,10 @@ def _fit_plsr_models(
         pls.fit(feats, reference_lab[:, i])
         models.append(pls)
 
-    return pre, models
+    W, b = _collapse_plsr(pre, models)
+
+    return pre, W, b
+
 
 ##################################
 # Convert LAB image to BGR again #
@@ -275,16 +296,17 @@ def _lab_to_bgr(img_lab: np.ndarray) -> np.ndarray:
 def _apply_color_correction(
     img_lab: np.ndarray,
     fitted,
+    chunk: int = 1_000_000
 ) -> np.ndarray:
-    pre, models = fitted
+    pre, W, b = fitted
     h, w = img_lab.shape[:2]
     flat = img_lab.reshape(-1, 3)
 
     feats = pre.transform(flat)
 
     corrected_lab = np.empty((flat.shape[0], 3), dtype=np.float32)
-    for i in range(3):
-        corrected_lab[:, i] = models[i].predict(feats).ravel()
+    for s in range(0, len(flat), chunk):
+        corrected_lab[s:s + chunk] = pre.transform(flat[s:s + chunk]) @ W + b
 
     corrected_bgr = _lab_to_bgr(corrected_lab.reshape(h, w, 3))
     return corrected_bgr
