@@ -64,9 +64,9 @@ def calculate_axes(
         Whether to draw the major and minor axes onto ``img``. Default
         is ``False``.
     major_axis_color : tuple of int, optional
-        BGR color for the major axis line. Default is ``(0, 255, 0)``.
+        BGR color for the major axis line. Default is orange ``(0,159,230)``.
     minor_axis_color : tuple of int, optional
-        BGR color for the minor axis line. Default is ``(255, 0, 0)``.
+        BGR color for the minor axis line. Default is blue ``(233, 180, 86)``.
     axis_thickness : int, optional
         Line thickness in pixels for both axis lines. Default is 2.
     hull_verts : np.ndarray or None, optional
