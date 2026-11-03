@@ -395,10 +395,20 @@ def calculate_pericarp_thickness_radial(
             f'outer_pericarp_std_thickness_{prefix}': np.nan,
             'outer_pericarp_cv_thickness': np.nan,
             f'fruit_lobedness_{prefix}': np.nan,
+            'outer_pericarp_relative_thickness_mean': np.nan,
+            'outer_pericarp_relative_thickness_std': np.nan,
         }
 
+    # Feat 1. Pericarp thickness
     thicknesses_px = np.array(thicknesses_px)
+    # Feat 2. Lobedness (std fruit r)
     lobedness_px = float(np.std(outer_distances_px)) if outer_distances_px else np.nan
+    # Feat 3. Pericarp thickness / mean outer radius -> comparable across fruit sizes
+    mean_outer_r = np.mean(outer_distances_px)
+    thickness_ratio = thicknesses_px / mean_outer_r
+    relative_thickness_mean = float(np.mean(thickness_ratio))
+    relative_thickness_std = float(np.std(thickness_ratio))
+
 
     scale = 1.0 / px_per_cm if convert_cm else 1.0
     thicknesses = thicknesses_px * scale
@@ -412,6 +422,8 @@ def calculate_pericarp_thickness_radial(
         f'outer_pericarp_std_thickness_{prefix}': float(std_val),
         'outer_pericarp_cv_thickness': float(std_val / mean_val * 100) if mean_val > 0 else np.nan,
         f'fruit_lobedness_{prefix}': float(lobedness),
+        'outer_pericarp_relative_thickness_mean': relative_thickness_mean,
+        'outer_pericarp_relative_thickness_std': relative_thickness_std,
     }
 
 

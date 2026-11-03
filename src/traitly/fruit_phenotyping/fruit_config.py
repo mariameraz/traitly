@@ -956,7 +956,7 @@ def _calculate_pericarp_metrics(
     # Filter thickness stats to only include the active unit
     thickness_filtered = {
         k: v for k, v in thickness_stats.items()
-        if unit in k or 'cv_' in k
+        if unit in k or 'cv_' in k or 'relative' in k
     }
 
     # Use cm2 for area when unit is cm, px when unit is px
