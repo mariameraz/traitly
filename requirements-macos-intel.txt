@@ -1,19 +1,25 @@
 ########################################################################
-# Requirements for Intel Macs (x86_64) and macOS 14 or earlier.
+# Requirements for Intel Macs (x86_64) and macOS 12 or earlier.
 # Last updated: October 3, 2026
 ########################################################################
 # PyTorch (needed by EasyOCR) no longer publishes wheels for Intel Macs,
-# and recent OpenCV versions also don't have wheels for older macOS.
-# If your machine can run current versions, you don't need this file.
+# and recent OpenCV versions don't have wheels for older macOS.
 #
-# These are older versions, so some features won't work:
+# Use this file ONLY if you are on macOS and either:
+#   - you have an Intel Mac (x86_64), or
+#   - you are running macOS 12 or earlier.
+#
+# On Windows, Linux, or Apple Silicon Mac you don't need it.
+#
+# IMPORTANT: These are older versions, so some features may not work:
 #   - QR code detection (OpenCV wechat_qrcode module)
 #   - Color checker detection (OpenCV mcc module)
 #
-# However, you can still run morphological and color analyses.
+# However, morphological and color analyses should still work.
 #
-# If you run into this problem, install these BEFORE installing Traitly:
+# Download this file, then install it BEFORE installing Traitly:
 #   pip install -r requirements-macos-intel.txt
+#   pip install traitly
 #
 ########################################################################
 
