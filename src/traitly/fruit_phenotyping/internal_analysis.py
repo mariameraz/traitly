@@ -301,7 +301,14 @@ class FruitInternalAnalyzer:
     ##########################################################################################
     ## Detect label text and ROI
     ##########################################################################################
-    def setup_label(
+    def _detect_label_roi(self) -> None:
+        """Detect the label ROI: YOLO model first, classical detector as fallback."""
+        roi = detect_label_box_yolo(img=self.img, plot=False, conf=0.4)
+        if not roi:
+            roi = detect_label_box(img=self.img, verbose=False, plot=False)
+        self._label_roi = roi if roi else None
+
+    def _setup_label(
         self,
         verbose: bool = True,
         detect_label: bool = False,
@@ -309,36 +316,32 @@ class FruitInternalAnalyzer:
         blur_label: Tuple[int, int] = (11, 11),
         gpu: bool = True,
         skip_qr: bool = False,
-        skip_label_roi: bool = False,
     ) -> None:
-
         """
-        Detect QR code, label ROI, and label text for the loaded image.
+        Detect the label ROI and, optionally, the label text.
 
-        Runs up to three detection steps in order:
+        The label ROI is always detected (YOLO model first, classical
+        detector as fallback), since later steps need it to exclude the
+        label from fruit detection. Text detection is optional and only
+        runs when ``detect_label=True``:
 
-        1. QR code detection via :func:`~traitly.utils.basic_functions.detect_qr`
-        (skipped if ``skip_qr=True``).
-        2. Label ROI detection via
-        :func:`~traitly.utils.basic_functions.detect_label_box_yolo` then
-        :func:`~traitly.utils.basic_functions.detect_label_box` as fallback
-        (skipped if ``skip_label_roi=True``).
-        3. OCR via :func:`~traitly.utils.basic_functions.detect_label_text`
-        only if a ROI was found and no QR text was detected.
+        1. QR code via :func:`~traitly.utils.basic_functions.detect_qr`
+            (skipped if ``skip_qr=True``).
+        2. OCR via :func:`~traitly.utils.basic_functions.detect_label_text`
+            only if a ROI was found and the QR gave no text. OCR is the slow
+            step, so it is never run unless requested.
 
-        Populates :attr:`label_text` and :attr:`label_roi`.
+        Populates :attr:`label_text` and :attr:`_label_roi`.
 
         Parameters
         ----------
         verbose : bool, optional
             If True, print detection results. Default is True.
         detect_label : bool, optional
-            If False, skip OCR and only attempt ROI detection. Default is
-            False.
+            If True, also detect the label text (QR, then OCR). If False,
+            only the ROI is detected. Default is False.
         language_label : list of str, optional
-            OCR language codes forwarded to
-            :func:`~traitly.utils.basic_functions.detect_label_text`.
-            Default is ``["es", "en"]``.
+            OCR language codes. Default is ``["es", "en"]``.
         blur_label : tuple of int, optional
             Gaussian blur kernel size applied before OCR. Default is
             ``(11, 11)``.
@@ -346,78 +349,69 @@ class FruitInternalAnalyzer:
             If True, use GPU acceleration for OCR. Default is True.
         skip_qr : bool, optional
             If True, skip QR code detection. Default is False.
-        skip_label_roi : bool, optional
-            If True, skip both ROI detection and OCR. Default is False.
         """
-
         if verbose:
             print("\n" + "=" * 55)
             print("★ LABEL DETECTION:")
             print("=" * 55)
 
-        # 1. early return if no label detection required
+        # 1. ROI: always detected, once
+        self._detect_label_roi()
+        if verbose:
+            print(f"> Label ROI: {'detected' if self._label_roi else 'not found'}")
+
+        # 2. Text is optional
         if not detect_label:
-            self._label_roi = None
             self.label_text = "No label detected"
             if verbose:
-                print("> Label detection: SKIPPED (detect_label=False)")
+                print("> Label text detection: SKIPPED (detect_label=False)")
             return None
 
-        # 2. If there is detected text, reuse it
-        if self.label_text is not None and self.label_text != "No label detected":
+        # Reuse text that was already detected
+        if self.label_text and self.label_text != "No label detected":
             if verbose:
                 print(f"> Label text: {self.label_text}")
             return None
 
-        # 3. QR
+        # 3. First option: QR (fast)
         if not skip_qr:
             qr_start = time.perf_counter()
             self.label_text = detect_qr(img=self.img)
             if verbose and self.label_text:
                 print(f"> QR Code detected: {self.label_text} ({time.perf_counter() - qr_start:.2f}s)")
-        else:
-            if verbose:
-                print("> QR detection: SKIPPED")
+        elif verbose:
+            print("> QR detection: SKIPPED")
 
-        # 4. ROI + OCR (only if the qr did not detect the text)
-        if skip_label_roi:
-            self._label_roi = None
-        else:
-            self._label_roi = detect_label_box_yolo(img=self.img, plot=False, conf=0.4)
-            if not self._label_roi:
-                self._label_roi = detect_label_box(img=self.img, verbose=False, plot=False)
+        # 4. Second option: OCR (slow) -> only if there is a ROI and the QR gave no text to avoid analyzing the whole image
+        if self._label_roi and not self.label_text:
+            ocr_start = time.perf_counter()
+            old_stdout = sys.stdout
+            sys.stdout = StringIO()
+            try:
+                self.label_text = detect_label_text(
+                    img=self.img,
+                    label_roi=self._label_roi,
+                    language=language_label,
+                    blur_label=blur_label,
+                    verbose=False,
+                    gpu=gpu,
+                )
+            finally:
+                sys.stdout = old_stdout
+            if verbose and self.label_text:
+                print(f"> Label text detected: {self.label_text}   (OCR: {time.perf_counter() - ocr_start:.2f}s)")
 
-            if self._label_roi and not self.label_text:
-                ocr_start = time.perf_counter()
-                old_stdout = sys.stdout
-                sys.stdout = StringIO()
-                try:
-                    self.label_text = detect_label_text(
-                        img=self.img,
-                        label_roi=self._label_roi,
-                        language=language_label,
-                        blur_label=blur_label,
-                        verbose=False,
-                        gpu=gpu,
-                    )
-                finally:
-                    sys.stdout = old_stdout
-
-                    if verbose and self.label_text:
-                        print(f"> Label text detected: {self.label_text}   (OCR: {time.perf_counter() - ocr_start:.2f}s)")
-
-        # 5. final result
+        # 5. Final fallback
         if not self.label_text:
             self.label_text = "No label detected"
-
-        if verbose and self.label_text == "No label detected":
-            print("> No label detected.")
+            if verbose:
+                print("> No label text detected.")
 
     ##########################################################################################
     ## Detect size reference
     ##########################################################################################
 
-    def setup_calibration(
+    def _setup_calibration(
         self,
         verbose: bool = True,
         confidence: float = 0.6,
@@ -555,7 +549,7 @@ class FruitInternalAnalyzer:
         """
         Detect label text and calculate the pixel-to-centimetre scale factor.
 
-        Orchestrates :meth:`setup_label` and :meth:`setup_calibration` in
+        Orchestrates :meth:`_setup_label` and :meth:`_setup_calibration` in
         order. Populates :attr:`label_text`, :attr:`label_roi`, :attr:`ref_roi`, and
         :attr:`px_per_cm`.
 
@@ -565,37 +559,37 @@ class FruitInternalAnalyzer:
             If True, display a cropped view of each detected reference ROI.
             Default is False.
         font_size : int, optional
-            Font size forwarded to :meth:`setup_calibration`. Default is 3.
+            Font size forwarded to :meth:`_setup_calibration`. Default is 3.
         confidence : float, optional
-            Detection confidence forwarded to :meth:`setup_calibration`.
+            Detection confidence forwarded to :meth:`_setup_calibration`.
             Default is 0.6.
         detect_label : bool, optional
             If True, run full label detection including OCR in
-            :meth:`setup_label`. Default is False.
+            :meth:`_setup_label`. Default is False.
         verbose : bool, optional
             If True, print progress and results. Default is True.
         plot_size : tuple of int, optional
             Figure size for reference ROI plots. Default is (5, 5).
         language_label : list of str, optional
-            OCR language codes forwarded to :meth:`setup_label`. Default is
+            OCR language codes forwarded to :meth:`_setup_label`. Default is
             ``["es", "en"]``.
         width_cm : float or None, optional
             Known reference width in centimetres, forwarded to
-            :meth:`setup_calibration`. Default is None.
+            :meth:`_setup_calibration`. Default is None.
         length_cm : float or None, optional
             Known reference length in centimetres, forwarded to
-            :meth:`setup_calibration`. Default is None.
+            :meth:`_setup_calibration`. Default is None.
         diameter_cm : float or None, optional
             Known reference diameter in centimetres, forwarded to
-            :meth:`setup_calibration`. Default is None.
+            :meth:`_setup_calibration`. Default is None.
         gpu : bool, optional
-            If True, use GPU for OCR in :meth:`setup_label`. Default is False.
+            If True, use GPU for OCR in :meth:`_setup_label`. Default is False.
         skip_qr : bool, optional
-            If True, skip QR detection in :meth:`setup_label`. Default is
+            If True, skip QR detection in :meth:`_setup_label`. Default is
             False.
         skip_yolo : bool, optional
             If True and ``width_cm`` and ``length_cm`` are set, skip YOLO
-            detection in :meth:`setup_calibration`. Default is False.
+            detection in :meth:`_setup_calibration`. Default is False.
 
         """
         if self.img is None:
@@ -617,7 +611,7 @@ class FruitInternalAnalyzer:
             }
 
         # 1) label
-        self.setup_label(
+        self._setup_label(
             detect_label=detect_label,
             verbose=verbose,
             language_label=language_label,
@@ -626,7 +620,7 @@ class FruitInternalAnalyzer:
         )
 
         # 2) calibration
-        self.setup_calibration(
+        self._setup_calibration(
             verbose=verbose,
             confidence=confidence,
             font_size=font_size,
