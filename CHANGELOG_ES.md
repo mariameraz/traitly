@@ -2,6 +2,23 @@
 
 *Todos los cambios significativos de Traitly están documentados aquí.*
 
+## 0.4.0 - En desarrollo
+
+### Cambios
+
+- Ahora `setup_label` siempre detecta la **ROI** de la etiqueta en `FruitInternalAnalyzer` y `FruitExternalAnalyzer` sin importar `detect_label` (usa primero el modelo de YOLO, y `detect_label_box` como fallback).
+- La detección del **texto** de la etiqueta aún es opcional: si `detect_label=False`, no se ejecuta ni la detección QR ni OCR. Con `detect_label=True`, primero se busca el QR, y despues OCR (método más lento) solo si previamente se detectó el ROI de la etiqueta y no se encontró un QR en la imagen.
+- Se encapsulan `setup_calibration` y `setup_label` como métodos privados (`_setup_calibration`, `_setup_label`) en `FruitInternalAnalyzer` para mantener la interfaz mas limpia. Son pasos internos que el pipeline ejecuta automáticamente en `setup_measurements`, por lo que el usuario no necesita llamarlos directamente.
+
+#### *Cambios que rompen compatibilidad:*
+
+- Se eliminó el argumento `skip_label_roi` de `_setup_label()`, ya que ahora la ROI de la etiqueta siempre es detectada.
+
+### Nuevo
+
+- Nuevos traits: `outer_pericarp_relative_thickness_mean` y `outer_pericarp_relative_thickness_std`: el grosor del pericarpio entre la media del radio del fruto para cada rayo. Ya que es un radio, es independienbte de `px_per_cm` y comparable entre frutos de diferente tamaño.
+
+
 ## v0.3.0 - 2026-10-25
 
 Documentación: [https://traitly.readthedocs.io/en/v0.3.0/es/](https://traitly.readthedocs.io/en/v0.3.0/es/)
