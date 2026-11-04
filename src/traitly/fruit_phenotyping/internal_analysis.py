@@ -362,13 +362,13 @@ class FruitInternalAnalyzer:
 
         # 2. Text is optional
         if not detect_label:
-            self.label_text = "No label detected"
+            self.label_text = "No detected"
             if verbose:
                 print("> Label text detection: SKIPPED (detect_label=False)")
             return None
 
         # Reuse text that was already detected
-        if self.label_text and self.label_text != "No label detected":
+        if self.label_text and self.label_text != "No detected":
             if verbose:
                 print(f"> Label text: {self.label_text}")
             return None
@@ -403,7 +403,7 @@ class FruitInternalAnalyzer:
 
         # 5. Final fallback
         if not self.label_text:
-            self.label_text = "No label detected"
+            self.label_text = "No detected"
             if verbose:
                 print("> No label text detected.")
 
@@ -1508,7 +1508,7 @@ class FruitInternalAnalyzer:
             )
 
         if self.label_text is None:
-            self.label_text = "No label detected"
+            self.label_text = "No detected"
 
         if self._img_copy is None:
             self._img_copy = self.img.copy()
@@ -1798,7 +1798,7 @@ class FruitInternalAnalyzer:
             )
 
         if self.label_text is None:
-            self.label_text = "No label detected"
+            self.label_text = "No detected"
 
         if dilation_factor is not None:
             self._dilation_factor = dilation_factor

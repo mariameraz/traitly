@@ -93,7 +93,7 @@ def get_easyocr_reader(
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            reader = easyocr.Reader(languages, gpu=gpu, quantize=False, verbose=False,
+            reader = easyocr.Reader(languages, gpu=gpu, verbose=False,
                                     download_enabled=True)
 
         logger.info("EasyOCR reader ready (device: %s).", "GPU" if gpu else "CPU")
@@ -196,9 +196,25 @@ def detect_label_text(
             logger.debug("Empty region for ROI %d", first_idx + 1)
             return None
 
-        gray    = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
-        blur    = cv2.GaussianBlur(gray, blur_label, 0)
-        results = reader.readtext(blur)
+        gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
+
+        # Downscale large crops: OCR cost grows with pixel count
+        max_side = 800
+        h_r, w_r = gray.shape[:2]
+        scale = min(1.0, max_side / max(h_r, w_r))
+        if scale < 1.0:
+            gray = cv2.resize(
+                gray,
+                (int(w_r * scale), int(h_r * scale)),
+                interpolation=cv2.INTER_AREA,
+            )
+
+        # Keep the blur proportional to the new size (and odd)
+        k = max(1, int(round(blur_label[0] * scale)))
+        k = k if k % 2 == 1 else k + 1
+        blur = cv2.GaussianBlur(gray, (k, k), 0)
+
+        results = reader.readtext(blur, canvas_size=max_side)
 
         if results:
             text = results[0][1].split()[0]
