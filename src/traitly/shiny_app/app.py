@@ -13,17 +13,20 @@ import shutil
 import tempfile
 import traceback
 import zipfile
+import warnings
 
 #########################################################################################
 # THIRD-PARTY
 #########################################################################################
 import cv2
-import matplotlib
-import matplotlib.pyplot as plt
-
-matplotlib.use("Agg")
 import numpy as np
 import pandas as pd
+
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use("Agg")
+warnings.filterwarnings("ignore", message="FigureCanvasAgg is non-interactive",
+    category=UserWarning)
 
 try:
     from shiny import App, Inputs, Outputs, Session, reactive, render, ui
@@ -38,10 +41,12 @@ except ImportError:
 try:
     from traitly import __version__
     from traitly.fruit_phenotyping import FruitExternalAnalyzer, FruitInternalAnalyzer
+    from traitly.fruit_phenotyping.mask import BACKGROUND_COLORS
 
     traitly_available = True
 except ImportError:
     __version__ = "dev"
+    BACKGROUND_COLORS = {}
     traitly_available = False
 
 
@@ -873,17 +878,21 @@ Shiny.addCustomMessageHandler('get_current_mode', function() {{
 # Helper functions #
 ####################
 
-
-def arr_to_b64(arr):
-    """
-    Convert a numpy array to a base64-encoded PNG string.
-    """
+def arr_to_b64(arr, max_side=None, fmt="png", quality=85):
+    """Convert a BGR/gray array to base64 and optionally downscaled and as JPEG."""
     if arr is None:
         return ""
-    success, encoded = cv2.imencode(".png", arr.astype(np.uint8))
-    if not success:
-        return ""
-    return base64.b64encode(encoded.tobytes()).decode()
+    if max_side:
+        h, w = arr.shape[:2]
+        s = max_side / max(h, w)
+        if s < 1:
+            arr = cv2.resize(arr, (int(w * s), int(h * s)), interpolation=cv2.INTER_AREA)
+    if fmt == "jpeg":
+        ok, enc = cv2.imencode(".jpg", arr, [cv2.IMWRITE_JPEG_QUALITY, quality])
+    else:
+        ok, enc = cv2.imencode(".png", arr.astype(np.uint8),
+                               [cv2.IMWRITE_PNG_COMPRESSION, 1])
+    return base64.b64encode(enc.tobytes()).decode() if ok else ""
 
 
 def img_tag(arr, style="width:100%;border-radius:8px;margin-top:.5rem"):
@@ -1123,7 +1132,6 @@ step_setup = _panel(
             ui.output_ui("upload_input_ui"),
             ui.hr(),
             ui.input_checkbox("detect_label", "Detect label text", False),
-            ui.input_checkbox("skip_qr", "Skip QR detection", False),
             ui.input_checkbox("detect_color_checker", "Detect color checker", False),
             ui.input_slider(
                 "confidence", "Detection confidence", 0.0, 1.0, 0.6, step=0.01
@@ -1150,8 +1158,8 @@ step_setup = _panel(
                 ui.output_ui("step1_preview"),
                 ui.div(
                     ui.output_ui("step1_results"),
-                    style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);  "
-                    "width:90%; z-index:10;",
+                    style="position:absolute; top:30%; left:50%; transform:translate(-50%, -50%);  "
+                    "width:50%; z-index:10;",
                 ),
                 style="position:relative;",
             ),
@@ -1167,7 +1175,6 @@ step_mask = _panel(
     ui.layout_columns(
         ui.div(
             ui.output_ui("mask_bg_ui"),
-            ui.input_checkbox("remove_roi", "Remove label/reference regions", True),
             ui.input_checkbox("use_manual_hsv", "Apply manual color threshold", False),
             ui.p(
                 "Find HSV range in Background Helper",
@@ -1495,10 +1502,7 @@ step_color = _panel(
         ui.div(
             ui.input_select("stat", "Statistical measure", choices=["mean", "median"]),
             ui.output_ui("color_tissue_ui"),
-            ui.input_select(
-                "color_space",
-                "Color space",
-                choices=["all", "rgb", "lab", "hsv", "gray"],
+            ui.input_select("color_space", "Color space", choices=["all", "rgb", "lab", "hsv", "gray"],
             ),
             ui.hr(),
             ui.input_checkbox("get_color_histogram", "Get color histogram", False),
@@ -1625,37 +1629,6 @@ tab_home = ui.nav_panel(
 
             <br><br>
 
-            <h2 class="home-h2">Methodological approach</h2>
-            <div class="home-body">
-                <p style="margin-bottom:1.2rem">
-                    The core of Traitly\'s analysis is based primarily on <strong>classical segmentation and
-                    traditional image processing</strong>, complemented by pre-trained models for auxiliary tasks
-                    such as label or size reference detection.
-                </p>
-                <p>
-                This design prioritizes <strong>robustness, interpretability, and reproducibility</strong>,
-                and allows the method to be <strong>easily adaptable</strong> beyond fruits. With minimal parameter
-                adjustments, the same approach can be applied to other tissues such as <strong>seeds or leaves</strong>,
-                without redefining the pipeline architecture.
-                </p>
-            </div>
-
-            <br><br>
-
-            <h2 class="home-h2">Key features</h2>
-            <div class="home-body">
-                <ul style="margin:.2rem 0 .8rem;padding-left:5rem;font-size:2rem;margin-bottom:1.2rem">
-                    <li style="margin-bottom:.4rem"><strong>Single image or batch processing</strong>: analyze a single image or entire folders in one run.</li>
-                    <li style="margin-bottom:.4rem"><strong>Per-fruit measurements</strong>: each detected fruit receives a unique ID and is measured independently.</li>
-                    <li style="margin-bottom:.4rem"><strong>Fully automated</strong>: detection, segmentation, calibration, and trait extraction without manual measurements.</li>
-                    <li style="margin-bottom:.4rem"><strong>Pre-trained models included</strong>: automatic detection of size markers and sample labels.</li>
-                    <li style="margin-bottom:.4rem"><strong>Automatic sample identification</strong>: detection of QR codes and text labels.</li>
-                    <li style="margin-bottom:.4rem"><strong>PDF support</strong>: direct conversion of scanned PDF files to images.</li>
-                    <li style="margin-bottom:.4rem"><strong>Session reports</strong>: automatically saves parameters, dependency versions, and metadata for every run.</li>
-                </ul>
-            </div>
-            <br><br>
-
             <h2 class="home-h2">Citation</h2>
             <div class="home-body">
                 <p style="margin-bottom:1.2rem">
@@ -1766,14 +1739,14 @@ tab_bg = ui.nav_panel(
         ui.div(
             ui.HTML(
                 '<p style="font-size:2rem;font-weight:600;color:var(--panel-title-color);'
-                'margin-bottom:.8rem;">HSV Thresholds — live preview</p>'
+                'margin-bottom:.8rem;">HSV Thresholds preview</p>'
             ),
             ui.hr(),
             ui.layout_columns(
                 ui.input_select(
                     "bg_preset",
                     "Preset values",
-                    choices=["custom", "blue", "white", "black"],
+                    choices=["custom", *BACKGROUND_COLORS],
                 ),
                 ui.div(),
                 col_widths=[4, 8],
@@ -1785,18 +1758,18 @@ tab_bg = ui.nav_panel(
                         '<div style="font-size:1.7rem;font-weight:600;margin-bottom:.5rem;'
                         'color:#3b82f6;">Lower bound</div>'
                     ),
-                    ui.input_slider("bg_h_lo", "H min", 0, 180, 0),
-                    ui.input_slider("bg_s_lo", "S min", 0, 255, 0),
-                    ui.input_slider("bg_v_lo", "V min", 0, 255, 0),
+                    ui.input_numeric("bg_h_lo", "H min", 0, min=0, max=180, step=1),
+                    ui.input_numeric("bg_s_lo", "S min", 0, min=0, max=255, step=1),
+                    ui.input_numeric("bg_v_lo", "V min", 0, min=0, max=255, step=1),
                 ),
                 ui.div(
                     ui.HTML(
                         '<div style="font-size:1.7rem;font-weight:600;margin-bottom:.5rem;'
                         'color:#1d4ed8;">Upper bound</div>'
                     ),
-                    ui.input_slider("bg_h_hi", "H max", 0, 180, 180),
-                    ui.input_slider("bg_s_hi", "S max", 0, 255, 255),
-                    ui.input_slider("bg_v_hi", "V max", 0, 255, 255),
+                    ui.input_numeric("bg_h_hi", "H max", 180, min=0, max=180, step=1),
+                    ui.input_numeric("bg_s_hi", "S max", 255, min=0, max=255, step=1),
+                    ui.input_numeric("bg_v_hi", "V max", 255, min=0, max=255, step=1),
                 ),
                 col_widths=[6, 6],
             ),
@@ -2055,7 +2028,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             d.append(idx)
         r_completed.set(d)
 
-    @render.download(filename="parameters.json")
+    @render.download_button(filename="parameters.json")
     async def dl_base_json():
         json_path = os.path.join(os.path.dirname(__file__), "www", "parameters.json")
         with open(json_path, "rb") as f:
@@ -2063,12 +2036,12 @@ def server(input: Inputs, output: Outputs, session: Session):
 
     @reactive.effect
     @reactive.event(input.js_main_tab)
-    def _on_main_tab():
+    async def _on_main_tab():
         tab = input.js_main_tab()
         ui.update_navset("main_tab", selected=tab, session=session)
 
         if tab == "tab_analysis" and r_mode.get() is None:
-            session.send_custom_message("get_current_mode", {})
+            await session.send_custom_message("get_current_mode", {})
 
 
     @reactive.effect
@@ -2138,14 +2111,13 @@ def server(input: Inputs, output: Outputs, session: Session):
                 cls += " active"
             if is_done:
                 cls += " done"
-            chk = '<span class="step-check">✓</span>' if is_done else ""
             items.append(
                 ui.HTML(
                     f'<button class="{cls}" '
                     f"onclick=\"goStep('{sid}')\">"
                     f'<span class="step-num">{i + 1}</span>'
                     f'<span class="step-label">{icon} {label}</span>'
-                    f"{chk}</button>"
+                    f"</button>"
                 )
             )
 
@@ -2348,30 +2320,31 @@ def server(input: Inputs, output: Outputs, session: Session):
         az = r_analyzer.get()
         if az is None:
             return ui.div()
-        display_img = (
-            cv2.cvtColor(az._img_copy, cv2.COLOR_BGR2RGB)
+
+        bgr = (
+            az._img_copy
             if (hasattr(az, "_img_copy") and az._img_copy is not None)
-            else cv2.cvtColor(az.img, cv2.COLOR_BGR2RGB)
+            else az.img
         )
 
-        if input.use_crop():  # ← ejes ON mientras crop esté activo
+        if input.use_crop():
+            # keep original pixel coordinates on the axes, but draw a small image
+            h, w = bgr.shape[:2]
+            s = min(1.0, 1600 / max(h, w))
+            small = cv2.resize(bgr, (int(w * s), int(h * s)), interpolation=cv2.INTER_AREA)
             fig, ax = plt.subplots(figsize=(9, 9))
-            ax.imshow(display_img)
+            ax.imshow(cv2.cvtColor(small, cv2.COLOR_BGR2RGB), extent=(0, w, h, 0))
             ax.axis("on")
             fig.tight_layout()
             buf = io.BytesIO()
-            fig.savefig(buf, format="png", dpi=100)
-            buf.seek(0)
-            b64 = base64.b64encode(buf.read()).decode()
+            fig.savefig(buf, format="jpeg", dpi=100, pil_kwargs={"quality": 85})
             plt.close(fig)
-            return ui.HTML(
-                f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
-                f'style="width:100%;border-radius:8px;margin-top:.5rem">'
-            )
+            b64 = base64.b64encode(buf.getvalue()).decode()
+        else:
+            b64 = arr_to_b64(bgr, max_side=1600, fmt="jpeg")
 
-        b64 = arr_to_b64(cv2.cvtColor(display_img, cv2.COLOR_RGB2BGR))
         return ui.HTML(
-            f'<img src="data:image/png;base64,{b64}" class="img-zoomable" '
+            f'<img src="data:image/jpeg;base64,{b64}" class="img-zoomable" '
             f'style="width:100%;border-radius:8px;margin-top:.5rem">'
         )
 
@@ -2386,7 +2359,6 @@ def server(input: Inputs, output: Outputs, session: Session):
             az.setup_measurements(
                 detect_label=input.detect_label(),
                 confidence=input.confidence(),
-                skip_qr=input.skip_qr(),
                 width_cm=input.width_cm() if input.use_dimensions() else None,
                 length_cm=input.length_cm() if input.use_dimensions() else None,
                 diameter_cm=input.diameter_cm(),
@@ -2394,40 +2366,40 @@ def server(input: Inputs, output: Outputs, session: Session):
             )
 
             if input.detect_color_checker():
-                az.detect_color_checker()
+                az.detect_color_checker(verbose = False)
 
             mark_done(0)
-            h, w = az.img.shape[:2] if az.img is not None else (0, 0)
             n_refs = len(az._ref_roi) if az._ref_roi else 0
+
+            items = [
+                ui.tags.li(ui.tags.b("Label text: "), az.label_text or "N/A"),
+                ui.tags.li(
+                    ui.tags.b("px/cm density: "),
+                    f"{az.px_per_cm:.1f}" if az.px_per_cm else "–",
+                ),
+                ui.tags.li(ui.tags.b("Size references: "), str(n_refs)),
+            ]
+
+            if input.detect_color_checker():
+                found = getattr(az, "_checker_coords", None) is not None
+                items.append(
+                    ui.tags.li(
+                        ui.tags.b("Color checker: "),
+                        "detected" if found else "not detected",
+                    )
+                )
+
             r_step1_result.set(
                 ui.div(
-                    # ui.p(
-                    #     "Process completed!",
-                    #     style="font-size:3.4rem; text-align:center; max-width:700px; "
-                    #     "margin:0 auto; color: #97c8ec; font-weight:700; background-color:rgba(49,63,65,0.8);",
-                    # ),
                     ui.div(
-                        ui.layout_columns(
-                            ui.value_box(
-                                "Label:", az.label_text or "N/A", theme="primary"
-                            ),
-                            ui.value_box(
-                                "px/cm density:",
-                                f"{az.px_per_cm:.1f}" if az.px_per_cm else "–",
-                                theme="primary",
-                            ),
-                            col_widths=[6, 6],
+                        ui.tags.ul(
+                            *items,
+                            style="margin:0; padding-left:2.5rem; "
+                            "font-size:2.2rem; line-height:1.9; color:#fff;",
                         ),
-                        ui.layout_columns(
-                            ui.value_box("Image size:", f"{w}×{h}", theme="secondary"),
-                            ui.value_box(
-                                "References:",
-                                str(n_refs),
-                                theme="success" if n_refs > 0 else "danger",
-                            ),
-                            col_widths=[6, 6],
-                        ),
-                        style="max-width: 700px; margin: 0 auto;",
+                        style="max-width:600px; margin:0 auto; padding:1.4rem 1.8rem; "
+                        "background:rgba(98,123,140,.85); border-radius:10px; "
+                        "border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(0,0,0,.25);",
                     ),
                 )
             )
@@ -2446,11 +2418,15 @@ def server(input: Inputs, output: Outputs, session: Session):
     # step 2
     @render.ui
     def mask_bg_ui():
-        if r_mode.get() == "external":
-            return ui.input_select(
-                "bg_color", "Background color", choices=["blue", "black", "white"]
-            )
-        return ui.div()
+        if input.use_manual_hsv():
+            return ui.div()
+        default = "black" if r_mode.get() == "internal" else "blue"
+        return ui.input_select(
+            "bg_color",
+            "Background color",
+            choices=list(BACKGROUND_COLORS),
+            selected=default,
+        )
 
     @render.ui
     def mask_stamp_ui():
@@ -2467,19 +2443,30 @@ def server(input: Inputs, output: Outputs, session: Session):
             return
         is_int = r_mode.get() == "internal"
         try:
-            lower_hsv = (
-                [input.h_range()[0], input.s_range()[0], input.v_range()[0]]
-                if input.use_manual_hsv()
-                else None
-            )
-            upper_hsv = (
-                [input.h_range()[1], input.s_range()[1], input.v_range()[1]]
-                if input.use_manual_hsv()
-                else None
-            )
+            lower_hsv = upper_hsv = None
+            if input.use_manual_hsv():
+                vals = {
+                    "H min": input.h_min(), "H max": input.h_max(),
+                    "S min": input.s_min(), "S max": input.s_max(),
+                    "V min": input.v_min(), "V max": input.v_max(),
+                }
+                empty = [k for k, v in vals.items() if v is None]
+                if empty:
+                    raise ValueError(f"Missing value for: {', '.join(empty)}")
+
+                limits = {"H": 180, "S": 255, "V": 255}
+                for ch, top in limits.items():
+                    lo, hi = vals[f"{ch} min"], vals[f"{ch} max"]
+                    if not (0 <= lo <= top and 0 <= hi <= top):
+                        raise ValueError(f"{ch} must be between 0 and {top}")
+                    if lo > hi:
+                        raise ValueError(f"{ch} min cannot be greater than {ch} max")
+
+                lower_hsv = [int(vals["H min"]), int(vals["S min"]), int(vals["V min"])]
+                upper_hsv = [int(vals["H max"]), int(vals["S max"]), int(vals["V max"])]
+
             kw = dict(
                 stamp=input.stamp() if r_mode.get() == "internal" else False,
-                remove_roi=input.remove_roi(),
                 lower_hsv=lower_hsv,
                 upper_hsv=upper_hsv,
                 n_iteration=input.n_iteration(),
@@ -2494,7 +2481,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 plot_size=(20, 20),
             )
 
-            if not is_int:
+            if not input.use_manual_hsv():
                 kw["background_color"] = input.bg_color()
 
             az.generate_fruit_mask(**kw)
@@ -2533,9 +2520,21 @@ def server(input: Inputs, output: Outputs, session: Session):
         if not input.use_manual_hsv():
             return ui.div()
         return ui.div(
-            ui.input_slider("h_range", "H", 0, 180, [0, 180]),
-            ui.input_slider("s_range", "S", 0, 255, [0, 255]),
-            ui.input_slider("v_range", "V", 0, 255, [0, 255]),
+            ui.layout_columns(
+                ui.input_numeric("h_min", "H min", 0, min=0, max=180, step=1),
+                ui.input_numeric("h_max", "H max", 180, min=0, max=180, step=1),
+                col_widths=(6, 6),
+            ),
+            ui.layout_columns(
+                ui.input_numeric("s_min", "S min", 0, min=0, max=255, step=1),
+                ui.input_numeric("s_max", "S max", 255, min=0, max=255, step=1),
+                col_widths=(6, 6),
+            ),
+            ui.layout_columns(
+                ui.input_numeric("v_min", "V min", 0, min=0, max=255, step=1),
+                ui.input_numeric("v_max", "V max", 255, min=0, max=255, step=1),
+                col_widths=(6, 6),
+            ),
             style="padding:.4rem 0 .2rem 0",
         )
 
@@ -2591,11 +2590,11 @@ def server(input: Inputs, output: Outputs, session: Session):
         b64_orig = arr_to_b64(right_full)
         return b64_mask, b64_orig
 
-    def _push_editor_panels():
+    async def _push_editor_panels():
         b64_mask, b64_orig = _render_editor_panels()
         if b64_mask and b64_orig:
             pts_list = [[p[0], p[1]] for p in r_mask_points.get()]
-            session.send_custom_message(
+            await session.send_custom_message(
                 "mask_editor_update",
                 {
                     "b64_mask": b64_mask,
@@ -2841,8 +2840,8 @@ def server(input: Inputs, output: Outputs, session: Session):
 
     @reactive.effect
     @reactive.event(input.mask_overlay_alpha)
-    def _on_alpha_change():
-        _push_editor_panels()
+    async def _on_alpha_change():
+        await _push_editor_panels()
 
     @reactive.effect
     @reactive.event(input.mask_click)
@@ -2867,7 +2866,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     # Apply polygon
     @reactive.effect
     @reactive.event(input.mask_edit_apply)
-    def _mask_apply():
+    async def _mask_apply():
         pts = r_mask_points.get()
         if len(pts) < 3:
             return
@@ -2880,7 +2879,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         r_mask_history.set(hist)
         r_mask_edited.set(edited)
         r_mask_points.set([])
-        _push_editor_panels()
+        await _push_editor_panels()
 
     # Undo
     @reactive.effect
@@ -3394,7 +3393,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                         )
                     )
 
-                @render.download(filename="morphology_results.csv")
+                @render.download_button(filename="morphology_results.csv")
                 async def dl_morph():
                     yield csv_b
 
@@ -3596,7 +3595,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                         )
                     )
 
-                @render.download(filename="color_results.csv")
+                @render.download_button(filename="color_results.csv")
                 async def dl_color_csv():
                     yield csv_b
 
@@ -3666,18 +3665,11 @@ def server(input: Inputs, output: Outputs, session: Session):
     def color_results():
         return r_color_result.get()
 
-    @render.download(filename=lambda: f"{r_color_base.get()}_color.zip")
+    @render.download_button(filename=lambda: f"{r_color_base.get()}_color.zip")
     async def dl_color_zip():
         data = r_color_zip.get()
         if data:
             yield data
-
-    # bg helper
-    bg_thresh = {
-        "blue": ([90, 50, 50], [130, 255, 255]),
-        "white": ([0, 0, 180], [180, 40, 255]),
-        "black": ([0, 0, 0], [180, 255, 50]),
-    }
 
     @reactive.effect
     @reactive.event(input.bg_upload)
@@ -3694,15 +3686,15 @@ def server(input: Inputs, output: Outputs, session: Session):
     @reactive.event(input.bg_preset)
     def _apply_bg_preset():
         preset = input.bg_preset()
-        if preset not in bg_thresh:
+        if preset not in BACKGROUND_COLORS:
             return
-        lo, hi = bg_thresh[preset]
-        ui.update_slider("bg_h_lo", value=lo[0], session=session)
-        ui.update_slider("bg_s_lo", value=lo[1], session=session)
-        ui.update_slider("bg_v_lo", value=lo[2], session=session)
-        ui.update_slider("bg_h_hi", value=hi[0], session=session)
-        ui.update_slider("bg_s_hi", value=hi[1], session=session)
-        ui.update_slider("bg_v_hi", value=hi[2], session=session)
+        lo, hi = BACKGROUND_COLORS[preset]
+        ui.update_numeric("bg_h_lo", value=int(lo[0]), session=session)
+        ui.update_numeric("bg_s_lo", value=int(lo[1]), session=session)
+        ui.update_numeric("bg_v_lo", value=int(lo[2]), session=session)
+        ui.update_numeric("bg_h_hi", value=int(hi[0]), session=session)
+        ui.update_numeric("bg_s_hi", value=int(hi[1]), session=session)
+        ui.update_numeric("bg_v_hi", value=int(hi[2]), session=session)
 
     @render.ui
     def bg_scatter_out():
@@ -3961,13 +3953,13 @@ def server(input: Inputs, output: Outputs, session: Session):
 
         return ui.div(*parts)
 
-    @render.download(filename=lambda: f"{r_morph_base.get()}_morphology.zip")
+    @render.download_button(filename=lambda: f"{r_morph_base.get()}_morphology.zip")
     async def dl_morph_zip():
         data = r_morph_zip.get()
         if data:
             yield data
 
-    @render.download(filename="traitly_results.zip")
+    @render.download_button(filename="traitly_results.zip")
     async def dl_batch_zip():
         data = r_batch_zip.get()
         if data:
@@ -4121,7 +4113,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             ]
         return ui.div(*parts)
 
-    @render.download(
+    @render.download_button(
         filename=lambda: (
             f"{os.path.splitext(input.pdf_file()[0]['name'])[0]}_images.zip"
             if input.pdf_file() and len(input.pdf_file()) == 1

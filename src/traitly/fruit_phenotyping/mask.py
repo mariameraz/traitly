@@ -30,6 +30,13 @@ from ..utils.basic_functions import plot_img
 # Create fruit mask
 #################################################################################################
 
+BACKGROUND_COLORS = {
+    "blue": ((90, 100, 80), (130, 255, 255)),
+    "white": ((0, 0, 110), (180, 40, 255)),
+    "black": ((0, 0, 0), (180, 250, 50)),
+    "gray": ((0, 0, 101), (180, 74, 255)),
+}
+
 def create_mask(
     img_hsv: np.ndarray,
     lower_hsv: Optional[Tuple[int, int, int]] = None,
@@ -97,7 +104,7 @@ def create_mask(
         Figure size for the mask plot. Default is (5, 5).
     background_color : str or None, optional
         Preset background color that overrides ``lower_hsv`` and
-        ``upper_hsv``. One of ``'blue'``, ``'white'``, or ``'black'``.
+        ``upper_hsv``. One of ``'blue'``, ``'white'``, ``'gray'`` or ``'black'``.
         Default is ``None``.
     fill_holes : bool, optional
         If True, fill enclosed holes in the mask via
@@ -164,22 +171,15 @@ def create_mask(
                 raise ValueError("canny_min must be < canny_max")
 
         # Set default HSV values for black/dark backgrounds if not provided
-
         if background_color is not None:
-            if background_color == 'blue':
-                lower_hsv = np.array([90, 100, 80], dtype=np.uint8)
-                upper_hsv = np.array([130, 255, 255], dtype=np.uint8)
-            elif background_color == 'white':
-                lower_hsv = np.array([0, 0, 110], dtype=np.uint8)
-                upper_hsv = np.array([180, 40, 255], dtype=np.uint8)
-            elif background_color == 'black':
-                lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
-                upper_hsv = np.array([180, 250, 50], dtype=np.uint8)
-            elif background_color == 'gray':
-                lower_hsv = np.array([0,0,103], dtype=np.uint8)
-                upper_hsv = np.array([125,40,225], dtype=np.uint8)
-            else:
-                raise ValueError(f"Invalid background_color: {background_color}. Use: {{'blue', 'white', 'black', 'gray'}}")
+            if background_color not in BACKGROUND_COLORS:
+                raise ValueError(
+                    f"Invalid background_color: {background_color}. "
+                    f"Use: {set(BACKGROUND_COLORS)}"
+                )
+            low, hi = BACKGROUND_COLORS[background_color]
+            lower_hsv = np.array(low, dtype=np.uint8)
+            upper_hsv = np.array(hi, dtype=np.uint8)
 
         if lower_hsv is None:
             lower_hsv = np.array([0, 0, 0], dtype=np.uint8)
