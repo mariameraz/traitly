@@ -83,12 +83,19 @@ def _ellipse(center, axes, angle=0):
 def _circle(center, r):
     return _ellipse(center, (r, r))
 
-KEYS_PX = {
-    "outer_pericarp_mean_thickness_px",
-    "outer_pericarp_std_thickness_px",
+UNITLESS = {
     "outer_pericarp_cv_thickness",
-    "fruit_lobedness_px",
+    "outer_pericarp_relative_thickness_mean",
+    "outer_pericarp_relative_thickness_std",
 }
+
+WITH_UNIT = {
+    "outer_pericarp_mean_thickness",
+    "outer_pericarp_std_thickness",
+    "fruit_lobedness",
+}
+
+KEYS_PX = UNITLESS | {f"{k}_px" for k in WITH_UNIT}
 
 C = (150, 150)
 SHAPE = (300, 300)
@@ -263,7 +270,7 @@ def test_invalid_px_per_cm_falls_back_to_pixels(bad):
 def test_no_valid_rays_returns_nan():
     """Inner > outer, therefore no valid rays."""
     res = f(_circle(C, 60), _circle(C, 100), C, SHAPE)
-    assert len(res) == 4
+    assert set(res) == KEYS_PX
     assert all(np.isnan(v) for v in res.values())
 
 def test_fruit_touching_image_border_does_not_crash():

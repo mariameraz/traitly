@@ -11,6 +11,7 @@ import os
 import pytest
 from unittest.mock import patch
 import numpy as np
+import cv2
 
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -171,12 +172,12 @@ class TestSetupCalibration:
         c = FruitInternalAnalyzer(path=valid_img)
         c.load_image(plot=False)
         with pytest.raises(ValueError):
-            c.setup_calibration(width_cm=5, verbose=False)
+            c._setup_calibration(width_cm=5, verbose=False)
 
     def test_width_and_length_cm_fast_mode(self):
         c = FruitInternalAnalyzer(path=valid_img)
         c.load_image(plot=False)
-        c.setup_calibration(width_cm=5, length_cm=7, verbose=True)
+        c._setup_calibration(width_cm=5, length_cm=7, verbose=True)
         assert c.px_per_cm is not None
         assert c._ref_roi is None
 
@@ -185,7 +186,6 @@ class TestSetupCalibration:
         with pytest.raises(ValueError):
             c.setup_measurements()
 
-    @pytest.mark.slow
     def test_setup_measurements_plot_true(self):
         c = FruitInternalAnalyzer(path=valid_img)
         c.load_image(plot=False)
@@ -387,7 +387,7 @@ class TestSetupLabelBranches:
     def test_reuses_existing_label_text(self, capsys):
         c = self._fresh()
         c.label_text = "ALREADY_DETECTED"
-        c.setup_label(verbose=True, detect_label=True)
+        c._setup_label(verbose=True, detect_label=True)
         captured = capsys.readouterr()
         assert c.label_text == "ALREADY_DETECTED"
         assert "ALREADY_DETECTED" in captured.out
@@ -396,7 +396,7 @@ class TestSetupLabelBranches:
         c = self._fresh()
         monkeypatch.setattr(internal_analysis_mod, "detect_label_box_yolo", lambda **kw: None)
         monkeypatch.setattr(internal_analysis_mod, "detect_label_box", lambda **kw: None)
-        c.setup_label(verbose=True, detect_label=True, skip_qr=True, skip_label_roi=True)
+        c._setup_label(verbose=True, detect_label=True, skip_qr=True,)
         captured = capsys.readouterr()
         assert "QR detection: SKIPPED" in captured.out
 
@@ -405,7 +405,7 @@ class TestSetupLabelBranches:
         monkeypatch.setattr(internal_analysis_mod, "detect_qr", lambda img: "QR_TEXT")
         monkeypatch.setattr(internal_analysis_mod, "detect_label_box_yolo", lambda **kw: None)
         monkeypatch.setattr(internal_analysis_mod, "detect_label_box", lambda **kw: None)
-        c.setup_label(verbose=False, detect_label=True, skip_qr=False, skip_label_roi=True)
+        c._setup_label(verbose=False, detect_label=True, skip_qr=False,)
         assert c.label_text == "QR_TEXT"
 
     def test_label_roi_fallback_when_yolo_returns_none(self, monkeypatch):
@@ -414,14 +414,26 @@ class TestSetupLabelBranches:
         monkeypatch.setattr(internal_analysis_mod, "detect_label_box_yolo", lambda **kw: None)
         monkeypatch.setattr(internal_analysis_mod, "detect_label_box", lambda **kw: [{"x": 1, "y": 1, "width": 5, "height": 5}])
         monkeypatch.setattr(internal_analysis_mod, "detect_label_text", lambda **kw: None)
-        c.setup_label(verbose=False, detect_label=True, skip_qr=False, skip_label_roi=False)
+        c._setup_label(verbose=False, detect_label=True, skip_qr=False,)
         assert c._label_roi == [{"x": 1, "y": 1, "width": 5, "height": 5}]
 
-    def test_skip_label_roi_sets_none(self, monkeypatch):
+    def test_label_roi_is_always_detected(self, monkeypatch):
+        """The ROI is detected even when label text is not requested."""
         c = self._fresh()
-        monkeypatch.setattr(internal_analysis_mod, "detect_qr", lambda img: None)
+        roi = [{"x": 10, "y": 10, "width": 50, "height": 20}]
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_box_yolo", lambda **kw: roi)
+
+        c._setup_label(verbose=False, detect_label=False)
+
+        assert c._label_roi == roi
+        assert c.label_text == "No detected"
+
+    def test_label_roi_is_replaced_when_nothing_detected(self, monkeypatch):
+        c = self._fresh()
         c._label_roi = [{"x": 1, "y": 1, "width": 5, "height": 5}]
-        c.setup_label(verbose=False, detect_label=True, skip_qr=True, skip_label_roi=True)
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_box_yolo", lambda **kw: [])
+        monkeypatch.setattr(internal_analysis_mod, "detect_label_box", lambda **kw: [])
+        c._setup_label(verbose=False, detect_label=True, skip_qr=True)
         assert c._label_roi is None
 
     def test_no_label_detected_final_message(self, monkeypatch, capsys):
@@ -429,16 +441,17 @@ class TestSetupLabelBranches:
         monkeypatch.setattr(internal_analysis_mod, "detect_qr", lambda img: None)
         monkeypatch.setattr(internal_analysis_mod, "detect_label_box_yolo", lambda **kw: None)
         monkeypatch.setattr(internal_analysis_mod, "detect_label_box", lambda **kw: None)
-        c.setup_label(verbose=True, detect_label=True, skip_qr=False, skip_label_roi=False)
+        c._setup_label(verbose=True, detect_label=True, skip_qr=False,)
         captured = capsys.readouterr()
-        assert c.label_text == "No label detected"
-        assert "No label detected." in captured.out
+        assert c.label_text == "No detected"
+        assert "No label text detected" in captured.out
 
 
 class TestSetupMeasurementsPlotLandscape:
     def test_plot_landscape_orientation(self, monkeypatch):
         c = FruitInternalAnalyzer(path=valid_img)
         c.load_image(plot=False)
+        c.img = cv2.rotate(c.img, cv2.ROTATE_90_CLOCKWISE)
         h, w = c.img.shape[:2]
         if h > w:
             pytest.skip("test image is portrait; landscape branch needs w >= h")
@@ -525,7 +538,7 @@ class TestSetupLabelQRBranch:
         c = _make_analyzer(monkeypatch, tmp_path)
         monkeypatch.setattr(internal_analysis_mod, "detect_qr", lambda img: "ABC123")
 
-        c.setup_label(verbose=True, detect_label=True, skip_qr=False, skip_label_roi=True)
+        c._setup_label(verbose=True, detect_label=True, skip_qr=False,)
 
         assert c.label_text == "ABC123"
         captured = capsys.readouterr()
@@ -542,7 +555,7 @@ class TestSetupLabelQRBranch:
 
         monkeypatch.setattr(internal_analysis_mod, "detect_qr", fake_detect_qr)
 
-        c.setup_label(verbose=False, detect_label=True, skip_qr=True, skip_label_roi=True)
+        c._setup_label(verbose=False, detect_label=True, skip_qr=True,)
 
         assert called["count"] == 0
         assert c.label_text != "should-not-be-used"
@@ -551,7 +564,7 @@ class TestSetupLabelQRBranch:
         c = _make_analyzer(monkeypatch, tmp_path)
         monkeypatch.setattr(internal_analysis_mod, "detect_qr", lambda img: None)
 
-        c.setup_label(verbose=True, detect_label=True, skip_qr=False, skip_label_roi=True)
+        c._setup_label(verbose=True, detect_label=True, skip_qr=False,)
 
         captured = capsys.readouterr()
         assert "QR Code detected" not in captured.out
@@ -559,7 +572,7 @@ class TestSetupLabelQRBranch:
 class TestSetupMeasurementsPlotOrientation:
     def _prep_common(self, monkeypatch, tmp_path):
         c = _make_analyzer(monkeypatch, tmp_path)
-        monkeypatch.setattr(c, "setup_label", lambda **kwargs: None)
+        monkeypatch.setattr(c, "_setup_label", lambda **kwargs: None)
         monkeypatch.setattr(
             internal_analysis_mod.plt, "figure", lambda figsize=None: figsize
         )
@@ -577,11 +590,11 @@ class TestSetupMeasurementsPlotOrientation:
         c.img = np.zeros((10, 40, 3), dtype=np.uint8)  # width > heigth -> landscape
         c._img_rgb = c.img.copy()
 
-        # simulate setup_calibration with 2 ref_roi (n=2)
-        def fake_setup_calibration(**kwargs):
+        # simulate _setup_calibration with 2 ref_roi (n=2)
+        def fake__setup_calibration(**kwargs):
             c._ref_roi = [np.array([[0, 0]]), np.array([[1, 1]])]
 
-        monkeypatch.setattr(c, "setup_calibration", fake_setup_calibration)
+        monkeypatch.setattr(c, "_setup_calibration", fake__setup_calibration)
 
         figsizes = []
         monkeypatch.setattr(
@@ -599,10 +612,10 @@ class TestSetupMeasurementsPlotOrientation:
         c.img = np.zeros((40, 10, 3), dtype=np.uint8)  # length > width -> Portrait
         c._img_rgb = c.img.copy()
 
-        def fake_setup_calibration(**kwargs):
+        def fake__setup_calibration(**kwargs):
             c._ref_roi = [np.array([[0, 0]]), np.array([[1, 1]])]
 
-        monkeypatch.setattr(c, "setup_calibration", fake_setup_calibration)
+        monkeypatch.setattr(c, "_setup_calibration", fake__setup_calibration)
 
         figsizes = []
         monkeypatch.setattr(
