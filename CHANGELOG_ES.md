@@ -4,6 +4,10 @@
 
 ## 0.4.0 - En desarrollo
 
+### Correcciones
+
+- En la app, los colores de fondo predefinidos y los umbrales de color manuales ahora son **mutuamente excluyentes**. Anteriormente, los umbrales manuales se ignoraban tanto en el análisis External como Internal porque siempre se aplicaba el color de fondo predefinido por defecto (azul) para segmentar el fruto.
+
 ### Cambios
 
 - Ahora `setup_label` siempre detecta la **ROI** de la etiqueta en `FruitInternalAnalyzer` y `FruitExternalAnalyzer` sin importar `detect_label` (usa primero el modelo de YOLO, y `detect_label_box` como fallback).
@@ -14,9 +18,12 @@
 
 - Se eliminó el argumento `skip_label_roi` de `_setup_label()`, ya que ahora la ROI de la etiqueta siempre es detectada.
 
+
 ### Nuevo
 
 - Nuevos traits: `outer_pericarp_relative_thickness_mean` y `outer_pericarp_relative_thickness_std`: el grosor del pericarpio entre la media del radio del fruto para cada rayo. Ya que es un radio, es independienbte de `px_per_cm` y comparable entre frutos de diferente tamaño.
+- En la app, se añadió el color de fondo predeterminado `gray`, para las secciones de segmentación de fondo.
+- Se añadió `gray` a los colores predeterminados en las pestañas de Internal/External y Background Helper.
 
 
 ## v0.3.0 - 2026-10-25
