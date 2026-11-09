@@ -54,7 +54,7 @@ classifiers = [
 
 [project.optional-dependencies]
 pdf = ["PyMuPDF"]
-app = ["PyMuPDF", "shiny"]
+app = ["PyMuPDF", "shiny >= 1.7.0"]
 
 dev = ["pytest", "pytest-cov"]
 
