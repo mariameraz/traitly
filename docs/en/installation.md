@@ -175,7 +175,9 @@ Once installed, you can confirm everything is working correctly by running:
 
 **In the terminal:**
 ```bash
-traitly --version
+traitly info
+# For v0.1.2 and older, run: 
+# traitly --version
 ```
 
 **In Python or Jupyter Notebook:**

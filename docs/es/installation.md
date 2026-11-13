@@ -180,7 +180,9 @@ Una vez instalado, puedes confirmar que todo funciona correctamente ejecutando:
 
 **Desde la terminal:**
 ```bash
-traitly --version
+traitly info
+# En v0.1.2 y anteriores, ejecuta:
+# traitly --version
 ```
 
 **Desde Python o Jupyter Notebook:**
