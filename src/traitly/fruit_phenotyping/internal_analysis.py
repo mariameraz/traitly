@@ -189,7 +189,6 @@ class FruitInternalAnalyzer:
         self.img_name = None
         self._img_copy = None
         self.img_shape = None
-        self._img_rgb = None
         self._img_hsv = None
 
         # setup_measurements
@@ -291,7 +290,6 @@ class FruitInternalAnalyzer:
         # Save some image attributes
         self.img_shape = self.img.shape[:2] # Image shape
         self._img_hsv = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV) # HSV Image
-        self._img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB) # RGB Image
         self.img_name = detect_img_name(self.input_path) # Image name
 
         self._parameters.input_params = {"input_path": self.input_path} # Save used parameters
@@ -373,10 +371,19 @@ class FruitInternalAnalyzer:
                 print(f"> Label text: {self.label_text}")
             return None
 
+        max_side = 1300
+        h, w = self.img.shape[:2]
+
+        scaled_img = self.img
+
+        if max(h,w) > max_side:
+            scale = max_side / max(h,w)
+            scaled_img = cv2.resize(self.img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+
         # 3. First option: QR (fast)
         if not skip_qr:
             qr_start = time.perf_counter()
-            self.label_text = detect_qr(img=self.img)
+            self.label_text = detect_qr(img=scaled_img)
             if verbose and self.label_text:
                 print(f"> QR Code detected: {self.label_text} ({time.perf_counter() - qr_start:.2f}s)")
         elif verbose:
@@ -764,7 +771,7 @@ class FruitInternalAnalyzer:
 
         generate_scatter_plot(
             img_hsv=self._img_hsv,
-            img_rgb=self._img_rgb,
+            img_rgb=self.img[..., ::-1],
             sample_size=sample_size,
             plot_size=plot_size,
         )
@@ -795,7 +802,7 @@ class FruitInternalAnalyzer:
         erosion_px: int = 0,
     ) -> None:
 
-        if self._img_rgb is None:
+        if self.img is None:
             raise ValueError("No image loaded. Run load_image() first.")
 
         metadata = self._is_metadata_saved
@@ -818,10 +825,10 @@ class FruitInternalAnalyzer:
                 "erosion_px": erosion_px,
             }
         if stamp:
-            img = 255 - self._img_rgb
+            img = 255 - self.img[..., ::-1]
 
         else:
-            img = cv2.cvtColor(self._img_rgb, cv2.COLOR_RGB2HSV)
+            img = cv2.cvtColor(self.img[..., ::-1], cv2.COLOR_RGB2HSV)
 
         # Create base mask
         self.mask_fruit = create_mask(
@@ -850,16 +857,14 @@ class FruitInternalAnalyzer:
                 for box in self._label_roi:
                     x, y = box["x"], box["y"]
                     w, h = box["width"], box["height"]
-                    x_expanded = max(0, x - roi_expansion)
-                    y_expanded = max(0, y - roi_expansion)
-                    w_expanded = w + 2 * roi_expansion
-                    h_expanded = h + 2 * roi_expansion
+                    # x_expanded = max(0, x - roi_expansion)
+                    # y_expanded = max(0, y - roi_expansion)
+                    # w_expanded = w + 2 * roi_expansion
+                    # h_expanded = h + 2 * roi_expansion
                     cv2.rectangle(
                         mask_rois,
-                        (x_expanded, y_expanded),
-                        (x_expanded + w_expanded, y_expanded + h_expanded),
-                        255,
-                        -1,
+                        (x, y),
+                        (x + w, y + h), 255, -1,
                     )
 
             # Reference ROI
@@ -1234,7 +1239,7 @@ class FruitInternalAnalyzer:
             if dilation_factor is not None:
                 self._dilation_factor = dilation_factor
 
-            img_copy = self._img_rgb.copy()
+            img_copy = self.img[..., ::-1].copy()
             for fruit_id, locule_ids in self.fruit_locule_map.items():
                 # Fruits
                 cv2.drawContours(
@@ -2446,11 +2451,11 @@ class FruitInternalAnalyzer:
                 print(
                     "Warning: No annotated image, showing original image instead. Run analyze_color() or analyze_morphology() first."
                 )
-                img = self._img_rgb
+                img = self.img[..., ::-1]
             else:
                 img = self.results.morphology_image
         else:
-            img = self._img_rgb
+            img = self.img[..., ::-1]
 
         plt.figure(figsize=plot_size)
         plt.imshow(img)

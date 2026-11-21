@@ -191,8 +191,6 @@ def _detect_color_checker(
     # Save the LAB mean value for each color patch
     chart = checker.getChartsRGB()
 
-
-
     return checker_coords, chart, img_copy
 
 ########################################################################

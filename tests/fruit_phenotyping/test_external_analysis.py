@@ -168,7 +168,6 @@ def test_detect_label(cranberry_blue_labeled):
     assert cranberry_blue_labeled.img.any()
     assert cranberry_blue_labeled.img_name
     assert cranberry_blue_labeled._img_copy.any()
-    assert cranberry_blue_labeled._img_rgb.any()
     assert cranberry_blue_labeled._img_hsv.any()
     assert cranberry_blue_labeled.l_transformed is None
 
