@@ -371,19 +371,40 @@ class FruitInternalAnalyzer:
                 print(f"> Label text: {self.label_text}")
             return None
 
-        max_side = 1300
-        h, w = self.img.shape[:2]
-
-        scaled_img = self.img
-
-        if max(h,w) > max_side:
-            scale = max_side / max(h,w)
-            scaled_img = cv2.resize(self.img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
-
         # 3. First option: QR (fast)
         if not skip_qr:
             qr_start = time.perf_counter()
-            self.label_text = detect_qr(img=scaled_img)
+            max_side = 1300
+
+            def _downscale(img: np.ndarray, w: int, h: int):
+                if max(h,w) <= max_side:
+                    return img
+                scale = max_side / max(h,w)
+                return cv2.resize(img, None, fx = scale, fy = scale, interpolation = cv2.INTER_AREA)
+
+            self.label_text =None
+
+            H, W = self.img.shape[:2]
+
+            # 3.1 Look inside each label roi first
+            if self._label_roi:
+                for box in self._label_roi:
+                    x1 = max(0, int(box["x"]))
+                    y1 = max(0, int(box["y"]))
+                    x2 = min(W, int(box["x"] + box["width"]))
+                    y2 = min(H, int(box["y"] + box["height"]))
+
+                    if x2 <= x1 or y2 <= y1:
+                        continue
+
+                    self.label_text = detect_qr(img = _downscale(self.img[y1:y2, x1:x2], w = W, h = H))
+                    if self.label_text:
+                        break
+
+            # 3.2 Fallback: if QR is not detected there or self._label_roi is None (no label included/detected):
+            if not self.label_text:
+                self.label_text = detect_qr(img = _downscale(self.img, w = W, h = H))
+
             if verbose and self.label_text:
                 print(f"> QR Code detected: {self.label_text} ({time.perf_counter() - qr_start:.2f}s)")
         elif verbose:
