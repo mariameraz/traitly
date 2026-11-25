@@ -1653,9 +1653,7 @@ class FruitInternalAnalyzer:
             [
                 "outer_pericarp_mean_thickness",
                 "outer_pericarp_std_thickness",
-                "outer_pericarp_cv_thickness",
-                "outer_pericarp_relative_thickness_mean",
-                'outer_pericarp_relative_thickness_std',
+                "outer_pericarp_cv_thickness"
 
             ],
             # Internal areas
